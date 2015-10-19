@@ -47,7 +47,7 @@ public class JMAPModule extends AbstractModule {
         bind(RequestHandler.class).toInstance(new RequestHandler() {
             
             @Override
-            public ProtocolResponse process(ProtocolRequest request) {
+            public ProtocolResponse handle(ProtocolRequest request) {
                 // TODO Auto-generated method stub
                 return null;
             }

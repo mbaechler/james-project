@@ -17,12 +17,25 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.jmap.methods;
+package org.apache.james.jmap;
 
-import org.apache.james.jmap.model.ProtocolRequest;
-import org.apache.james.jmap.model.ProtocolResponse;
+import org.apache.james.jmap.methods.ProtocolArgumentsManager;
+import org.apache.james.jmap.methods.ProtocolArgumentsManagerImpl;
+import org.apache.james.jmap.methods.Method;
+import org.apache.james.jmap.methods.RequestHandler;
+import org.apache.james.jmap.methods.RequestHandlerImpl;
 
-public interface RequestHandler {
+import com.google.inject.AbstractModule;
+import com.google.inject.multibindings.Multibinder;
 
-    ProtocolResponse handle(ProtocolRequest request);
+public class MethodsModule extends AbstractModule {
+
+    @Override
+    protected void configure() {
+        bind(RequestHandler.class).to(RequestHandlerImpl.class);
+        bind(ProtocolArgumentsManager.class).to(ProtocolArgumentsManagerImpl.class);
+
+        Multibinder<Method> methods = Multibinder.newSetBinder(binder(), Method.class);
+    }
+
 }

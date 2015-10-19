@@ -22,7 +22,10 @@ package org.apache.james.jmap.methods;
 import org.apache.james.jmap.model.ProtocolRequest;
 import org.apache.james.jmap.model.ProtocolResponse;
 
-public interface RequestHandler {
+public interface Method {
 
-    ProtocolResponse handle(ProtocolRequest request);
+    String methodName();
+
+    ProtocolResponse process(ProtocolRequest request);
+
 }

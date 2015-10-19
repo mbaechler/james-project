@@ -19,10 +19,6 @@
 
 package org.apache.james.jmap.methods;
 
-import org.apache.james.jmap.model.ProtocolRequest;
-import org.apache.james.jmap.model.ProtocolResponse;
+public interface JmapResponse {
 
-public interface RequestHandler {
-
-    ProtocolResponse handle(ProtocolRequest request);
 }
