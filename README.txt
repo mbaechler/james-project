@@ -92,7 +92,7 @@ This feature is only available for Java 8 / Cassandra mailbox backend yet.
 
 
 * Requirements
-You should have the zip resulting of the build in the ./destination folder.
+You should have the zip resulting of the build in the ./dockerfiles/destination folder.
 
 
 * Howto ?
