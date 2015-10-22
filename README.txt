@@ -97,19 +97,18 @@ You should have the zip resulting of the build in the ./destination folder.
 
 * Howto ?
 You need a running cassandra in docker. To achieve this run :
-$ docker run --name=cassandra cassandra
+$ docker run -d --name=cassandra cassandra
 
 You need a running ElasticSearch in docker. To achieve this run :
-$ docker run --name=elasticsearch elasticsearch:1.5.2
+$ docker run -d --name=elasticsearch elasticsearch:1.5.2
 
 We need to provide the key we will use for TLS. For obvious reasons, this is not provided in this git.
 
-Copy your TSL keys to destination/conf/keystore or generate it using :
+Copy your TSL keys to destination/conf/keystore or generate it using the following command. The password must be james72laBalle to match default configuration.
 $ keytool -genkey -alias james -keyalg RSA -keystore destination/conf/keystore
 
 Then we need to build james container :
-$ cd dockerfiles/Dockerfile/
-$ docker build -t james_run .
+$ docker build -t james_run dockerfiles
 
 To run this container :
 $ docker run --hostname HOSTNAME -p "25:25" -p "110:110" -p "143:143" -p "465:465" -p "587:587" -p "993:993" --link cassandra:cassandra --link elasticsearch:elasticsearch --name james_run -t james_run
@@ -122,19 +121,17 @@ Where :
 
 ** How to add a domain ?
 # Add DOMAIN to 127.0.0.1 in your host /etc/hosts
-$ docker exec JAMES_CONTAINER_ID /root/james-server-app-3.0.0-beta5-SNAPSHOT/bin/james-cli.sh -h 127.0.0.1 -p 9999 adddomain DOMAIN
+$ docker exec james_run /root/james-server-app-3.0.0-beta5-SNAPSHOT/bin/james-cli.sh -h 127.0.0.1 -p 9999 adddomain DOMAIN
 
 Where :
 - DOMAIN: is the domain you want to add.
-- JAMES_CONTAINER_ID: is the docker ID of your james container.
 
 ** How to add a user ?
-$ docker exec JAMES_CONTAINER_ID /root/james-server-app-3.0.0-beta5-SNAPSHOT/bin/james-cli.sh -h 127.0.0.1 -p 9999 adduser USER_MAIL_ADDRESS PASSWORD
+$ docker exec james_run /root/james-server-app-3.0.0-beta5-SNAPSHOT/bin/james-cli.sh -h 127.0.0.1 -p 9999 adduser USER_MAIL_ADDRESS PASSWORD
 
 Where :
 - USER_MAIL_ADDRESS: is the mail address that will be used by this user.
 - PASSWORD: is the password that will be used by this user.
-- JAMES_CONTAINER_ID: is the docker ID of your james container
 
 You can then just add DOMAIN to your /etc/hosts and you can connect to your james account with for instance thunderbird.
 

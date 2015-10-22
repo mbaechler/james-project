@@ -18,8 +18,8 @@ EXPOSE 25 110 143 465 587 993
 WORKDIR /root
 
 # Get data we need to run James : build results and configuration
-ADD destination/james-server-app-3.0.0-beta5-SNAPSHOT-app.zip james-server-app-3.0.0-beta5-SNAPSHOT-app.zip
-ADD destination/conf conf
+ADD destination/james-server-app-3.0.0-beta5-SNAPSHOT-app.zip /root/james-server-app-3.0.0-beta5-SNAPSHOT-app.zip
+ADD destination/conf /root/conf
 
 # Unzip build result
 RUN unzip james-server-app-3.0.0-beta5-SNAPSHOT-app.zip
