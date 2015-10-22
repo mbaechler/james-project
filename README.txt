@@ -175,11 +175,11 @@ with password password. Read above documentation to see how you can do this.
 You have to run MPT tests inside docker. As you need to use maven, the simplest option is to
 use james/parent image, and override the entry point ( as git and maven are already configured
 there ) :
-$ docker run -t --entrypoint="/root/integration_tests.sh" -v $PWD/.m2:/root/.m2 james/project JAMES_IP JAMES_PORT SHA1
+$ docker run -t --entrypoint="/root/integration_tests.sh" -v $PWD/.m2:/root/.m2 -v $PWD:/origin james/project JAMES_IP JAMES_PORT SHA1
 
 Where :
  - JAMES_IP: IP address or DNS entry for your James server
- - JAMES_PORT: Port allocated to James' IMAP port.
+ - JAMES_PORT: Port allocated to James' IMAP port (should be 143).
  - SHA1(optional): Branch to use in order to build integration tests or trunk
 
 
