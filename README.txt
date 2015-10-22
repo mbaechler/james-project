@@ -133,7 +133,7 @@ Where :
 - USER_MAIL_ADDRESS: is the mail address that will be used by this user.
 - PASSWORD: is the password that will be used by this user.
 
-You can then just add DOMAIN to your /etc/hosts and you can connect to your james account with for instance thunderbird.
+You can then just add DOMAIN to your /etc/hosts and you can connect to your james account with for instance Thunderbird.
 
 ** How to manage SIEVE scripts ?
 Each user can manage his SIEVE scripts threw the manage SIEVE mailet.
