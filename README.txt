@@ -105,7 +105,7 @@ $ docker run -d --name=elasticsearch elasticsearch:1.5.2
 We need to provide the key we will use for TLS. For obvious reasons, this is not provided in this git.
 
 Copy your TSL keys to destination/conf/keystore or generate it using the following command. The password must be james72laBalle to match default configuration.
-$ keytool -genkey -alias james -keyalg RSA -keystore destination/conf/keystore
+$ keytool -genkey -alias james -keyalg RSA -keystore dockerfiles/destination/conf/keystore
 
 Then we need to build james container :
 $ docker build -t james_run dockerfiles
