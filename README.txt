@@ -187,7 +187,7 @@ Howto check the merge of a commit
 =================================
 
 First step, you have to build the Docker image
-$ docker build -t james/merge .
+$ docker build -t james/merge dockerfiles/merge
 
 In order to run the build, you have to launch the following command:
 $ docker run -v $PWD:/origin -t james/merge SHA1 RESULTING_BRANCH
