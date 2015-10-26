@@ -68,7 +68,7 @@
         <module>container/spring</module>
         <module>container/util</module>
         <module>container/util-java8</module>
-
+        <module>container/smtp-guice</module>
         <module>mailet/mailetcontainer-api</module>
         <module>mailet/mailetcontainer-camel</module>
         <module>mailet/mailets</module>
@@ -781,6 +781,16 @@
             <dependency>
                 <groupId>org.apache.james</groupId>
                 <artifactId>apache-jsieve-core</artifactId>
+                <version>${jsieve.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>apache-jsieve-manager-jsieve</artifactId>
+                <version>${jsieve.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>apache-jsieve-manager-mailet</artifactId>
                 <version>${jsieve.version}</version>
             </dependency>
             <dependency>
