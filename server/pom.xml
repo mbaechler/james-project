@@ -66,6 +66,7 @@
         <module>container/mailbox-adapter</module>
         <module>container/spring</module>
         <module>container/util</module>
+        <module>container/smtp-guice</module>
 
         <module>mailet/mailetcontainer-api</module>
         <module>mailet/mailetcontainer-camel</module>
