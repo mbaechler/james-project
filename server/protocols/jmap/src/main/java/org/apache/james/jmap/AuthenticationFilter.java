@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.Optional;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -33,15 +34,25 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.james.jmap.api.AccessTokenManager;
 import org.apache.james.jmap.api.access.AccessToken;
+import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.MailboxSession;
+import org.apache.james.mailbox.exception.BadCredentialsException;
+import org.apache.james.mailbox.exception.MailboxException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+@Singleton
 public class AuthenticationFilter implements Filter {
     
+    private static final Logger LOG = LoggerFactory.getLogger(AuthenticationFilter.class);
+
     private AccessTokenManager accessTokenManager;
+    private MailboxManager mailboxManager;
 
     @Inject
-    public AuthenticationFilter(AccessTokenManager accessTokenManager) {
+    public AuthenticationFilter(AccessTokenManager accessTokenManager, MailboxManager mailboxManager) {
         this.accessTokenManager = accessTokenManager;
+        this.mailboxManager = mailboxManager;
     }
 
     @Override
@@ -56,14 +67,20 @@ public class AuthenticationFilter implements Filter {
             ((HttpServletResponse)response).sendError(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
-        MailboxSession mailboxSession = fromHeader(authHeader);
-        JmapAuthenticatedRequest jmapAuthenticatedRequest = new JmapAuthenticatedRequest(httpRequest, mailboxSession);
-        chain.doFilter(jmapAuthenticatedRequest, response);
+        try {
+            MailboxSession mailboxSession = fromHeader(authHeader);
+            JmapAuthenticatedRequest jmapAuthenticatedRequest = new JmapAuthenticatedRequest(httpRequest, mailboxSession);
+            chain.doFilter(jmapAuthenticatedRequest, response);
+        } catch (MailboxException e) {
+            ((HttpServletResponse)response).sendError(HttpServletResponse.SC_UNAUTHORIZED);
+        }
     }
 
-    private MailboxSession fromHeader(Optional<String> authHeader) {
-        // TODO Auto-generated method stub
-        return null;
+    private MailboxSession fromHeader(Optional<String> authHeader) throws BadCredentialsException, MailboxException {
+        String username = authHeader
+            .map(header -> accessTokenManager.getUsernameFromToken(AccessToken.fromString(header)))
+            .orElseThrow(() -> new BadCredentialsException());
+        return mailboxManager.createSystemSession(username, LOG);
     }
 
     private boolean checkAuthorizationHeader(Optional<String> authHeader) throws IOException {

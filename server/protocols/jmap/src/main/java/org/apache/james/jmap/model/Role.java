@@ -16,30 +16,35 @@
  * specific language governing permissions and limitations      *
  * under the License.                                           *
  ****************************************************************/
+package org.apache.james.jmap.model;
 
-package org.apache.james.jmap;
+public enum Role {
 
-import org.apache.james.jmap.methods.ProtocolArgumentsManager;
-import org.apache.james.jmap.methods.ProtocolArgumentsManagerImpl;
-import org.apache.james.jmap.methods.GetMailboxesMethod;
-import org.apache.james.jmap.methods.Method;
-import org.apache.james.jmap.methods.RequestHandler;
-import org.apache.james.jmap.methods.RequestHandlerImpl;
-import org.apache.james.mailbox.cassandra.CassandraId;
+    INBOX("inbox"),
+    ARCHIVE("archive"),
+    DRAFTS("drafts"),
+    OUTBOX("outbox"),
+    SENT("sent"),
+    TRASH("trash"),
+    SPAM("spam"),
+    TEMPLATES("templates");
+    
+    private String name;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.TypeLiteral;
-import com.google.inject.multibindings.Multibinder;
-
-public class MethodsModule extends AbstractModule {
-
-    @Override
-    protected void configure() {
-        bind(RequestHandler.class).to(RequestHandlerImpl.class);
-        bind(ProtocolArgumentsManager.class).to(ProtocolArgumentsManagerImpl.class);
-
-        Multibinder<Method> methods = Multibinder.newSetBinder(binder(), Method.class);
-        methods.addBinding().to(new TypeLiteral<GetMailboxesMethod<CassandraId>>(){});
+    private Role(String name) {
+        this.name = name;
     }
 
+    public static Role from(String name) {
+        for (Role role : values()) {
+            if (role.serialize().equals(name.toLowerCase())) {
+                return role;
+            }
+        }
+        return null;
+    }
+
+    public String serialize() {
+        return name;
+    }
 }

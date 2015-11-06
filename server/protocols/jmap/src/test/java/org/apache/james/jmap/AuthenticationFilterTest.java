@@ -31,6 +31,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.james.jmap.api.AccessTokenManager;
 import org.apache.james.jmap.api.access.AccessToken;
+import org.apache.james.mailbox.MailboxManager;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -48,7 +49,8 @@ public class AuthenticationFilterTest {
         mockedRequest = mock(HttpServletRequest.class);
         mockedResponse = mock(HttpServletResponse.class);
         mockedAccessTokenManager = mock(AccessTokenManager.class);
-        tested = new AuthenticationFilter(mockedAccessTokenManager);
+        MailboxManager mockedMailboxManager = mock(MailboxManager.class);
+        tested = new AuthenticationFilter(mockedAccessTokenManager, mockedMailboxManager);
         filterChain = mock(FilterChain.class);
     }
     
@@ -76,10 +78,12 @@ public class AuthenticationFilterTest {
     
     @Test
     public void filterShouldChainOnValidAuthorizationHeader() throws Exception {
+        AccessToken token = AccessToken.fromString(TOKEN);
         when(mockedRequest.getHeader("Authorization"))
             .thenReturn(TOKEN);
-        when(mockedAccessTokenManager.isValid(AccessToken.fromString(TOKEN)))
+        when(mockedAccessTokenManager.isValid(token))
             .thenReturn(true);
+        when(mockedAccessTokenManager.getUsernameFromToken(token)).thenReturn("user@domain.tld");
         
         tested.doFilter(mockedRequest, mockedResponse, filterChain);
         

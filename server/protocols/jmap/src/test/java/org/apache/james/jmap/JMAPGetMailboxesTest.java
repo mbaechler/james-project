@@ -21,9 +21,11 @@ package org.apache.james.jmap;
 import static com.jayway.restassured.RestAssured.given;
 import static com.jayway.restassured.config.EncoderConfig.encoderConfig;
 import static com.jayway.restassured.config.RestAssuredConfig.newConfig;
-
 import static org.hamcrest.Matchers.equalTo;
-import static org.mockito.Mockito.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.UUID;
 
@@ -36,39 +38,52 @@ import org.apache.james.jmap.methods.ProtocolArgumentsManager;
 import org.apache.james.jmap.methods.ProtocolArgumentsManagerImpl;
 import org.apache.james.jmap.methods.RequestHandler;
 import org.apache.james.jmap.methods.RequestHandlerImpl;
-import org.apache.james.jmap.utils.ZonedDateTimeProvider;
-import org.apache.james.user.api.UsersRepository;
+import org.apache.james.mailbox.MailboxManager;
+import org.apache.james.mailbox.MailboxSession;
+import org.apache.james.mailbox.MessageManager;
+import org.apache.james.mailbox.MessageManager.MetaData.FetchGroup;
+import org.apache.james.mailbox.model.MailboxPath;
+import org.apache.james.mailbox.store.MailboxMetaData;
+import org.apache.james.mailbox.store.TestId;
+import org.apache.james.mailbox.store.mail.MailboxMapper;
+import org.apache.james.mailbox.store.mail.MailboxMapperFactory;
+import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.http.ContentType;
 
 public class JMAPGetMailboxesTest {
 
-    private UsersRepository mockedUsersRepository;
     private RequestHandler requestHandler;
     private JettyHttpServer server;
-    private TestClient client;
-    private ZonedDateTimeProvider mockedZonedDateTimeProvider;
     private UUID accessToken;
+    private MailboxManager mockedMailboxManager;
+    private MailboxMapperFactory<TestId> mockedMailboxMapperFactory;
     
+    @SuppressWarnings("unchecked")
     @Before
     public void setup() throws Exception {
-        mockedZonedDateTimeProvider = mock(ZonedDateTimeProvider.class);
-        mockedUsersRepository = mock(UsersRepository.class);
+        String username = "username@domain.tld";
+
         AccessTokenManager mockedAccessTokenManager = mock(AccessTokenManager.class);
+        mockedMailboxMapperFactory = mock(MailboxMapperFactory.class);
+        mockedMailboxManager = mock(MailboxManager.class);
+
         ProtocolArgumentsManager protocolArgumentsManager = new ProtocolArgumentsManagerImpl(); 
         
-        requestHandler = new RequestHandlerImpl(ImmutableSet.of(new GetMailboxesMethod(protocolArgumentsManager)));
+        requestHandler = new RequestHandlerImpl(ImmutableSet.of(new GetMailboxesMethod<>(protocolArgumentsManager, mockedMailboxManager, mockedMailboxMapperFactory)));
         JMAPServlet jmapServlet = new JMAPServlet(requestHandler);
 
-        AuthenticationFilter authenticationFilter = new AuthenticationFilter(mockedAccessTokenManager);
+        AuthenticationFilter authenticationFilter = new AuthenticationFilter(mockedAccessTokenManager, mockedMailboxManager);
         
         when(mockedAccessTokenManager.isValid(any(AccessToken.class))).thenReturn(true);
+        when(mockedAccessTokenManager.getUsernameFromToken(any(AccessToken.class))).thenReturn(username);
         
         accessToken = UUID.randomUUID();
         
@@ -85,7 +100,6 @@ public class JMAPGetMailboxesTest {
 
         RestAssured.port = server.getPort();
         RestAssured.config = newConfig().encoderConfig(encoderConfig().defaultContentCharset(Charsets.UTF_8));
-        client = new TestClient(mockedUsersRepository, mockedZonedDateTimeProvider);
     }
 
     @After
@@ -148,5 +162,49 @@ public class JMAPGetMailboxesTest {
         .then()
             .statusCode(200)
             .content(equalTo("[[\"error\",{\"type\":\"invalidArguments\"},\"#0\"]]"));
+    }
+
+    @Test
+    public void getMailboxesShouldReturnEmptyListWhenNoMailboxes() throws Exception {
+        when(mockedMailboxManager.list(any()))
+            .thenReturn(ImmutableList.<MailboxPath>of());
+        given()
+            .accept(ContentType.JSON)
+            .contentType(ContentType.JSON)
+            .header("Authorization", accessToken)
+            .body("[[\"getMailboxes\", {}, \"#0\"]]")
+        .when()
+            .post("/jmap")
+        .then()
+            .statusCode(200)
+            .content(equalTo("[[\"getMailboxes\",{\"accountId\":null,\"state\":null,\"list\":[],\"notFound\":null},\"#0\"]]"));
+    }
+
+    @Test
+    public void getMailboxesShouldReturnMailboxesWhenAvailable() throws Exception {
+        MailboxPath mailboxPath = new MailboxPath("namespace", "user", "name");
+        when(mockedMailboxManager.list(any()))
+            .thenReturn(ImmutableList.<MailboxPath>of(mailboxPath/*, new MailboxPath("namespace2", "user2", "name2")*/));
+        MessageManager mockedMessageManager = mock(MessageManager.class);
+        //final Long firstUnseen, final boolean writeable, final boolean modSeqPermanent, MailboxACL acl
+        MailboxMetaData mailboxMetaData = new MailboxMetaData(ImmutableList.of(), null, 123L, 5L, 10L, 3L, 2L, 1L, false, false, null);
+        when(mockedMessageManager.getMetaData(eq(false), any(MailboxSession.class), eq(FetchGroup.UNSEEN_COUNT))).thenReturn(mailboxMetaData);
+        when(mockedMailboxManager.getMailbox(eq(mailboxPath), any(MailboxSession.class))).thenReturn(mockedMessageManager);
+        SimpleMailbox<TestId> simpleMailbox = new SimpleMailbox<TestId>(mailboxPath, 5L);
+        simpleMailbox.setMailboxId(TestId.of(23432L));
+        @SuppressWarnings("unchecked")
+        MailboxMapper<TestId> mockedMailboxMapper = mock(MailboxMapper.class);
+        when(mockedMailboxMapperFactory.getMailboxMapper(any(MailboxSession.class))).thenReturn(mockedMailboxMapper);
+        when(mockedMailboxMapper.findMailboxByPath(mailboxPath)).thenReturn(simpleMailbox);
+        given()
+            .accept(ContentType.JSON)
+            .contentType(ContentType.JSON)
+            .header("Authorization", accessToken)
+            .body("[[\"getMailboxes\", {}, \"#0\"]]")
+        .when()
+            .post("/jmap")
+        .then()
+            .statusCode(200)
+            .content(equalTo("[[\"getMailboxes\",{\"accountId\":null,\"state\":null,\"list\":[{\"id\":\"23432\",\"name\":\"name\",\"parentId\":null,\"role\":null,\"sortOrder\":0,\"mustBeOnlyMailbox\":false,\"mayReadItems\":false,\"mayAddItems\":false,\"mayRemoveItems\":false,\"mayCreateChild\":false,\"mayRename\":false,\"mayDelete\":false,\"totalMessages\":0,\"unreadMessages\":2,\"totalThreads\":0,\"unreadThreads\":0}],\"notFound\":null},\"#0\"]]"));
     }
 }
