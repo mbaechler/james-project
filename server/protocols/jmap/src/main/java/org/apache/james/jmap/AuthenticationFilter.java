@@ -33,6 +33,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.james.jmap.api.AccessTokenManager;
 import org.apache.james.jmap.api.access.AccessToken;
+import org.apache.james.mailbox.MailboxSession;
 
 public class AuthenticationFilter implements Filter {
     
@@ -55,7 +56,14 @@ public class AuthenticationFilter implements Filter {
             ((HttpServletResponse)response).sendError(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
-        chain.doFilter(request, response);
+        MailboxSession mailboxSession = fromHeader(authHeader);
+        JmapAuthenticatedRequest jmapAuthenticatedRequest = new JmapAuthenticatedRequest(httpRequest, mailboxSession);
+        chain.doFilter(jmapAuthenticatedRequest, response);
+    }
+
+    private MailboxSession fromHeader(Optional<String> authHeader) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
     private boolean checkAuthorizationHeader(Optional<String> authHeader) throws IOException {

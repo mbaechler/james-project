@@ -38,7 +38,7 @@ public class ProtocolRequestTest {
         JsonNode[] nodes = new JsonNode[] { new ObjectNode(new JsonNodeFactory(false)).textNode("getAccounts"),
                 new ObjectNode(new JsonNodeFactory(false)).putObject("{}")} ;
 
-        ProtocolRequest.deserialize(nodes);
+        ProtocolRequest.fromProtocolSpecification(nodes);
     }
 
     @Test(expected=IllegalStateException.class)
@@ -48,7 +48,7 @@ public class ProtocolRequestTest {
                 new ObjectNode(new JsonNodeFactory(false)).textNode("#0"),
                 new ObjectNode(new JsonNodeFactory(false)).textNode("tooMuch")} ;
 
-        ProtocolRequest.deserialize(nodes);
+        ProtocolRequest.fromProtocolSpecification(nodes);
     }
 
     @Test(expected=IllegalStateException.class)
@@ -57,7 +57,7 @@ public class ProtocolRequestTest {
                 new ObjectNode(new JsonNodeFactory(false)).putObject("{}"),
                 new ObjectNode(new JsonNodeFactory(false)).textNode("#0")} ;
 
-        ProtocolRequest.deserialize(nodes);
+        ProtocolRequest.fromProtocolSpecification(nodes);
     }
 
     @Test(expected=IllegalStateException.class)
@@ -66,7 +66,7 @@ public class ProtocolRequestTest {
                 new ObjectNode(new JsonNodeFactory(false)).textNode("true"),
                 new ObjectNode(new JsonNodeFactory(false)).textNode("#0")} ;
 
-        ProtocolRequest.deserialize(nodes);
+        ProtocolRequest.fromProtocolSpecification(nodes);
     }
 
     @Test(expected=IllegalStateException.class)
@@ -75,7 +75,7 @@ public class ProtocolRequestTest {
                 new ObjectNode(new JsonNodeFactory(false)).putObject("{}"),
                 new ObjectNode(new JsonNodeFactory(false)).booleanNode(true)} ;
 
-        ProtocolRequest.deserialize(nodes);
+        ProtocolRequest.fromProtocolSpecification(nodes);
     }
 
     @Test
@@ -84,7 +84,7 @@ public class ProtocolRequestTest {
                 new ObjectNode(new JsonNodeFactory(false)).putObject("{\"id\": \"id\"}"),
                 new ObjectNode(new JsonNodeFactory(false)).textNode("#1")} ;
 
-        ProtocolRequest request = ProtocolRequest.deserialize(nodes);
+        ProtocolRequest request = ProtocolRequest.fromProtocolSpecification(nodes);
 
         assertThat(request.getMethod()).isEqualTo("getAccounts");
         assertThat(request.getParameters()).isNotNull();

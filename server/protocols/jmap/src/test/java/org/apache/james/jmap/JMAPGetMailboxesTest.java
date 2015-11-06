@@ -23,12 +23,14 @@ import static com.jayway.restassured.config.EncoderConfig.encoderConfig;
 import static com.jayway.restassured.config.RestAssuredConfig.newConfig;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
+
+import java.util.UUID;
 
 import org.apache.james.http.jetty.Configuration;
 import org.apache.james.http.jetty.JettyHttpServer;
 import org.apache.james.jmap.api.AccessTokenManager;
-import org.apache.james.jmap.api.ContinuationTokenManager;
+import org.apache.james.jmap.api.access.AccessToken;
 import org.apache.james.jmap.methods.GetMailboxesMethod;
 import org.apache.james.jmap.methods.ProtocolArgumentsManager;
 import org.apache.james.jmap.methods.ProtocolArgumentsManagerImpl;
@@ -52,24 +54,28 @@ public class JMAPGetMailboxesTest {
     private JettyHttpServer server;
     private TestClient client;
     private ZonedDateTimeProvider mockedZonedDateTimeProvider;
+    private UUID accessToken;
     
     @Before
     public void setup() throws Exception {
         mockedZonedDateTimeProvider = mock(ZonedDateTimeProvider.class);
         mockedUsersRepository = mock(UsersRepository.class);
         AccessTokenManager mockedAccessTokenManager = mock(AccessTokenManager.class);
-        ContinuationTokenManager mockedContinuationTokenManager = mock(ContinuationTokenManager.class);
         ProtocolArgumentsManager protocolArgumentsManager = new ProtocolArgumentsManagerImpl(); 
         
         requestHandler = new RequestHandlerImpl(ImmutableSet.of(new GetMailboxesMethod(protocolArgumentsManager)));
         JMAPServlet jmapServlet = new JMAPServlet(requestHandler);
 
-        AuthenticationServlet authenticationServlet = new AuthenticationServlet(mockedUsersRepository, mockedContinuationTokenManager, mockedAccessTokenManager);
+        AuthenticationFilter authenticationFilter = new AuthenticationFilter(mockedAccessTokenManager);
+        
+        when(mockedAccessTokenManager.isValid(any(AccessToken.class))).thenReturn(true);
+        
+        accessToken = UUID.randomUUID();
         
         server = JettyHttpServer.create(
                 Configuration.builder()
-                .serve("/authentication")
-                .with(authenticationServlet)
+                .filter("/jmap")
+                .with(authenticationFilter)
                 .serve("/jmap")
                 .with(jmapServlet)
                 .randomPort()
@@ -89,7 +95,6 @@ public class JMAPGetMailboxesTest {
     
     @Test
     public void getMailboxesShouldErrorNotSupportedWhenRequestContainsNonNullAccountId() throws Exception {
-        String accessToken = client.authenticate();
         given()
             .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
@@ -105,7 +110,6 @@ public class JMAPGetMailboxesTest {
     
     @Test
     public void getMailboxesShouldErrorNotSupportedWhenRequestContainsNonNullIds() throws Exception {
-        String accessToken = client.authenticate();
         given()
             .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
@@ -120,7 +124,6 @@ public class JMAPGetMailboxesTest {
     
     @Test
     public void getMailboxesShouldErrorNotSupportedWhenRequestContainsNonNullProperties() throws Exception {
-        String accessToken = client.authenticate();
         given()
             .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
@@ -135,7 +138,6 @@ public class JMAPGetMailboxesTest {
     
     @Test
     public void getMailboxesShouldErrorInvalidArgumentsWhenRequestIsInvalid() throws Exception {
-        String accessToken = client.authenticate();
         given()
             .accept(ContentType.JSON)
             .contentType(ContentType.JSON)

@@ -39,7 +39,7 @@ public class ProtocolArgumentsManagerImplTest {
                 new ObjectNode(new JsonNodeFactory(false)).textNode("#1")} ;
 
         ProtocolArgumentsManagerImpl methodsArgumentsManager = new ProtocolArgumentsManagerImpl();
-        methodsArgumentsManager.extractJmapRequest(ProtocolRequest.deserialize(nodes), null);
+        methodsArgumentsManager.extractJmapRequest(ProtocolRequest.fromProtocolSpecification(nodes), null);
     }
 
     @Test(expected=UnrecognizedPropertyException.class)
@@ -51,7 +51,7 @@ public class ProtocolArgumentsManagerImplTest {
                 new ObjectNode(new JsonNodeFactory(false)).textNode("#1")} ;
 
         ProtocolArgumentsManagerImpl protocolArgumentsManager = new ProtocolArgumentsManagerImpl();
-        protocolArgumentsManager.extractJmapRequest(ProtocolRequest.deserialize(nodes), RequestClass.class);
+        protocolArgumentsManager.extractJmapRequest(ProtocolRequest.fromProtocolSpecification(nodes), RequestClass.class);
     }
 
     @Test
@@ -62,7 +62,7 @@ public class ProtocolArgumentsManagerImplTest {
                 new ObjectNode(new JsonNodeFactory(false)).textNode("#1")} ;
 
         ProtocolArgumentsManagerImpl protocolArgumentsManager = new ProtocolArgumentsManagerImpl();
-        protocolArgumentsManager.extractJmapRequest(ProtocolRequest.deserialize(nodes), RequestClass.class);
+        protocolArgumentsManager.extractJmapRequest(ProtocolRequest.fromProtocolSpecification(nodes), RequestClass.class);
     }
 
     private static class RequestClass implements JmapRequest {
@@ -84,7 +84,7 @@ public class ProtocolArgumentsManagerImplTest {
                 new ObjectNode(new JsonNodeFactory(false)).textNode(expectedClientId)} ;
 
         ProtocolArgumentsManagerImpl protocolArgumentsManager = new ProtocolArgumentsManagerImpl();
-        ProtocolResponse response = protocolArgumentsManager.formatMethodResponse(ProtocolRequest.deserialize(nodes), null);
+        ProtocolResponse response = protocolArgumentsManager.formatMethodResponse(ProtocolRequest.fromProtocolSpecification(nodes), null);
 
         assertThat(response.getMethod()).isEqualTo(expectedMethod);
         assertThat(response.getResults().findValue("id").asText()).isEqualTo(expectedId);
@@ -107,7 +107,7 @@ public class ProtocolArgumentsManagerImplTest {
         responseClass.id = expectedId;
 
         ProtocolArgumentsManagerImpl protocolArgumentsManager = new ProtocolArgumentsManagerImpl();
-        ProtocolResponse response = protocolArgumentsManager.formatMethodResponse(ProtocolRequest.deserialize(nodes), responseClass);
+        ProtocolResponse response = protocolArgumentsManager.formatMethodResponse(ProtocolRequest.fromProtocolSpecification(nodes), responseClass);
 
         assertThat(response.getMethod()).isEqualTo(expectedMethod);
         assertThat(response.getResults().findValue("id").asText()).isEqualTo(expectedId);
@@ -132,7 +132,7 @@ public class ProtocolArgumentsManagerImplTest {
                 new ObjectNode(new JsonNodeFactory(false)).textNode(expectedClientId)} ;
 
         ProtocolArgumentsManagerImpl protocolArgumentsManager = new ProtocolArgumentsManagerImpl();
-        ProtocolResponse response = protocolArgumentsManager.formatErrorResponse(ProtocolRequest.deserialize(nodes));
+        ProtocolResponse response = protocolArgumentsManager.formatErrorResponse(ProtocolRequest.fromProtocolSpecification(nodes));
 
         assertThat(response.getMethod()).isEqualTo(ProtocolArgumentsManagerImpl.ERROR_METHOD);
         assertThat(response.getResults().findValue("type").asText()).isEqualTo(ProtocolArgumentsManagerImpl.DEFAULT_ERROR_MESSAGE);

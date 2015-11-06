@@ -18,39 +18,24 @@
  ****************************************************************/
 package org.apache.james.jmap.model;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.base.Preconditions;
+import org.apache.james.jmap.JmapAuthenticatedRequest;
+import org.apache.james.mailbox.MailboxSession;
 
-public class ProtocolRequest {
-
-    public static ProtocolRequest fromProtocolSpecification(JsonNode[] json) {
-        Preconditions.checkState(json.length == 3, "should have three elements");
-        Preconditions.checkState(json[0].isTextual(), "first element should be a String");
-        Preconditions.checkState(json[1].isObject(), "second element should be a Json");
-        Preconditions.checkState(json[2].isTextual(), "third element should be a String");
-        return new ProtocolRequest(json[0].textValue(), (ObjectNode) json[1], json[2].textValue());
+public class AuthenticatedProtocolRequest extends ProtocolRequest {
+    
+    public static AuthenticatedProtocolRequest decorate(ProtocolRequest request, JmapAuthenticatedRequest authentication) {
+        return new AuthenticatedProtocolRequest(request, authentication);
     }
 
-    private final String method;
-    private final ObjectNode parameters;
-    private final String clientId;
+    private final JmapAuthenticatedRequest authentication;
 
-    protected ProtocolRequest(String method, ObjectNode parameters, String clientId) {
-        this.method = method;
-        this.parameters = parameters;
-        this.clientId = clientId;
+    private AuthenticatedProtocolRequest(ProtocolRequest request, JmapAuthenticatedRequest authentication) {
+        super(request.getMethod(), request.getParameters(), request.getClientId());
+        this.authentication = authentication;
+        
     }
 
-    public String getMethod() {
-        return method;
-    }
-
-    public ObjectNode getParameters() {
-        return parameters;
-    }
-
-    public String getClientId() {
-        return clientId;
+    public MailboxSession getMailboxSession() {
+        return authentication.getMailboxSession();
     }
 }

@@ -18,11 +18,14 @@
  ****************************************************************/
 package org.apache.james.jmap;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import javax.servlet.FilterChain;
+import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -80,7 +83,7 @@ public class AuthenticationFilterTest {
         
         tested.doFilter(mockedRequest, mockedResponse, filterChain);
         
-        verify(filterChain).doFilter(mockedRequest, mockedResponse);
+        verify(filterChain).doFilter(any(ServletRequest.class), eq(mockedResponse));
     }
     
 }

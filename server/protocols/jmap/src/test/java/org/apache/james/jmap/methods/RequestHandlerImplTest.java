@@ -120,7 +120,7 @@ public class RequestHandlerImplTest {
                 new ObjectNode(new JsonNodeFactory(false)).textNode("#1")} ;
 
         RequestHandlerImpl requestHandlerImpl = new RequestHandlerImpl(ImmutableSet.of());
-        requestHandlerImpl.handle(ProtocolRequest.deserialize(nodes));
+        requestHandlerImpl.handle(ProtocolRequest.fromProtocolSpecification(nodes));
     }
 
     @Test(expected=IllegalStateException.class)
@@ -168,7 +168,7 @@ public class RequestHandlerImplTest {
                 parameters,
                 new ObjectNode(new JsonNodeFactory(false)).textNode("#1")} ;
 
-        ProtocolResponse response = testee.handle(ProtocolRequest.deserialize(nodes));
+        ProtocolResponse response = testee.handle(ProtocolRequest.fromProtocolSpecification(nodes));
 
         assertThat(response.getResults().findValue("id").asText()).isEqualTo("myId");
         assertThat(response.getResults().findValue("name").asText()).isEqualTo("myName");
