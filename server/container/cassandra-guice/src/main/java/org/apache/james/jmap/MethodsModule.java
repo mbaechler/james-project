@@ -21,6 +21,7 @@ package org.apache.james.jmap;
 
 import org.apache.james.jmap.methods.ProtocolArgumentsManager;
 import org.apache.james.jmap.methods.ProtocolArgumentsManagerImpl;
+import org.apache.james.jmap.methods.GetMailboxesMethod;
 import org.apache.james.jmap.methods.Method;
 import org.apache.james.jmap.methods.RequestHandler;
 import org.apache.james.jmap.methods.RequestHandlerImpl;
@@ -36,6 +37,7 @@ public class MethodsModule extends AbstractModule {
         bind(ProtocolArgumentsManager.class).to(ProtocolArgumentsManagerImpl.class);
 
         Multibinder<Method> methods = Multibinder.newSetBinder(binder(), Method.class);
+        methods.addBinding().to(GetMailboxesMethod.class);
     }
 
 }

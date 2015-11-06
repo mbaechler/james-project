@@ -29,15 +29,13 @@ import javax.inject.Singleton;
 import org.apache.james.jmap.model.ProtocolRequest;
 import org.apache.james.jmap.model.ProtocolResponse;
 
-import com.google.common.annotations.VisibleForTesting;
-
 @Singleton
 public class RequestHandlerImpl implements RequestHandler {
 
     private final Map<String, Method> methods;
 
     @Inject
-    @VisibleForTesting RequestHandlerImpl(Set<Method> methods) {
+    public RequestHandlerImpl(Set<Method> methods) {
         this.methods = methods.stream()
                 .collect(Collectors.toMap(Method::methodName, method -> method));
     }

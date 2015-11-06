@@ -21,21 +21,39 @@ package org.apache.james.jmap.methods;
 
 import java.io.IOException;
 
+import javax.inject.Inject;
+
+import org.apache.commons.lang.NotImplementedException;
+import org.apache.james.jmap.model.GetMailboxesRequest;
 import org.apache.james.jmap.model.ProtocolRequest;
 import org.apache.james.jmap.model.ProtocolResponse;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
+import com.google.common.annotations.VisibleForTesting;
 
-public interface ProtocolArgumentsManager {
+public class GetMailboxesMethod implements Method {
+    
+    private ProtocolArgumentsManager protocolArgumentsManager;
 
-    <T extends JmapRequest> T extractJmapRequest(ProtocolRequest request, Class<T> requestClass) 
-            throws IOException, JsonParseException, JsonMappingException;
+    @Inject
+    @VisibleForTesting public GetMailboxesMethod(ProtocolArgumentsManager protocolArgumentsManager) {
+        this.protocolArgumentsManager = protocolArgumentsManager;
+    }
 
-    ProtocolResponse formatMethodResponse(ProtocolRequest request, JmapResponse jmapResponse);
+    public String methodName() {
+        return "getMailboxes";
+    }
 
-    ProtocolResponse formatErrorResponse(ProtocolRequest request);
-
-    ProtocolResponse formatErrorResponse(ProtocolRequest request, String error);
+    public ProtocolResponse process(ProtocolRequest request) {
+        try {
+            protocolArgumentsManager.extractJmapRequest(request, GetMailboxesRequest.class);
+        } catch (IOException e) {
+            if (e.getCause() instanceof NotImplementedException) {
+                return protocolArgumentsManager.formatErrorResponse(request, "Not yet implemented");
+            } else {
+                return protocolArgumentsManager.formatErrorResponse(request, "invalidArguments");
+            }
+        }
+        return protocolArgumentsManager.formatErrorResponse(request);
+    }
 
 }
