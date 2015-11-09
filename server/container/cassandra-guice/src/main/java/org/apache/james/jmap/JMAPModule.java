@@ -18,7 +18,16 @@
  ****************************************************************/
 package org.apache.james.jmap;
 
+import java.io.FileNotFoundException;
+
+import javax.inject.Singleton;
+
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.james.filesystem.api.FileSystem;
+
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
 import com.google.inject.name.Names;
 
 public class JMAPModule extends AbstractModule {
@@ -37,4 +46,16 @@ public class JMAPModule extends AbstractModule {
         bind(JMAPServer.class);
     }
 
+    @Provides
+    @Singleton
+    JMAPConfiguration provideConfiguration(FileSystem fileSystem) throws FileNotFoundException, ConfigurationException{
+        PropertiesConfiguration configuration = getConfiguration(fileSystem);
+        String keystore = configuration.getString("tls.keystoreURL");
+        String secret = configuration.getString("tls.secret");
+        return new JMAPConfiguration(keystore, secret);
+    }
+
+    private PropertiesConfiguration getConfiguration(FileSystem fileSystem) throws FileNotFoundException, ConfigurationException {
+        return new PropertiesConfiguration(fileSystem.getFile(FileSystem.FILE_PROTOCOL_AND_CONF + "jmap.properties"));
+    }
 }
