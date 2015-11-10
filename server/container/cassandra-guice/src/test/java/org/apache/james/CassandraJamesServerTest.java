@@ -139,7 +139,7 @@ public class CassandraJamesServerTest {
         .when()
             .post("/authentication")
         .then()
-            .statusCode(401);
+            .statusCode(400);
     }
 
     private String getServerConnectionResponse(SocketChannel socketChannel) throws IOException {

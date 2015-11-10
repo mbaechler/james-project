@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.inject.Inject;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -38,6 +39,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 
 public class JMAPServlet extends HttpServlet {
 
@@ -49,7 +51,8 @@ public class JMAPServlet extends HttpServlet {
     private final RequestHandler requestHandler;
     private final ObjectMapper objectMapper;
 
-    public JMAPServlet(RequestHandler requestHandler) {
+    @Inject
+    @VisibleForTesting JMAPServlet(RequestHandler requestHandler) {
         this.requestHandler = requestHandler;
         this.objectMapper = new ObjectMapper();
     }
