@@ -160,6 +160,11 @@
                 </dependency>
                 <dependency>
                     <groupId>org.apache.james</groupId>
+                    <artifactId>apache-james-mailbox-memory</artifactId>
+                    <scope>test</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.james</groupId>
                     <artifactId>apache-james-mailbox-store</artifactId>
                 </dependency>
                 <dependency>
@@ -247,6 +252,11 @@
                     <groupId>junit</groupId>
                     <artifactId>junit</artifactId>
                     <scope>test</scope>
+                </dependency>
+                <dependency>
+                    <groupId>nl.jqno.equalsverifier</groupId>
+                    <artifactId>equalsverifier</artifactId>
+                    <version>1.7.5</version>
                 </dependency>
                 <dependency>
                     <groupId>org.assertj</groupId>
