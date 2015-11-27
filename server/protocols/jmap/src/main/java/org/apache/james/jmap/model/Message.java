@@ -18,16 +18,83 @@
  ****************************************************************/
 package org.apache.james.jmap.model;
 
+import java.util.Optional;
+
+import com.google.common.base.Preconditions;
+
 public class Message {
 
-    private final MessageId messageId;
+    public static Builder builder() {
+        return new Builder();
+    }
 
-    public Message(MessageId messageId) {
-        this.messageId = messageId;
+    public static class Builder {
+        
+        private MessageId messageId;
+        private Optional<String> blobId;
+        private Optional<String> threadId;
+        private Optional<String> subject;
+        
+        private Builder() {
+            blobId = Optional.empty();
+            threadId = Optional.empty();
+            subject = Optional.empty();
+        }
+        
+        public Builder messageId(MessageId id) {
+            this.messageId = id;
+            return this;
+        }
+        
+        public Builder blobId(Optional<String> blobId) {
+            this.blobId = blobId;
+            return this;
+        }
+        
+        public Builder threadId(Optional<String> threadId) {
+            this.threadId = threadId;
+            return this;
+        }
+        
+        public Builder subject(Optional<String> subject) {
+            this.subject = subject;
+            return this;
+        }
+        
+        public Message build() {
+            Preconditions.checkState(messageId != null);
+            return new Message(messageId, blobId, threadId, subject);
+        }
+        
     }
     
+    private final MessageId messageId;
+    private final Optional<String> blobId;
+    private final Optional<String> threadId;
+    private final Optional<String> subject;
+
+    public Message(MessageId messageId, Optional<String> blobId,
+            Optional<String> threadId, Optional<String> subject) {
+        this.messageId = messageId;
+        this.blobId = blobId;
+        this.threadId = threadId;
+        this.subject = subject;
+    }
+
     public MessageId getId() {
         return messageId;
     }
-    
+
+    public Optional<String> getBlobId() {
+        return blobId;
+    }
+
+    public Optional<String> getThreadId() {
+        return threadId;
+    }
+
+    public Optional<String> getSubject() {
+        return subject;
+    }
+
 }
