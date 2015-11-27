@@ -29,7 +29,7 @@ public class GetMessagesRequestTest {
 
     @Test
     public void shouldAllowOptionalAccountId() {
-        GetMessagesRequest result = GetMessagesRequest.builder().messages(MessageId.of("user-inbox-1")).properties(new Property()).build();
+        GetMessagesRequest result = GetMessagesRequest.builder().messages(MessageId.of("user-inbox-1")).properties(Property.id).build();
         assertThat(result).isNotNull();
         assertThat(result.getAccountId()).isEmpty();
     }
@@ -41,7 +41,7 @@ public class GetMessagesRequestTest {
 
     @Test
     public void shouldAllowEmptyMessagesList() {
-        GetMessagesRequest result = GetMessagesRequest.builder().accountId("accountId").messages().properties(new Property()).build();
+        GetMessagesRequest result = GetMessagesRequest.builder().accountId("accountId").messages().properties(Property.id).build();
         assertThat(result).isNotNull();
         assertThat(result.getMessageIds()).isEmpty();
     }
