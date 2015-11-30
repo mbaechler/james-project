@@ -17,38 +17,50 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.modules;
+package org.apache.james.jmap;
 
-import java.io.FileNotFoundException;
-import java.util.Optional;
+public class UserCredentials {
 
-import javax.inject.Singleton;
-
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.james.jmap.JMAPConfiguration;
-import org.apache.james.jmap.PortConfiguration;
-
-import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
-
-public class TestJMAPServerModule extends AbstractModule{
-
-    @Override
-    protected void configure() {
-        bind(PortConfiguration.class).to(RandomPortConfiguration.class).in(Singleton.class);
-    }
-
-    @Provides
-    @Singleton
-    JMAPConfiguration provideConfiguration() throws FileNotFoundException, ConfigurationException{
-        return new JMAPConfiguration("keystore", "james72laBalle");
+    public static Builder builder() {
+        return new Builder();
     }
     
-    private static class RandomPortConfiguration implements PortConfiguration {
-
-        @Override
-        public Optional<Integer> getPort() {
-            return Optional.empty();
+    public static class Builder {
+        
+        private String username;
+        private String password;
+        
+        private Builder() {
         }
+        
+        public Builder username(String username) {
+            this.username = username;
+            return this;
+        }
+        
+        public Builder password(String password) {
+            this.password = password;
+            return this;
+        }
+        
+        public UserCredentials build() {
+            return new UserCredentials(username, password);
+        }
+    }
+
+    private final String username;
+    private final String password;
+
+    private UserCredentials(String username, String password) {
+        this.username = username;
+        this.password = password;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPassword() {
+        return password;
     }
 }

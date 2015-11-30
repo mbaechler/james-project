@@ -17,38 +17,23 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.modules;
+package org.apache.james.jmap;
 
-import java.io.FileNotFoundException;
-import java.util.Optional;
+import java.time.ZonedDateTime;
 
-import javax.inject.Singleton;
+import org.apache.james.jmap.utils.ZonedDateTimeProvider;
 
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.james.jmap.JMAPConfiguration;
-import org.apache.james.jmap.PortConfiguration;
+public class FixedDateZonedDateTimeProvider implements ZonedDateTimeProvider {
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
+    private ZonedDateTime zonedDateTime;
 
-public class TestJMAPServerModule extends AbstractModule{
+    public void setFixedDateTime(ZonedDateTime zonedDateTime) {
+        this.zonedDateTime = zonedDateTime;
+    }
 
     @Override
-    protected void configure() {
-        bind(PortConfiguration.class).to(RandomPortConfiguration.class).in(Singleton.class);
+    public ZonedDateTime get() {
+        return zonedDateTime;
     }
 
-    @Provides
-    @Singleton
-    JMAPConfiguration provideConfiguration() throws FileNotFoundException, ConfigurationException{
-        return new JMAPConfiguration("keystore", "james72laBalle");
-    }
-    
-    private static class RandomPortConfiguration implements PortConfiguration {
-
-        @Override
-        public Optional<Integer> getPort() {
-            return Optional.empty();
-        }
-    }
 }

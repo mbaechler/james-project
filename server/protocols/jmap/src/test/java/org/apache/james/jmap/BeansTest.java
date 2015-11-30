@@ -17,38 +17,18 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.modules;
+package org.apache.james.jmap;
 
-import java.io.FileNotFoundException;
-import java.util.Optional;
+import org.apache.james.jmap.model.Mailbox;
+import org.junit.Test;
 
-import javax.inject.Singleton;
+import nl.jqno.equalsverifier.EqualsVerifier;
 
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.james.jmap.JMAPConfiguration;
-import org.apache.james.jmap.PortConfiguration;
+public class BeansTest {
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
-
-public class TestJMAPServerModule extends AbstractModule{
-
-    @Override
-    protected void configure() {
-        bind(PortConfiguration.class).to(RandomPortConfiguration.class).in(Singleton.class);
-    }
-
-    @Provides
-    @Singleton
-    JMAPConfiguration provideConfiguration() throws FileNotFoundException, ConfigurationException{
-        return new JMAPConfiguration("keystore", "james72laBalle");
-    }
-    
-    private static class RandomPortConfiguration implements PortConfiguration {
-
-        @Override
-        public Optional<Integer> getPort() {
-            return Optional.empty();
-        }
+    @Test
+    public void beanShouldRespectBeanContract() {
+        EqualsVerifier.forClass(Mailbox.class)
+            .verify();
     }
 }
