@@ -55,8 +55,8 @@ import com.google.common.collect.ImmutableMap;
 public class GetMessagesMethod<Id extends MailboxId> implements Method {
 
     private static final Method.Name METHOD_NAME = Method.name("getMessages");
-    private MessageMapperFactory<Id> messageMapperFactory;
-    private MailboxMapperFactory<Id> mailboxMapperFactory;
+    private final MessageMapperFactory<Id> messageMapperFactory;
+    private final MailboxMapperFactory<Id> mailboxMapperFactory;
     
 
     @Inject
