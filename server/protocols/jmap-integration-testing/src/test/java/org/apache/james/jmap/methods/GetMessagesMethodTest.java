@@ -164,7 +164,9 @@ public abstract class GetMessagesMethodTest {
     public void getMessagesShouldReturnMessagesWhenAvailable() throws Exception {
         jmapServer.serverProbe().appendMessage("username", new MailboxPath(MailboxConstants.USER_NAMESPACE, "username", "inbox"), 
                 new ByteArrayInputStream("Subject: my test subject\r\n\r\ntestmail".getBytes()), new Date(), false, new Flags());
-
+        
+        embeddedElasticSearch.awaitForElasticSearch();
+        
         String response = given()
             .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
