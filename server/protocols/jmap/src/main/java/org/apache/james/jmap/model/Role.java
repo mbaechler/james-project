@@ -18,6 +18,9 @@
  ****************************************************************/
 package org.apache.james.jmap.model;
 
+import java.util.Locale;
+import java.util.Optional;
+
 public enum Role {
 
     INBOX("inbox"),
@@ -28,20 +31,20 @@ public enum Role {
     TRASH("trash"),
     SPAM("spam"),
     TEMPLATES("templates");
-    
+
     private String name;
 
-    private Role(String name) {
+    Role(String name) {
         this.name = name;
     }
 
-    public static Role from(String name) {
+    public static Optional<Role> from(String name) {
         for (Role role : values()) {
-            if (role.serialize().equals(name.toLowerCase())) {
-                return role;
+            if (role.serialize().equals(name.toLowerCase(Locale.ENGLISH))) {
+                return Optional.of(role);
             }
         }
-        return null;
+        return Optional.empty();
     }
 
     public String serialize() {
