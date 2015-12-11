@@ -127,10 +127,10 @@
         <hadoop.version>1.1.1</hadoop.version>
         <hbase.version>0.94.27</hbase.version>
         <javax.inject.version>1</javax.inject.version>
-        <javax.mail.groupId>org.apache.geronimo.javamail</javax.mail.groupId>
-        <javax.mail.artifactId>geronimo-javamail_1.4_mail</javax.mail.artifactId>
-        <javax.activation.groupId>org.apache.geronimo.specs</javax.activation.groupId>
-        <javax.activation.artifactId>geronimo-activation_1.1_spec</javax.activation.artifactId>
+	<javax.mail.groupId>javax.mail</javax.mail.groupId>
+        <javax.mail.artifactId>mail</javax.mail.artifactId>
+        <javax.activation.groupId>javax.activation</javax.activation.groupId>
+        <javax.activation.artifactId>activation</javax.activation.artifactId>
         <jackrabbit.version>2.5.2</jackrabbit.version>
         <jsieve.version>0.6-SNAPSHOT</jsieve.version>
         <mailbox.version>0.6-SNAPSHOT</mailbox.version>
@@ -823,11 +823,6 @@
                 <version>${geronimo-activation-spec.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.geronimo.javamail</groupId>
-                <artifactId>geronimo-javamail_1.4_mail</artifactId>
-                <version>${geronimo-javamail.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>commons-daemon</groupId>
                 <artifactId>commons-daemon</artifactId>
                 <version>${commons-daemon.version}</version>
@@ -1466,15 +1461,6 @@
     </build>
 
     <profiles>
-        <profile>
-            <id>oracle-javamail</id>
-            <properties>
-                <javax.activation.groupId>javax.activation</javax.activation.groupId>
-                <javax.activation.artifactId>activation</javax.activation.artifactId>
-                <javax.mail.groupId>javax.mail</javax.mail.groupId>
-                <javax.mail.artifactId>mail</javax.mail.artifactId>
-            </properties>
-        </profile>
         <profile>
             <!-- run live tests, ie. ones that do not run stably enough in
             a CI environment (for example, karaf integration tests accessing external network
