@@ -1,7 +1,8 @@
-package org.apache.james.jmap.model;
+package org.apache.james.jmap.model.mailbox;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.apache.james.jmap.model.mailbox.Role;
 import org.junit.Test;
 
 import java.util.Locale;
