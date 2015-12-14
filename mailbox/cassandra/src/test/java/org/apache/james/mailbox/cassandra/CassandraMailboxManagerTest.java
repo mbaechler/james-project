@@ -18,7 +18,11 @@
  ****************************************************************/
 package org.apache.james.mailbox.cassandra;
 
+import java.util.Locale;
+
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.james.backends.cassandra.CassandraCluster;
+import org.apache.james.backends.cassandra.EmbeddedCassandra;
 import org.apache.james.backends.cassandra.init.CassandraModuleComposite;
 import org.apache.james.mailbox.AbstractMailboxManagerTest;
 import org.apache.james.mailbox.MailboxSession;
@@ -30,7 +34,6 @@ import org.apache.james.mailbox.cassandra.modules.CassandraMailboxModule;
 import org.apache.james.mailbox.cassandra.modules.CassandraMessageModule;
 import org.apache.james.mailbox.cassandra.modules.CassandraSubscriptionModule;
 import org.apache.james.mailbox.cassandra.modules.CassandraUidAndModSeqModule;
-import org.apache.james.mailbox.exception.BadCredentialsException;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.store.JVMMailboxPathLocker;
 import org.junit.After;
@@ -43,64 +46,43 @@ import org.slf4j.LoggerFactory;
  */
 public class CassandraMailboxManagerTest extends AbstractMailboxManagerTest {
 
-    private static final CassandraCluster CASSANDRA = CassandraCluster.create(new CassandraModuleComposite(
-        new CassandraAclModule(),
-        new CassandraMailboxModule(),
-        new CassandraMessageModule(),
-        new CassandraMailboxCounterModule(),
-        new CassandraUidAndModSeqModule(),
-        new CassandraSubscriptionModule()));
+    private static final EmbeddedCassandra CASSANDRA = EmbeddedCassandra.createStartServer();
+    
+    private CassandraCluster cluster;
 
-    /**
-     * Setup the mailboxManager.
-     * 
-     * @throws Exception
-     */
     @Before
     public void setup() throws Exception {
-        CASSANDRA.ensureAllTables();
-        CASSANDRA.clearAllTables();
+        CassandraModuleComposite dataDefinition = new CassandraModuleComposite(
+                new CassandraAclModule(),
+                new CassandraMailboxModule(),
+                new CassandraMessageModule(),
+                new CassandraMailboxCounterModule(),
+                new CassandraUidAndModSeqModule(),
+                new CassandraSubscriptionModule());
+        
+        cluster = CassandraCluster.create(dataDefinition, CASSANDRA, RandomStringUtils.randomAlphabetic(5).toLowerCase(Locale.US));
         createMailboxManager();
     }
 
-    /**
-     * Close the system session and entityManagerFactory
-     * 
-     * @throws MailboxException
-     * @throws BadCredentialsException
-     */
     @After
     public void tearDown() throws Exception {
-        deleteAllMailboxes();
         MailboxSession session = getMailboxManager().createSystemSession("test", LoggerFactory.getLogger("Test"));
         session.close();
     }
 
-    /*
-     * (non-Javadoc)i deve
-     * 
-     * @see org.apache.james.mailbox.MailboxManagerTest#createMailboxManager()
-     */
     @Override
     protected void createMailboxManager() throws MailboxException {
-        final CassandraUidProvider uidProvider = new CassandraUidProvider(CASSANDRA.getConf());
-        final CassandraModSeqProvider modSeqProvider = new CassandraModSeqProvider(CASSANDRA.getConf());
+        final CassandraUidProvider uidProvider = new CassandraUidProvider(cluster.getConf());
+        final CassandraModSeqProvider modSeqProvider = new CassandraModSeqProvider(cluster.getConf());
         final CassandraMailboxSessionMapperFactory mapperFactory = new CassandraMailboxSessionMapperFactory(uidProvider,
             modSeqProvider,
-            CASSANDRA.getConf(),
-            CASSANDRA.getTypesProvider());
+            cluster.getConf(),
+            cluster.getTypesProvider());
 
         final CassandraMailboxManager manager = new CassandraMailboxManager(mapperFactory, null, new JVMMailboxPathLocker());
         manager.init();
 
         setMailboxManager(manager);
-
-        deleteAllMailboxes();
     }
 
-    private void deleteAllMailboxes() throws BadCredentialsException, MailboxException {
-        MailboxSession session = getMailboxManager().createSystemSession("test", LoggerFactory.getLogger("Test"));
-        CASSANDRA.clearAllTables();
-        session.close();
-    }
 }

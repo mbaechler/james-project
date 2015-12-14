@@ -39,7 +39,7 @@ import com.google.common.base.Throwables;
 public final class CassandraCluster {
     private static final String CLUSTER_IP = "localhost";
     private static final int CLUSTER_PORT_TEST = 9142;
-    private static final String KEYSPACE_NAME = "apache_james";
+    private static final String DEFAULT_KEYSPACE_NAME = "apache_james";
     private static final int REPLICATION_FACTOR = 1;
 
     private static final long SLEEP_BEFORE_RETRY = 200;
@@ -48,14 +48,20 @@ public final class CassandraCluster {
     private final CassandraModule module;
     private Session session;
     private CassandraTypesProvider typesProvider;
+    private String keyspaceName;
 
     public static CassandraCluster create(CassandraModule module) throws RuntimeException {
-        return new CassandraCluster(module, EmbeddedCassandra.createStartServer());
+        return new CassandraCluster(module, EmbeddedCassandra.createStartServer(), DEFAULT_KEYSPACE_NAME);
     }
 
+    public static CassandraCluster create(CassandraModule module, EmbeddedCassandra cassandra, String keyspaceName) throws RuntimeException {
+        return new CassandraCluster(module, cassandra, keyspaceName);
+    }
+    
     @Inject
-    private CassandraCluster(CassandraModule module, EmbeddedCassandra embeddedCassandra) throws RuntimeException {
+    private CassandraCluster(CassandraModule module, EmbeddedCassandra embeddedCassandra, String keyspaceName) throws RuntimeException {
         this.module = module;
+        this.keyspaceName = keyspaceName;
         try {
             session = new FunctionRunnerWithRetry(MAX_RETRY).executeAndRetrieveObject(CassandraCluster.this::tryInitializeSession);
             typesProvider = new CassandraTypesProvider(module, session);
@@ -80,8 +86,8 @@ public final class CassandraCluster {
     private Optional<Session> tryInitializeSession() {
         try {
             Cluster clusterWithInitializedKeyspace = ClusterWithKeyspaceCreatedFactory
-                .clusterWithInitializedKeyspace(getCluster(), KEYSPACE_NAME, REPLICATION_FACTOR);
-            return Optional.of(new SessionWithInitializedTablesFactory(module).createSession(clusterWithInitializedKeyspace, KEYSPACE_NAME));
+                .clusterWithInitializedKeyspace(getCluster(), keyspaceName, REPLICATION_FACTOR);
+            return Optional.of(new SessionWithInitializedTablesFactory(module).createSession(clusterWithInitializedKeyspace, keyspaceName));
         } catch (NoHostAvailableException exception) {
             sleep(SLEEP_BEFORE_RETRY);
             return Optional.empty();
