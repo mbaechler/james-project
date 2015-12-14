@@ -115,6 +115,7 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
     private final UidProvider<CassandraId> uidProvider;
     private final CassandraTypesProvider typesProvider;
     private final int maxRetries;
+    private final PreparedStatement preparedInsert;
 
     public CassandraMessageMapper(Session session, UidProvider<CassandraId> uidProvider, ModSeqProvider<CassandraId> modSeqProvider, MailboxSession mailboxSession, int maxRetries, CassandraTypesProvider typesProvider) {
         this.session = session;
@@ -123,6 +124,27 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
         this.mailboxSession = mailboxSession;
         this.maxRetries = maxRetries;
         this.typesProvider = typesProvider;
+        Insert insert = insertInto(TABLE_NAME)
+                .value(MAILBOX_ID, bindMarker(MAILBOX_ID))
+                .value(IMAP_UID, bindMarker(IMAP_UID))
+                .value(MOD_SEQ, bindMarker(MOD_SEQ))
+                .value(INTERNAL_DATE, bindMarker(INTERNAL_DATE))
+                .value(BODY_START_OCTET, bindMarker(BODY_START_OCTET))
+                .value(FULL_CONTENT_OCTETS, bindMarker(FULL_CONTENT_OCTETS))
+                .value(BODY_OCTECTS, bindMarker(BODY_OCTECTS))
+                .value(ANSWERED, bindMarker(ANSWERED))
+                .value(DELETED, bindMarker(DELETED))
+                .value(DRAFT, bindMarker(DRAFT))
+                .value(FLAGGED, bindMarker(FLAGGED))
+                .value(RECENT, bindMarker(RECENT))
+                .value(SEEN, bindMarker(SEEN))
+                .value(USER, bindMarker(USER))
+                .value(USER_FLAGS, bindMarker(USER_FLAGS))
+                .value(BODY_CONTENT, bindMarker(BODY_CONTENT))
+                .value(HEADER_CONTENT, bindMarker(HEADER_CONTENT))
+                .value(PROPERTIES, bindMarker(PROPERTIES))
+                .value(TEXTUAL_LINE_COUNT, bindMarker(TEXTUAL_LINE_COUNT));
+        preparedInsert = session.prepare(insert.toString());
     }
 
     @Override
@@ -273,7 +295,7 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
     }
 
     private void updateMailbox(Mailbox<CassandraId> mailbox, Assignment operation) {
-        session.execute(update(CassandraMailboxCountersTable.TABLE_NAME).with(operation).where(eq(CassandraMailboxCountersTable.MAILBOX_ID, mailbox.getMailboxId().asUuid())));
+        session.executeAsync(update(CassandraMailboxCountersTable.TABLE_NAME).with(operation).where(eq(CassandraMailboxCountersTable.MAILBOX_ID, mailbox.getMailboxId().asUuid())));
     }
 
     private Message<CassandraId> message(Row row) {
@@ -323,37 +345,34 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
 
     private MessageMetaData save(Mailbox<CassandraId> mailbox, Message<CassandraId> message) throws MailboxException {
         try {
-            Insert query = insertInto(TABLE_NAME)
-                .value(MAILBOX_ID, mailbox.getMailboxId().asUuid())
-                .value(IMAP_UID, message.getUid())
-                .value(MOD_SEQ, message.getModSeq())
-                .value(INTERNAL_DATE, message.getInternalDate())
-                .value(BODY_START_OCTET, message.getFullContentOctets() - message.getBodyOctets())
-                .value(FULL_CONTENT_OCTETS, message.getFullContentOctets())
-                .value(BODY_OCTECTS, message.getBodyOctets())
-                .value(ANSWERED, message.isAnswered())
-                .value(DELETED, message.isDeleted())
-                .value(DRAFT, message.isDraft())
-                .value(FLAGGED, message.isFlagged())
-                .value(RECENT, message.isRecent())
-                .value(SEEN, message.isSeen())
-                .value(USER, message.createFlags().contains(Flag.USER))
-                .value(USER_FLAGS, userFlagsSet(message))
-                .value(BODY_CONTENT, bindMarker())
-                .value(HEADER_CONTENT, bindMarker())
-                .value(PROPERTIES, message.getProperties().stream()
+            BoundStatement boundStatement = preparedInsert.bind()
+                .setUUID(MAILBOX_ID, mailbox.getMailboxId().asUuid())
+                .setLong(IMAP_UID, message.getUid())
+                .setLong(MOD_SEQ, message.getModSeq())
+                .setDate(INTERNAL_DATE, message.getInternalDate())
+                .setInt(BODY_START_OCTET, (int)(message.getFullContentOctets() - message.getBodyOctets()))
+                .setInt(FULL_CONTENT_OCTETS, (int)message.getFullContentOctets())
+                .setInt(BODY_OCTECTS, (int)message.getBodyOctets())
+                .setBool(ANSWERED, message.isAnswered())
+                .setBool(DELETED, message.isDeleted())
+                .setBool(DRAFT, message.isDraft())
+                .setBool(FLAGGED, message.isFlagged())
+                .setBool(RECENT, message.isRecent())
+                .setBool(SEEN, message.isSeen())
+                .setBool(USER, message.createFlags().contains(Flag.USER))
+                .setSet(USER_FLAGS, userFlagsSet(message))
+                .setBytes(BODY_CONTENT, toByteBuffer(message.getBodyContent()))
+                .setBytes(HEADER_CONTENT, toByteBuffer(message.getHeaderContent()))
+                .setList(PROPERTIES, message.getProperties().stream()
                     .map(x -> typesProvider.getDefinedUserType(PROPERTIES)
                         .newValue()
                         .setString(Properties.NAMESPACE, x.getNamespace())
                         .setString(Properties.NAME, x.getLocalName())
                         .setString(Properties.VALUE, x.getValue()))
                     .collect(Collectors.toList()))
-                .value(TEXTUAL_LINE_COUNT, message.getTextualLineCount());
-            PreparedStatement preparedStatement = session.prepare(query.toString());
+                .setLong(TEXTUAL_LINE_COUNT, message.getTextualLineCount());
 
-
-            BoundStatement boundStatement = preparedStatement.bind(toByteBuffer(message.getBodyContent()), toByteBuffer(message.getHeaderContent()));
-            session.execute(boundStatement);
+            session.executeAsync(boundStatement);
             return new SimpleMessageMetaData(message);
         } catch (IOException e) {
             throw new MailboxException("Error saving mail", e);
