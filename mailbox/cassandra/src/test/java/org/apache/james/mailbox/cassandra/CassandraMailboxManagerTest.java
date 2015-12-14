@@ -38,6 +38,7 @@ import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.store.JVMMailboxPathLocker;
 import org.junit.After;
 import org.junit.Before;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -46,12 +47,15 @@ import org.slf4j.LoggerFactory;
  */
 public class CassandraMailboxManagerTest extends AbstractMailboxManagerTest {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger("TIMINGS");
+    
     private static final EmbeddedCassandra CASSANDRA = EmbeddedCassandra.createStartServer();
     
     private CassandraCluster cluster;
 
     @Before
     public void setup() throws Exception {
+        LOGGER.warn("starting setup");
         CassandraModuleComposite dataDefinition = new CassandraModuleComposite(
                 new CassandraAclModule(),
                 new CassandraMailboxModule(),
@@ -61,7 +65,9 @@ public class CassandraMailboxManagerTest extends AbstractMailboxManagerTest {
                 new CassandraSubscriptionModule());
         
         cluster = CassandraCluster.create(dataDefinition, CASSANDRA, RandomStringUtils.randomAlphabetic(5).toLowerCase(Locale.US));
+        LOGGER.warn("cluster created");
         createMailboxManager();
+        LOGGER.warn("ending setup");
     }
 
     @After

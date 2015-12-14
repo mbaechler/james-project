@@ -30,6 +30,8 @@ import org.apache.james.backends.cassandra.init.ClusterFactory;
 import org.apache.james.backends.cassandra.init.ClusterWithKeyspaceCreatedFactory;
 import org.apache.james.backends.cassandra.init.SessionWithInitializedTablesFactory;
 import org.apache.james.backends.cassandra.utils.FunctionRunnerWithRetry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
@@ -37,6 +39,9 @@ import com.datastax.driver.core.exceptions.NoHostAvailableException;
 import com.google.common.base.Throwables;
 
 public final class CassandraCluster {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger("TIMINGS");
+    
     private static final String CLUSTER_IP = "localhost";
     private static final int CLUSTER_PORT_TEST = 9142;
     private static final String DEFAULT_KEYSPACE_NAME = "apache_james";
@@ -63,7 +68,9 @@ public final class CassandraCluster {
         this.module = module;
         this.keyspaceName = keyspaceName;
         try {
+            LOGGER.warn("retrieving session");
             session = new FunctionRunnerWithRetry(MAX_RETRY).executeAndRetrieveObject(CassandraCluster.this::tryInitializeSession);
+            LOGGER.warn("session retrieved");
             typesProvider = new CassandraTypesProvider(module, session);
         } catch (Exception exception) {
             Throwables.propagate(exception);
@@ -85,8 +92,10 @@ public final class CassandraCluster {
 
     private Optional<Session> tryInitializeSession() {
         try {
+            LOGGER.warn("try init session");
             Cluster clusterWithInitializedKeyspace = ClusterWithKeyspaceCreatedFactory
                 .clusterWithInitializedKeyspace(getCluster(), keyspaceName, REPLICATION_FACTOR);
+            LOGGER.warn("keyspace created");
             return Optional.of(new SessionWithInitializedTablesFactory(module).createSession(clusterWithInitializedKeyspace, keyspaceName));
         } catch (NoHostAvailableException exception) {
             sleep(SLEEP_BEFORE_RETRY);
