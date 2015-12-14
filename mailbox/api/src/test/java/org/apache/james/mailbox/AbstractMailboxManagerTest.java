@@ -34,6 +34,7 @@ import org.apache.james.mailbox.model.MailboxConstants;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.junit.After;
 import org.junit.Test;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -46,6 +47,8 @@ import org.slf4j.LoggerFactory;
  * 
  */
 public abstract class AbstractMailboxManagerTest {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger("TIMINGS");
     
     public final static String USER_1 = "USER_1";
     public final static String USER_2 = "USER_2";
@@ -65,24 +68,29 @@ public abstract class AbstractMailboxManagerTest {
     
     @Test 
     public void createUser1SystemSessionShouldReturnValidSession() throws UnsupportedEncodingException, MailboxException {
+        LOGGER.warn("start test");
         setMailboxManager(new MockMailboxManager(getMailboxManager()).getMockMailboxManager());
         session = getMailboxManager().createSystemSession(USER_1, LoggerFactory.getLogger("Mock"));
         
         assertThat(session.getUser().getUserName()).isEqualTo(USER_1);
+        LOGGER.warn("end test");
     }
 
     @Test
     public void user1ShouldNotHaveAnInbox() throws UnsupportedEncodingException, MailboxException {
+        LOGGER.warn("start test");
         setMailboxManager(new MockMailboxManager(getMailboxManager()).getMockMailboxManager());
         session = getMailboxManager().createSystemSession(USER_1, LoggerFactory.getLogger("Mock"));
         getMailboxManager().startProcessingRequest(session);
         
         MailboxPath inbox = MailboxPath.inbox(session);
         assertThat(getMailboxManager().mailboxExists(inbox, session)).isFalse();
+        LOGGER.warn("end test");
     }
     
     @Test
     public void user1ShouldBeAbleToCreateInbox() throws MailboxException, UnsupportedEncodingException {
+        LOGGER.warn("start test");
         setMailboxManager(new MockMailboxManager(getMailboxManager()).getMockMailboxManager());
         session = getMailboxManager().createSystemSession(USER_1, LoggerFactory.getLogger("Mock"));
         getMailboxManager().startProcessingRequest(session);
@@ -91,10 +99,12 @@ public abstract class AbstractMailboxManagerTest {
         getMailboxManager().createMailbox(inbox, session);
         
         assertThat(getMailboxManager().mailboxExists(inbox, session)).isTrue();
+        LOGGER.warn("end test");
     }
 
     @Test(expected=MailboxException.class)
     public void user1ShouldNotBeAbleToCreateInboxTwice() throws MailboxException, UnsupportedEncodingException {
+        LOGGER.warn("start test");
         setMailboxManager(new MockMailboxManager(getMailboxManager()).getMockMailboxManager());
         session = getMailboxManager().createSystemSession(USER_1, LoggerFactory.getLogger("Mock"));
         getMailboxManager().startProcessingRequest(session);
@@ -105,6 +115,7 @@ public abstract class AbstractMailboxManagerTest {
 
     @Test
     public void user1ShouldNotHaveTestSubmailbox() throws MailboxException, UnsupportedEncodingException {
+        LOGGER.warn("start test");
         setMailboxManager(new MockMailboxManager(getMailboxManager()).getMockMailboxManager());
         session = getMailboxManager().createSystemSession(USER_1, LoggerFactory.getLogger("Mock"));
         getMailboxManager().startProcessingRequest(session);
@@ -113,10 +124,12 @@ public abstract class AbstractMailboxManagerTest {
         getMailboxManager().createMailbox(inbox, session);
         
         assertThat(getMailboxManager().mailboxExists(new MailboxPath(inbox, "INBOX.Test"), session)).isFalse();
+        LOGGER.warn("end test");
     }
     
     @Test
     public void user1ShouldBeAbleToCreateTestSubmailbox() throws MailboxException, UnsupportedEncodingException {
+        LOGGER.warn("start test");
         setMailboxManager(new MockMailboxManager(getMailboxManager()).getMockMailboxManager());
         session = getMailboxManager().createSystemSession(USER_1, LoggerFactory.getLogger("Mock"));
         getMailboxManager().startProcessingRequest(session);
@@ -127,10 +140,12 @@ public abstract class AbstractMailboxManagerTest {
         getMailboxManager().createMailbox(inboxSubMailbox, session);
         
         assertThat(getMailboxManager().mailboxExists(inboxSubMailbox, session)).isTrue();
+        LOGGER.warn("end test");
     }
     
     @Test
     public void user1ShouldBeAbleToDeleteInbox() throws MailboxException, UnsupportedEncodingException {
+        LOGGER.warn("start test");
         setMailboxManager(new MockMailboxManager(getMailboxManager()).getMockMailboxManager());
         session = getMailboxManager().createSystemSession(USER_1, LoggerFactory.getLogger("Mock"));
         getMailboxManager().startProcessingRequest(session);
@@ -144,10 +159,12 @@ public abstract class AbstractMailboxManagerTest {
         
         assertThat(getMailboxManager().mailboxExists(inbox, session)).isFalse();
         assertThat(getMailboxManager().mailboxExists(inboxSubMailbox, session)).isTrue();
+        LOGGER.warn("end test");
     }
     
     @Test
     public void user1ShouldBeAbleToDeleteSubmailbox() throws MailboxException, UnsupportedEncodingException {
+        LOGGER.warn("start test");
         setMailboxManager(new MockMailboxManager(getMailboxManager()).getMockMailboxManager());
         session = getMailboxManager().createSystemSession(USER_1, LoggerFactory.getLogger("Mock"));
         getMailboxManager().startProcessingRequest(session);
@@ -161,10 +178,12 @@ public abstract class AbstractMailboxManagerTest {
         
         assertThat(getMailboxManager().mailboxExists(inbox, session)).isTrue();
         assertThat(getMailboxManager().mailboxExists(inboxSubMailbox, session)).isFalse();
+        LOGGER.warn("end test");
     }
 
     @Test
     public void closingSessionShouldWork() throws BadCredentialsException, MailboxException, UnsupportedEncodingException {
+        LOGGER.warn("start test");
         setMailboxManager(new MockMailboxManager(getMailboxManager()).getMockMailboxManager());
         session = getMailboxManager().createSystemSession(USER_1, LoggerFactory.getLogger("Mock"));
         getMailboxManager().startProcessingRequest(session);
@@ -173,34 +192,41 @@ public abstract class AbstractMailboxManagerTest {
         getMailboxManager().endProcessingRequest(session);
         
         assertThat(session.isOpen()).isFalse();
+        LOGGER.warn("end test");
     }
 
     @Test
     public void listShouldReturnMailboxes() throws MailboxException, UnsupportedEncodingException {
+        LOGGER.warn("start test");
         setMailboxManager(new MockMailboxManager(getMailboxManager()).getMockMailboxManager());
         session = getMailboxManager().createSystemSession("manager", LoggerFactory.getLogger("testList"));
         getMailboxManager().startProcessingRequest(session);
         
         assertThat(getMailboxManager().list(session)).hasSize(MockMailboxManager.EXPECTED_MAILBOXES_COUNT);
+        LOGGER.warn("end test");
     }
 
     @Test
     public void user2ShouldBeAbleToCreateRootlessFolder() throws BadCredentialsException, MailboxException {
+        LOGGER.warn("start test");
         session = getMailboxManager().createSystemSession(USER_2, LoggerFactory.getLogger("Test"));
         MailboxPath trash = new MailboxPath(MailboxConstants.USER_NAMESPACE, USER_2, "Trash");
         getMailboxManager().createMailbox(trash, session);
         
         assertThat(getMailboxManager().mailboxExists(trash, session)).isTrue();
+        LOGGER.warn("end test");
     }
     
     @Test
     public void user2ShouldBeAbleToCreateNestedFoldersWithoutTheirParents() throws BadCredentialsException, MailboxException {
+        LOGGER.warn("start test");
         session = getMailboxManager().createSystemSession(USER_2, LoggerFactory.getLogger("Test"));
         MailboxPath nestedFolder = new MailboxPath(MailboxConstants.USER_NAMESPACE, USER_2, "INBOX.testfolder");
         getMailboxManager().createMailbox(nestedFolder, session);
         
         assertThat(getMailboxManager().mailboxExists(nestedFolder, session)).isTrue();
         getMailboxManager().getMailbox(MailboxPath.inbox(session), session).appendMessage(new ByteArrayInputStream("Subject: test\r\n\r\ntestmail".getBytes()), new Date(), session, false, new Flags());
+        LOGGER.warn("end test");
     }
     
     protected abstract void createMailboxManager() throws MailboxException, IOException;
