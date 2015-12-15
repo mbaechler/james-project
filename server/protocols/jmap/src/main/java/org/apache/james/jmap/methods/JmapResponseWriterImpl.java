@@ -23,11 +23,13 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.james.jmap.model.ProtocolResponse;
 
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
+import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 
 public class JmapResponseWriterImpl implements JmapResponseWriter {
 
@@ -41,6 +43,11 @@ public class JmapResponseWriterImpl implements JmapResponseWriter {
 
     @Override
     public ProtocolResponse formatMethodResponse(JmapResponse jmapResponse) {
+        jmapResponse.getProperties()
+                .map(x -> SimpleBeanPropertyFilter.filterOutAllExcept(x))
+                .map(x -> new SimpleFilterProvider().addFilter("propertiesFilter", x))
+                .ifPresent(x -> objectMapper.setFilterProvider(x));
+        
         return new ProtocolResponse(
                 jmapResponse.getResponseName(), 
                 objectMapper.valueToTree(jmapResponse.getResponse()), 
