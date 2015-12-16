@@ -28,29 +28,40 @@ import org.apache.james.jmap.model.ProtocolResponse;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.ser.FilterProvider;
+import com.fasterxml.jackson.databind.ser.PropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 
 public class JmapResponseWriterImpl implements JmapResponseWriter {
 
-    private final ObjectMapper objectMapper;
+    private final Set<Module> jacksonModules;
 
     @Inject
     public JmapResponseWriterImpl(Set<Module> jacksonModules) {
-        this.objectMapper = new ObjectMapper().registerModules(jacksonModules)
-            .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        this.jacksonModules = jacksonModules;
     }
 
     @Override
     public ProtocolResponse formatMethodResponse(JmapResponse jmapResponse) {
-        jmapResponse.getProperties()
-                .map(x -> SimpleBeanPropertyFilter.filterOutAllExcept(x))
-                .map(x -> new SimpleFilterProvider().addFilter("propertiesFilter", x))
-                .ifPresent(x -> objectMapper.setFilterProvider(x));
+        ObjectMapper objectMapper = newConfiguredObjectMapper(jmapResponse);
         
         return new ProtocolResponse(
                 jmapResponse.getResponseName(), 
                 objectMapper.valueToTree(jmapResponse.getResponse()), 
                 jmapResponse.getClientId());
+    }
+    
+    private ObjectMapper newConfiguredObjectMapper(JmapResponse jmapResponse) {
+        ObjectMapper objectMapper = new ObjectMapper().registerModules(jacksonModules)
+                .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+
+        PropertyFilter filter = jmapResponse.getProperties()
+            .map(SimpleBeanPropertyFilter::filterOutAllExcept)
+            .orElse(SimpleBeanPropertyFilter.serializeAll());
+        FilterProvider filterProvider = new SimpleFilterProvider().addFilter("propertiesFilter", filter);
+        objectMapper.setFilterProvider(filterProvider);
+
+        return objectMapper;
     }
 }
