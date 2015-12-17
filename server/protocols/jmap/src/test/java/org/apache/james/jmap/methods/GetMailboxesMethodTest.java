@@ -21,10 +21,16 @@ package org.apache.james.jmap.methods;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.ByteArrayInputStream;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.mail.Flags;
 
+import com.google.common.collect.ImmutableList;
+import org.apache.james.jmap.model.ClientId;
 import org.apache.james.jmap.model.GetMailboxesRequest;
 import org.apache.james.jmap.model.GetMailboxesResponse;
 import org.apache.james.jmap.model.Mailbox;
@@ -39,6 +45,7 @@ import org.apache.james.mailbox.inmemory.InMemoryMailboxSessionMapperFactory;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.MockAuthenticator;
 import org.apache.james.mailbox.store.StoreMailboxManager;
+import org.assertj.core.util.Objects;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -51,9 +58,11 @@ public class GetMailboxesMethodTest {
 
     private StoreMailboxManager<InMemoryId> mailboxManager;
     private GetMailboxesMethod<InMemoryId> getMailboxesMethod;
-    
+    private ClientId clientId;
+
     @Before
     public void setup() throws Exception {
+        clientId = ClientId.of("#0");
         InMemoryMailboxSessionMapperFactory mailboxMapperFactory = new InMemoryMailboxSessionMapperFactory();
         MailboxACLResolver aclResolver = new UnionMailboxACLResolver();
         GroupMembershipResolver groupMembershipResolver = new SimpleGroupMembershipResolver();
@@ -69,8 +78,13 @@ public class GetMailboxesMethodTest {
                 .build();
 
         MailboxSession mailboxSession = mailboxManager.createSystemSession(USERNAME, LOGGER);
-        GetMailboxesResponse getMailboxesResponse = getMailboxesMethod.process(getMailboxesRequest, mailboxSession);
-        assertThat(getMailboxesResponse.getList()).isEmpty();
+        List<JmapResponse> getMailboxesResponse = getMailboxesMethod.process(getMailboxesRequest, clientId, mailboxSession).collect(Collectors.toList());
+        assertThat(getMailboxesResponse).hasSize(1)
+                .extracting(JmapResponse::getResponse)
+                .hasOnlyElementsOfType(GetMailboxesResponse.class)
+                .extracting(GetMailboxesResponse.class::cast)
+                .extracting(GetMailboxesResponse::getList)
+                .containsExactly(Collections.emptyList());
     }
 
     @Test
@@ -91,7 +105,14 @@ public class GetMailboxesMethodTest {
                 .unreadMessages(2)
                 .build();
 
-        GetMailboxesResponse getMailboxesResponse = getMailboxesMethod.process(getMailboxesRequest, mailboxSession);
-        assertThat(getMailboxesResponse.getList()).containsOnly(expectedMailbox);
+        List<JmapResponse> getMailboxesResponse = getMailboxesMethod.process(getMailboxesRequest, clientId, mailboxSession).collect(Collectors.toList());
+        assertThat(getMailboxesResponse).hasSize(1)
+            .extracting(JmapResponse::getResponse)
+            .hasOnlyElementsOfType(GetMailboxesResponse.class)
+            .extracting(GetMailboxesResponse.class::cast)
+            .extracting(GetMailboxesResponse::getList)
+            .containsExactly(ImmutableList.of(expectedMailbox));
     }
+
+
 }

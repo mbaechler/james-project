@@ -26,8 +26,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.james.jmap.methods.Method.Response.Name;
 import org.apache.james.jmap.model.AuthenticatedProtocolRequest;
+import org.apache.james.jmap.model.ClientId;
 import org.apache.james.jmap.model.ProtocolRequest;
 import org.apache.james.jmap.model.ProtocolResponse;
 import org.apache.james.mailbox.MailboxSession;
@@ -44,6 +44,7 @@ import com.google.common.collect.ImmutableSet;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class RequestHandlerTest {
 
@@ -98,20 +99,20 @@ public class RequestHandlerTest {
         }
 
         @Override
-        public Method.Response.Name responseName() {
-            return Method.Response.name("testMethod");
-        }
-        
-        @Override
         public Class<? extends JmapRequest> requestType() {
             return TestJmapRequest.class;
         }
 
         @Override
-        public TestJmapResponse process(JmapRequest request, MailboxSession mailboxSession) {
+        public Stream<JmapResponse> process(JmapRequest request, ClientId clientId, MailboxSession mailboxSession) {
             Preconditions.checkArgument(request instanceof TestJmapRequest);
             TestJmapRequest typedRequest = (TestJmapRequest) request;
-            return new TestJmapResponse(typedRequest.getId(), typedRequest.getName(), "works");
+            return Stream.of(
+                    JmapResponse.builder()
+                            .response(new TestJmapResponse(typedRequest.getId(), typedRequest.getName(), "works"))
+                            .responseName(Response.name("test"))
+                            .clientId(ClientId.of("#0"))
+                            .build());
         }
     }
 
@@ -184,17 +185,12 @@ public class RequestHandlerTest {
         }
         
         @Override
-        public Name responseName() {
-            return null;
-        }
-
-        @Override
         public Class<? extends JmapRequest> requestType() {
             return null;
         }
         
         @Override
-        public Method.Response process(JmapRequest request, MailboxSession mailboxSession) {
+        public Stream<JmapResponse> process(JmapRequest request, ClientId clientId, MailboxSession mailboxSession) {
             return null;
         }
     }

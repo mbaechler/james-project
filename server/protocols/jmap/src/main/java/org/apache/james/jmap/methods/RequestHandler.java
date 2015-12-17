@@ -52,32 +52,30 @@ public class RequestHandler {
     }
 
     public Stream<ProtocolResponse> handle(AuthenticatedProtocolRequest request) {
-        Builder responseBuilder = JmapResponse.builder().clientId(request.getClientId());
         return Optional.ofNullable(methods.get(request.getMethodName()))
-                        .map(extractAndProcess(request, responseBuilder))
+                        .map(extractAndProcess(request))
                         .map(jmapResponseWriter::formatMethodResponse)
                         .orElseThrow(() -> new IllegalStateException("unknown method"));
     }
     
-    private Function<Method, Stream<JmapResponse>> extractAndProcess(AuthenticatedProtocolRequest request, JmapResponse.Builder responseBuilder) {
+    private Function<Method, Stream<JmapResponse>> extractAndProcess(AuthenticatedProtocolRequest request) {
         MailboxSession mailboxSession = request.getMailboxSession();
         return (Method method) -> {
                     try {
                         JmapRequest jmapRequest = jmapRequestParser.extractJmapRequest(request, method.requestType());
-                        return Stream.of(
-                                responseBuilder
-                                .response(method.process(jmapRequest, mailboxSession))
-                                .responseName(method.responseName())
-                                .build());
+                        return method.process(jmapRequest, request.getClientId(), mailboxSession);
                     } catch (IOException e) {
                         if (e.getCause() instanceof NotImplementedException) {
-                            return Stream.of(responseBuilder.error("Not yet implemented").build());
+                            return error(request, "Not yet implemented");
                         }
-                        return Stream.of(responseBuilder.error("invalidArguments").build());
+                        return error(request, "invalidArguments");
                     } catch (NotImplementedException e) {
-                        return Stream.of(responseBuilder.error("Not yet implemented").build());
+                        return error(request, "Not yet implemented");
                     }
                 };
-        
+    }
+
+    private Stream<JmapResponse> error(AuthenticatedProtocolRequest request, String message) {
+        return Stream.of(JmapResponse.builder().clientId(request.getClientId()).error(message).build());
     }
 }
