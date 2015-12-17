@@ -207,5 +207,40 @@ public abstract class GetMessagesMethodTest {
         assertThat(jsonPath.parse(response).<Map<String, String>>read(firstMessagePath + ".headers")).containsExactly(MapEntry.entry("subject", "my test subject"));
         assertThat(jsonPath.parse(response).<String>read(firstMessagePath + ".date")).isEqualTo("2014-10-30T14:12:00Z");
     }
+    
+    @Test
+    public void getMessagesShouldReturnFilteredPropertiesMessagesWhenAsked() throws Exception {
+        ZonedDateTime dateTime = ZonedDateTime.parse("2014-10-30T14:12:00Z");
+        jmapServer.serverProbe().appendMessage("username", new MailboxPath(MailboxConstants.USER_NAMESPACE, "username", "inbox"),
+                new ByteArrayInputStream("Subject: my test subject\r\n\r\ntestmail".getBytes()), Date.from(dateTime.toInstant()), false, new Flags());
+        
+        embeddedElasticSearch.awaitForElasticSearch();
+        
+        String response = given()
+            .accept(ContentType.JSON)
+            .contentType(ContentType.JSON)
+            .header("Authorization", accessToken.serialize())
+            .body("[[\"getMessages\", {\"ids\": [\"username-inbox-1\"], \"properties\": [\"id\", \"subject\"]}, \"#0\"]]")
+        .when()
+            .post("/jmap")
+        .then()
+            .statusCode(200)
+            .content(startsWith("[[\"messages\","))
+            .extract()
+            .asString();
+
+        String firstResponsePath = "$.[0].[1]";
+        String firstMessagePath = firstResponsePath + ".list[0]";
+
+        assertThat(jsonPath.parse(response).<Integer>read("$.length()")).isEqualTo(1);
+        assertThat(jsonPath.parse(response).<Integer>read(firstResponsePath + ".list.length()")).isEqualTo(1);
+        assertThat(jsonPath.parse(response).<String>read(firstMessagePath + ".id")).isEqualTo("username@domain.tld-inbox-1");
+        assertThat(jsonPath.parse(response).<String>read(firstMessagePath + ".subject")).isEqualTo("my test subject");
+        assertThat(jsonPath.parse(response).<String>read(firstMessagePath + ".textBody")).isNull();
+        assertThat(jsonPath.parse(response).<Boolean>read(firstMessagePath + ".isUnread")).isNull();
+        assertThat(jsonPath.parse(response).<String>read(firstMessagePath + ".preview")).isNull();
+        assertThat(jsonPath.parse(response).<Map<String, String>>read(firstMessagePath + ".headers")).isNull();
+        assertThat(jsonPath.parse(response).<String>read(firstMessagePath + ".date")).isNull();
+    }
 
 }
