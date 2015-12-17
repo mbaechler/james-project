@@ -20,9 +20,11 @@
 package org.apache.james.jmap.methods;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.groups.Tuple.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -147,6 +149,38 @@ public class JmapResponseWriterImplTest {
         JsonNode firstObject = Iterables.getOnlyElement(response).getResults().get("list").elements().next();
         assertThat(firstObject.get("id").asText()).isEqualTo("id");
         assertThat(firstObject.get("name").asText()).isEqualTo("name");
+    }
+
+    @Test
+    public void formatMethodResponseShouldFilterRightFieldsForEachResponse() {
+        ObjectResponseClass responseClass = new ObjectResponseClass();
+        responseClass.list = ImmutableList.of(new ObjectResponseClass.Foo("id", "name"));
+
+        JmapResponseWriterImpl jmapResponseWriterImpl = new JmapResponseWriterImpl(ImmutableSet.of(new Jdk8Module()));
+
+        List<ProtocolResponse> response = jmapResponseWriterImpl.formatMethodResponse(
+                Stream.of(JmapResponse
+                            .builder()
+                            .responseName(Method.Response.name("unknownMethod"))
+                            .clientId(ClientId.of("#1"))
+                            .properties(ImmutableSet.of("id", "name"))
+                            .response(responseClass)
+                            .build(),
+                        JmapResponse
+                            .builder()
+                            .responseName(Method.Response.name("unknownMethod"))
+                            .clientId(ClientId.of("#1"))
+                            .properties(ImmutableSet.of("id"))
+                            .response(responseClass)
+                            .build()))
+                .collect(Collectors.toList());
+
+        assertThat(response).hasSize(2)
+                .extracting(x -> x.getResults().get("list").elements().next())
+                .extracting(
+                        x -> x.get("id").asText(),
+                        x -> Optional.ofNullable(x.get("name")).map(JsonNode::asText).orElse(null))
+                .containsExactly(tuple("id", "name"), tuple("id", null));
     }
 
     @SuppressWarnings("unused")
