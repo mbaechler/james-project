@@ -21,6 +21,7 @@ package org.apache.james.jmap.methods;
 
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
@@ -63,14 +64,18 @@ public class JmapResponseWriterImpl implements JmapResponseWriter {
                 .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
 
         PropertyFilter filter = jmapResponse.getProperties()
-            .map(x -> x.stream()
-                    .map(Property::asFieldName)
-                    .collect(java.util.stream.Collectors.toSet()))
+            .map(this::toFieldNames)
             .map(SimpleBeanPropertyFilter::filterOutAllExcept)
             .orElse(SimpleBeanPropertyFilter.serializeAll());
         FilterProvider filterProvider = new SimpleFilterProvider().addFilter("propertiesFilter", filter);
         objectMapper.setFilterProvider(filterProvider);
 
         return objectMapper;
+    }
+
+    private Set<String> toFieldNames(Set<? extends Property> properties) {
+        return properties.stream()
+            .map(Property::asFieldName)
+            .collect(Collectors.toImmutableSet());
     }
 }
