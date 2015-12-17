@@ -236,7 +236,7 @@ public abstract class GetMessagesMethodTest {
         assertThat(jsonPath.parse(response).<Integer>read(firstResponsePath + ".list.length()")).isEqualTo(1);
         assertThat(jsonPath.parse(response).<String>read(firstMessagePath + ".id")).isEqualTo("username@domain.tld-inbox-1");
         assertThat(jsonPath.parse(response).<String>read(firstMessagePath + ".subject")).isEqualTo("my test subject");
-        assertThat(jsonPath.parse(response).<String>read(firstMessagePath + ".textBody")).isNull();
+        assertThat(jsonPath.parse(response).<String>read(firstMessagePath + ".textBody")).isNull(); //testmail
         assertThat(jsonPath.parse(response).<Boolean>read(firstMessagePath + ".isUnread")).isNull();
         assertThat(jsonPath.parse(response).<String>read(firstMessagePath + ".preview")).isNull();
         assertThat(jsonPath.parse(response).<Map<String, String>>read(firstMessagePath + ".headers")).isNull();

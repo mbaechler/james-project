@@ -19,6 +19,7 @@
 
 package org.apache.james.jmap.methods;
 
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.Mockito.mock;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -40,6 +41,9 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class RequestHandlerTest {
 
@@ -205,10 +209,14 @@ public class RequestHandlerTest {
                 parameters,
                 new ObjectNode(new JsonNodeFactory(false)).textNode("#1")} ;
 
-        ProtocolResponse response = testee.handle(AuthenticatedProtocolRequest.decorate(ProtocolRequest.deserialize(nodes), mockHttpServletRequest));
+        List<ProtocolResponse> responses = testee.handle(AuthenticatedProtocolRequest.decorate(ProtocolRequest.deserialize(nodes), mockHttpServletRequest))
+                .collect(Collectors.toList());
 
-        assertThat(response.getResults().findValue("id").asText()).isEqualTo("testId");
-        assertThat(response.getResults().findValue("name").asText()).isEqualTo("testName");
-        assertThat(response.getResults().findValue("message").asText()).isEqualTo("works");
+        assertThat(responses).hasSize(1)
+                .extracting(
+                        x -> x.getResults().findValue("id").asText(),
+                        x -> x.getResults().findValue("name").asText(),
+                        x -> x.getResults().findValue("message").asText())
+                .containsExactly(tuple("testId", "testName", "works"));
     }
 }

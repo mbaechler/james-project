@@ -20,14 +20,17 @@
 package org.apache.james.jmap.methods;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import com.google.common.collect.ImmutableList;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.james.jmap.methods.JmapResponse.Builder;
 import org.apache.james.jmap.model.AuthenticatedProtocolRequest;
@@ -48,7 +51,7 @@ public class RequestHandler {
                 .collect(Collectors.toMap(Method::requestHandled, Function.identity()));
     }
 
-    public ProtocolResponse handle(AuthenticatedProtocolRequest request) {
+    public Stream<ProtocolResponse> handle(AuthenticatedProtocolRequest request) {
         Builder responseBuilder = JmapResponse.builder().clientId(request.getClientId());
         return Optional.ofNullable(methods.get(request.getMethodName()))
                         .map(extractAndProcess(request, responseBuilder))
@@ -56,22 +59,23 @@ public class RequestHandler {
                         .orElseThrow(() -> new IllegalStateException("unknown method"));
     }
     
-    private Function<Method, JmapResponse> extractAndProcess(AuthenticatedProtocolRequest request, JmapResponse.Builder responseBuilder) {
+    private Function<Method, Stream<JmapResponse>> extractAndProcess(AuthenticatedProtocolRequest request, JmapResponse.Builder responseBuilder) {
         MailboxSession mailboxSession = request.getMailboxSession();
         return (Method method) -> {
                     try {
                         JmapRequest jmapRequest = jmapRequestParser.extractJmapRequest(request, method.requestType());
-                        return responseBuilder
+                        return Stream.of(
+                                responseBuilder
                                 .response(method.process(jmapRequest, mailboxSession))
                                 .responseName(method.responseName())
-                                .build();
+                                .build());
                     } catch (IOException e) {
                         if (e.getCause() instanceof NotImplementedException) {
-                            return responseBuilder.error("Not yet implemented").build();
+                            return Stream.of(responseBuilder.error("Not yet implemented").build());
                         }
-                        return responseBuilder.error("invalidArguments").build();
+                        return Stream.of(responseBuilder.error("invalidArguments").build());
                     } catch (NotImplementedException e) {
-                        return responseBuilder.error("Not yet implemented").build();
+                        return Stream.of(responseBuilder.error("Not yet implemented").build());
                     }
                 };
         

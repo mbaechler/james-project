@@ -19,7 +19,9 @@
 
 package org.apache.james.jmap.methods;
 
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
@@ -32,6 +34,7 @@ import com.fasterxml.jackson.databind.ser.FilterProvider;
 import com.fasterxml.jackson.databind.ser.PropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
+import org.apache.james.util.streams.Collectors;
 
 public class JmapResponseWriterImpl implements JmapResponseWriter {
 
@@ -43,13 +46,15 @@ public class JmapResponseWriterImpl implements JmapResponseWriter {
     }
 
     @Override
-    public ProtocolResponse formatMethodResponse(JmapResponse jmapResponse) {
-        ObjectMapper objectMapper = newConfiguredObjectMapper(jmapResponse);
-        
-        return new ProtocolResponse(
-                jmapResponse.getResponseName(), 
-                objectMapper.valueToTree(jmapResponse.getResponse()), 
-                jmapResponse.getClientId());
+    public Stream<ProtocolResponse> formatMethodResponse(Stream<JmapResponse> jmapResponses) {
+        return jmapResponses.map(jmapResponse -> {
+            ObjectMapper objectMapper = newConfiguredObjectMapper(jmapResponse);
+
+            return new ProtocolResponse(
+                    jmapResponse.getResponseName(),
+                    objectMapper.valueToTree(jmapResponse.getResponse()),
+                    jmapResponse.getClientId());
+        });
     }
     
     private ObjectMapper newConfiguredObjectMapper(JmapResponse jmapResponse) {
