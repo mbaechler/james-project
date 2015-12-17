@@ -109,7 +109,7 @@ public abstract class GetMessagesMethodTest {
     
     @Test
     public void getMessagesShouldIgnoreUnknownArguments() throws Exception {
-        given()
+        String response = given()
             .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .header("Authorization", accessToken.serialize())
@@ -118,7 +118,13 @@ public abstract class GetMessagesMethodTest {
             .post("/jmap")
         .then()
             .statusCode(200)
-            .content(equalTo("[[\"messages\",{\"notFound\":[],\"list\":[]},\"#0\"]]"));
+            .content(startsWith("[[\"messages\","))
+            .extract()
+            .asString();
+
+        String firstResponsePath = "$.[0].[1]";
+        assertThat(jsonPath.parse(response).<Integer>read(firstResponsePath + ".notFound.length()")).isEqualTo(0);
+        assertThat(jsonPath.parse(response).<Integer>read(firstResponsePath + ".list.length()")).isEqualTo(0);
     }
 
     @Test
