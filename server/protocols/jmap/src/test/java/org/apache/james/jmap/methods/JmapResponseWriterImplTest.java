@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 
 import com.google.common.collect.Iterables;
 import org.apache.james.jmap.model.ClientId;
+import org.apache.james.jmap.model.Property;
 import org.apache.james.jmap.model.ProtocolRequest;
 import org.apache.james.jmap.model.ProtocolResponse;
 import org.assertj.core.groups.Tuple;
@@ -100,6 +101,7 @@ public class JmapResponseWriterImplTest {
     public void formatMethodResponseShouldFilterFieldsWhenProperties() {
         ObjectResponseClass responseClass = new ObjectResponseClass();
         responseClass.list = ImmutableList.of(new ObjectResponseClass.Foo("id", "name"));
+        Property property = () -> "id";
 
         JmapResponseWriterImpl jmapResponseWriterImpl = new JmapResponseWriterImpl(ImmutableSet.of(new Jdk8Module()));
         List<ProtocolResponse> response = jmapResponseWriterImpl.formatMethodResponse(
@@ -107,7 +109,7 @@ public class JmapResponseWriterImplTest {
                 .builder()
                 .responseName(Method.Response.name("unknownMethod"))
                 .clientId(ClientId.of("#1"))
-                .properties(ImmutableSet.of("id"))
+                .properties(ImmutableSet.of(property))
                 .response(responseClass)
                 .build()))
                 .collect(Collectors.toList());
@@ -124,6 +126,7 @@ public class JmapResponseWriterImplTest {
     public void formatMethodResponseShouldNotFilterFieldsWhenSecondCallWithoutProperties() {
         ObjectResponseClass responseClass = new ObjectResponseClass();
         responseClass.list = ImmutableList.of(new ObjectResponseClass.Foo("id", "name"));
+        Property property = () -> "id";
 
         JmapResponseWriterImpl jmapResponseWriterImpl = new JmapResponseWriterImpl(ImmutableSet.of(new Jdk8Module()));
         @SuppressWarnings("unused")
@@ -132,7 +135,7 @@ public class JmapResponseWriterImplTest {
                         .builder()
                         .responseName(Method.Response.name("unknownMethod"))
                         .clientId(ClientId.of("#1"))
-                        .properties(ImmutableSet.of("id"))
+                        .properties(ImmutableSet.of(property))
                         .response(responseClass)
                         .build()));
 
@@ -155,6 +158,8 @@ public class JmapResponseWriterImplTest {
     public void formatMethodResponseShouldFilterRightFieldsForEachResponse() {
         ObjectResponseClass responseClass = new ObjectResponseClass();
         responseClass.list = ImmutableList.of(new ObjectResponseClass.Foo("id", "name"));
+        Property idProperty = () -> "id";
+        Property nameProperty = () -> "name";
 
         JmapResponseWriterImpl jmapResponseWriterImpl = new JmapResponseWriterImpl(ImmutableSet.of(new Jdk8Module()));
 
@@ -163,14 +168,14 @@ public class JmapResponseWriterImplTest {
                             .builder()
                             .responseName(Method.Response.name("unknownMethod"))
                             .clientId(ClientId.of("#1"))
-                            .properties(ImmutableSet.of("id", "name"))
+                            .properties(ImmutableSet.of(idProperty, nameProperty))
                             .response(responseClass)
                             .build(),
                         JmapResponse
                             .builder()
                             .responseName(Method.Response.name("unknownMethod"))
                             .clientId(ClientId.of("#1"))
-                            .properties(ImmutableSet.of("id"))
+                            .properties(ImmutableSet.of(idProperty))
                             .response(responseClass)
                             .build()))
                 .collect(Collectors.toList());

@@ -34,6 +34,7 @@ import java.util.Map;
 
 import javax.mail.Flags;
 
+import com.jayway.jsonpath.Option;
 import org.apache.james.backends.cassandra.EmbeddedCassandra;
 import org.apache.james.jmap.JmapAuthentication;
 import org.apache.james.jmap.JmapServer;
@@ -82,6 +83,7 @@ public abstract class GetMessagesMethodTest {
         jsonPath = JsonPath.using(Configuration.builder()
                                     .jsonProvider(new JacksonJsonProvider())
                                     .mappingProvider(new JacksonMappingProvider())
+                                    .options(Option.DEFAULT_PATH_LEAF_TO_NULL)
                                     .build());
 
         String domain = "domain.tld";
@@ -237,6 +239,7 @@ public abstract class GetMessagesMethodTest {
 
         String firstResponsePath = "$.[0].[1]";
         String firstMessagePath = firstResponsePath + ".list[0]";
+
 
         assertThat(jsonPath.parse(response).<Integer>read("$.length()")).isEqualTo(1);
         assertThat(jsonPath.parse(response).<Integer>read(firstResponsePath + ".list.length()")).isEqualTo(1);

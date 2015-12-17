@@ -28,6 +28,7 @@ import java.util.stream.StreamSupport;
 
 import javax.inject.Inject;
 
+import com.google.common.collect.ImmutableSet;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.james.jmap.model.ClientId;
 import org.apache.james.jmap.model.GetMessagesRequest;
@@ -35,7 +36,7 @@ import org.apache.james.jmap.model.GetMessagesResponse;
 import org.apache.james.jmap.model.Message;
 import org.apache.james.jmap.model.Message.Builder;
 import org.apache.james.jmap.model.MessageId;
-import org.apache.james.jmap.model.Property;
+import org.apache.james.jmap.model.MessageProperty;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.model.MessageRange;
@@ -88,6 +89,7 @@ public class GetMessagesMethod<Id extends MailboxId> implements Method {
         return Stream.of(JmapResponse.builder().clientId(clientId)
                             .response(getMessagesResponse(mailboxSession, getMessagesRequest))
                             .responseName(RESPONSE_NAME)
+                            .properties(getMessagesRequest.getProperties())
                             .build());
     }
 
@@ -148,16 +150,16 @@ public class GetMessagesMethod<Id extends MailboxId> implements Method {
 
     private static class JmapMessageFactory implements Function<Message, Message> {
         
-        public ImmutableMap<Property, ThrowingBiFunction<Message, Message.Builder, Message.Builder>> fieldCopiers = 
+        public ImmutableMap<MessageProperty, ThrowingBiFunction<Message, Message.Builder, Message.Builder>> fieldCopiers =
                 ImmutableMap.of(
-                        Property.id, (message, builder) -> builder.id(message.getId()),
-                        Property.subject, (message, builder) -> builder.subject(message.getSubject())
+                        MessageProperty.id, (message, builder) -> builder.id(message.getId()),
+                        MessageProperty.subject, (message, builder) -> builder.subject(message.getSubject())
                         );
         
-        private final ImmutableList<Property> selectedProperties;
+        private final ImmutableSet<MessageProperty> selectedProperties;
         
         public JmapMessageFactory(GetMessagesRequest messagesRequest) {
-            this.selectedProperties = messagesRequest.getProperties().orElse(Property.all());
+            this.selectedProperties = messagesRequest.getProperties().orElse(MessageProperty.all());
         }
 
         @Override
@@ -170,7 +172,7 @@ public class GetMessagesMethod<Id extends MailboxId> implements Method {
         }
 
         private Stream<ThrowingBiFunction<Message, Builder, Builder>> selectCopiers() {
-            return Stream.concat(selectedProperties.stream(), Stream.of(Property.id))
+            return Stream.concat(selectedProperties.stream(), Stream.of(MessageProperty.id))
                 .filter(fieldCopiers::containsKey)
                 .map(fieldCopiers::get);
         }   

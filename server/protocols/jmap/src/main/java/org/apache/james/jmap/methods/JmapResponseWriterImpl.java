@@ -25,6 +25,7 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import org.apache.james.jmap.model.Property;
 import org.apache.james.jmap.model.ProtocolResponse;
 
 import com.fasterxml.jackson.databind.Module;
@@ -62,6 +63,9 @@ public class JmapResponseWriterImpl implements JmapResponseWriter {
                 .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
 
         PropertyFilter filter = jmapResponse.getProperties()
+            .map(x -> x.stream()
+                    .map(Property::asFieldName)
+                    .collect(java.util.stream.Collectors.toSet()))
             .map(SimpleBeanPropertyFilter::filterOutAllExcept)
             .orElse(SimpleBeanPropertyFilter.serializeAll());
         FilterProvider filterProvider = new SimpleFilterProvider().addFilter("propertiesFilter", filter);

@@ -21,6 +21,7 @@ package org.apache.james.jmap.model;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.google.common.collect.ImmutableSet;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
@@ -29,7 +30,7 @@ public class GetMessagesRequestTest {
 
     @Test
     public void shouldAllowOptionalAccountId() {
-        GetMessagesRequest result = GetMessagesRequest.builder().ids(MessageId.of("user-inbox-1")).properties(Property.id).build();
+        GetMessagesRequest result = GetMessagesRequest.builder().ids(MessageId.of("user-inbox-1")).properties(MessageProperty.id).build();
         assertThat(result).isNotNull();
         assertThat(result.getAccountId()).isEmpty();
     }
@@ -41,7 +42,7 @@ public class GetMessagesRequestTest {
 
     @Test
     public void shouldAllowEmptyMessagesList() {
-        GetMessagesRequest result = GetMessagesRequest.builder().accountId("accountId").ids().properties(Property.id).build();
+        GetMessagesRequest result = GetMessagesRequest.builder().accountId("accountId").ids().properties(MessageProperty.id).build();
         assertThat(result).isNotNull();
         assertThat(result.getIds()).isEmpty();
     }
@@ -55,8 +56,8 @@ public class GetMessagesRequestTest {
 
     @Test
     public void shouldAllowEmptyPropertyList() {
-        GetMessagesRequest result = GetMessagesRequest.builder().accountId("accountId").ids().properties(new Property[0]).build();
+        GetMessagesRequest result = GetMessagesRequest.builder().accountId("accountId").ids().properties(new MessageProperty[0]).build();
         assertThat(result).isNotNull();
-        assertThat(result.getProperties()).contains(ImmutableList.of());
+        assertThat(result.getProperties()).contains(ImmutableSet.of());
     }
 }
