@@ -85,7 +85,7 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
     @Override
     public Iterator<MailboxMessage<CassandraId>> findInMailbox(Mailbox<CassandraId> mailbox, MessageRange set, FetchType ftype, int max) throws MailboxException {
         return repository.loadMessageRange(mailbox, set)
-            .sorted(Comparator.comparingLong(MailboxMessage::getUid))
+            .sorted()
             .iterator();
     }
 
