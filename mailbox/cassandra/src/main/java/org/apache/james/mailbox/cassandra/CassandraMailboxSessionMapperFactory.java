@@ -24,6 +24,7 @@ import javax.inject.Inject;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.cassandra.mail.CassandraMailboxMapper;
 import org.apache.james.mailbox.cassandra.mail.CassandraMessageMapper;
+import org.apache.james.mailbox.cassandra.mail.CassandraMessageRepository;
 import org.apache.james.mailbox.cassandra.user.CassandraSubscriptionMapper;
 import org.apache.james.mailbox.store.MailboxSessionMapperFactory;
 import org.apache.james.mailbox.store.mail.MailboxMapper;
@@ -44,13 +45,17 @@ public class CassandraMailboxSessionMapperFactory extends MailboxSessionMapperFa
     private final UidProvider<CassandraId> uidProvider;
     private final ModSeqProvider<CassandraId> modSeqProvider;
     private final CassandraTypesProvider typesProvider;
+    private final CassandraMessageRepository cassandraMessageRepository;
     private int maxRetry;
 
     @Inject
-    public CassandraMailboxSessionMapperFactory(UidProvider<CassandraId> uidProvider, ModSeqProvider<CassandraId> modSeqProvider, Session session, CassandraTypesProvider typesProvider) {
+    public CassandraMailboxSessionMapperFactory(UidProvider<CassandraId> uidProvider, 
+            ModSeqProvider<CassandraId> modSeqProvider, Session session, CassandraTypesProvider typesProvider,
+            CassandraMessageRepository cassandraMessageRepository) {
         this.uidProvider = uidProvider;
         this.modSeqProvider = modSeqProvider;
         this.session = session;
+        this.cassandraMessageRepository = cassandraMessageRepository;
         this.maxRetry = DEFAULT_MAX_RETRY;
         this.typesProvider = typesProvider;
     }
@@ -61,7 +66,7 @@ public class CassandraMailboxSessionMapperFactory extends MailboxSessionMapperFa
 
     @Override
     public CassandraMessageMapper createMessageMapper(MailboxSession mailboxSession) {
-        return new CassandraMessageMapper(session, uidProvider, modSeqProvider, null, maxRetry, typesProvider);
+        return new CassandraMessageMapper(uidProvider, modSeqProvider, null, maxRetry, cassandraMessageRepository);
     }
 
     @Override
