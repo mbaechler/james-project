@@ -26,6 +26,6 @@ public class MessageUidComparator implements Comparator<MailboxMessage<?>> {
 
     @Override
     public int compare(MailboxMessage<?> m1, MailboxMessage<?> m2) {
-        return Long.compare(m1.getUid(), m2.getUid());
+        return Long.valueOf(m1.getUid()).compareTo(m2.getUid());
     }
 }
