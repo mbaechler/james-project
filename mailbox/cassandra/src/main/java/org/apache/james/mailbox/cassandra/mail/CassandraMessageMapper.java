@@ -91,14 +91,14 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
 
     @Override
     public List<Long> findRecentMessageUidsInMailbox(Mailbox<CassandraId> mailbox) throws MailboxException {
-        return repository.findRecentMessageUidsInMailbox(mailbox)
+        return repository.findRecentMessageUids(mailbox)
             .sorted()
             .collect(Collectors.toList());
     }
 
     @Override
     public Long findFirstUnseenMessageUid(Mailbox<CassandraId> mailbox) throws MailboxException {
-        return repository.findFirstUnseenMessageUid(mailbox)
+        return repository.findUnseenMessageUids(mailbox)
             .sorted()
             .findFirst()
             .orElse(null);

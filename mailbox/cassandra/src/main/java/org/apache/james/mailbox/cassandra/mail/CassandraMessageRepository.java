@@ -136,14 +136,26 @@ public class CassandraMessageRepository {
             .map(this::message);
     }
 
-    public Stream<Long> findRecentMessageUidsInMailbox(Mailbox<CassandraId> mailbox) throws MailboxException {
-        return CassandraUtils.convertToStream(session.execute(selectAll(mailbox).and((eq(RECENT, true)))))
-            .map((row) -> row.getLong(IMAP_UID));
+    public Stream<Long> findRecentMessageUids(Mailbox<CassandraId> mailbox) throws MailboxException {
+        return CassandraUtils
+            .convertToStream(
+                session.execute(
+                    select(IMAP_UID)
+                        .from(TABLE_NAME)
+                        .where(eq(MAILBOX_ID, mailbox.getMailboxId().asUuid()))
+                        .and(eq(RECENT, true))))
+            .map(row -> row.getLong(IMAP_UID));
     }
 
-    public Stream<Long> findFirstUnseenMessageUid(Mailbox<CassandraId> mailbox) throws MailboxException {
-        return CassandraUtils.convertToStream(session.execute(selectAll(mailbox).and((eq(SEEN, false)))))
-            .map((row) -> row.getLong(IMAP_UID));
+    public Stream<Long> findUnseenMessageUids(Mailbox<CassandraId> mailbox) throws MailboxException {
+        return CassandraUtils
+            .convertToStream(
+                session.execute(
+                    select(IMAP_UID)
+                        .from(TABLE_NAME)
+                        .where(eq(MAILBOX_ID, mailbox.getMailboxId().asUuid()))
+                        .and(eq(SEEN, false))))
+            .map(row -> row.getLong(IMAP_UID));
     }
 
     public Stream<MailboxMessage<CassandraId>> findDeletedMessages(Mailbox<CassandraId> mailbox, MessageRange set) {
