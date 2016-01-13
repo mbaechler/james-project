@@ -55,6 +55,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -67,6 +68,7 @@ import javax.mail.util.SharedByteArrayInputStream;
 import org.apache.james.backends.cassandra.init.CassandraTypesProvider;
 import org.apache.james.backends.cassandra.utils.CassandraConstants;
 import org.apache.james.backends.cassandra.utils.CassandraUtils;
+import org.apache.james.mailbox.FlagsBuilder;
 import org.apache.james.mailbox.cassandra.CassandraId;
 import org.apache.james.mailbox.cassandra.table.CassandraMailboxCountersTable;
 import org.apache.james.mailbox.cassandra.table.CassandraMessageTable;
@@ -195,16 +197,35 @@ public class CassandraMessageRepository {
     }
 
     private Flags getFlags(Row row) {
-        Flags flags = new Flags();
-        for (String flag : CassandraMessageTable.Flag.ALL) {
-            if (row.getBool(flag)) {
-                flags.add(CassandraMessageTable.Flag.JAVAX_MAIL_FLAG.get(flag));
-            }
+        Set<String> userFlagSet = row.getSet(CassandraMessageTable.Flag.USER_FLAGS, String.class);
+
+        List<Flag> flagList = Arrays.stream(CassandraMessageTable.Flag.ALL)
+            .filter(row::getBool)
+            .map(this::toJavaxFlag)
+            .collect(Collectors.toList());
+
+        return new FlagsBuilder().addFlags(flagList).addUserFlags(userFlagSet).build();
+    }
+
+    private Flags.Flag toJavaxFlag(String flag) {
+        switch (flag) {
+            case CassandraMessageTable.Flag.ANSWERED:
+                return Flags.Flag.ANSWERED;
+            case CassandraMessageTable.Flag.DELETED:
+                return Flags.Flag.DELETED;
+            case CassandraMessageTable.Flag.DRAFT:
+                return Flags.Flag.DRAFT;
+            case CassandraMessageTable.Flag.RECENT:
+                return Flags.Flag.RECENT;
+            case CassandraMessageTable.Flag.SEEN:
+                return Flags.Flag.SEEN;
+            case CassandraMessageTable.Flag.FLAGGED:
+                return Flags.Flag.FLAGGED;
+            case CassandraMessageTable.Flag.USER:
+                return Flags.Flag.USER;
+            default:
+                return null;
         }
-        row.getSet(CassandraMessageTable.Flag.USER_FLAGS, String.class)
-            .stream()
-            .forEach(flags::add);
-        return flags;
     }
 
     private PropertyBuilder getPropertyBuilder(Row row) {
