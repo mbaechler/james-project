@@ -29,7 +29,7 @@ import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MessageMetaData;
 import org.apache.james.mailbox.model.MessageRange;
 import org.apache.james.mailbox.model.UpdatedFlags;
-import org.apache.james.mailbox.store.FlagsUpdateCalculator;
+import org.apache.james.mailbox.store.FlagsUpdate;
 import org.apache.james.mailbox.store.SimpleMessageMetaData;
 import org.apache.james.mailbox.store.mail.MessageMapper;
 import org.apache.james.mailbox.store.mail.ModSeqProvider;
@@ -139,9 +139,9 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
     }
 
     @Override
-    public Iterator<UpdatedFlags> updateFlags(Mailbox<CassandraId> mailbox, FlagsUpdateCalculator flagUpdateCalculator, MessageRange set) throws MailboxException {
+    public Iterator<UpdatedFlags> updateFlags(Mailbox<CassandraId> mailbox, FlagsUpdate flagUpdate, MessageRange set) throws MailboxException {
         return repository.loadMessageRange(mailbox, set)
-            .map(message -> updateFlagsOnMessage(mailbox, flagUpdateCalculator, message))
+            .map(message -> updateFlagsOnMessage(mailbox, flagUpdate, message))
             .filter(Optional::isPresent)
             .map(Optional::get)
             .peek((updatedFlags) -> manageUnseenMessageCounts(mailbox, updatedFlags.getOldFlags(), updatedFlags.getNewFlags()))
@@ -180,17 +180,17 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
         }
     }
 
-    private Optional<UpdatedFlags> updateFlagsOnMessage(Mailbox<CassandraId> mailbox, FlagsUpdateCalculator flagUpdateCalculator, MailboxMessage<CassandraId> message) {
-        return tryMessageFlagsUpdate(flagUpdateCalculator, mailbox, message)
+    private Optional<UpdatedFlags> updateFlagsOnMessage(Mailbox<CassandraId> mailbox, FlagsUpdate flagUpdate, MailboxMessage<CassandraId> message) {
+        return tryMessageFlagsUpdate(flagUpdate, mailbox, message)
             .map(Optional::of)
-            .orElse(handleRetries(mailbox, flagUpdateCalculator, message.getUid()));
+            .orElse(handleRetries(mailbox, flagUpdate, message.getUid()));
     }
 
-    private Optional<UpdatedFlags> tryMessageFlagsUpdate(FlagsUpdateCalculator flagUpdateCalculator, Mailbox<CassandraId> mailbox, MailboxMessage<CassandraId> message) {
+    private Optional<UpdatedFlags> tryMessageFlagsUpdate(FlagsUpdate flagUpdate, Mailbox<CassandraId> mailbox, MailboxMessage<CassandraId> message) {
         try {
             long oldModSeq = message.getModSeq();
             Flags oldFlags = message.createFlags();
-            Flags newFlags = flagUpdateCalculator.buildNewFlags(oldFlags);
+            Flags newFlags = flagUpdate.apply(oldFlags);
             message.setFlags(newFlags);
             message.setModSeq(modSeqProvider.nextModSeq(mailboxSession, mailbox));
             if (repository.conditionalSave(message, oldModSeq)) {
@@ -203,11 +203,11 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
         }
     }
 
-    private Optional<UpdatedFlags> handleRetries(Mailbox<CassandraId> mailbox, FlagsUpdateCalculator flagUpdateCalculator, long uid) {
+    private Optional<UpdatedFlags> handleRetries(Mailbox<CassandraId> mailbox, FlagsUpdate flagUpdate, long uid) {
         try {
             return Optional.of(
                 new FunctionRunnerWithRetry(maxRetries)
-                    .executeAndRetrieveObject(() -> retryMessageFlagsUpdate(mailbox, uid, flagUpdateCalculator)));
+                    .executeAndRetrieveObject(() -> retryMessageFlagsUpdate(mailbox, uid, flagUpdate)));
         } catch (MessageDeletedDuringFlagsUpdateException e) {
             mailboxSession.getLog().warn(e.getMessage());
             return Optional.empty();
@@ -216,12 +216,12 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
         }
     }
 
-    private Optional<UpdatedFlags> retryMessageFlagsUpdate(Mailbox<CassandraId> mailbox, long uid, FlagsUpdateCalculator flagUpdateCalculator) {
+    private Optional<UpdatedFlags> retryMessageFlagsUpdate(Mailbox<CassandraId> mailbox, long uid, FlagsUpdate flagUpdate) {
         MailboxMessage<CassandraId> reloadedMessage =
             repository.loadMessageRange(mailbox, MessageRange.one(uid))
                 .findAny()
                 .orElseThrow(() -> new MessageDeletedDuringFlagsUpdateException(mailbox.getMailboxId(), uid));
-        return tryMessageFlagsUpdate(flagUpdateCalculator, mailbox, reloadedMessage);
+        return tryMessageFlagsUpdate(flagUpdate, mailbox, reloadedMessage);
     }
 
 }
