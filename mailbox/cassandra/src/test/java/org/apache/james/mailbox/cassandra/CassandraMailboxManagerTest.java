@@ -23,6 +23,7 @@ import org.apache.james.backends.cassandra.init.CassandraModuleComposite;
 import org.apache.james.backends.cassandra.init.CassandraTypesProvider;
 import org.apache.james.mailbox.AbstractMailboxManagerTest;
 import org.apache.james.mailbox.MailboxSession;
+import org.apache.james.mailbox.cassandra.mail.CassandraMailboxCountersRepository;
 import org.apache.james.mailbox.cassandra.mail.CassandraMessageRepository;
 import org.apache.james.mailbox.cassandra.mail.CassandraModSeqProvider;
 import org.apache.james.mailbox.cassandra.mail.CassandraUidProvider;
@@ -93,8 +94,10 @@ public class CassandraMailboxManagerTest extends AbstractMailboxManagerTest {
         CassandraModSeqProvider modSeqProvider = new CassandraModSeqProvider(session);
 
         CassandraMessageRepository messageRepository = new CassandraMessageRepository(session, typesProvider);
+        CassandraMailboxCountersRepository mailboxCountersRepository = new CassandraMailboxCountersRepository(session);
+
         final CassandraMailboxSessionMapperFactory mapperFactory = new CassandraMailboxSessionMapperFactory(uidProvider,
-            modSeqProvider, session, typesProvider, messageRepository);
+            modSeqProvider, session, typesProvider, messageRepository, mailboxCountersRepository);
 
         final CassandraMailboxManager manager = new CassandraMailboxManager(mapperFactory, null, new JVMMailboxPathLocker());
         manager.init();

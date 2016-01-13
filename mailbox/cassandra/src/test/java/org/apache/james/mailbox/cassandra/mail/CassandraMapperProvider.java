@@ -32,13 +32,14 @@ public class CassandraMapperProvider implements MapperProvider<CassandraId> {
         Session session = cassandra.getConf();
         CassandraTypesProvider typesProvider = cassandra.getTypesProvider();
         CassandraMessageRepository messageRepository = new CassandraMessageRepository(session, typesProvider);
+        CassandraMailboxCountersRepository mailboxCountersRepository = new CassandraMailboxCountersRepository(session);
         return new CassandraMailboxSessionMapperFactory(
             new CassandraUidProvider(session),
             new CassandraModSeqProvider(session),
             session,
             typesProvider,
-            messageRepository
-        ).getMailboxMapper(new MockMailboxSession("benwa"));
+            messageRepository,
+            mailboxCountersRepository).getMailboxMapper(new MockMailboxSession("benwa"));
     }
 
     @Override
@@ -46,13 +47,14 @@ public class CassandraMapperProvider implements MapperProvider<CassandraId> {
         Session session = cassandra.getConf();
         CassandraTypesProvider typesProvider = cassandra.getTypesProvider();
         CassandraMessageRepository messageRepository = new CassandraMessageRepository(session, typesProvider);
+        CassandraMailboxCountersRepository mailboxCountersRepository = new CassandraMailboxCountersRepository(session);
         return new CassandraMailboxSessionMapperFactory(
             new CassandraUidProvider(session),
             new CassandraModSeqProvider(session),
             session,
             typesProvider,
-            messageRepository
-        ).getMessageMapper(new MockMailboxSession("benwa"));
+            messageRepository,
+            mailboxCountersRepository).getMessageMapper(new MockMailboxSession("benwa"));
     }
 
     @Override

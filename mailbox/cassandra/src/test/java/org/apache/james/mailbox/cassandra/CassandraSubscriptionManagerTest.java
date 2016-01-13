@@ -23,6 +23,7 @@ import org.apache.james.backends.cassandra.CassandraCluster;
 import org.apache.james.backends.cassandra.init.CassandraTypesProvider;
 import org.apache.james.mailbox.AbstractSubscriptionManagerTest;
 import org.apache.james.mailbox.SubscriptionManager;
+import org.apache.james.mailbox.cassandra.mail.CassandraMailboxCountersRepository;
 import org.apache.james.mailbox.cassandra.mail.CassandraMessageRepository;
 import org.apache.james.mailbox.cassandra.mail.CassandraModSeqProvider;
 import org.apache.james.mailbox.cassandra.mail.CassandraUidProvider;
@@ -42,14 +43,15 @@ public class CassandraSubscriptionManagerTest extends AbstractSubscriptionManage
         Session session = cassandra.getConf();
         CassandraTypesProvider typesProvider = cassandra.getTypesProvider();
         CassandraMessageRepository messageRepository = new CassandraMessageRepository(session, typesProvider);
+        CassandraMailboxCountersRepository mailboxCountersRepository = new CassandraMailboxCountersRepository(session);
         return new CassandraSubscriptionManager(
             new CassandraMailboxSessionMapperFactory(
                 new CassandraUidProvider(session),
                 new CassandraModSeqProvider(session),
                 session,
                 typesProvider,
-                messageRepository
-            )
+                messageRepository,
+                mailboxCountersRepository)
         );
     }
 }

@@ -22,6 +22,7 @@ package org.apache.james.mailbox.cassandra;
 import org.apache.james.backends.cassandra.init.CassandraTypesProvider;
 import javax.inject.Inject;
 import org.apache.james.mailbox.MailboxSession;
+import org.apache.james.mailbox.cassandra.mail.CassandraMailboxCountersRepository;
 import org.apache.james.mailbox.cassandra.mail.CassandraMailboxMapper;
 import org.apache.james.mailbox.cassandra.mail.CassandraMessageMapper;
 import org.apache.james.mailbox.cassandra.mail.CassandraMessageRepository;
@@ -46,16 +47,20 @@ public class CassandraMailboxSessionMapperFactory extends MailboxSessionMapperFa
     private final ModSeqProvider<CassandraId> modSeqProvider;
     private final CassandraTypesProvider typesProvider;
     private final CassandraMessageRepository cassandraMessageRepository;
+    private final CassandraMailboxCountersRepository mailboxCountersRepository;
     private int maxRetry;
 
     @Inject
-    public CassandraMailboxSessionMapperFactory(UidProvider<CassandraId> uidProvider, 
-            ModSeqProvider<CassandraId> modSeqProvider, Session session, CassandraTypesProvider typesProvider,
-            CassandraMessageRepository cassandraMessageRepository) {
+    public CassandraMailboxSessionMapperFactory(UidProvider<CassandraId> uidProvider,
+                                                ModSeqProvider<CassandraId> modSeqProvider, Session session,
+                                                CassandraTypesProvider typesProvider,
+                                                CassandraMessageRepository cassandraMessageRepository,
+                                                CassandraMailboxCountersRepository mailboxCountersRepository) {
         this.uidProvider = uidProvider;
         this.modSeqProvider = modSeqProvider;
         this.session = session;
         this.cassandraMessageRepository = cassandraMessageRepository;
+        this.mailboxCountersRepository = mailboxCountersRepository;
         this.maxRetry = DEFAULT_MAX_RETRY;
         this.typesProvider = typesProvider;
     }
@@ -66,7 +71,7 @@ public class CassandraMailboxSessionMapperFactory extends MailboxSessionMapperFa
 
     @Override
     public CassandraMessageMapper createMessageMapper(MailboxSession mailboxSession) {
-        return new CassandraMessageMapper(uidProvider, modSeqProvider, null, maxRetry, cassandraMessageRepository);
+        return new CassandraMessageMapper(uidProvider, modSeqProvider, null, maxRetry, cassandraMessageRepository, mailboxCountersRepository);
     }
 
     @Override

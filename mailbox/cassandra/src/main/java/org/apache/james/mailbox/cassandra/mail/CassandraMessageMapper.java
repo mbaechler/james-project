@@ -52,52 +52,54 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
     private final MailboxSession mailboxSession;
     private final UidProvider<CassandraId> uidProvider;
     private final int maxRetries;
-    private final CassandraMessageRepository repository;
+    private final CassandraMessageRepository messageRepository;
+    private final CassandraMailboxCountersRepository mailboxCountersRepository;
 
-    public CassandraMessageMapper(UidProvider<CassandraId> uidProvider, ModSeqProvider<CassandraId> modSeqProvider, MailboxSession mailboxSession, int maxRetries, CassandraMessageRepository repository) {
+    public CassandraMessageMapper(UidProvider<CassandraId> uidProvider, ModSeqProvider<CassandraId> modSeqProvider, MailboxSession mailboxSession, int maxRetries, CassandraMessageRepository messageRepository, CassandraMailboxCountersRepository mailboxCountersRepository) {
         this.uidProvider = uidProvider;
         this.modSeqProvider = modSeqProvider;
         this.mailboxSession = mailboxSession;
         this.maxRetries = maxRetries;
-        this.repository = repository;
+        this.messageRepository = messageRepository;
+        this.mailboxCountersRepository = mailboxCountersRepository;
     }
 
     @Override
     public long countMessagesInMailbox(Mailbox<CassandraId> mailbox) throws MailboxException {
-        return repository.countMessagesInMailbox(mailbox);
+        return mailboxCountersRepository.countMessagesInMailbox(mailbox);
     }
 
     @Override
     public long countUnseenMessagesInMailbox(Mailbox<CassandraId> mailbox) throws MailboxException {
-        return repository.countUnseenMessagesInMailbox(mailbox);
+        return mailboxCountersRepository.countUnseenMessagesInMailbox(mailbox);
     }
 
     @Override
     public void delete(Mailbox<CassandraId> mailbox, MailboxMessage<CassandraId> message) {
-        repository.delete(mailbox, message);
-        repository.decrementCount(mailbox);
+        messageRepository.delete(mailbox, message);
+        mailboxCountersRepository.decrementCount(mailbox);
         if (!message.isSeen()) {
-            repository.decrementUnseen(mailbox);
+            mailboxCountersRepository.decrementUnseen(mailbox);
         }
     }
 
     @Override
     public Iterator<MailboxMessage<CassandraId>> findInMailbox(Mailbox<CassandraId> mailbox, MessageRange set, FetchType ftype, int max) throws MailboxException {
-        return repository.loadMessageRange(mailbox, set)
+        return messageRepository.loadMessageRange(mailbox, set)
             .sorted()
             .iterator();
     }
 
     @Override
     public List<Long> findRecentMessageUidsInMailbox(Mailbox<CassandraId> mailbox) throws MailboxException {
-        return repository.findRecentMessageUids(mailbox)
+        return messageRepository.findRecentMessageUids(mailbox)
             .sorted()
             .collect(Collectors.toList());
     }
 
     @Override
     public Long findFirstUnseenMessageUid(Mailbox<CassandraId> mailbox) throws MailboxException {
-        return repository.findUnseenMessageUids(mailbox)
+        return messageRepository.findUnseenMessageUids(mailbox)
             .sorted()
             .findFirst()
             .orElse(null);
@@ -105,7 +107,7 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
 
     @Override
     public Map<Long, MessageMetaData> expungeMarkedForDeletionInMailbox(final Mailbox<CassandraId> mailbox, MessageRange set) throws MailboxException {
-        return repository.findDeletedMessages(mailbox, set)
+        return messageRepository.findDeletedMessages(mailbox, set)
             .peek(message -> delete(mailbox, message))
             .collect(Collectors.toMap(MailboxMessage::getUid, SimpleMessageMetaData::new));
     }
@@ -129,17 +131,17 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
     public MessageMetaData add(Mailbox<CassandraId> mailbox, MailboxMessage<CassandraId> message) throws MailboxException {
         message.setUid(uidProvider.nextUid(mailboxSession, mailbox));
         message.setModSeq(modSeqProvider.nextModSeq(mailboxSession, mailbox));
-        MessageMetaData messageMetaData = repository.save(mailbox, message);
+        MessageMetaData messageMetaData = messageRepository.save(mailbox, message);
         if (!message.isSeen()) {
-            repository.incrementUnseen(mailbox);
+            mailboxCountersRepository.incrementUnseen(mailbox);
         }
-        repository.incrementCount(mailbox);
+        mailboxCountersRepository.incrementCount(mailbox);
         return messageMetaData;
     }
 
     @Override
     public Iterator<UpdatedFlags> updateFlags(Mailbox<CassandraId> mailbox, FlagsUpdate flagUpdate, MessageRange set) throws MailboxException {
-        return repository.loadMessageRange(mailbox, set)
+        return messageRepository.loadMessageRange(mailbox, set)
             .map(message -> updateFlagsOnMessage(mailbox, flagUpdate, message))
             .filter(Optional::isPresent)
             .map(Optional::get)
@@ -155,14 +157,14 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
 
     @Override
     public MessageMetaData copy(Mailbox<CassandraId> mailbox, MailboxMessage<CassandraId> original) throws MailboxException {
-        repository.incrementCount(mailbox);
+        mailboxCountersRepository.incrementCount(mailbox);
         if(!original.isSeen()) {
-            repository.incrementUnseen(mailbox);
+            mailboxCountersRepository.incrementUnseen(mailbox);
         }
         original.setUid(uidProvider.nextUid(mailboxSession, mailbox));
         original.setModSeq(modSeqProvider.nextModSeq(mailboxSession, mailbox));
         original.setFlags(new FlagsBuilder().add(original.createFlags()).add(Flag.RECENT).build());
-        return repository.save(mailbox, original);
+        return messageRepository.save(mailbox, original);
     }
 
     @Override
@@ -172,10 +174,10 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
 
     private void manageUnseenMessageCounts(Mailbox<CassandraId> mailbox, Flags oldFlags, Flags newFlags) {
         if (oldFlags.contains(Flag.SEEN) && !newFlags.contains(Flag.SEEN)) {
-            repository.incrementUnseen(mailbox);
+            mailboxCountersRepository.incrementUnseen(mailbox);
         }
         if (!oldFlags.contains(Flag.SEEN) && newFlags.contains(Flag.SEEN)) {
-            repository.decrementUnseen(mailbox);
+            mailboxCountersRepository.decrementUnseen(mailbox);
         }
     }
 
@@ -192,7 +194,7 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
             Flags newFlags = flagUpdate.apply(oldFlags);
             message.setFlags(newFlags);
             message.setModSeq(modSeqProvider.nextModSeq(mailboxSession, mailbox));
-            if (repository.conditionalSave(message, oldModSeq)) {
+            if (messageRepository.conditionalSave(message, oldModSeq)) {
                 return Optional.of(new UpdatedFlags(message.getUid(), message.getModSeq(), oldFlags, newFlags));
             } else {
                 return Optional.empty();
@@ -217,7 +219,7 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
 
     private Optional<UpdatedFlags> retryMessageFlagsUpdate(Mailbox<CassandraId> mailbox, long uid, FlagsUpdate flagUpdate) {
         MailboxMessage<CassandraId> reloadedMessage =
-            repository.loadMessageRange(mailbox, MessageRange.one(uid))
+            messageRepository.loadMessageRange(mailbox, MessageRange.one(uid))
                 .findAny()
                 .orElseThrow(() -> new MessageDeletedDuringFlagsUpdateException(mailbox.getMailboxId(), uid));
         return tryMessageFlagsUpdate(flagUpdate, mailbox, reloadedMessage);

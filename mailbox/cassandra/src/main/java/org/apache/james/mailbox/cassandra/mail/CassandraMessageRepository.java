@@ -20,10 +20,8 @@
 package org.apache.james.mailbox.cassandra.mail;
 
 import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.decr;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.gte;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.incr;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.lte;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
@@ -65,13 +63,11 @@ import javax.mail.Flags;
 import javax.mail.Flags.Flag;
 import javax.mail.util.SharedByteArrayInputStream;
 
-import com.google.common.collect.Sets;
 import org.apache.james.backends.cassandra.init.CassandraTypesProvider;
 import org.apache.james.backends.cassandra.utils.CassandraConstants;
 import org.apache.james.backends.cassandra.utils.CassandraUtils;
 import org.apache.james.mailbox.FlagsBuilder;
 import org.apache.james.mailbox.cassandra.CassandraId;
-import org.apache.james.mailbox.cassandra.table.CassandraMailboxCountersTable;
 import org.apache.james.mailbox.cassandra.table.CassandraMessageTable;
 import org.apache.james.mailbox.cassandra.table.CassandraMessageTable.Properties;
 import org.apache.james.mailbox.exception.MailboxException;
@@ -90,10 +86,10 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.UDTValue;
-import com.datastax.driver.core.querybuilder.Assignment;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.driver.core.querybuilder.Select.Where;
+import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
 import com.google.common.primitives.Bytes;
 
@@ -106,22 +102,6 @@ public class CassandraMessageRepository {
     public CassandraMessageRepository(Session session, CassandraTypesProvider typesProvider) {
         this.session = session;
         this.typesProvider = typesProvider;
-    }
-
-    public long countMessagesInMailbox(Mailbox<CassandraId> mailbox) {
-        ResultSet results = session.execute(
-            select(CassandraMailboxCountersTable.COUNT)
-                .from(CassandraMailboxCountersTable.TABLE_NAME)
-                .where(eq(CassandraMailboxCountersTable.MAILBOX_ID, mailbox.getMailboxId().asUuid())));
-        return results.isExhausted() ? 0 : results.one().getLong(CassandraMailboxCountersTable.COUNT);
-    }
-
-    public long countUnseenMessagesInMailbox(Mailbox<CassandraId> mailbox) throws MailboxException {
-        ResultSet results = session.execute(
-            select(CassandraMailboxCountersTable.UNSEEN)
-                .from(CassandraMailboxCountersTable.TABLE_NAME)
-                .where(eq(CassandraMailboxCountersTable.MAILBOX_ID, mailbox.getMailboxId().asUuid())));
-        return results.isExhausted() ? 0 : results.one().getLong(CassandraMailboxCountersTable.UNSEEN);
     }
 
     public void delete(Mailbox<CassandraId> mailbox, MailboxMessage<CassandraId> message) {
@@ -162,28 +142,6 @@ public class CassandraMessageRepository {
     public Stream<MailboxMessage<CassandraId>> findDeletedMessages(Mailbox<CassandraId> mailbox, MessageRange set) {
         return CassandraUtils.convertToStream(session.execute(buildQuery(mailbox, set).and(eq(DELETED, true))))
             .map(this::message);
-    }
-
-    public void decrementCount(Mailbox<CassandraId> mailbox) {
-        updateMailbox(mailbox, decr(CassandraMailboxCountersTable.COUNT));
-    }
-
-    public void incrementCount(Mailbox<CassandraId> mailbox) {
-        updateMailbox(mailbox, incr(CassandraMailboxCountersTable.COUNT));
-    }
-
-    public void decrementUnseen(Mailbox<CassandraId> mailbox) {
-        updateMailbox(mailbox, decr(CassandraMailboxCountersTable.UNSEEN));
-    }
-
-    public void incrementUnseen(Mailbox<CassandraId> mailbox) {
-        updateMailbox(mailbox, incr(CassandraMailboxCountersTable.UNSEEN));
-    }
-
-    private void updateMailbox(Mailbox<CassandraId> mailbox, Assignment operation) {
-        session.execute(update(CassandraMailboxCountersTable.TABLE_NAME)
-            .with(operation)
-            .where(eq(CassandraMailboxCountersTable.MAILBOX_ID, mailbox.getMailboxId().asUuid())));
     }
 
     private MailboxMessage<CassandraId> message(Row row) {
