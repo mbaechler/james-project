@@ -65,6 +65,7 @@ import javax.mail.Flags;
 import javax.mail.Flags.Flag;
 import javax.mail.util.SharedByteArrayInputStream;
 
+import com.google.common.collect.Sets;
 import org.apache.james.backends.cassandra.init.CassandraTypesProvider;
 import org.apache.james.backends.cassandra.utils.CassandraConstants;
 import org.apache.james.backends.cassandra.utils.CassandraUtils;
@@ -289,7 +290,7 @@ public class CassandraMessageRepository {
     }
 
     private Set<String> userFlagsSet(MailboxMessage<CassandraId> message) {
-        return Arrays.stream(message.createFlags().getUserFlags()).collect(Collectors.toSet());
+        return Sets.newHashSet(message.createFlags().getUserFlags());
     }
 
     public boolean conditionalSave(MailboxMessage<CassandraId> message, long oldModSeq) {
