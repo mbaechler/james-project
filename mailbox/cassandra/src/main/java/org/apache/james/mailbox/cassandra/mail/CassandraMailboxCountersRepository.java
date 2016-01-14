@@ -21,12 +21,16 @@ package org.apache.james.mailbox.cassandra.mail;
 
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.querybuilder.Assignment;
+import net.javacrumbs.futureconverter.java8guava.FutureConverter;
 import org.apache.james.mailbox.cassandra.CassandraId;
-import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 
 import javax.inject.Inject;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 import static com.datastax.driver.core.querybuilder.QueryBuilder.decr;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
@@ -47,42 +51,58 @@ public class CassandraMailboxCountersRepository {
         this.session = session;
     }
 
-    public long countMessagesInMailbox(Mailbox<CassandraId> mailbox) {
-        ResultSet results = session.execute(
+    private CompletableFuture<ResultSet> execute(Statement statement) {
+        return FutureConverter.toCompletableFuture(session.executeAsync(statement));
+    }
+
+    public CompletableFuture<Long> countMessagesInMailbox(Mailbox<CassandraId> mailbox) {
+        return execute(
             select(COUNT)
                 .from(TABLE_NAME)
-                .where(eq(MAILBOX_ID, mailbox.getMailboxId().asUuid())));
-        return results.isExhausted() ? 0 : results.one().getLong(COUNT);
+                .where(eq(MAILBOX_ID, mailbox.getMailboxId().asUuid())))
+            .thenApply(result ->
+                Optional
+                    .ofNullable(result.one())
+                    .map(row -> row.getLong(COUNT))
+                    .orElse(0L));
     }
 
-    public long countUnseenMessagesInMailbox(Mailbox<CassandraId> mailbox) throws MailboxException {
-        ResultSet results = session.execute(
+    public CompletableFuture<Long> countUnseenMessagesInMailbox(Mailbox<CassandraId> mailbox) {
+        return execute(
             select(UNSEEN)
                 .from(TABLE_NAME)
-                .where(eq(MAILBOX_ID, mailbox.getMailboxId().asUuid())));
-        return results.isExhausted() ? 0 : results.one().getLong(UNSEEN);
+                .where(eq(MAILBOX_ID, mailbox.getMailboxId().asUuid())))
+            .thenApply(result ->
+                Optional
+                    .ofNullable(result.one())
+                    .map(row -> row.getLong(UNSEEN))
+                    .orElse(0L));
     }
 
-    public void decrementCount(Mailbox<CassandraId> mailbox) {
-        updateMailbox(mailbox, decr(COUNT));
+    public CompletableFuture<Void> decrementCount(Mailbox<CassandraId> mailbox) {
+        return updateMailbox(mailbox, decr(COUNT));
     }
 
-    public void incrementCount(Mailbox<CassandraId> mailbox) {
-        updateMailbox(mailbox, incr(COUNT));
+    public CompletableFuture<Void> incrementCount(Mailbox<CassandraId> mailbox) {
+        return updateMailbox(mailbox, incr(COUNT));
     }
 
-    public void decrementUnseen(Mailbox<CassandraId> mailbox) {
-        updateMailbox(mailbox, decr(UNSEEN));
+    public CompletableFuture<Void> decrementUnseen(Mailbox<CassandraId> mailbox) {
+        return updateMailbox(mailbox, decr(UNSEEN));
     }
 
-    public void incrementUnseen(Mailbox<CassandraId> mailbox) {
-        updateMailbox(mailbox, incr(UNSEEN));
+    public CompletableFuture<Void> incrementUnseen(Mailbox<CassandraId> mailbox) {
+        return updateMailbox(mailbox, incr(UNSEEN));
     }
 
-    private void updateMailbox(Mailbox<CassandraId> mailbox, Assignment operation) {
-        session.execute(update(TABLE_NAME)
-            .with(operation)
-            .where(eq(MAILBOX_ID, mailbox.getMailboxId().asUuid())));
+    private CompletableFuture<Void> updateMailbox(Mailbox<CassandraId> mailbox, Assignment operation) {
+        return execute(
+            update(TABLE_NAME)
+                .with(operation)
+                .where(eq(MAILBOX_ID, mailbox.getMailboxId().asUuid())))
+            .thenAccept(this::consume);
     }
 
+    private <U> void consume(U value) {}
+    
 }
