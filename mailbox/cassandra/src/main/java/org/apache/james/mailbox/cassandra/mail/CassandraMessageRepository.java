@@ -55,6 +55,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -63,6 +64,7 @@ import javax.mail.Flags;
 import javax.mail.Flags.Flag;
 import javax.mail.util.SharedByteArrayInputStream;
 
+import com.datastax.driver.core.Statement;
 import org.apache.james.backends.cassandra.init.CassandraTypesProvider;
 import org.apache.james.backends.cassandra.utils.CassandraConstants;
 import org.apache.james.backends.cassandra.utils.CassandraUtils;
@@ -82,7 +84,6 @@ import org.apache.james.mailbox.store.mail.model.impl.SimpleProperty;
 
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.UDTValue;
@@ -104,44 +105,48 @@ public class CassandraMessageRepository {
         this.typesProvider = typesProvider;
     }
 
-    public void delete(Mailbox<CassandraId> mailbox, MailboxMessage<CassandraId> message) {
-        session.execute(
+    public CompletableFuture<Void> delete(Mailbox<CassandraId> mailbox, MailboxMessage<CassandraId> message) {
+        return CassandraUtils.executeVoidAsync(session,
             QueryBuilder.delete()
                 .from(TABLE_NAME)
                 .where(eq(MAILBOX_ID, mailbox.getMailboxId().asUuid()))
                 .and(eq(IMAP_UID, message.getUid())));
     }
 
-    public Stream<MailboxMessage<CassandraId>> loadMessageRange(Mailbox<CassandraId> mailbox, MessageRange set) {
-        return CassandraUtils.convertToStream(session.execute(buildQuery(mailbox, set)))
-            .map(this::message);
+    public CompletableFuture<Stream<MailboxMessage<CassandraId>>> loadMessageRange(Mailbox<CassandraId> mailbox, MessageRange set) {
+        return CassandraUtils.executeAsync(session, buildQuery(mailbox, set))
+                    .thenApply(CassandraUtils::convertToStream)
+                    .thenApply(stream -> stream.map(this::message));
     }
 
-    public Stream<Long> findRecentMessageUids(Mailbox<CassandraId> mailbox) throws MailboxException {
+    public CompletableFuture<Stream<Long>> findRecentMessageUids(Mailbox<CassandraId> mailbox) throws MailboxException {
+        Statement query = select(IMAP_UID)
+                            .from(TABLE_NAME)
+                            .where(eq(MAILBOX_ID, mailbox.getMailboxId().asUuid()))
+                            .and(eq(RECENT, true));
         return CassandraUtils
-            .convertToStream(
-                session.execute(
-                    select(IMAP_UID)
-                        .from(TABLE_NAME)
-                        .where(eq(MAILBOX_ID, mailbox.getMailboxId().asUuid()))
-                        .and(eq(RECENT, true))))
-            .map(row -> row.getLong(IMAP_UID));
+                    .executeAsync(session, query)
+                    .thenApply(CassandraUtils::convertToStream)
+                    .thenApply(stream -> stream.map(row -> row.getLong(IMAP_UID)));
     }
 
-    public Stream<Long> findUnseenMessageUids(Mailbox<CassandraId> mailbox) throws MailboxException {
+    public CompletableFuture<Stream<Long>> findUnseenMessageUids(Mailbox<CassandraId> mailbox) throws MailboxException {
+        Statement query = select(IMAP_UID)
+                            .from(TABLE_NAME)
+                            .where(eq(MAILBOX_ID, mailbox.getMailboxId().asUuid()))
+                            .and(eq(SEEN, false));
         return CassandraUtils
-            .convertToStream(
-                session.execute(
-                    select(IMAP_UID)
-                        .from(TABLE_NAME)
-                        .where(eq(MAILBOX_ID, mailbox.getMailboxId().asUuid()))
-                        .and(eq(SEEN, false))))
-            .map(row -> row.getLong(IMAP_UID));
+            .executeAsync(session, query)
+            .thenApply(CassandraUtils::convertToStream)
+            .thenApply(stream -> stream.map(row -> row.getLong(IMAP_UID)));
     }
 
-    public Stream<MailboxMessage<CassandraId>> findDeletedMessages(Mailbox<CassandraId> mailbox, MessageRange set) {
-        return CassandraUtils.convertToStream(session.execute(buildQuery(mailbox, set).and(eq(DELETED, true))))
-            .map(this::message);
+    public CompletableFuture<Stream<MailboxMessage<CassandraId>>> findDeletedMessages(Mailbox<CassandraId> mailbox, MessageRange set) {
+        Statement query = buildQuery(mailbox, set).and(eq(DELETED, true));
+        return CassandraUtils
+            .executeAsync(session, query)
+            .thenApply(CassandraUtils::convertToStream)
+            .thenApply(stream -> stream.map(this::message));
     }
 
     private MailboxMessage<CassandraId> message(Row row) {
@@ -208,7 +213,7 @@ public class CassandraMessageRepository {
         return property;
     }
 
-    public MessageMetaData save(Mailbox<CassandraId> mailbox, MailboxMessage<CassandraId> message) throws MailboxException {
+    public CompletableFuture<MessageMetaData> save(Mailbox<CassandraId> mailbox, MailboxMessage<CassandraId> message) throws MailboxException {
         try {
             Insert query = insertInto(TABLE_NAME)
                 .value(MAILBOX_ID, mailbox.getMailboxId().asUuid())
@@ -240,8 +245,8 @@ public class CassandraMessageRepository {
 
 
             BoundStatement boundStatement = preparedStatement.bind(toByteBuffer(message.getBodyContent()), toByteBuffer(message.getHeaderContent()));
-            session.execute(boundStatement);
-            return new SimpleMessageMetaData(message);
+            return CassandraUtils.executeAsync(session, boundStatement)
+                .thenApply(x -> new SimpleMessageMetaData(message));
         } catch (IOException e) {
             throw new MailboxException("Error saving mail", e);
         }
@@ -251,8 +256,8 @@ public class CassandraMessageRepository {
         return Sets.newHashSet(message.createFlags().getUserFlags());
     }
 
-    public boolean conditionalSave(MailboxMessage<CassandraId> message, long oldModSeq) {
-        ResultSet resultSet = session.execute(
+    public CompletableFuture<Boolean> conditionalSave(MailboxMessage<CassandraId> message, long oldModSeq) {
+        Statement query =
             update(TABLE_NAME)
                 .with(set(ANSWERED, message.isAnswered()))
                 .and(set(DELETED, message.isDeleted()))
@@ -265,8 +270,9 @@ public class CassandraMessageRepository {
                 .and(set(MOD_SEQ, message.getModSeq()))
                 .where(eq(IMAP_UID, message.getUid()))
                 .and(eq(MAILBOX_ID, message.getMailboxId().asUuid()))
-                .onlyIf(eq(MOD_SEQ, oldModSeq)));
-        return resultSet.one().getBool(CassandraConstants.LIGHTWEIGHT_TRANSACTION_APPLIED);
+                .onlyIf(eq(MOD_SEQ, oldModSeq));
+        return CassandraUtils.executeAsync(session, query)
+            .thenApply(resultSet -> resultSet.one().getBool(CassandraConstants.LIGHTWEIGHT_TRANSACTION_APPLIED));
     }
 
     private ByteBuffer toByteBuffer(InputStream stream) throws IOException {

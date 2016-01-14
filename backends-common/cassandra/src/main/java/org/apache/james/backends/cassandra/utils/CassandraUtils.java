@@ -21,6 +21,11 @@ package org.apache.james.backends.cassandra.utils;
 
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
+import com.datastax.driver.core.Session;
+import com.datastax.driver.core.Statement;
+import net.javacrumbs.futureconverter.java8guava.FutureConverter;
+
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -29,5 +34,16 @@ public class CassandraUtils {
     public static Stream<Row> convertToStream(ResultSet resultSet) {
         return StreamSupport.stream(resultSet.spliterator(), true);
     }
+
+    public static CompletableFuture<ResultSet> executeAsync(Session session, Statement statement) {
+        return FutureConverter.toCompletableFuture(session.executeAsync(statement));
+    }
+
+    public static CompletableFuture<Void> executeVoidAsync(Session session, Statement statement) {
+        return FutureConverter.toCompletableFuture(session.executeAsync(statement))
+            .thenAccept(CassandraUtils::consume);
+    }
+
+    private static <U> void consume(U value) {}
 
 }

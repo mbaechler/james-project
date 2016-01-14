@@ -19,18 +19,15 @@
 
 package org.apache.james.mailbox.cassandra.mail;
 
-import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.querybuilder.Assignment;
-import net.javacrumbs.futureconverter.java8guava.FutureConverter;
+import org.apache.james.backends.cassandra.utils.CassandraUtils;
 import org.apache.james.mailbox.cassandra.CassandraId;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 
 import javax.inject.Inject;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 
 import static com.datastax.driver.core.querybuilder.QueryBuilder.decr;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
@@ -51,12 +48,8 @@ public class CassandraMailboxCountersRepository {
         this.session = session;
     }
 
-    private CompletableFuture<ResultSet> execute(Statement statement) {
-        return FutureConverter.toCompletableFuture(session.executeAsync(statement));
-    }
-
     public CompletableFuture<Long> countMessagesInMailbox(Mailbox<CassandraId> mailbox) {
-        return execute(
+        return CassandraUtils.executeAsync(session,
             select(COUNT)
                 .from(TABLE_NAME)
                 .where(eq(MAILBOX_ID, mailbox.getMailboxId().asUuid())))
@@ -68,7 +61,7 @@ public class CassandraMailboxCountersRepository {
     }
 
     public CompletableFuture<Long> countUnseenMessagesInMailbox(Mailbox<CassandraId> mailbox) {
-        return execute(
+        return CassandraUtils.executeAsync(session,
             select(UNSEEN)
                 .from(TABLE_NAME)
                 .where(eq(MAILBOX_ID, mailbox.getMailboxId().asUuid())))
@@ -96,13 +89,10 @@ public class CassandraMailboxCountersRepository {
     }
 
     private CompletableFuture<Void> updateMailbox(Mailbox<CassandraId> mailbox, Assignment operation) {
-        return execute(
+        return CassandraUtils.executeVoidAsync(session,
             update(TABLE_NAME)
                 .with(operation)
-                .where(eq(MAILBOX_ID, mailbox.getMailboxId().asUuid())))
-            .thenAccept(this::consume);
+                .where(eq(MAILBOX_ID, mailbox.getMailboxId().asUuid())));
     }
 
-    private <U> void consume(U value) {}
-    
 }

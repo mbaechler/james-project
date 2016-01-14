@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.mail.Flags;
 import javax.mail.Flags.Flag;
@@ -48,8 +49,6 @@ import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.MailboxMessage;
 
 import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 
 public class CassandraMessageMapper implements MessageMapper<CassandraId> {
 
@@ -79,14 +78,18 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
         return mailboxCountersRepository.countUnseenMessagesInMailbox(mailbox).join();
     }
 
-    @Override
-    public void delete(Mailbox<CassandraId> mailbox, MailboxMessage<CassandraId> message) {
-        messageRepository.delete(mailbox, message);
-        CompletableFuture
+    private CompletableFuture<MailboxMessage<CassandraId>> deleteAsync(Mailbox<CassandraId> mailbox, MailboxMessage<CassandraId> message) {
+        return CompletableFuture
             .allOf(
+                messageRepository.delete(mailbox, message),
                 mailboxCountersRepository.decrementCount(mailbox),
                 decrementUnseen(mailbox, message))
-            .join();
+            .thenApply(x -> message);
+    }
+
+    @Override
+    public void delete(Mailbox<CassandraId> mailbox, MailboxMessage<CassandraId> message) {
+        deleteAsync(mailbox, message).join();
     }
 
     private CompletableFuture<Void> decrementUnseen(Mailbox<CassandraId> mailbox, MailboxMessage<CassandraId> message) {
@@ -99,6 +102,7 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
     @Override
     public Iterator<MailboxMessage<CassandraId>> findInMailbox(Mailbox<CassandraId> mailbox, MessageRange set, FetchType ftype, int max) throws MailboxException {
         return messageRepository.loadMessageRange(mailbox, set)
+            .join()
             .sorted()
             .iterator();
     }
@@ -106,6 +110,7 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
     @Override
     public List<Long> findRecentMessageUidsInMailbox(Mailbox<CassandraId> mailbox) throws MailboxException {
         return messageRepository.findRecentMessageUids(mailbox)
+            .join()
             .sorted()
             .collect(Collectors.toList());
     }
@@ -113,6 +118,7 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
     @Override
     public Long findFirstUnseenMessageUid(Mailbox<CassandraId> mailbox) throws MailboxException {
         return messageRepository.findUnseenMessageUids(mailbox)
+            .join()
             .sorted()
             .findFirst()
             .orElse(null);
@@ -120,10 +126,26 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
 
     @Override
     public Map<Long, MessageMetaData> expungeMarkedForDeletionInMailbox(final Mailbox<CassandraId> mailbox, MessageRange set) throws MailboxException {
+        Function<MailboxMessage<CassandraId>, CompletableFuture<Stream<MailboxMessage<CassandraId>>>> deleteMessage = 
+                message -> deleteAsync(mailbox, message).thenApply(Stream::of);
+        
+        Function<MailboxMessage<CassandraId>, MessageMetaData> toMessageMetaData = SimpleMessageMetaData::new;
+                
         return messageRepository.findDeletedMessages(mailbox, set)
-            .peek(message -> delete(mailbox, message))
-            .collect(Collectors.toMap(MailboxMessage::getUid, SimpleMessageMetaData::new));
+            .thenApply(messages -> messages
+                    .map(deleteMessage)
+                    .reduce(this::combineFutureStreams)
+                    .map(CompletableFuture::join)
+                    .orElseGet(Stream::of)
+                    .collect(Collectors.toMap(MailboxMessage::getUid, toMessageMetaData)))
+            .join();
     }
+    
+
+    private <U> CompletableFuture<Stream<U>> combineFutureStreams(CompletableFuture<Stream<U>> f1, CompletableFuture<Stream<U>> f2) {
+        return f1.thenCombine(f2, (l1, l2) -> Stream.concat(l1, l2));
+    }
+
 
     @Override
     public MessageMetaData move(Mailbox<CassandraId> mailbox, MailboxMessage<CassandraId> original) throws MailboxException {
@@ -144,13 +166,14 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
     public MessageMetaData add(Mailbox<CassandraId> mailbox, MailboxMessage<CassandraId> message) throws MailboxException {
         message.setUid(uidProvider.nextUid(mailboxSession, mailbox));
         message.setModSeq(modSeqProvider.nextModSeq(mailboxSession, mailbox));
-        MessageMetaData messageMetaData = messageRepository.save(mailbox, message);
+        CompletableFuture<MessageMetaData> messageMetaData = messageRepository.save(mailbox, message);
         CompletableFuture
             .allOf(
+                messageMetaData,
                 incrementUnseen(mailbox, message),
                 mailboxCountersRepository.incrementCount(mailbox))
             .join();
-        return messageMetaData;
+        return messageMetaData.join();
     }
 
     private CompletableFuture<Void> incrementUnseen(Mailbox<CassandraId> mailbox, MailboxMessage<CassandraId> message) {
@@ -162,22 +185,20 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
 
     @Override
     public Iterator<UpdatedFlags> updateFlags(Mailbox<CassandraId> mailbox, FlagsUpdate flagUpdate, MessageRange set) throws MailboxException {
-        Function<UpdatedFlags, CompletableFuture<Iterable<UpdatedFlags>>> handleUnseenCountAsync = 
-                flags -> manageUnseenMessageCounts(mailbox, flags).thenApply(ImmutableList::of);
+        Function<UpdatedFlags, CompletableFuture<Stream<UpdatedFlags>>> handleUnseenCountAsync = 
+                flags -> manageUnseenMessageCounts(mailbox, flags).thenApply(Stream::of);
                 
         return messageRepository.loadMessageRange(mailbox, set)
-            .map(message -> updateFlagsOnMessage(mailbox, flagUpdate, message))
-            .filter(Optional::isPresent)
-            .map(Optional::get)
-            .map(handleUnseenCountAsync)
-            .reduce(this::combineFutures)
-            .map(CompletableFuture::join)
-            .orElseGet(ImmutableList::of)
-            .iterator();
-    }
-
-    private <U> CompletableFuture<Iterable<U>> combineFutures(CompletableFuture<Iterable<U>> f1, CompletableFuture<Iterable<U>> f2) {
-        return f1.thenCombine(f2, Iterables::concat);
+                .thenApply(messages -> messages
+                    .map(message -> updateFlagsOnMessage(mailbox, flagUpdate, message))
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .map(handleUnseenCountAsync)
+                    .reduce(this::combineFutureStreams)
+                    .map(CompletableFuture::join)
+                    .orElseGet(Stream::of)
+                    .iterator())
+                .join();
     }
     
     @Override
@@ -187,13 +208,21 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
 
     @Override
     public MessageMetaData copy(Mailbox<CassandraId> mailbox, MailboxMessage<CassandraId> original) throws MailboxException {
-        CompletableFuture<Void> countersUpdate = CompletableFuture.allOf(
-            mailboxCountersRepository.incrementCount(mailbox),
-            incrementUnseen(mailbox, original));
+        CompletableFuture<MessageMetaData> save = saveCopy(mailbox, original);
+        CompletableFuture
+            .allOf(
+                mailboxCountersRepository.incrementCount(mailbox),
+                incrementUnseen(mailbox, original),
+                save)
+            .join();
+        
+        return save.join();
+    }
+    
+    private CompletableFuture<MessageMetaData> saveCopy(Mailbox<CassandraId> mailbox, MailboxMessage<CassandraId> original) throws MailboxException {
         original.setUid(uidProvider.nextUid(mailboxSession, mailbox));
         original.setModSeq(modSeqProvider.nextModSeq(mailboxSession, mailbox));
         original.setFlags(new FlagsBuilder().add(original.createFlags()).add(Flag.RECENT).build());
-        countersUpdate.join();
         return messageRepository.save(mailbox, original);
     }
 
@@ -227,7 +256,7 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
             Flags newFlags = flagUpdate.apply(oldFlags);
             message.setFlags(newFlags);
             message.setModSeq(modSeqProvider.nextModSeq(mailboxSession, mailbox));
-            if (messageRepository.conditionalSave(message, oldModSeq)) {
+            if (messageRepository.conditionalSave(message, oldModSeq).join()) {
                 return Optional.of(new UpdatedFlags(message.getUid(), message.getModSeq(), oldFlags, newFlags));
             } else {
                 return Optional.empty();
@@ -251,11 +280,13 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
     }
 
     private Optional<UpdatedFlags> retryMessageFlagsUpdate(Mailbox<CassandraId> mailbox, long uid, FlagsUpdate flagUpdate) {
-        MailboxMessage<CassandraId> reloadedMessage =
+        return
             messageRepository.loadMessageRange(mailbox, MessageRange.one(uid))
-                .findAny()
-                .orElseThrow(() -> new MessageDeletedDuringFlagsUpdateException(mailbox.getMailboxId(), uid));
-        return tryMessageFlagsUpdate(flagUpdate, mailbox, reloadedMessage);
+                .thenApply(messages -> messages
+                    .findAny()
+                    .<RuntimeException>orElseThrow(() -> new MessageDeletedDuringFlagsUpdateException(mailbox.getMailboxId(), uid)))
+                .thenApply(message -> tryMessageFlagsUpdate(flagUpdate, mailbox, message))
+                .join();
     }
 
 }
