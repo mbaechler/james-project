@@ -169,6 +169,11 @@
                     <version>0.3.0</version>
                 </dependency>
                 <dependency>
+                    <groupId>nl.jqno.equalsverifier</groupId>
+                    <artifactId>equalsverifier</artifactId>
+                    <scope>test</scope>
+                </dependency>
+                <dependency>
                     <groupId>org.skyscreamer</groupId>
                     <artifactId>jsonassert</artifactId>
                     <version>1.2.3</version>
