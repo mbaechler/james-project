@@ -215,7 +215,6 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
                 incrementUnseen(mailbox, original),
                 save)
             .join();
-        
         return save.join();
     }
     
