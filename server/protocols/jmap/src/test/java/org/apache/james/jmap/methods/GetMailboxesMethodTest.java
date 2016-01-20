@@ -64,7 +64,7 @@ public class GetMailboxesMethodTest {
         InMemoryMailboxSessionMapperFactory mailboxMapperFactory = new InMemoryMailboxSessionMapperFactory();
         MailboxACLResolver aclResolver = new UnionMailboxACLResolver();
         GroupMembershipResolver groupMembershipResolver = new SimpleGroupMembershipResolver();
-        mailboxManager = new StoreMailboxManager<InMemoryId>(mailboxMapperFactory, new MockAuthenticator(), aclResolver, groupMembershipResolver);
+        mailboxManager = new StoreMailboxManager<>(mailboxMapperFactory, new MockAuthenticator(), aclResolver, groupMembershipResolver);
         mailboxManager.init();
 
         getMailboxesMethod = new GetMailboxesMethod<>(mailboxManager, mailboxMapperFactory);
