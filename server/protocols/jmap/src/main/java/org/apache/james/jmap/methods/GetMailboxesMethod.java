@@ -87,7 +87,7 @@ public class GetMailboxesMethod<Id extends MailboxId> implements Method {
     }
 
     private Set<MailboxProperty> ensureContainsId(Set<MailboxProperty> input) {
-        return Sets.union(input, ImmutableSet.of(MailboxProperty.ID));
+        return Sets.union(input, ImmutableSet.of(MailboxProperty.ID)).immutableCopy();
     }
 
     private GetMailboxesResponse getMailboxesResponse(MailboxSession mailboxSession) {
