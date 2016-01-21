@@ -36,8 +36,4 @@ public class GetMailboxesRequestTest {
         GetMailboxesRequest.builder().ids(ImmutableList.of());
     }
 
-    @Test(expected=NotImplementedException.class)
-    public void builderShouldThrowWhenProperties() {
-        GetMailboxesRequest.builder().properties(ImmutableList.of());
-    }
 }
