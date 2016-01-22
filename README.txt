@@ -98,11 +98,11 @@ Run James with Java 8 + Guice + Cassandra + ElasticSearch
 =========================================================
 
 * Requirements
-Build artifacts should be in ./dockerfiles/run/guice/destination folder.
+Built artifacts should be in ./dockerfiles/run/guice/destination folder.
 
 * Howto ?
 You need a running cassandra in docker. To achieve this run :
-$ docker run -d --name=cassandra cassandra
+$ docker run -d --name=cassandra cassandra:2.2.3
 
 You need a running ElasticSearch in docker. To achieve this run :
 $ docker run -d --name=elasticsearch elasticsearch:1.5.2
@@ -126,7 +126,7 @@ Run James with Java 6 + Spring + JPA
 ====================================
 
 * Requirements
-Build artifacts should be in ./dockerfiles/run/spring/destination folder.
+Built artifacts should be in ./dockerfiles/run/spring/destination folder.
 
 * Howto ?
 
