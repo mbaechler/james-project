@@ -24,9 +24,12 @@ import java.util.Set;
 
 import org.apache.james.util.streams.Collectors;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSet;
 
 public class MessageProperty implements Property {
+
     public static MessageProperty id = valueOf("id");
     public static MessageProperty blobId = valueOf("blobId");
     public static MessageProperty threadId = valueOf("threadId");
@@ -52,28 +55,36 @@ public class MessageProperty implements Property {
     public static MessageProperty attachments = valueOf("attachments");
     public static MessageProperty attachedMessages = valueOf("attachedMessages");
     public static MessageProperty body = valueOf("body");
-    
-    private static final String HEADER_PROPERTY_PREFIX = "headers.";
-    
+
+    public static final Set<MessageProperty> MANDATORY_PROPERTIES = ImmutableSet.of(id, threadId, mailboxIds);
+
+    @VisibleForTesting static String HEADER_PROPERTY_PREFIX = "headers.";
+
     private final String property;
-    
+
     private MessageProperty(String property) {
-        this.property = property.toLowerCase(Locale.US);
+        this.property = property;
     }
 
     public static MessageProperty valueOf(String property) {
+        Preconditions.checkNotNull(property);
         return new MessageProperty(property);
     }
     
     public static MessageProperty headerValueOf(String headerProperty) {
         Preconditions.checkNotNull(headerProperty);
-        return new MessageProperty(HEADER_PROPERTY_PREFIX + headerProperty);
+        return new MessageProperty(HEADER_PROPERTY_PREFIX + headerProperty.toLowerCase(Locale.US));
     }
     
     public static Set<MessageProperty> selectHeadersProperties(Set<MessageProperty> properties) {
         return properties.stream()
+                .map(messageProperty -> toLowerCase(messageProperty))
                 .filter(MessageProperty::isHeaderProperty)
                 .collect(Collectors.toImmutableSet());
+    }
+
+    private static MessageProperty toLowerCase(MessageProperty messageProperty) {
+        return MessageProperty.valueOf(messageProperty.asFieldName().toLowerCase(Locale.US));
     }
 
     @Override

@@ -34,8 +34,8 @@ public class MessagePropertyTest {
     }
     
     @Test
-    public void valueOfThenAsFieldNameShouldReturnLowerCasedProperty() {
-        assertThat(MessageProperty.valueOf("ProP").asFieldName()).isEqualTo("prop");
+    public void valueOfThenAsFieldNameShouldReturnMatchingCaseProperty() {
+        assertThat(MessageProperty.valueOf("ProP").asFieldName()).isEqualTo("ProP");
     }
     
     @Test(expected=NullPointerException.class)
@@ -79,6 +79,13 @@ public class MessagePropertyTest {
     }
     
     @Test
+    public void headerValueOfShouldReturnLowerCasedProperty() {
+        MessageProperty messageProperty = MessageProperty.headerValueOf("ProP");
+
+        assertThat(messageProperty.asFieldName()).isEqualTo(MessageProperty.HEADER_PROPERTY_PREFIX + "prop");
+    }
+    
+    @Test
     public void equalsShouldBeTrueWhenIdenticalProperties() {
         assertThat(MessageProperty.valueOf("prop")).isEqualTo(MessageProperty.valueOf("prop"));
     }
@@ -89,7 +96,7 @@ public class MessagePropertyTest {
     }
 
     @Test
-    public void equalsShouldBeTrueWhenDifferentCaseProperties() {
-        assertThat(MessageProperty.valueOf("prOP")).isEqualTo(MessageProperty.valueOf("PRop"));
+    public void equalsShouldBeFalseWhenDifferentCaseProperties() {
+        assertThat(MessageProperty.valueOf("prOP")).isNotEqualTo(MessageProperty.valueOf("PRop"));
     }
 }

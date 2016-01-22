@@ -101,18 +101,32 @@ public class GetMessagesMethod<Id extends MailboxId> implements Method {
     private Set<MessageProperty> handleSpecificProperties(Set<MessageProperty> input) {
         Set<MessageProperty> toAdd = Sets.newHashSet();
         Set<MessageProperty> toRemove = Sets.newHashSet();
-        ensureContainsId(input, toAdd);
+        ensureContainsMandatoryFields(input, toAdd);
         handleBody(input, toAdd, toRemove);
         handleHeadersProperties(input, toAdd, toRemove);
         return Sets.union(Sets.difference(input, toRemove), toAdd).immutableCopy();
     }
         
-    private void ensureContainsId(Set<MessageProperty> input, Set<MessageProperty> toAdd) {
-        if (!input.contains(MessageProperty.id)) {
-            toAdd.add(MessageProperty.id);
-        }
+    private void ensureContainsMandatoryFields(Set<MessageProperty> input, Set<MessageProperty> toAdd) {
+        MessageProperty.MANDATORY_PROPERTIES.stream()
+            .map(mandatoryProperty -> propertyNoInSet(mandatoryProperty, toAdd))
+            .forEach(property -> addProperty(property, toAdd));
     }
-    
+
+    private Optional<MessageProperty> propertyNoInSet(MessageProperty property, Set<MessageProperty> set) {
+        if (!set.contains(property)) {
+            return Optional.of(property);
+        }
+        return Optional.empty();
+    }
+
+    private boolean addProperty(Optional<MessageProperty> property, Set<MessageProperty> toAdd) {
+        if (property.isPresent()) {
+            toAdd.add(property.get());
+        }
+        return true;
+    }
+
     private void handleBody(Set<MessageProperty> input, Set<MessageProperty> toAdd, Set<MessageProperty> toRemove) {
         if (input.contains(MessageProperty.body)) {
             toAdd.add(MessageProperty.textBody);
@@ -121,10 +135,12 @@ public class GetMessagesMethod<Id extends MailboxId> implements Method {
     }
     
     private void handleHeadersProperties(Set<MessageProperty> input, Set<MessageProperty> toAdd, Set<MessageProperty> toRemove) {
-        Set<MessageProperty> selectHeadersProperties = MessageProperty.selectHeadersProperties(input);
-        if (!selectHeadersProperties.isEmpty()) {
+        List<MessageProperty> headersProperties = input.stream()
+            .filter(MessageProperty::isHeaderProperty)
+            .collect(Collectors.toList());
+        if (!headersProperties.isEmpty()) {
             toAdd.add(MessageProperty.headers);
-            toRemove.addAll(selectHeadersProperties);
+            toRemove.addAll(headersProperties);
         }
     }
     

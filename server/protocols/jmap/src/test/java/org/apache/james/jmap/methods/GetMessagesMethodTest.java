@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang.NotImplementedException;
@@ -58,6 +59,7 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Sets;
 import com.jayway.jsonpath.JsonPath;
 
 public class GetMessagesMethodTest {
@@ -176,7 +178,7 @@ public class GetMessagesMethodTest {
     }
 
     @Test
-    public void processShouldReturnOnlyMessageIdsOnEmptyPropertyList() throws MailboxException {
+    public void processShouldReturnOnlyMandatoryPropertiesOnEmptyPropertyList() throws MailboxException {
         MessageManager inbox = mailboxManager.getMailbox(inboxPath, session);
         Date now = new Date();
         ByteArrayInputStream message1Content = new ByteArrayInputStream("Subject: message 1 subject\r\n\r\nmy message".getBytes(Charsets.UTF_8));
@@ -194,11 +196,11 @@ public class GetMessagesMethodTest {
             .extracting(JmapResponse::getProperties)
             .flatExtracting(Optional::get)
             .asList()
-            .containsOnly(MessageProperty.id);
+            .containsOnlyElementsOf(MessageProperty.MANDATORY_PROPERTIES);
     }
 
     @Test
-    public void processShouldReturnIdWhenNotInPropertyList() throws MailboxException {
+    public void processShouldAddMantoryPropertiesWhenNotInPropertyList() throws MailboxException {
         MessageManager inbox = mailboxManager.getMailbox(inboxPath, session);
         Date now = new Date();
         ByteArrayInputStream message1Content = new ByteArrayInputStream("Subject: message 1 subject\r\n\r\nmy message".getBytes(Charsets.UTF_8));
@@ -209,6 +211,9 @@ public class GetMessagesMethodTest {
                 .properties(MessageProperty.subject)
                 .build();
 
+        Set<MessageProperty> expected = Sets.newHashSet(MessageProperty.MANDATORY_PROPERTIES);
+        expected.add(MessageProperty.subject);
+
         GetMessagesMethod<InMemoryId> testee = new GetMessagesMethod<>(mailboxSessionMapperFactory, mailboxSessionMapperFactory);
         List<JmapResponse> result = testee.process(request, clientId, session).collect(Collectors.toList());
 
@@ -216,7 +221,7 @@ public class GetMessagesMethodTest {
             .extracting(JmapResponse::getProperties)
             .flatExtracting(Optional::get)
             .asList()
-            .containsOnly(MessageProperty.id, MessageProperty.subject);
+            .containsOnlyElementsOf(expected);
     }
     
     @Test
@@ -231,6 +236,9 @@ public class GetMessagesMethodTest {
                 .properties(MessageProperty.body)
                 .build();
 
+        Set<MessageProperty> expected = Sets.newHashSet(MessageProperty.MANDATORY_PROPERTIES);
+        expected.add(MessageProperty.textBody);
+
         GetMessagesMethod<InMemoryId> testee = new GetMessagesMethod<>(mailboxSessionMapperFactory, mailboxSessionMapperFactory);
         List<JmapResponse> result = testee.process(request, clientId, session).collect(Collectors.toList());
 
@@ -238,7 +246,7 @@ public class GetMessagesMethodTest {
             .extracting(JmapResponse::getProperties)
             .flatExtracting(Optional::get)
             .asList()
-            .containsOnly(MessageProperty.id, MessageProperty.textBody);
+            .containsOnlyElementsOf(expected);
     }
     
     @Test
@@ -256,6 +264,9 @@ public class GetMessagesMethodTest {
                 .properties(MessageProperty.valueOf("headers.from"), MessageProperty.valueOf("headers.heADER2"))
                 .build();
 
+        Set<MessageProperty> expected = Sets.newHashSet(MessageProperty.MANDATORY_PROPERTIES);
+        expected.add(MessageProperty.headers);
+
         GetMessagesMethod<InMemoryId> testee = new GetMessagesMethod<>(mailboxSessionMapperFactory, mailboxSessionMapperFactory);
         List<JmapResponse> result = testee.process(request, clientId, session).collect(Collectors.toList());
 
@@ -264,7 +275,7 @@ public class GetMessagesMethodTest {
             .extracting(JmapResponse::getProperties)
             .flatExtracting(Optional::get)
             .asList()
-            .containsOnly(MessageProperty.id, MessageProperty.headers);
+            .containsOnlyElementsOf(expected);
     }
     
     @Test
