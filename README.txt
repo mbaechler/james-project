@@ -88,7 +88,7 @@ as it is needed by the container that will run James.
 Howto run James in Docker
 =========================
 
-This feature available for too configuration :
+This feature available for two configurations :
 
  * Java 8 + Guice + Cassandra + ElasticSearch
  * Java 6 + Spring + JPA
@@ -98,7 +98,7 @@ Run James with Java 8 + Guice + Cassandra + ElasticSearch
 =========================================================
 
 * Requirements
-You should have the zip resulting of the build in the ./dockerfiles/run/guice/destination folder.
+Build artifacts should be in ./dockerfiles/run/guice/destination folder.
 
 * Howto ?
 You need a running cassandra in docker. To achieve this run :
@@ -126,7 +126,7 @@ Run James with Java 6 + Spring + JPA
 ====================================
 
 * Requirements
-You should have the zip resulting of the build in the ./dockerfiles/run/spring/destination folder.
+Build artifacts should be in ./dockerfiles/run/spring/destination folder.
 
 * Howto ?
 
