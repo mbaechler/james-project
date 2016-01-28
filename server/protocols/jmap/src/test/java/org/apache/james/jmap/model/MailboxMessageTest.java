@@ -244,7 +244,9 @@ public class MailboxMessageTest {
         testMail.setModSeq(MOD_SEQ);
         
         Message testee = Message.fromMailboxMessage(testMail, x -> MessageId.of("user|box|" + x));
-        assertThat(testee.getPreview()).isEqualTo("(Empty)");
+        assertThat(testee)
+            .extracting(Message::getPreview, Message::getSize, Message::getSubject)
+            .containsExactly("(Empty)", 0L, "(No subject)");
     }
 
     @Test
