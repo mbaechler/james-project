@@ -53,8 +53,8 @@ The response body will be a single JSON object with the following properties.
 - **methods**: `String[]`
   A list of the supported authentication methods to continue with authentication. This will often have only have one item in it. Allowed values are `"password"`, `"external"` and `"oauth"`. More options may be added in future extensions to JMAP.
 <aside class="warning">
-Support only `"password"` & `"oauth"`
-In `"oauth"` method, the client must provide a header in the request such as this:
+Support only `"password"`
+The client can also use OAuth by providing a header in the request such as this:
 `Authorization: Bearer JWT_TOKEN`
 </aside>
 - **prompt**: `String|null`
