@@ -53,7 +53,9 @@ The response body will be a single JSON object with the following properties.
 - **methods**: `String[]`
   A list of the supported authentication methods to continue with authentication. This will often have only have one item in it. Allowed values are `"password"`, `"external"` and `"oauth"`. More options may be added in future extensions to JMAP.
 <aside class="warning">
-Support only `"password"`
+Support only `"password"` & `"oauth"`
+In `"oauth"` method, the client must provide a header in the request such as this:
+`Authorization: Bearer JWT_TOKEN`
 </aside>
 - **prompt**: `String|null`
   A message to display in the client to the user.
@@ -130,9 +132,6 @@ This normally means the continuation token has expired, but it can be returned f
 Returned if the server is temporarily blocking this IP/client from authenticating. This may be due to too many failed password attempts, or detected username enumeration attempts, or any other reason. (Legitimate) clients should wait a while then try again.
 
 ### Refetching URL endpoints
-<aside class="warning">
-Not implemented
-</aside>
 
 A server MAY (although SHOULD NOT) move end points for any services other than authentication at any time. If a request to the API/file upload/event source endpoint returns a `404`, the client MUST refetch the URL endpoints. To do this, it should make an authenticated GET request to the authentication URL (see below for how to authenticate requests).
 
