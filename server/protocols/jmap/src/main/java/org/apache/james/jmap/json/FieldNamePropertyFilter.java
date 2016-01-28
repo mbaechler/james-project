@@ -17,7 +17,7 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.jmap.methods;
+package org.apache.james.jmap.json;
 
 
 import com.fasterxml.jackson.databind.ser.PropertyWriter;
