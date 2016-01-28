@@ -28,6 +28,7 @@ import org.apache.james.lifecycle.api.Configurable;
 import org.apache.james.lifecycle.api.LogEnabled;
 import org.apache.james.mailrepository.api.MailRepository;
 import org.apache.james.mailrepository.api.MailRepositoryStore;
+import org.apache.james.mailrepository.file.FileMailRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -132,6 +133,9 @@ public class InMemoryMailRepositoryStore implements MailRepositoryStore {
             }
             if (mailRepository instanceof Configurable) {
                 ((Configurable) mailRepository).configure(config);
+            }
+            if (mailRepository instanceof FileMailRepository) {
+                ((FileMailRepository)mailRepository).init();
             }
             return mailRepository;
         } catch (Exception e) {
