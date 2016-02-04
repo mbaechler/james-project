@@ -62,10 +62,10 @@
                 <value>true</value>
             </mailet>
             <mailet match="All" class="RecipientRewriteTable" />
-            <mailet match="HostIsLocal" class="ToProcessor">
+            <!-- <mailet match="HostIsLocal" class="ToProcessor">
                 <processor>local-address-error</processor>
                 <notice>550 - Requested action not taken: no such user here</notice>
-            </mailet>
+            </mailet> -->
             <mailet match="SMTPAuthSuccessful" class="RemoteDelivery">
                 <outgoingQueue>outgoing</outgoingQueue>
                 <delayTime>5 minutes</delayTime>
