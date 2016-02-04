@@ -20,7 +20,6 @@
 package org.apache.james;
 
 import org.apache.james.modules.CommonServicesModule;
-import org.apache.james.modules.protocols.LMTPServerModule;
 import org.apache.james.modules.protocols.ProtocolHandlerModule;
 import org.apache.james.modules.protocols.SMTPServerModule;
 import org.apache.james.modules.server.ActiveMQQueueModule;
@@ -43,7 +42,6 @@ public class SMTPJamesServerMain {
             new DNSServiceModule(),
             new ProtocolHandlerModule(),
             new SMTPServerModule(),
-            new LMTPServerModule(),
             new ActiveMQQueueModule(),
             new MailStoreRepositoryModule(),
             new CamelMailetContainerModule());
