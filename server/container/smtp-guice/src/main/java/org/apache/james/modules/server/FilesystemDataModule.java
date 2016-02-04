@@ -54,22 +54,17 @@ public class FilesystemDataModule extends AbstractModule {
         private final ConfigurationProvider configurationProvider;
         private final XMLDomainList fileDomainList;
         private final UsersFileRepository fileUsersRepository;
-        private final XMLRecipientRewriteTable fileRecipientRewriteTable;
 
         @Inject
         public DataConfigurationPerformer(ConfigurationProvider configurationProvider,
                                                    XMLDomainList fileDomainList,
-                                                   UsersFileRepository fileUsersRepository,
-                                                   XMLRecipientRewriteTable fileRecipientRewriteTable) {
+                                                   UsersFileRepository fileUsersRepository) {
             this.configurationProvider = configurationProvider;
             this.fileDomainList = fileDomainList;
             this.fileUsersRepository = fileUsersRepository;
-            this.fileRecipientRewriteTable = fileRecipientRewriteTable;
         }
 
         public void initModule() throws Exception {
-            fileRecipientRewriteTable.setLog(LOGGER);
-            fileRecipientRewriteTable.configure(configurationProvider.getConfiguration("recipientrewritetable"));
             fileDomainList.setLog(LOGGER);
             fileDomainList.configure(configurationProvider.getConfiguration("domainlist"));
             fileUsersRepository.setLog(LOGGER);
