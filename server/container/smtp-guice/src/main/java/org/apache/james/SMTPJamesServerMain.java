@@ -48,7 +48,6 @@ public class SMTPJamesServerMain {
             new ActiveMQQueueModule(),
             new MailStoreRepositoryModule(),
             new SieveModule(),
-            new MailStoreRepositoryModule(),
             new CamelMailetContainerModule());
 
     public static void main(String[] args) throws Exception {
