@@ -30,7 +30,6 @@ import org.apache.james.modules.server.DNSServiceModule;
 import org.apache.james.modules.server.FilesystemDataModule;
 import org.apache.james.modules.server.JMXServerModule;
 import org.apache.james.modules.server.MailStoreRepositoryModule;
-import org.apache.james.modules.server.SieveModule;
 
 import com.google.inject.Module;
 import com.google.inject.util.Modules;
@@ -47,7 +46,6 @@ public class SMTPJamesServerMain {
             new LMTPServerModule(),
             new ActiveMQQueueModule(),
             new MailStoreRepositoryModule(),
-            new SieveModule(),
             new CamelMailetContainerModule());
 
     public static void main(String[] args) throws Exception {
