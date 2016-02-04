@@ -42,9 +42,9 @@ public class FilesystemDataModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        bind(DomainList.class).to(XMLDomainList.class);
-        bind(UsersRepository.class).to(UsersFileRepository.class);
-        bind(RecipientRewriteTable.class).to(XMLRecipientRewriteTable.class);
+        bind(DomainList.class).to(XMLDomainList.class).in(Singleton.class);
+        bind(UsersRepository.class).to(UsersFileRepository.class).in(Singleton.class);
+        bind(RecipientRewriteTable.class).to(UsersFileRepository.class).in(Singleton.class);
         Multibinder.newSetBinder(binder(), ConfigurationPerformer.class).addBinding().to(DataConfigurationPerformer.class);
     }
 
