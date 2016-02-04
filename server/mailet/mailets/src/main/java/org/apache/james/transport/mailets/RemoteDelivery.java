@@ -54,6 +54,7 @@ import javax.mail.internet.MimePart;
 import javax.mail.internet.ParseException;
 
 import org.apache.geronimo.javamail.transport.smtp.SMTPTransport;
+//import com.sun.mail.smtp.SMTPTransport;
 import org.apache.james.dnsservice.api.DNSService;
 import org.apache.james.dnsservice.api.TemporaryResolutionException;
 import org.apache.james.dnsservice.library.MXHostAddressIterator;
