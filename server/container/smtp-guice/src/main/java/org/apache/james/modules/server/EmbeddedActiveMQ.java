@@ -30,6 +30,7 @@ import org.apache.activemq.broker.BrokerService;
 import org.apache.activemq.broker.jmx.ManagementContext;
 import org.apache.activemq.plugin.StatisticsBrokerPlugin;
 import org.apache.activemq.store.amq.AMQPersistenceAdapter;
+import org.apache.james.filesystem.api.FileSystem;
 import org.apache.james.queue.activemq.FileSystemBlobTransferPolicy;
 
 import javax.annotation.PreDestroy;
@@ -41,13 +42,13 @@ public class EmbeddedActiveMQ {
     private ActiveMQConnectionFactory activeMQConnectionFactory;
     private BrokerService brokerService;
 
-    @Inject private EmbeddedActiveMQ() {
+    @Inject private EmbeddedActiveMQ(FileSystem fileSystem) {
         try {
             launchEmbeddedBroker();
         } catch (Exception e) {
             throw Throwables.propagate(e);
         }
-        activeMQConnectionFactory = createActiveMQConnectionFactory(createBlobTransferPolicy());
+        activeMQConnectionFactory = createActiveMQConnectionFactory(createBlobTransferPolicy(fileSystem));
     }
 
     public ConnectionFactory getConnectionFactory() {
@@ -73,9 +74,11 @@ public class EmbeddedActiveMQ {
         return prefetchPolicy;
     }
 
-    private BlobTransferPolicy createBlobTransferPolicy() {
-        BlobTransferPolicy blobTransferPolicy = new FileSystemBlobTransferPolicy();
+    private BlobTransferPolicy createBlobTransferPolicy(FileSystem fileSystem) {
+        FileSystemBlobTransferPolicy blobTransferPolicy = new FileSystemBlobTransferPolicy();
+        //should probably be a variable ?
         blobTransferPolicy.setDefaultUploadUrl("file://var/store/activemq/blob-transfer");
+        blobTransferPolicy.setFileSystem(fileSystem);
         return blobTransferPolicy;
     }
 
@@ -84,7 +87,8 @@ public class EmbeddedActiveMQ {
         brokerService.setBrokerName("james");
         brokerService.setUseJmx(false);
         brokerService.setPersistent(true);
-        brokerService.setDataDirectory("filesystem=file://var/store/activemq/brokers");
+        //should probably be a variable ?
+        brokerService.setDataDirectory("wksp/var/store/activemq/brokers");
         brokerService.setUseShutdownHook(false);
         brokerService.setSchedulerSupport(false);
         brokerService.setBrokerId("broker");
