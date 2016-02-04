@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>apache-james-mpt</artifactId>
+        <groupId>org.apache.james</groupId>
+        <version>0.2-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <name>Apache James MPT SMTP</name>
+
+    <artifactId>apache-james-mpt-smtp</artifactId>
+    <packaging>jar</packaging>
+
+    <dependencies>
+      <dependency>
+        <groupId>org.apache.james</groupId>
+        <artifactId>apache-james-mpt-core</artifactId>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.james</groupId>
+        <artifactId>james-server-data-api</artifactId>
+        <version>${james.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.james</groupId>
+        <artifactId>james-server-smtp-guice</artifactId>
+        <version>${james.version}</version>
+      </dependency>
+        <dependency>
+            <groupId>com.google.inject</groupId>
+            <artifactId>guice</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.onami</groupId>
+            <artifactId>org.apache.onami.test</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>**/suite/*.java</exclude>
+                        <exclude>**/suite/**/*.java</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
