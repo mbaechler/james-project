@@ -2,7 +2,7 @@ FROM python:2.7.11
 
 RUN pip install mkdocs
 
-ADD . /doc
+COPY . /doc
 
 RUN find /doc -type f -name '*.mdwn' -print0 | xargs -0 rename 's/.mdwn$/.md/'
 
