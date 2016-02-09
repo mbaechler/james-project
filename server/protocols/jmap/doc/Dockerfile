@@ -1,10 +1,10 @@
-FROM python:2.7.11
+FROM iron/python:2-dev
 
 RUN pip install mkdocs
 
 COPY . /doc
 
-RUN find /doc -type f -name '*.mdwn' -print0 | xargs -0 rename 's/.mdwn$/.md/'
+RUN find . -name "*.mdwn" | while IFS= read -r f; do mv -v "$f" "$(echo "$f" | sed -e 's/.mdwn$/.md/' - )"; done
 
 RUN mv /doc/specs/spec/apimodel.md /doc/specs/index.md
 
