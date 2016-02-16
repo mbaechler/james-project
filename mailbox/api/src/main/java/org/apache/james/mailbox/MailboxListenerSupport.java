@@ -23,10 +23,8 @@ import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MailboxPath;
 
 /**
- * Implementations of this interface supports {@link MailboxListener}. Its needed that the events get handled
+ * Implementations of this interface supports {@link MailboxListener}. It requires that events get handled
  * in the submitted order
- * 
- *
  */
 public interface MailboxListenerSupport {
 
@@ -47,34 +45,13 @@ public interface MailboxListenerSupport {
      */
     void addListener(MailboxPath mailboxPath, MailboxListener listener, MailboxSession session) throws MailboxException;
 
-    /**
-     * Remove the {@link MailboxListener}
-     * 
-     * @param mailboxPath
-     * @param listner
-     * @param session
-     * @throws MailboxException
-     */
     void removeListener(MailboxPath mailboxPath, MailboxListener listner, MailboxSession session) throws MailboxException;
     
     /**
-     * Add a {@link MailboxListener} which get fired for ever
-     * {@link MailboxPath}
-     * 
-     * @param listener
-     * @param session
-     * @throws MailboxException
+     * Add a {@link MailboxListener} which get fired for every {@link MailboxPath}
      */
     void addGlobalListener(MailboxListener listener, MailboxSession session) throws MailboxException;
     
-    
-    /**
-     * Remove the {@link MailboxListener}
-     * 
-     * @param listner
-     * @param session
-     * @throws MailboxException
-     */
     void removeGlobalListener(MailboxListener listner, MailboxSession session) throws MailboxException;
 
 

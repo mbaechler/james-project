@@ -50,18 +50,17 @@ public interface MailboxListener {
     ExecutionMode getExecutionMode();
 
     /**
-     * Informs this listener about the given event.
+     * notifies this listener about the given event.
      * 
-     * @param event
-     *            not null
+     * @param event not null
      */
     void event(final Event event);
 
     /**
      * A mailbox event.
      */
-    @SuppressWarnings("serial")
     abstract class Event implements Serializable {
+        
         private final MailboxSession session;
         private final MailboxPath path;
 
@@ -73,8 +72,6 @@ public interface MailboxListener {
         /**
          * Gets the {@link MailboxSession} in which's context the {@link Event}
          * happened
-         * 
-         * @return session
          */
         public MailboxSession getSession() {
             return session;
@@ -82,8 +79,6 @@ public interface MailboxListener {
 
         /**
          * Return the path of the Mailbox this event belongs to.
-         * 
-         * @return path
          */
         public MailboxPath getMailboxPath() {
             return path;
@@ -95,11 +90,6 @@ public interface MailboxListener {
      */
     class MailboxDeletion extends Event {
 
-        /**
-         * 
-         */
-        private static final long serialVersionUID = 1L;
-
         public MailboxDeletion(final MailboxSession session, MailboxPath path) {
             super(session, path);
         }
@@ -109,10 +99,6 @@ public interface MailboxListener {
      * Indicates that a mailbox has been Added.
      */
     class MailboxAdded extends Event {
-        /**
-         * 
-         */
-        private static final long serialVersionUID = 1L;
 
         public MailboxAdded(final MailboxSession session, MailboxPath path) {
             super(session, path);
@@ -123,19 +109,15 @@ public interface MailboxListener {
      * Indicates that a mailbox has been renamed.
      */
     abstract class MailboxRenamed extends Event {
-        /**
-         * 
-         */
-        private static final long serialVersionUID = 1L;
 
         public MailboxRenamed(final MailboxSession session, MailboxPath path) {
             super(session, path);
         }
 
         /**
-         * Gets the new name for this mailbox.
+         * Gets the new path for this mailbox.
          * 
-         * @return name, not null
+         * @return path, not null
          */
         public abstract MailboxPath getNewPath();
     }
@@ -145,11 +127,6 @@ public interface MailboxListener {
      * A mailbox event related to updated ACL
      */
     abstract class MailboxACLUpdated extends MessageEvent {
-
-        /**
-         * 
-         */
-        private static final long serialVersionUID = 1L;
 
         public MailboxACLUpdated(MailboxSession session, MailboxPath path) {
             super(session, path);
@@ -162,11 +139,6 @@ public interface MailboxListener {
      * A mailbox event related to a message.
      */
     abstract class MessageEvent extends Event {
-
-        /**
-         * 
-         */
-        private static final long serialVersionUID = 1L;
 
         public MessageEvent(MailboxSession session, MailboxPath path) {
             super(session, path);
@@ -187,9 +159,7 @@ public interface MailboxListener {
         }
 
         /**
-         * Return the flags which were set for the afected message
-         *
-         * @return flags
+         * Return the metadata which were set for the affected message
          */
         public abstract MessageMetaData getMetaData(long uid);
 
@@ -197,20 +167,10 @@ public interface MailboxListener {
 
     abstract class Expunged extends MetaDataHoldingEvent {
 
-        /**
-         * 
-         */
-        private static final long serialVersionUID = 1L;
-
         public Expunged(MailboxSession session, MailboxPath path) {
             super(session, path);
         }
         
-        /**
-         * Return the flags which were set for the added message
-         * 
-         * @return flags
-         */
         public abstract MessageMetaData getMetaData(long uid);
     }
 
@@ -218,11 +178,6 @@ public interface MailboxListener {
      * A mailbox event related to updated flags
      */
     abstract class FlagsUpdated extends MessageEvent {
-
-        /**
-         * 
-         */
-        private static final long serialVersionUID = 1L;
 
         public FlagsUpdated(MailboxSession session, MailboxPath path) {
             super(session, path);
@@ -236,19 +191,14 @@ public interface MailboxListener {
      */
     abstract class Added extends MetaDataHoldingEvent {
 
-        /**
-         * 
-         */
-        private static final long serialVersionUID = 1L;
-
         public Added(MailboxSession session, MailboxPath path) {
             super(session, path);
         }
         
         /**
-         * Return the flags which were set for the added message
+         * Return the metadata which were set for the added message
          * 
-         * @return flags
+         * @return metadata
          */
         public abstract MessageMetaData getMetaData(long uid);
         
