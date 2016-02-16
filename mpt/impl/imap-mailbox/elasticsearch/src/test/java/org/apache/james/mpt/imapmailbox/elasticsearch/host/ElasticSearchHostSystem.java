@@ -49,6 +49,7 @@ import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.MockAuthenticator;
 import org.apache.james.mailbox.store.StoreMailboxManager;
 import org.apache.james.mailbox.store.StoreSubscriptionManager;
+import org.apache.james.mailbox.store.event.DelegatingMailboxListener;
 import org.apache.james.mailbox.store.extractor.DefaultTextExtractor;
 import org.apache.james.mailbox.store.quota.DefaultQuotaRootResolver;
 import org.apache.james.mailbox.store.quota.NoQuotaManager;
@@ -113,7 +114,9 @@ public class ElasticSearchHostSystem extends JamesImapHostSystem {
         MailboxACLResolver aclResolver = new UnionMailboxACLResolver();
         GroupMembershipResolver groupMembershipResolver = new SimpleGroupMembershipResolver();
 
-        mailboxManager = new StoreMailboxManager<>(factory, userManager, aclResolver, groupMembershipResolver);
+        DelegatingMailboxListener delegatingMailboxListener = null;
+        
+        mailboxManager = new StoreMailboxManager<>(factory, userManager, aclResolver, groupMembershipResolver, delegatingMailboxListener);
         mailboxManager.setMessageSearchIndex(searchIndex);
 
         try {

@@ -29,6 +29,7 @@ import org.apache.james.mailbox.store.Authenticator;
 import org.apache.james.mailbox.store.JVMMailboxPathLocker;
 import org.apache.james.mailbox.store.StoreMailboxManager;
 import org.apache.james.mailbox.store.StoreMessageManager;
+import org.apache.james.mailbox.store.event.DelegatingMailboxListener;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,12 +42,16 @@ public class JCRMailboxManager extends StoreMailboxManager<JCRId> implements JCR
 
     private final Logger logger = LoggerFactory.getLogger(JCRMailboxManager.class);
     
-    public JCRMailboxManager(JCRMailboxSessionMapperFactory mapperFactory, final Authenticator authenticator, MailboxACLResolver aclResolver, GroupMembershipResolver groupMembershipResolver) {
-	    this(mapperFactory, authenticator, new JVMMailboxPathLocker(), aclResolver, groupMembershipResolver);
+    public JCRMailboxManager(JCRMailboxSessionMapperFactory mapperFactory, 
+            Authenticator authenticator, MailboxACLResolver aclResolver, GroupMembershipResolver groupMembershipResolver,
+            DelegatingMailboxListener delegatingMailboxListener) {
+	    this(mapperFactory, authenticator, new JVMMailboxPathLocker(), aclResolver, groupMembershipResolver, delegatingMailboxListener);
     }
 
-    public JCRMailboxManager(JCRMailboxSessionMapperFactory mapperFactory, final Authenticator authenticator, final MailboxPathLocker locker, MailboxACLResolver aclResolver, GroupMembershipResolver groupMembershipResolver) {
-        super(mapperFactory, authenticator, locker, aclResolver, groupMembershipResolver);
+    public JCRMailboxManager(JCRMailboxSessionMapperFactory mapperFactory, 
+            Authenticator authenticator, MailboxPathLocker locker, MailboxACLResolver aclResolver, 
+            GroupMembershipResolver groupMembershipResolver, DelegatingMailboxListener delegatingMailboxListener) {
+        super(mapperFactory, authenticator, locker, aclResolver, groupMembershipResolver, delegatingMailboxListener);
     }
 
     

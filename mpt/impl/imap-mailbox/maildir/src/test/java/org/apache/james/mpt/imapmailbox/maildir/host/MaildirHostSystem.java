@@ -38,6 +38,7 @@ import org.apache.james.mailbox.store.JVMMailboxPathLocker;
 import org.apache.james.mailbox.store.MockAuthenticator;
 import org.apache.james.mailbox.store.StoreMailboxManager;
 import org.apache.james.mailbox.store.StoreSubscriptionManager;
+import org.apache.james.mailbox.store.event.DelegatingMailboxListener;
 import org.apache.james.mailbox.store.quota.DefaultQuotaRootResolver;
 import org.apache.james.mailbox.store.quota.NoQuotaManager;
 import org.apache.james.mpt.api.ImapFeatures;
@@ -69,7 +70,8 @@ public class MaildirHostSystem extends JamesImapHostSystem {
         MailboxACLResolver aclResolver = new UnionMailboxACLResolver();
         GroupMembershipResolver groupMembershipResolver = new SimpleGroupMembershipResolver();
 
-        mailboxManager = new StoreMailboxManager<MaildirId>(mailboxSessionMapperFactory, userManager, locker, aclResolver, groupMembershipResolver);
+        DelegatingMailboxListener delegatingMailboxListener = null;
+        mailboxManager = new StoreMailboxManager<MaildirId>(mailboxSessionMapperFactory, userManager, locker, aclResolver, groupMembershipResolver, delegatingMailboxListener);
         mailboxManager.init();
 
         final ImapProcessor defaultImapProcessorFactory = 

@@ -30,6 +30,7 @@ import org.apache.james.mailbox.exception.MailboxException;
 import static org.apache.james.mailbox.hbase.HBaseNames.*;
 import org.apache.james.mailbox.hbase.mail.HBaseModSeqProvider;
 import org.apache.james.mailbox.hbase.mail.HBaseUidProvider;
+import org.apache.james.mailbox.store.event.DelegatingMailboxListener;
 import org.junit.After;
 import org.junit.Before;
 import org.slf4j.LoggerFactory;
@@ -92,9 +93,9 @@ public class HBaseMailboxManagerTest extends AbstractMailboxManagerTest {
 
         final MailboxACLResolver aclResolver = new UnionMailboxACLResolver();
         final GroupMembershipResolver groupMembershipResolver = new SimpleGroupMembershipResolver();
-
+        DelegatingMailboxListener delegatingMailboxListener = null;
         final HBaseMailboxManager manager = new HBaseMailboxManager(mapperFactory, null, aclResolver,
-                groupMembershipResolver);
+                groupMembershipResolver, delegatingMailboxListener);
         manager.init();
 
         setMailboxManager(manager);

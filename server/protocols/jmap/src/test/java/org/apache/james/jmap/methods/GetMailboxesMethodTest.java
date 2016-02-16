@@ -50,6 +50,7 @@ import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.MockAuthenticator;
 import org.apache.james.mailbox.store.SimpleMailboxSession;
 import org.apache.james.mailbox.store.StoreMailboxManager;
+import org.apache.james.mailbox.store.event.DelegatingMailboxListener;
 import org.assertj.core.groups.Tuple;
 import org.junit.Before;
 import org.junit.Test;
@@ -75,7 +76,8 @@ public class GetMailboxesMethodTest {
         mailboxMapperFactory = new InMemoryMailboxSessionMapperFactory();
         MailboxACLResolver aclResolver = new UnionMailboxACLResolver();
         GroupMembershipResolver groupMembershipResolver = new SimpleGroupMembershipResolver();
-        mailboxManager = new StoreMailboxManager<>(mailboxMapperFactory, new MockAuthenticator(), aclResolver, groupMembershipResolver);
+        DelegatingMailboxListener delegatingMailboxListener = null;
+        mailboxManager = new StoreMailboxManager<>(mailboxMapperFactory, new MockAuthenticator(), aclResolver, groupMembershipResolver, delegatingMailboxListener);
         mailboxManager.init();
 
         getMailboxesMethod = new GetMailboxesMethod<>(mailboxManager, mailboxMapperFactory);

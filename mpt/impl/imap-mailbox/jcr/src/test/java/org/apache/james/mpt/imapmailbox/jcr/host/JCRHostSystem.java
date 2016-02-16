@@ -42,6 +42,7 @@ import org.apache.james.mailbox.jcr.mail.JCRUidProvider;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.JVMMailboxPathLocker;
 import org.apache.james.mailbox.store.MockAuthenticator;
+import org.apache.james.mailbox.store.event.DelegatingMailboxListener;
 import org.apache.james.mailbox.store.quota.DefaultQuotaRootResolver;
 import org.apache.james.mailbox.store.quota.NoQuotaManager;
 import org.apache.james.mpt.api.ImapFeatures;
@@ -91,7 +92,8 @@ public class JCRHostSystem extends JamesImapHostSystem{
             MailboxACLResolver aclResolver = new UnionMailboxACLResolver();
             GroupMembershipResolver groupMembershipResolver = new SimpleGroupMembershipResolver();
 
-            mailboxManager = new JCRMailboxManager(mf, userManager, locker, aclResolver, groupMembershipResolver);
+            DelegatingMailboxListener delegatingMailboxListener = null;
+            mailboxManager = new JCRMailboxManager(mf, userManager, locker, aclResolver, groupMembershipResolver, delegatingMailboxListener);
             mailboxManager.init();
 
             final ImapProcessor defaultImapProcessorFactory = 

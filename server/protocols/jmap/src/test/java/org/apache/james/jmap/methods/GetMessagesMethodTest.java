@@ -49,6 +49,7 @@ import org.apache.james.mailbox.inmemory.InMemoryMailboxSessionMapperFactory;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.MockAuthenticator;
 import org.apache.james.mailbox.store.StoreMailboxManager;
+import org.apache.james.mailbox.store.event.DelegatingMailboxListener;
 import org.assertj.core.api.Condition;
 import org.assertj.core.data.MapEntry;
 import org.assertj.core.groups.Tuple;
@@ -111,7 +112,8 @@ public class GetMessagesMethodTest {
         authenticator.addUser(ROBERT.username, ROBERT.password);
         UnionMailboxACLResolver aclResolver = new UnionMailboxACLResolver();
         SimpleGroupMembershipResolver groupMembershipResolver = new SimpleGroupMembershipResolver();
-        mailboxManager = new StoreMailboxManager<>(mailboxSessionMapperFactory, authenticator, aclResolver, groupMembershipResolver);
+        DelegatingMailboxListener delegatingMailboxListener = null;
+        mailboxManager = new StoreMailboxManager<>(mailboxSessionMapperFactory, authenticator, aclResolver, groupMembershipResolver, delegatingMailboxListener);
         mailboxManager.init();
         
 

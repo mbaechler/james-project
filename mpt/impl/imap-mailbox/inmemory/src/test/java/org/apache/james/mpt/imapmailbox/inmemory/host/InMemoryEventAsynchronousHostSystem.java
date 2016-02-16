@@ -39,6 +39,7 @@ import org.apache.james.mailbox.store.StoreMailboxManager;
 import org.apache.james.mailbox.store.StoreSubscriptionManager;
 import org.apache.james.mailbox.store.event.AsynchronousEventDelivery;
 import org.apache.james.mailbox.store.event.DefaultDelegatingMailboxListener;
+import org.apache.james.mailbox.store.event.DelegatingMailboxListener;
 import org.apache.james.mailbox.store.quota.CurrentQuotaCalculator;
 import org.apache.james.mailbox.store.quota.DefaultQuotaRootResolver;
 import org.apache.james.mailbox.store.quota.ListeningCurrentQuotaUpdater;
@@ -79,7 +80,8 @@ public class InMemoryEventAsynchronousHostSystem extends JamesImapHostSystem {
         MailboxACLResolver aclResolver = new UnionMailboxACLResolver();
         GroupMembershipResolver groupMembershipResolver = new SimpleGroupMembershipResolver();
 
-        mailboxManager = new StoreMailboxManager<InMemoryId>(factory, userManager, aclResolver, groupMembershipResolver);
+        DelegatingMailboxListener delegatingMailboxListener = new DefaultDelegatingMailboxListener(new AsynchronousEventDelivery(10));
+        mailboxManager = new StoreMailboxManager<InMemoryId>(factory, userManager, aclResolver, groupMembershipResolver, delegatingMailboxListener);
         QuotaRootResolver quotaRootResolver = new DefaultQuotaRootResolver(factory);
 
         InMemoryPerUserMaxQuotaManager perUserMaxQuotaManager = new InMemoryPerUserMaxQuotaManager();
@@ -101,8 +103,6 @@ public class InMemoryEventAsynchronousHostSystem extends JamesImapHostSystem {
         mailboxManager.setQuotaRootResolver(quotaRootResolver);
         mailboxManager.setQuotaManager(quotaManager);
         mailboxManager.setQuotaUpdater(quotaUpdater);
-
-        mailboxManager.setDelegatingMailboxListener(new DefaultDelegatingMailboxListener(new AsynchronousEventDelivery(10)));
 
         mailboxManager.init();
 

@@ -32,6 +32,7 @@ import org.apache.james.mailbox.model.SimpleMailboxACL;
 import org.apache.james.mailbox.store.Authenticator;
 import org.apache.james.mailbox.store.StoreMailboxManager;
 import org.apache.james.mailbox.store.StoreMessageManager;
+import org.apache.james.mailbox.store.event.DelegatingMailboxListener;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
 import org.apache.james.mailbox.store.search.MessageSearchIndex;
@@ -44,12 +45,14 @@ public class CassandraMailboxManager extends StoreMailboxManager<CassandraId> {
     private final MailboxPathLocker locker;
 
     @Inject
-    public CassandraMailboxManager(CassandraMailboxSessionMapperFactory mapperFactory, Authenticator authenticator, final MailboxPathLocker locker) {
+    public CassandraMailboxManager(CassandraMailboxSessionMapperFactory mapperFactory, Authenticator authenticator, 
+            MailboxPathLocker locker, DelegatingMailboxListener delegatingMailboxListener) {
         super(mapperFactory,
             authenticator,
             locker,
             new UnionMailboxACLResolver(),
-            new SimpleGroupMembershipResolver());
+            new SimpleGroupMembershipResolver(),
+            delegatingMailboxListener);
         this.locker = locker;
     }
 

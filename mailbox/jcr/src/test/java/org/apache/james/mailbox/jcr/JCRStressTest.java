@@ -37,6 +37,7 @@ import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.jcr.mail.JCRModSeqProvider;
 import org.apache.james.mailbox.jcr.mail.JCRUidProvider;
 import org.apache.james.mailbox.store.JVMMailboxPathLocker;
+import org.apache.james.mailbox.store.event.DelegatingMailboxListener;
 import org.junit.After;
 import org.junit.Before;
 import org.slf4j.LoggerFactory;
@@ -66,7 +67,8 @@ public class JCRStressTest extends AbstractStressTest {
         MailboxACLResolver aclResolver = new UnionMailboxACLResolver();
         GroupMembershipResolver groupMembershipResolver = new SimpleGroupMembershipResolver();
 
-        mailboxManager = new JCRMailboxManager(mf, null, locker, aclResolver, groupMembershipResolver);
+        DelegatingMailboxListener delegatingMailboxListener = null;
+        mailboxManager = new JCRMailboxManager(mf, null, locker, aclResolver, groupMembershipResolver, delegatingMailboxListener);
         mailboxManager.init();
     }
 

@@ -28,6 +28,7 @@ import org.apache.james.mailbox.jpa.mail.model.JPAMailbox;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.Authenticator;
 import org.apache.james.mailbox.store.StoreMailboxManager;
+import org.apache.james.mailbox.store.event.DelegatingMailboxListener;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.transaction.TransactionalMapper;
 
@@ -37,8 +38,9 @@ import org.apache.james.mailbox.store.transaction.TransactionalMapper;
 public abstract class JPAMailboxManager extends StoreMailboxManager<JPAId> {
     
     public JPAMailboxManager(JPAMailboxSessionMapperFactory mailboxSessionMapperFactory,
-            final Authenticator authenticator, final MailboxPathLocker locker, MailboxACLResolver aclResolver, GroupMembershipResolver groupMembershipResolver) {
-        super(mailboxSessionMapperFactory, authenticator, locker, aclResolver, groupMembershipResolver);
+            Authenticator authenticator, MailboxPathLocker locker, MailboxACLResolver aclResolver, 
+            GroupMembershipResolver groupMembershipResolver, DelegatingMailboxListener delegatingMailboxListener) {
+        super(mailboxSessionMapperFactory, authenticator, locker, aclResolver, groupMembershipResolver, delegatingMailboxListener);
     }
     
     @Override

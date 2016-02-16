@@ -22,6 +22,7 @@ package org.apache.james.mailbox.store;
 import org.apache.james.mailbox.acl.SimpleGroupMembershipResolver;
 import org.apache.james.mailbox.acl.UnionMailboxACLResolver;
 import org.apache.james.mailbox.model.MailboxPath;
+import org.apache.james.mailbox.store.event.DelegatingMailboxListener;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,7 +36,15 @@ public class StoreMailboxManagerTest {
 
     @Before
     public void setUp() {
-        storeMailboxManager = new StoreMailboxManager<TestId>(null, new MockAuthenticator(), new JVMMailboxPathLocker(), new UnionMailboxACLResolver(), new SimpleGroupMembershipResolver());
+        DelegatingMailboxListener delegatingMailboxListener = null;
+        MailboxSessionMapperFactory<TestId> mailboxSessionMapperFactory = null;
+        storeMailboxManager = new StoreMailboxManager<TestId>(
+                mailboxSessionMapperFactory, 
+                new MockAuthenticator(),
+                new JVMMailboxPathLocker(), 
+                new UnionMailboxACLResolver(), 
+                new SimpleGroupMembershipResolver(), 
+                delegatingMailboxListener);
     }
 
     @Test

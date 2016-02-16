@@ -30,6 +30,7 @@ import org.apache.james.mailbox.store.Authenticator;
 import org.apache.james.mailbox.store.JVMMailboxPathLocker;
 import org.apache.james.mailbox.store.StoreMailboxManager;
 import org.apache.james.mailbox.store.StoreMessageManager;
+import org.apache.james.mailbox.store.event.DelegatingMailboxListener;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.transaction.TransactionalMapper;
 
@@ -39,12 +40,16 @@ import org.apache.james.mailbox.store.transaction.TransactionalMapper;
  */
 public class HBaseMailboxManager extends StoreMailboxManager<HBaseId> {
 
-    public HBaseMailboxManager(HBaseMailboxSessionMapperFactory mapperFactory, Authenticator authenticator, MailboxPathLocker locker, MailboxACLResolver aclResolver, GroupMembershipResolver groupMembershipResolver) {
-        super(mapperFactory, authenticator, locker, aclResolver, groupMembershipResolver);
+    public HBaseMailboxManager(HBaseMailboxSessionMapperFactory mapperFactory, 
+            Authenticator authenticator, MailboxPathLocker locker, MailboxACLResolver aclResolver, 
+            GroupMembershipResolver groupMembershipResolver, DelegatingMailboxListener delegatingMailboxListener) {
+        super(mapperFactory, authenticator, locker, aclResolver, groupMembershipResolver, delegatingMailboxListener);
     }
 
-    public HBaseMailboxManager(HBaseMailboxSessionMapperFactory mapperFactory, Authenticator authenticator, MailboxACLResolver aclResolver, GroupMembershipResolver groupMembershipResolver) {
-        super(mapperFactory, authenticator, new JVMMailboxPathLocker(), aclResolver, groupMembershipResolver);
+    public HBaseMailboxManager(HBaseMailboxSessionMapperFactory mapperFactory, Authenticator authenticator, 
+            MailboxACLResolver aclResolver, GroupMembershipResolver groupMembershipResolver,
+            DelegatingMailboxListener delegatingMailboxListener) {
+        super(mapperFactory, authenticator, new JVMMailboxPathLocker(), aclResolver, groupMembershipResolver, delegatingMailboxListener);
     }
 
     @Override

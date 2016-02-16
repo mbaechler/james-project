@@ -56,7 +56,6 @@ import org.apache.james.mailbox.model.SimpleMailboxACL;
 import org.apache.james.mailbox.quota.QuotaManager;
 import org.apache.james.mailbox.quota.QuotaRootResolver;
 import org.apache.james.mailbox.store.event.DelegatingMailboxListener;
-import org.apache.james.mailbox.store.event.DefaultDelegatingMailboxListener;
 import org.apache.james.mailbox.store.event.MailboxEventDispatcher;
 import org.apache.james.mailbox.store.mail.MailboxMapper;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
@@ -119,16 +118,23 @@ public class StoreMailboxManager<Id extends MailboxId> implements MailboxManager
 
 
     @Inject
-    public StoreMailboxManager(MailboxSessionMapperFactory<Id> mailboxSessionMapperFactory, final Authenticator authenticator, final MailboxPathLocker locker, final MailboxACLResolver aclResolver, final GroupMembershipResolver groupMembershipResolver) {
+    public StoreMailboxManager(
+            MailboxSessionMapperFactory<Id> mailboxSessionMapperFactory, 
+            Authenticator authenticator, MailboxPathLocker locker, MailboxACLResolver aclResolver, GroupMembershipResolver groupMembershipResolver,
+            DelegatingMailboxListener delegatingMailboxListener) {
         this.authenticator = authenticator;
         this.locker = locker;
         this.mailboxSessionMapperFactory = mailboxSessionMapperFactory;
         this.aclResolver = aclResolver;
         this.groupMembershipResolver = groupMembershipResolver;
+        this.delegatingListener = delegatingMailboxListener;
+        this.dispatcher = new MailboxEventDispatcher<Id>(delegatingMailboxListener);
     }
 
-    public StoreMailboxManager(MailboxSessionMapperFactory<Id> mailboxSessionMapperFactory, final Authenticator authenticator, final MailboxACLResolver aclResolver, final GroupMembershipResolver groupMembershipResolver) {
-        this(mailboxSessionMapperFactory, authenticator, new JVMMailboxPathLocker(), aclResolver, groupMembershipResolver);
+    public StoreMailboxManager(MailboxSessionMapperFactory<Id> mailboxSessionMapperFactory, 
+            Authenticator authenticator, MailboxACLResolver aclResolver, GroupMembershipResolver groupMembershipResolver,
+            DelegatingMailboxListener delegatingMailboxListener) {
+        this(mailboxSessionMapperFactory, authenticator, new JVMMailboxPathLocker(), aclResolver, groupMembershipResolver, delegatingMailboxListener);
     }
 
     public void setMailboxSessionIdGenerator(MailboxSessionIdGenerator idGenerator) {
@@ -197,12 +203,8 @@ public class StoreMailboxManager<Id extends MailboxId> implements MailboxManager
      * @return delegatingListener
      */
     public DelegatingMailboxListener getDelegationListener() {
-        if (delegatingListener == null) {
-            delegatingListener = new DefaultDelegatingMailboxListener();
-        }
         return delegatingListener;
     }
-
 
     /**
      * Return the {@link MessageSearchIndex} used by this {@link MailboxManager}
@@ -249,17 +251,6 @@ public class StoreMailboxManager<Id extends MailboxId> implements MailboxManager
 
     public GroupMembershipResolver getGroupMembershipResolver() {
         return groupMembershipResolver;
-    }
-
-    /**
-     * Set the {@link DelegatingMailboxListener} to use with this {@link MailboxManager} instance. If none is set here a {@link DefaultDelegatingMailboxListener} instance will
-     * be created lazy
-     *
-     * @param delegatingListener
-     */
-    public void setDelegatingMailboxListener(DelegatingMailboxListener delegatingListener) {
-        this.delegatingListener = delegatingListener;
-        dispatcher = new MailboxEventDispatcher<Id>(getDelegationListener());
     }
 
     /**

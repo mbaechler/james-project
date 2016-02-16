@@ -52,6 +52,7 @@ import org.apache.james.mailbox.model.MailboxConstants;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.Authenticator;
 import org.apache.james.mailbox.store.StoreMailboxManager;
+import org.apache.james.mailbox.store.event.DelegatingMailboxListener;
 import org.apache.james.pop3server.netty.POP3Server;
 import org.apache.james.protocols.lib.POP3BeforeSMTPHelper;
 import org.apache.james.protocols.lib.PortUtil;
@@ -713,6 +714,7 @@ public class POP3ServerTest {
         InMemoryMailboxSessionMapperFactory factory = new InMemoryMailboxSessionMapperFactory();
         MailboxACLResolver aclResolver = new UnionMailboxACLResolver();
         GroupMembershipResolver groupMembershipResolver = new SimpleGroupMembershipResolver();
+        DelegatingMailboxListener delegatingMailboxListener = null;
         mailboxManager = new StoreMailboxManager<InMemoryId>(factory, new Authenticator() {
     
             @Override
@@ -724,7 +726,7 @@ public class POP3ServerTest {
                     return false;
                 }
             }
-        }, aclResolver, groupMembershipResolver);
+        }, aclResolver, groupMembershipResolver, delegatingMailboxListener);
         mailboxManager.init();
 
         protocolHandlerChain.put("mailboxmanager", MailboxManager.class, mailboxManager);

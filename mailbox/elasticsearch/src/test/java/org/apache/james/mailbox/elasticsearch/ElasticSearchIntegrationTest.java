@@ -46,6 +46,7 @@ import org.apache.james.mailbox.store.MailboxSessionMapperFactory;
 import org.apache.james.mailbox.store.MockAuthenticator;
 import org.apache.james.mailbox.store.StoreMailboxManager;
 import org.apache.james.mailbox.store.StoreMessageManager;
+import org.apache.james.mailbox.store.event.DelegatingMailboxListener;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -170,12 +171,14 @@ public class ElasticSearchIntegrationTest {
             new ElasticSearchIndexer(clientProvider),
             new ElasticSearchSearcher<>(clientProvider, new QueryConverter(new CriterionConverter())),
             new MessageToElasticSearchJson(new DefaultTextExtractor(), ZoneId.of("Europe/Paris")));
+        DelegatingMailboxListener delegatingMailboxListener = null;
         storeMailboxManager = new StoreMailboxManager<>(
             mapperFactory,
             new MockAuthenticator(),
             new JVMMailboxPathLocker(),
             new UnionMailboxACLResolver(),
-            new SimpleGroupMembershipResolver());
+            new SimpleGroupMembershipResolver(),
+            delegatingMailboxListener);
         storeMailboxManager.setMessageSearchIndex(elasticSearchListeningMessageSearchIndex);
         storeMailboxManager.init();
     }

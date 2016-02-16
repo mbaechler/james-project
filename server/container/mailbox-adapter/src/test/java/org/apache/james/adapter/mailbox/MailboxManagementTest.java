@@ -31,6 +31,7 @@ import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.JVMMailboxPathLocker;
 import org.apache.james.mailbox.store.MockAuthenticator;
 import org.apache.james.mailbox.store.StoreMailboxManager;
+import org.apache.james.mailbox.store.event.DelegatingMailboxListener;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
 import org.junit.Before;
@@ -51,12 +52,14 @@ public class MailboxManagementTest {
     @Before
     public void setUp() throws Exception {
         inMemoryMapperFactory = new InMemoryMailboxSessionMapperFactory();
+        DelegatingMailboxListener delegatingMailboxListener = null;
         StoreMailboxManager<InMemoryId> mailboxManager = new StoreMailboxManager<InMemoryId>(
             inMemoryMapperFactory,
             new MockAuthenticator(),
             new JVMMailboxPathLocker(),
             new UnionMailboxACLResolver(),
-            new SimpleGroupMembershipResolver());
+            new SimpleGroupMembershipResolver(),
+            delegatingMailboxListener);
         mailboxManager.init();
         mailboxManagerManagement = new MailboxManagerManagement();
         mailboxManagerManagement.setMailboxManager(mailboxManager);

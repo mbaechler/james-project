@@ -33,6 +33,7 @@ import org.apache.james.mailbox.jpa.openjpa.OpenJPAMessageManager.AdvancedFeatur
 import org.apache.james.mailbox.store.Authenticator;
 import org.apache.james.mailbox.store.JVMMailboxPathLocker;
 import org.apache.james.mailbox.store.StoreMessageManager;
+import org.apache.james.mailbox.store.event.DelegatingMailboxListener;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 
 /**
@@ -43,8 +44,10 @@ public class OpenJPAMailboxManager extends JPAMailboxManager {
 
     private final AdvancedFeature feature;
 
-    public OpenJPAMailboxManager(JPAMailboxSessionMapperFactory mapperFactory, Authenticator authenticator, MailboxPathLocker locker, boolean useStreaming, MailboxACLResolver aclResolver, GroupMembershipResolver groupMembershipResolver) {
-        super(mapperFactory, authenticator,  locker, aclResolver, groupMembershipResolver);
+    public OpenJPAMailboxManager(JPAMailboxSessionMapperFactory mapperFactory, Authenticator authenticator, 
+            MailboxPathLocker locker, boolean useStreaming, MailboxACLResolver aclResolver, GroupMembershipResolver groupMembershipResolver,
+            DelegatingMailboxListener delegatingMailboxListener) {
+        super(mapperFactory, authenticator,  locker, aclResolver, groupMembershipResolver, delegatingMailboxListener);
         if (useStreaming) {
             feature = AdvancedFeature.Streaming;
         } else {
@@ -52,8 +55,10 @@ public class OpenJPAMailboxManager extends JPAMailboxManager {
         }
     }
 
-    public OpenJPAMailboxManager(JPAMailboxSessionMapperFactory mapperFactory, Authenticator authenticator, MailboxPathLocker locker,  String encryptPass, MailboxACLResolver aclResolver, GroupMembershipResolver groupMembershipResolver) {
-        super(mapperFactory, authenticator,  locker, aclResolver, groupMembershipResolver);
+    public OpenJPAMailboxManager(JPAMailboxSessionMapperFactory mapperFactory, Authenticator authenticator, 
+            MailboxPathLocker locker,  String encryptPass, MailboxACLResolver aclResolver, GroupMembershipResolver groupMembershipResolver,
+            DelegatingMailboxListener delegatingMailboxListener) {
+        super(mapperFactory, authenticator,  locker, aclResolver, groupMembershipResolver, delegatingMailboxListener);
         if (encryptPass != null) {
             EncryptDecryptHelper.init(encryptPass);
             feature = AdvancedFeature.Encryption;
@@ -62,8 +67,10 @@ public class OpenJPAMailboxManager extends JPAMailboxManager {
         }
     }
     
-    public OpenJPAMailboxManager(JPAMailboxSessionMapperFactory mapperFactory, Authenticator authenticator, MailboxACLResolver aclResolver, GroupMembershipResolver groupMembershipResolver) {
-        this(mapperFactory, authenticator, new JVMMailboxPathLocker(), false, aclResolver, groupMembershipResolver);
+    public OpenJPAMailboxManager(JPAMailboxSessionMapperFactory mapperFactory, Authenticator authenticator, 
+            MailboxACLResolver aclResolver, GroupMembershipResolver groupMembershipResolver,
+            DelegatingMailboxListener delegatingMailboxListener) {
+        this(mapperFactory, authenticator, new JVMMailboxPathLocker(), false, aclResolver, groupMembershipResolver, delegatingMailboxListener);
     }
 
     @Override

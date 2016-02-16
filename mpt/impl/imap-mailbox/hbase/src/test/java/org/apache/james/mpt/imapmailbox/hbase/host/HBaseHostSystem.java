@@ -42,6 +42,7 @@ import org.apache.james.mailbox.hbase.mail.HBaseUidProvider;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.MockAuthenticator;
 import org.apache.james.mailbox.store.StoreSubscriptionManager;
+import org.apache.james.mailbox.store.event.DelegatingMailboxListener;
 import org.apache.james.mailbox.store.quota.DefaultQuotaRootResolver;
 import org.apache.james.mailbox.store.quota.NoQuotaManager;
 import org.apache.james.mpt.api.ImapFeatures;
@@ -97,8 +98,8 @@ public class HBaseHostSystem extends JamesImapHostSystem {
                 conf, uidProvider, modSeqProvider);
         MailboxACLResolver aclResolver = new UnionMailboxACLResolver();
         GroupMembershipResolver groupMembershipResolver = new SimpleGroupMembershipResolver();
-        
-        mailboxManager = new HBaseMailboxManager(mapperFactory, userManager, aclResolver, groupMembershipResolver);
+        DelegatingMailboxListener delegatingMailboxListener = null;
+        mailboxManager = new HBaseMailboxManager(mapperFactory, userManager, aclResolver, groupMembershipResolver, delegatingMailboxListener);
         mailboxManager.init();
 
         SubscriptionManager subscriptionManager = new StoreSubscriptionManager(mapperFactory);

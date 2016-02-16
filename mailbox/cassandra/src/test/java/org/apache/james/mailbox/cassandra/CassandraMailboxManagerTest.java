@@ -33,6 +33,7 @@ import org.apache.james.mailbox.cassandra.modules.CassandraUidAndModSeqModule;
 import org.apache.james.mailbox.exception.BadCredentialsException;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.store.JVMMailboxPathLocker;
+import org.apache.james.mailbox.store.event.DelegatingMailboxListener;
 import org.junit.After;
 import org.junit.Before;
 import org.slf4j.LoggerFactory;
@@ -89,8 +90,8 @@ public class CassandraMailboxManagerTest extends AbstractMailboxManagerTest {
             modSeqProvider,
             CASSANDRA.getConf(),
             CASSANDRA.getTypesProvider());
-
-        final CassandraMailboxManager manager = new CassandraMailboxManager(mapperFactory, null, new JVMMailboxPathLocker());
+        DelegatingMailboxListener delegatingMailboxListener = null;
+        final CassandraMailboxManager manager = new CassandraMailboxManager(mapperFactory, null, new JVMMailboxPathLocker(), delegatingMailboxListener);
         manager.init();
 
         setMailboxManager(manager);

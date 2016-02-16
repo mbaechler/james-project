@@ -35,6 +35,8 @@ import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.store.Authenticator;
 import org.apache.james.mailbox.store.MailboxSessionMapperFactory;
 import org.apache.james.mailbox.store.NoMailboxPathLocker;
+import org.apache.james.mailbox.store.event.DefaultDelegatingMailboxListener;
+import org.apache.james.mailbox.store.event.DelegatingMailboxListener;
 import org.apache.james.mailbox.store.mail.MailboxMapperFactory;
 import org.apache.james.mailbox.store.mail.MessageMapperFactory;
 import org.apache.james.mailbox.store.mail.ModSeqProvider;
@@ -65,6 +67,7 @@ public class CassandraMailboxModule extends AbstractModule {
         bind(MailboxPathLocker.class).to(NoMailboxPathLocker.class);
         bind(Authenticator.class).to(UserRepositoryAuthenticator.class);
         bind(MailboxManager.class).to(CassandraMailboxManager.class);
+        bind(DelegatingMailboxListener.class).to(DefaultDelegatingMailboxListener.class);
 
         Multibinder<CassandraModule> cassandraDataDefinitions = Multibinder.newSetBinder(binder(), CassandraModule.class);
         cassandraDataDefinitions.addBinding().to(org.apache.james.mailbox.cassandra.modules.CassandraAclModule.class);
