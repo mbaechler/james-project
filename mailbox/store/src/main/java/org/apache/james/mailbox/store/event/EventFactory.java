@@ -19,6 +19,7 @@
 
 package org.apache.james.mailbox.store.event;
 
+import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.apache.james.mailbox.MailboxListener;
@@ -60,6 +61,11 @@ public class EventFactory<Id extends MailboxId> {
 
         public Mailbox<LocalId> getMailbox() {
             return mailbox;
+        }
+        
+        @Override
+        public String toString() {
+            return Objects.toStringHelper(this).add("added", added).add("mailbox", mailbox).toString();
         }
     }
 
