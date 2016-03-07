@@ -105,8 +105,8 @@ public class GetMessageListRequest implements JmapRequest {
             return this;
         }
 
-        public Builder fetchMessageProperties(List<String> fetchMessageProperties) {
-            this.fetchMessageProperties.addAll(fetchMessageProperties);
+        public Builder fetchMessageProperties(Optional<List<String>> fetchMessageProperties) {
+            fetchMessageProperties.map(x -> this.fetchMessageProperties.addAll(x));
             return this;
         }
 
