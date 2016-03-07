@@ -83,7 +83,7 @@ public class GetMessageListRequestTest {
             .position(1)
             .limit(2)
             .fetchMessages(true)
-            .fetchMessageProperties(Optional.of(fetchMessageProperties))
+            .fetchMessageProperties(fetchMessageProperties)
             .build();
 
         assertThat(getMessageListRequest).isEqualToComparingFieldByField(expectedGetMessageListRequest);

@@ -501,7 +501,7 @@ public abstract class GetMessageListMethodTest {
             .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .header("Authorization", accessToken.serialize())
-            .body("[[\"getMessageList\", {\"fetchMessages\":true, \"fetchMessageProperties\": null}, \"#0\"]]")
+            .body("[[\"getMessageList\", {\"fetchMessages\":true}, \"#0\"]]")
         .when()
             .post("/jmap")
         .then()
