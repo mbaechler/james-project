@@ -32,6 +32,7 @@ import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsMapWithSize.aMapWithSize;
 import static org.hamcrest.collection.IsMapWithSize.anEmptyMap;
 
@@ -1059,6 +1060,64 @@ public abstract class SetMessagesMethodTest {
         calmlyAwait.atMost(10, TimeUnit.SECONDS).until( () -> isAnyMessageFoundInRecipientsMailboxes(recipientToken));
     }
 
+    @Test
+    public void setMessagesShouldStripBccFromDeliveredEmail() throws Exception {
+        // Sender
+        jmapServer.serverProbe().createMailbox(MailboxConstants.USER_NAMESPACE, username, "sent");
+        // Recipient
+        String recipientAddress = "recipient" + "@" + USERS_DOMAIN;
+        String password = "password";
+        jmapServer.serverProbe().addUser(recipientAddress, password);
+        jmapServer.serverProbe().createMailbox(MailboxConstants.USER_NAMESPACE, recipientAddress, "inbox");
+        embeddedElasticSearch.awaitForElasticSearch();
+        AccessToken recipientToken = JmapAuthentication.authenticateJamesUser(recipientAddress, password);
+
+        String messageCreationId = "user|inbox|1";
+        String fromAddress = username;
+        String requestBody = "[" +
+                "  [" +
+                "    \"setMessages\","+
+                "    {" +
+                "      \"create\": { \"" + messageCreationId  + "\" : {" +
+                "        \"from\": { \"email\": \"" + fromAddress + "\"}," +
+                "        \"bcc\": [{ \"name\": \"BOB\", \"email\": \"" + recipientAddress + "\"}]," +
+                "        \"cc\": [{ \"name\": \"ALICE\"}]," +
+                "        \"subject\": \"Thank you for joining example.com!\"," +
+                "        \"textBody\": \"Hello someone, and thank you for joining example.com!\"," +
+                "        \"mailboxIds\": [\"" + getOutboxId() + "\"]" +
+                "      }}" +
+                "    }," +
+                "    \"#0\"" +
+                "  ]" +
+                "]";
+
+        // Given
+        given()
+                .accept(ContentType.JSON)
+                .contentType(ContentType.JSON)
+                .header("Authorization", this.accessToken.serialize())
+                .body(requestBody)
+        // When
+        .when()
+                .post("/jmap");
+
+        // Then
+        calmlyAwait.atMost(10, TimeUnit.SECONDS).until( () -> isAnyMessageFoundInRecipientsMailboxes(recipientToken));
+        with()
+            .log().all()
+            .accept(ContentType.JSON)
+            .contentType(ContentType.JSON)
+            .header("Authorization", recipientToken.serialize())
+            .body("[[\"getMessageList\", {\"fetchMessages\": true, \"fetchMessageProperties\": [\"textBody\", \"bcc\"] }, \"#0\"]]")
+        .when()
+            .post("/jmap")
+        .then()
+            .log().ifValidationFails()
+            .statusCode(200)
+            .body(NAME, equalTo("messages"))
+            .body(ARGUMENTS + ".bcc", nullValue());
+    }
+    
     private boolean isAnyMessageFoundInRecipientsMailboxes(AccessToken recipientToken) {
         try {
             with()
