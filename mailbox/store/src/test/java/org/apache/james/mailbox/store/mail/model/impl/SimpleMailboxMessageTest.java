@@ -59,6 +59,7 @@ public class SimpleMailboxMessageTest {
 
     @Test
     public void testInputStreamSize() throws IOException {
+        @SuppressWarnings("resource")
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         byteArrayOutputStream.write(MESSAGE.getFullContent());
         assertThat(byteArrayOutputStream.size()).isEqualTo(MESSAGE_CONTENT.getBytes().length);
@@ -66,6 +67,7 @@ public class SimpleMailboxMessageTest {
 
     @Test
     public void testInputStreamSizeSpecialCharacters() throws IOException {
+        @SuppressWarnings("resource")
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         byteArrayOutputStream.write(MESSAGE_SPECIAL_CHAR.getFullContent());
         assertThat(byteArrayOutputStream.size()).isEqualTo(MESSAGE_CONTENT_SPECIAL_CHAR.getBytes().length);
