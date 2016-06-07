@@ -33,7 +33,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import org.apache.james.jmap.methods.ValueWithId.ErrorWithId;
 import org.apache.james.jmap.methods.ValueWithId.MessageWithId;
 import org.apache.james.jmap.model.CreationMessage;
 import org.apache.james.jmap.model.CreationMessage.DraftEmailer;
@@ -64,8 +63,6 @@ import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-
-import no.finntech.lambdacompanion.Either;
 
 public class SetMessagesCreationProcessorTest {
 
@@ -153,8 +150,8 @@ public class SetMessagesCreationProcessorTest {
         SetMessagesCreationProcessor sut = new SetMessagesCreationProcessor(
                 mockSessionMapperFactory, mimeMessageConverter, mockedMailSpool, mockedMailFactory, fakeSystemMailboxesProvider) {
             @Override
-            protected Either<ErrorWithId, MessageWithId> createMessageInOutboxAndSend(ValueWithId.CreationMessageEntry createdEntry, MailboxSession session, Mailbox outbox, Function<Long, MessageId> buildMessageIdFromUid) {
-                return Either.right(new MessageWithId(createdEntry.getCreationId(), FAKE_OUTBOX_MESSAGE));
+            protected MessageWithId createMessageInOutboxAndSend(ValueWithId.CreationMessageEntry createdEntry, MailboxSession session, Mailbox outbox, Function<Long, MessageId> buildMessageIdFromUid) {
+                return new MessageWithId(createdEntry.getCreationId(), FAKE_OUTBOX_MESSAGE);
             }
         };
         // When

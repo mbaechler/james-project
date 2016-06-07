@@ -33,9 +33,7 @@ import javax.mail.MessagingException;
 import javax.mail.internet.SharedInputStream;
 import javax.mail.util.SharedByteArrayInputStream;
 
-import org.apache.james.jmap.exceptions.MailboxRoleNotFoundException;
 import org.apache.james.jmap.methods.ValueWithId.CreationMessageEntry;
-import org.apache.james.jmap.methods.ValueWithId.ErrorWithId;
 import org.apache.james.jmap.methods.ValueWithId.MessageWithId;
 import org.apache.james.jmap.model.CreationMessage;
 import org.apache.james.jmap.model.CreationMessageId;
@@ -54,6 +52,7 @@ import org.apache.james.jmap.send.MailSpool;
 import org.apache.james.jmap.utils.SystemMailboxesProvider;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.exception.MailboxException;
+import org.apache.james.mailbox.exception.MailboxNotFoundException;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.MailboxSessionMapperFactory;
 import org.apache.james.mailbox.store.mail.MessageMapper;
@@ -63,8 +62,6 @@ import org.apache.james.mailbox.store.mail.model.MailboxMessage;
 import org.apache.james.mailbox.store.mail.model.impl.PropertyBuilder;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailboxMessage;
 import org.apache.mailet.Mail;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
@@ -72,13 +69,10 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
-import no.finntech.lambdacompanion.Either;
-
 public class SetMessagesCreationProcessor implements SetMessagesProcessor {
 
 
     private static final SetError UNEXPECTED_ERROR = SetError.builder().description("unexpected error").type("error").build();
-    private static final Logger LOGGER = LoggerFactory.getLogger(SetMessagesCreationProcessor.class);
 
     private final MailboxSessionMapperFactory mailboxSessionMapperFactory;
     private final MIMEMessageConverter mimeMessageConverter;
@@ -102,57 +96,66 @@ public class SetMessagesCreationProcessor implements SetMessagesProcessor {
 
     @Override
     public SetMessagesResponse process(SetMessagesRequest request, MailboxSession mailboxSession) {
-        List<CreationMessageEntry> creationRequestEntries = request.getCreate();
-        
         Builder responseBuilder = SetMessagesResponse.builder();
-        creationRequestEntries.stream()
-            .map(entry -> processEntry(entry, mailboxSession))
-            .forEach(either -> either.fold(
-                    error -> responseBuilder.notCreated(error.getCreationId(), error.getValue()),
-                    result -> responseBuilder.created(result.getCreationId(), result.getValue())));
+        request.getCreate()
+            .stream()
+            .forEach(create -> handleCreate(create, responseBuilder, mailboxSession));
         return responseBuilder.build();
     }
 
-    private Either<ErrorWithId, MessageWithId> processEntry(CreationMessageEntry entry, MailboxSession mailboxSession) {
-        return Either.<ErrorWithId, CreationMessageEntry>right(entry)
-            .joinRight(x -> notImplementedErrors(x, mailboxSession))
-            .joinRight(x -> getInvalidArgumentsErrors(x))
-            .joinRight(x -> notAllowedErrors(x, mailboxSession))
-            .joinRight(x -> handleOutboxMessages(x, mailboxSession));
-    }
-
-    private Either<ErrorWithId, CreationMessageEntry> notImplementedErrors(CreationMessageEntry entry, MailboxSession session) {
-        if (!isMessageSetIn(Role.DRAFTS, entry.getValue(), session)) {
-            return Either.right(entry);
-        } else {
-            return Either.left(
-                    new ErrorWithId(
-                            entry.getCreationId(), 
-                            SetError.builder().type("error").description("Not yet implemented").build()));
+    private void handleCreate(CreationMessageEntry create, Builder responseBuilder, MailboxSession mailboxSession) {
+        try {
+            validateImplementedFeature(create, mailboxSession);
+            validateArguments(create);
+            validateRights(create, mailboxSession);
+            MessageWithId created = handleOutboxMessages(create, mailboxSession);
+            responseBuilder.created(created.getCreationId(), created.getValue());
+            
+        } catch (MailboxUnhandledRequestException e) {
+            responseBuilder.notCreated(create.getCreationId(), 
+                    SetError.builder().description("unhandled request").type("unhandled").build());
+        } catch (MailboxNotFoundException e) {
+            responseBuilder.notCreated(create.getCreationId(), 
+                    SetError.builder()
+                        .type("error")
+                        .description("outbox can't be found")
+                        .build());
+        } catch (MailboxSendingNotAllowedException e) {
+            responseBuilder.notCreated(create.getCreationId(), 
+                    SetError.builder()
+                        .type("invalidProperties")
+                        .properties(ImmutableSet.of(MessageProperty.from))
+                        .description("Invalid 'from' field. Must be one of " + e.getAllowedFroms())
+                        .build());
+        } catch (MailboxNotImplementedException e) {
+            responseBuilder.notCreated(
+                            create.getCreationId(), 
+                            SetError.builder().type("error").description("Not yet implemented").build());
+        } catch (MailboxInvalidMessageCreationException e) {
+            responseBuilder.notCreated(create.getCreationId(),
+                            buildSetErrorFromValidationResult(create.getValue().validate()));
+        } catch (MailboxException | MessagingException e) {
+            responseBuilder.notCreated(create.getCreationId(), UNEXPECTED_ERROR);
         }
     }
     
-    private Either<ErrorWithId, CreationMessageEntry> getInvalidArgumentsErrors(CreationMessageEntry entry) {
+    private void validateImplementedFeature(CreationMessageEntry entry, MailboxSession session) throws MailboxNotImplementedException {
+        if (isMessageSetIn(Role.DRAFTS, entry.getValue(), session)) {
+            throw new MailboxNotImplementedException();
+        }
+    }
+    
+    private void validateArguments(CreationMessageEntry entry) throws MailboxInvalidMessageCreationException {
         CreationMessage message = entry.getValue();
         if (!message.isValid()) {
-            return Either.left(new ErrorWithId(entry.getCreationId(), buildSetErrorFromValidationResult(message.validate())));
+            throw new MailboxInvalidMessageCreationException();
         }
-        return Either.right(entry);
     }
     
-    private Either<ErrorWithId, CreationMessageEntry> notAllowedErrors(CreationMessageEntry entry, MailboxSession session) {
+    private void validateRights(CreationMessageEntry entry, MailboxSession session) throws MailboxSendingNotAllowedException {
         List<String> allowedSenders = ImmutableList.of(session.getUser().getUserName());
-        if (isAllowedFromAddress(entry.getValue(), allowedSenders)) {
-            return Either.right(entry);
-        } else {
-            return Either.left(
-                    new ErrorWithId(
-                            entry.getCreationId(), 
-                            SetError.builder()
-                                .type("invalidProperties")
-                                .properties(ImmutableSet.of(MessageProperty.from))
-                                .description("Invalid 'from' field. Must be one of " + allowedSenders)
-                                .build()));
+        if (!isAllowedFromAddress(entry.getValue(), allowedSenders)) {
+            throw new MailboxSendingNotAllowedException(allowedSenders);
         }
     }
     
@@ -165,42 +168,26 @@ public class SetMessagesCreationProcessor implements SetMessagesProcessor {
     }
 
     
-    private Either<ErrorWithId, MessageWithId> handleOutboxMessages(CreationMessageEntry entry, MailboxSession session) {
-        CreationMessageId creationId = entry.getCreationId();
-
-        return getMailboxWithRole(session, Role.OUTBOX)
-            .map(outbox -> {
-                if (isRequestForSending(entry.getValue(), session)) {
-                    Function<Long, MessageId> idGenerator = uid -> generateMessageId(session, outbox, uid);
-                    return createMessageInOutboxAndSend(entry, session, outbox, idGenerator);
-                }
-                return Either.<ErrorWithId, MessageWithId>left(
-                        new ErrorWithId(creationId, 
-                                SetError.builder().description("unhandled request").type("unhandled").build()));
-                
-            }).orElse(Either.left(new ErrorWithId(creationId, UNEXPECTED_ERROR)));
+    private MessageWithId handleOutboxMessages(CreationMessageEntry entry, MailboxSession session) throws MailboxException, MessagingException {
+        Mailbox outbox = getMailboxWithRole(session, Role.OUTBOX).orElseThrow(() -> new MailboxNotFoundException(Role.OUTBOX.serialize()));
+        if (!isRequestForSending(entry.getValue(), session)) {
+            throw new MailboxUnhandledRequestException();
+        }
+        Function<Long, MessageId> idGenerator = uid -> generateMessageId(session, outbox, uid);
+        return createMessageInOutboxAndSend(entry, session, outbox, idGenerator);
     }
     
     @VisibleForTesting
-    protected Either<ErrorWithId, MessageWithId> createMessageInOutboxAndSend(CreationMessageEntry createdEntry,
+    protected MessageWithId createMessageInOutboxAndSend(CreationMessageEntry createdEntry,
                                                            MailboxSession session,
-                                                           Mailbox outbox, Function<Long, MessageId> buildMessageIdFromUid) {
+                                                           Mailbox outbox, Function<Long, MessageId> buildMessageIdFromUid) throws MailboxException, MessagingException {
         CreationMessageId creationId = createdEntry.getCreationId();
-        try {
-            MessageMapper messageMapper = mailboxSessionMapperFactory.createMessageMapper(session);
-            MailboxMessage newMailboxMessage = buildMailboxMessage(createdEntry, outbox);
-            messageMapper.add(outbox, newMailboxMessage);
-            Message jmapMessage = Message.fromMailboxMessage(newMailboxMessage, ImmutableList.of(), buildMessageIdFromUid);
-            sendMessage(newMailboxMessage, jmapMessage, session);
-            return Either.right(new MessageWithId(creationId, jmapMessage));
-            
-        } catch (MessagingException | MailboxException e) {
-            return Either.left(new ErrorWithId(creationId, UNEXPECTED_ERROR));
-            
-        } catch (MailboxRoleNotFoundException e) {
-            LOGGER.error("Could not find mailbox '%s' while trying to save message.", e.getRole().serialize());
-            return Either.left(new ErrorWithId(creationId, UNEXPECTED_ERROR));
-        }
+        MessageMapper messageMapper = mailboxSessionMapperFactory.createMessageMapper(session);
+        MailboxMessage newMailboxMessage = buildMailboxMessage(createdEntry, outbox);
+        messageMapper.add(outbox, newMailboxMessage);
+        Message jmapMessage = Message.fromMailboxMessage(newMailboxMessage, ImmutableList.of(), buildMessageIdFromUid);
+        sendMessage(newMailboxMessage, jmapMessage, session);
+        return new MessageWithId(creationId, jmapMessage);
     }
     
     private boolean isMessageSetIn(Role role, CreationMessage entry, MailboxSession mailboxSession) {
