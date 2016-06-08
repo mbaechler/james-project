@@ -19,11 +19,11 @@
 
 package org.apache.james.jmap;
 
-import static com.jayway.restassured.RestAssured.with;
+import static io.restassured.RestAssured.with;
 
 import org.apache.james.jmap.api.access.AccessToken;
 
-import com.jayway.restassured.http.ContentType;
+import io.restassured.http.ContentType;
 
 public class JmapAuthentication {
 

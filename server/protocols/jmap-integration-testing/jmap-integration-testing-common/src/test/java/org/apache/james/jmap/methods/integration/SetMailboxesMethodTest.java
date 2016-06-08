@@ -19,10 +19,10 @@
 
 package org.apache.james.jmap.methods.integration;
 
-import static com.jayway.restassured.RestAssured.given;
-import static com.jayway.restassured.RestAssured.with;
-import static com.jayway.restassured.config.EncoderConfig.encoderConfig;
-import static com.jayway.restassured.config.RestAssuredConfig.newConfig;
+import static io.restassured.RestAssured.given;
+import static io.restassured.RestAssured.with;
+import static io.restassured.config.EncoderConfig.encoderConfig;
+import static io.restassured.config.RestAssuredConfig.newConfig;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
@@ -46,8 +46,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.google.common.base.Charsets;
-import com.jayway.restassured.RestAssured;
-import com.jayway.restassured.http.ContentType;
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
 
 public abstract class SetMailboxesMethodTest {
 
@@ -196,7 +196,7 @@ public abstract class SetMailboxesMethodTest {
             .contentType(ContentType.JSON)
             .header("Authorization", this.accessToken.serialize())
             .body(requestBody)
-            .then()
+            .when()
             .post("/jmap");
 
         given()

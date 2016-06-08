@@ -19,8 +19,8 @@
 
 package org.apache.james.jmap.methods.integration.cucumber;
 
-import static com.jayway.restassured.RestAssured.given;
-import static com.jayway.restassured.RestAssured.with;
+import static io.restassured.RestAssured.given;
+import static io.restassured.RestAssured.with;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 
@@ -37,7 +37,7 @@ import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 
 import com.github.fge.lambdas.Throwing;
-import com.jayway.restassured.http.ContentType;
+import io.restassured.http.ContentType;
 
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;

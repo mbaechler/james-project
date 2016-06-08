@@ -19,13 +19,13 @@
 
 package org.apache.james.jmap.methods.integration.cucumber;
 
-import static com.jayway.restassured.config.EncoderConfig.encoderConfig;
-import static com.jayway.restassured.config.RestAssuredConfig.newConfig;
+import static io.restassured.config.EncoderConfig.encoderConfig;
+import static io.restassured.config.RestAssuredConfig.newConfig;
 
 import org.apache.james.GuiceJamesServer;
 
 import com.google.common.base.Charsets;
-import com.jayway.restassured.RestAssured;
+import io.restassured.RestAssured;
 
 import cucumber.runtime.java.guice.ScenarioScoped;
 

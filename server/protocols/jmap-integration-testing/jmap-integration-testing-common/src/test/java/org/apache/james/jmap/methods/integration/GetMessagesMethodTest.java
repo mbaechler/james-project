@@ -19,9 +19,9 @@
 
 package org.apache.james.jmap.methods.integration;
 
-import static com.jayway.restassured.RestAssured.given;
-import static com.jayway.restassured.config.EncoderConfig.encoderConfig;
-import static com.jayway.restassured.config.RestAssuredConfig.newConfig;
+import static io.restassured.RestAssured.given;
+import static io.restassured.config.EncoderConfig.encoderConfig;
+import static io.restassured.config.RestAssuredConfig.newConfig;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
@@ -45,8 +45,8 @@ import org.junit.Test;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
-import com.jayway.restassured.RestAssured;
-import com.jayway.restassured.http.ContentType;
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
 
 public abstract class GetMessagesMethodTest {
     private static final String NAME = "[0][0]";

@@ -19,7 +19,7 @@
 
 package org.apache.james.jmap.methods.integration.cucumber;
 
-import static com.jayway.restassured.RestAssured.with;
+import static io.restassured.RestAssured.with;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
@@ -31,9 +31,9 @@ import javax.mail.Flags;
 import org.apache.james.mailbox.model.MailboxConstants;
 import org.apache.james.mailbox.model.MailboxPath;
 
-import com.jayway.restassured.http.ContentType;
-import com.jayway.restassured.response.Response;
-import com.jayway.restassured.specification.RequestSpecification;
+import io.restassured.http.ContentType;
+import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
 
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
