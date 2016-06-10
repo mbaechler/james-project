@@ -23,19 +23,10 @@ import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.with;
 import static io.restassured.config.EncoderConfig.encoderConfig;
 import static io.restassured.config.RestAssuredConfig.newConfig;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.endsWith;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.isEmptyOrNullString;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.collection.IsMapWithSize.aMapWithSize;
-import static org.hamcrest.collection.IsMapWithSize.anEmptyMap;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +40,6 @@ import org.apache.james.jmap.api.access.AccessToken;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MailboxConstants;
 import org.apache.james.mailbox.model.MailboxPath;
-import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -59,10 +49,14 @@ import com.google.common.base.Charsets;
 import com.jayway.awaitility.Awaitility;
 import com.jayway.awaitility.Duration;
 import com.jayway.awaitility.core.ConditionFactory;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.DocumentContext;
+import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.Option;
+import com.jayway.jsonpath.ParseContext;
+
 import io.restassured.RestAssured;
-import io.restassured.builder.ResponseSpecBuilder;
 import io.restassured.http.ContentType;
-import io.restassured.specification.ResponseSpecification;
 
 public abstract class SetMessagesMethodTest {
 
@@ -81,6 +75,7 @@ public abstract class SetMessagesMethodTest {
     private AccessToken accessToken;
     private String username;
     private GuiceJamesServer jmapServer;
+    private ParseContext jsonPath;
 
     @Before
     public void setup() throws Throwable {
@@ -101,6 +96,9 @@ public abstract class SetMessagesMethodTest {
 
         Duration slowPacedPollInterval = Duration.FIVE_HUNDRED_MILLISECONDS;
         calmlyAwait = Awaitility.with().pollInterval(slowPacedPollInterval).and().with().pollDelay(slowPacedPollInterval).await();
+        
+
+        jsonPath = JsonPath.using(Configuration.defaultConfiguration().addOptions(Option.DEFAULT_PATH_LEAF_TO_NULL));
     }
 
     @After
@@ -117,21 +115,20 @@ public abstract class SetMessagesMethodTest {
     }
 
     private List<Map<String, String>> getAllMailboxesIds(AccessToken accessToken) {
-        return with()
+        InputStream json = with()
                 .accept(ContentType.JSON)
                 .contentType(ContentType.JSON)
                 .header("Authorization", accessToken.serialize())
                 .body("[[\"getMailboxes\", {\"properties\": [\"role\", \"id\"]}, \"#0\"]]")
         .post("/jmap")
                 .andReturn()
-                .body()
-                .jsonPath()
-                .getList(ARGUMENTS + ".list");
+                .asInputStream();
+        return jsonPath.parse(json).read(ARGUMENTS + ".list");
     }
 
     @Test
     public void setMessagesShouldReturnErrorNotSupportedWhenRequestContainsNonNullAccountId() throws Exception {
-        given()
+        InputStream json = given()
             .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .header("Authorization", accessToken.serialize())
@@ -140,13 +137,15 @@ public abstract class SetMessagesMethodTest {
             .post("/jmap")
         .then()
             .statusCode(200)
-            .body(NAME, equalTo("error"))
-            .body(ARGUMENTS + ".type", equalTo("Not yet implemented"));
+            .extract().asInputStream();
+        DocumentContext jsonDoc = jsonPath.parse(json);
+        assertThat(jsonDoc.<String>read(NAME)).isEqualTo("error");
+        assertThat(jsonDoc.<String>read(ARGUMENTS + ".type")).isEqualTo("Not yet implemented");
     }
 
     @Test
     public void setMessagesShouldReturnErrorNotSupportedWhenRequestContainsNonNullIfInState() throws Exception {
-        given()
+        InputStream json = given()
             .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .header("Authorization", accessToken.serialize())
@@ -155,15 +154,17 @@ public abstract class SetMessagesMethodTest {
             .post("/jmap")
         .then()
             .statusCode(200)
-            .body(NAME, equalTo("error"))
-            .body(ARGUMENTS + ".type", equalTo("Not yet implemented"));
+            .extract().asInputStream();
+        DocumentContext jsonDoc = jsonPath.parse(json);
+        assertThat(jsonDoc.<String>read(NAME)).isEqualTo("error");
+        assertThat(jsonDoc.<String>read(ARGUMENTS + ".type")).isEqualTo("Not yet implemented");
     }
 
     @Test
     public void setMessagesShouldReturnNotDestroyedWhenUnknownMailbox() throws Exception {
 
         String unknownMailboxMessageId = username + "|unknown|12345";
-        given()
+        InputStream json = given()
             .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .header("Authorization", accessToken.serialize())
@@ -173,13 +174,16 @@ public abstract class SetMessagesMethodTest {
         .then()
             .log().ifValidationFails()
             .statusCode(200)
-            .body(NAME, equalTo("messagesSet"))
-            .body(ARGUMENTS + ".destroyed", empty())
-            .body(ARGUMENTS + ".notDestroyed", hasEntry(equalTo(unknownMailboxMessageId), Matchers.allOf(
-                    hasEntry("type", "anErrorOccurred"),
-                    hasEntry("description", "An error occurred while deleting message " + unknownMailboxMessageId),
-                    hasEntry(equalTo("properties"), isEmptyOrNullString())))
-            );
+            .extract().asInputStream();
+        DocumentContext jsonDoc = jsonPath.parse(json);
+        assertThat(jsonDoc.<String>read(NAME)).isEqualTo("messagesSet");
+        assertThat(jsonDoc.<List<String>>read(ARGUMENTS + ".destroyed")).isEmpty();
+        assertThat(jsonDoc.<Map<String, Map<String, String>>>read(ARGUMENTS + ".notDestroyed"))
+            .containsOnlyKeys(unknownMailboxMessageId);
+        assertThat(jsonDoc.<Map<String, Map<String, String>>>read(ARGUMENTS + ".notDestroyed").get(unknownMailboxMessageId))
+            .containsEntry("type", "anErrorOccurred")
+            .containsEntry("description", "An error occurred while deleting message " + unknownMailboxMessageId)
+            .containsEntry("properties",  null);
     }
 
     @Test
@@ -187,7 +191,7 @@ public abstract class SetMessagesMethodTest {
         jmapServer.serverProbe().createMailbox(MailboxConstants.USER_NAMESPACE, username, "mailbox");
 
         String messageId = username + "|mailbox|12345";
-        given()
+        InputStream json = given()
             .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .header("Authorization", accessToken.serialize())
@@ -197,13 +201,16 @@ public abstract class SetMessagesMethodTest {
         .then()
             .log().ifValidationFails()
             .statusCode(200)
-            .body(NAME, equalTo("messagesSet"))
-            .body(ARGUMENTS + ".destroyed", empty())
-            .body(ARGUMENTS + ".notDestroyed", hasEntry(equalTo(messageId), Matchers.allOf(
-                    hasEntry("type", "notFound"),
-                    hasEntry("description", "The message " + messageId + " can't be found"),
-                    hasEntry(equalTo("properties"), isEmptyOrNullString())))
-            );
+            .extract().asInputStream();
+        DocumentContext jsonDoc = JsonPath.parse(json);
+        assertThat(jsonDoc.<String>read(NAME)).isEqualTo("messagesSet");
+        assertThat(jsonDoc.<List<String>>read(ARGUMENTS + ".destroyed")).isEmpty();
+        assertThat(jsonDoc.<Map<String, Map<String, String>>>read(ARGUMENTS + ".notDestroyed"))
+            .containsKey(messageId);
+        assertThat(jsonDoc.<Map<String, Map<String, String>>>read(ARGUMENTS + ".notDestroyed").get(messageId))
+            .containsEntry("type", "notFound")
+            .containsEntry("description", "The message " + messageId + " can't be found")
+            .containsEntry("properties", null);
     }
 
     @Test
@@ -215,7 +222,7 @@ public abstract class SetMessagesMethodTest {
                 new ByteArrayInputStream("Subject: test\r\n\r\ntestmail".getBytes()), new Date(), false, new Flags());
         await();
 
-        given()
+        InputStream json = given()
             .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .header("Authorization", accessToken.serialize())
@@ -224,10 +231,11 @@ public abstract class SetMessagesMethodTest {
             .post("/jmap")
         .then()
             .statusCode(200)
-            .body(NAME, equalTo("messagesSet"))
-            .body(ARGUMENTS + ".notDestroyed", anEmptyMap())
-            .body(ARGUMENTS + ".destroyed", hasSize(1))
-            .body(ARGUMENTS + ".destroyed", contains(username + "|mailbox|1"));
+            .extract().asInputStream();
+        DocumentContext jsonDoc = JsonPath.parse(json);
+        assertThat(jsonDoc.<String>read(NAME)).isEqualTo("messagesSet");
+        assertThat(jsonDoc.<Map<String, Map<String, String>>>read(ARGUMENTS + ".notDestroyed"));
+        assertThat(jsonDoc.<List<String>>read(ARGUMENTS + ".destroyed")).containsExactly(username + "|mailbox|1");
     }
 
     @Test
@@ -251,7 +259,7 @@ public abstract class SetMessagesMethodTest {
             .statusCode(200);
 
         // Then
-        given()
+        InputStream json = given()
            .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .header("Authorization", accessToken.serialize())
@@ -260,8 +268,10 @@ public abstract class SetMessagesMethodTest {
             .post("/jmap")
         .then()
             .statusCode(200)
-            .body(NAME, equalTo("messages"))
-            .body(ARGUMENTS + ".list", empty());
+            .extract().asInputStream();
+        DocumentContext jsonDoc = JsonPath.parse(json);
+        assertThat(jsonDoc.<String>read(NAME)).isEqualTo("messages");
+        assertThat(jsonDoc.<List<String>>read(ARGUMENTS + ".list")).isEmpty();
     }
 
     @Test
@@ -279,7 +289,7 @@ public abstract class SetMessagesMethodTest {
         await();
 
         String missingMessageId = username + "|mailbox|4";
-        given()
+        InputStream json = given()
             .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .header("Authorization", accessToken.serialize())
@@ -288,14 +298,16 @@ public abstract class SetMessagesMethodTest {
             .post("/jmap")
         .then()
             .statusCode(200)
-            .body(NAME, equalTo("messagesSet"))
-            .body(ARGUMENTS + ".destroyed", hasSize(2))
-            .body(ARGUMENTS + ".notDestroyed", aMapWithSize(1))
-            .body(ARGUMENTS + ".destroyed", contains(username + "|mailbox|1", username + "|mailbox|3"))
-            .body(ARGUMENTS + ".notDestroyed", hasEntry(equalTo(missingMessageId), Matchers.allOf(
-                    hasEntry("type", "notFound"),
-                    hasEntry("description", "The message " + missingMessageId + " can't be found")))
-            );
+            .extract().asInputStream();
+        DocumentContext jsonDoc = jsonPath.parse(json);
+            
+        assertThat(jsonDoc.<String>read(NAME)).isEqualTo("messagesSet");
+        assertThat(jsonDoc.<List<String>>read(ARGUMENTS + ".destroyed")).containsExactly(username + "|mailbox|1", username + "|mailbox|3");
+        assertThat(jsonDoc.<Map<String, Map<String, String>>>read(ARGUMENTS + ".notDestroyed"))
+            .containsOnlyKeys(missingMessageId);
+        assertThat(jsonDoc.<Map<String, Map<String, String>>>read(ARGUMENTS + ".notDestroyed").get(missingMessageId))
+            .containsEntry("type", "notFound")
+            .containsEntry("description", "The message " + missingMessageId + " can't be found");
     }
 
     @Test
@@ -325,7 +337,7 @@ public abstract class SetMessagesMethodTest {
             .statusCode(200);
 
         // Then
-        given()
+        InputStream json = given()
             .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .header("Authorization", accessToken.serialize())
@@ -334,8 +346,10 @@ public abstract class SetMessagesMethodTest {
             .post("/jmap")
         .then()
             .statusCode(200)
-            .body(NAME, equalTo("messages"))
-            .body(ARGUMENTS + ".list", hasSize(1));
+            .extract().asInputStream();
+        DocumentContext jsonDoc = jsonPath.parse(json);
+        assertThat(jsonDoc.<String>read(NAME)).isEqualTo("messages");
+        assertThat(jsonDoc.<List<String>>read(ARGUMENTS + ".list")).hasSize(1);
     }
 
     @Test
@@ -350,7 +364,7 @@ public abstract class SetMessagesMethodTest {
         String presumedMessageId = username + "|mailbox|1";
 
         // When
-        given()
+        InputStream json = given()
             .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .header("Authorization", accessToken.serialize())
@@ -359,19 +373,14 @@ public abstract class SetMessagesMethodTest {
             .post("/jmap")
         // Then
         .then()
-            .spec(getSetMessagesUpdateOKResponseAssertions(presumedMessageId))
-            .log().ifValidationFails();
-    }
-
-    private ResponseSpecification getSetMessagesUpdateOKResponseAssertions(String messageId) {
-        ResponseSpecBuilder builder = new ResponseSpecBuilder()
-                .expectStatusCode(200)
-                .expectBody(NAME, equalTo("messagesSet"))
-                .expectBody(ARGUMENTS + ".updated", hasSize(1))
-                .expectBody(ARGUMENTS + ".updated", contains(messageId))
-                .expectBody(ARGUMENTS + ".error", isEmptyOrNullString())
-                .expectBody(ARGUMENTS + ".notUpdated", not(hasKey(messageId)));
-        return builder.build();
+            .statusCode(200)
+            .log().ifValidationFails()
+            .extract().asInputStream();
+        DocumentContext jsonDoc = jsonPath.parse(json);
+        assertThat(jsonDoc.<String>read(NAME)).isEqualTo("messagesSet");
+        assertThat(jsonDoc.<List<String>>read(ARGUMENTS + ".updated")).containsExactly(presumedMessageId);
+        assertThat(jsonDoc.<String>read(ARGUMENTS + ".error")).isNullOrEmpty();
+        assertThat(jsonDoc.<Map<String, String>>read(ARGUMENTS + ".notUpdated")).isEmpty();
     }
 
     @Test
@@ -392,8 +401,9 @@ public abstract class SetMessagesMethodTest {
         // When
         .when()
                 .post("/jmap");
+
         // Then
-        with()
+        InputStream json = with()
                 .accept(ContentType.JSON)
                 .contentType(ContentType.JSON)
                 .header("Authorization", accessToken.serialize())
@@ -401,10 +411,10 @@ public abstract class SetMessagesMethodTest {
                 .post("/jmap")
         .then()
                 .statusCode(200)
-                .body(NAME, equalTo("messages"))
-                .body(ARGUMENTS + ".list", hasSize(1))
-                .body(ARGUMENTS + ".list[0].isUnread", equalTo(false))
-                .log().ifValidationFails();
+                .extract().asInputStream();
+        DocumentContext jsonDoc = jsonPath.parse(json);
+        assertThat(jsonDoc.<String>read(NAME)).isEqualTo("messages");
+        assertThat(jsonDoc.<List<Boolean>>read(ARGUMENTS + ".list[*].isUnread")).containsExactly(false);
     }
 
     @Test
@@ -417,7 +427,7 @@ public abstract class SetMessagesMethodTest {
         await();
 
         String presumedMessageId = username + "|mailbox|1";
-        given()
+        InputStream json = given()
                 .accept(ContentType.JSON)
                 .contentType(ContentType.JSON)
                 .header("Authorization", accessToken.serialize())
@@ -427,8 +437,14 @@ public abstract class SetMessagesMethodTest {
                 .post("/jmap")
         // Then
         .then()
-                .spec(getSetMessagesUpdateOKResponseAssertions(presumedMessageId))
-                .log().ifValidationFails();
+            .statusCode(200)
+            .log().ifValidationFails()
+            .extract().asInputStream();
+        DocumentContext jsonDoc = jsonPath.parse(json);
+        assertThat(jsonDoc.<String>read(NAME)).isEqualTo("messagesSet");
+        assertThat(jsonDoc.<List<String>>read(ARGUMENTS + ".updated")).containsExactly(presumedMessageId);
+        assertThat(jsonDoc.<String>read(ARGUMENTS + ".error")).isNullOrEmpty();
+        assertThat(jsonDoc.<Map<String, String>>read(ARGUMENTS + ".notUpdated")).isEmpty();
     }
 
     @Test
@@ -450,17 +466,18 @@ public abstract class SetMessagesMethodTest {
         .when()
                 .post("/jmap");
         // Then
-        with()
+        InputStream json = with()
                 .accept(ContentType.JSON)
                 .contentType(ContentType.JSON)
                 .header("Authorization", accessToken.serialize())
                 .body("[[\"getMessages\", {\"ids\": [\"" + presumedMessageId + "\"]}, \"#0\"]]")
                 .post("/jmap")
         .then()
-                .body(NAME, equalTo("messages"))
-                .body(ARGUMENTS + ".list", hasSize(1))
-                .body(ARGUMENTS + ".list[0].isUnread", equalTo(true))
-                .log().ifValidationFails();
+            .statusCode(200)
+            .extract().asInputStream();
+        DocumentContext jsonDoc = jsonPath.parse(json);
+        assertThat(jsonDoc.<String>read(NAME)).isEqualTo("messages");
+        assertThat(jsonDoc.<List<Boolean>>read(ARGUMENTS + ".list[*].isUnread")).containsExactly(true);
     }
 
 
@@ -474,7 +491,7 @@ public abstract class SetMessagesMethodTest {
         await();
 
         String presumedMessageId = username + "|mailbox|1";
-        given()
+        InputStream json = given()
                 .accept(ContentType.JSON)
                 .contentType(ContentType.JSON)
                 .header("Authorization", accessToken.serialize())
@@ -484,8 +501,14 @@ public abstract class SetMessagesMethodTest {
                 .post("/jmap")
         // Then
         .then()
-                .spec(getSetMessagesUpdateOKResponseAssertions(presumedMessageId))
-                .log().ifValidationFails();
+            .statusCode(200)
+            .log().ifValidationFails()
+            .extract().asInputStream();
+        DocumentContext jsonDoc = jsonPath.parse(json);
+        assertThat(jsonDoc.<String>read(NAME)).isEqualTo("messagesSet");
+        assertThat(jsonDoc.<List<String>>read(ARGUMENTS + ".updated")).containsExactly(presumedMessageId);
+        assertThat(jsonDoc.<String>read(ARGUMENTS + ".error")).isNullOrEmpty();
+        assertThat(jsonDoc.<Map<String, String>>read(ARGUMENTS + ".notUpdated")).isEmpty();
     }
 
     @Test
@@ -507,17 +530,19 @@ public abstract class SetMessagesMethodTest {
         .when()
                 .post("/jmap");
         // Then
-        with()
+        InputStream json = with()
                 .accept(ContentType.JSON)
                 .contentType(ContentType.JSON)
                 .header("Authorization", accessToken.serialize())
                 .body("[[\"getMessages\", {\"ids\": [\"" + presumedMessageId + "\"]}, \"#0\"]]")
                 .post("/jmap")
         .then()
-                .body(NAME, equalTo("messages"))
-                .body(ARGUMENTS + ".list", hasSize(1))
-                .body(ARGUMENTS + ".list[0].isFlagged", equalTo(true))
-                .log().ifValidationFails();
+            .statusCode(200)
+            .log().ifValidationFails()
+            .extract().asInputStream();
+        DocumentContext jsonDoc = jsonPath.parse(json);
+        assertThat(jsonDoc.<String>read(NAME)).isEqualTo("messages");
+        assertThat(jsonDoc.<List<Boolean>>read(ARGUMENTS + ".list[*].isFlagged")).containsExactly(true);
     }
 
     @Test
@@ -530,7 +555,7 @@ public abstract class SetMessagesMethodTest {
 
         String messageId = username + "|mailbox|1";
 
-        given()
+        InputStream json = given()
                 .accept(ContentType.JSON)
                 .contentType(ContentType.JSON)
                 .header("Authorization", accessToken.serialize())
@@ -540,13 +565,19 @@ public abstract class SetMessagesMethodTest {
         .then()
                 .log().ifValidationFails()
                 .statusCode(200)
-                .body(NAME, equalTo("messagesSet"))
-                .body(ARGUMENTS + ".notUpdated", hasKey(messageId))
-                .body(ARGUMENTS + ".notUpdated[\""+messageId+"\"].type", equalTo("invalidProperties"))
-                .body(ARGUMENTS + ".notUpdated[\""+messageId+"\"].properties[0]", equalTo("isUnread"))
-                .body(ARGUMENTS + ".notUpdated[\""+messageId+"\"].description", equalTo("isUnread: Can not construct instance of java.lang.Boolean from String value '123': only \"true\" or \"false\" recognized\n" +
-                        " at [Source: {\"isUnread\":\"123\"}; line: 1, column: 2] (through reference chain: org.apache.james.jmap.model.Builder[\"isUnread\"])"))
-                .body(ARGUMENTS + ".updated", hasSize(0));
+                .extract().asInputStream();
+                
+        DocumentContext jsonDoc = jsonPath.parse(json);
+        assertThat(jsonDoc.<String>read(NAME)).isEqualTo("messagesSet");
+        assertThat(jsonDoc.<List<String>>read(ARGUMENTS + ".updated")).isEmpty();
+        String notUpdatedMap = ARGUMENTS + ".notUpdated";
+        assertThat(jsonDoc.<Map<String, ?>>read(notUpdatedMap)).containsOnlyKeys(messageId);
+        String notUpdatedEntry = notUpdatedMap + "['" + messageId + "']";
+        assertThat(jsonDoc.<String>read(notUpdatedEntry + ".type")).isEqualTo("invalidProperties");
+        assertThat(jsonDoc.<List<String>>read(notUpdatedEntry + ".properties")).containsExactly("isUnread");
+        assertThat(jsonDoc.<String>read(notUpdatedEntry + ".description")).isEqualTo(
+                "isUnread: Can not construct instance of java.lang.Boolean from String value '123': only \"true\" or \"false\" recognized\n" +
+                " at [Source: {\"isUnread\":\"123\"}; line: 1, column: 2] (through reference chain: org.apache.james.jmap.model.Builder[\"isUnread\"])");
     }
 
     @Test
@@ -560,7 +591,7 @@ public abstract class SetMessagesMethodTest {
 
         String messageId = username + "|mailbox|1";
 
-        given()
+        InputStream json = given()
                 .accept(ContentType.JSON)
                 .contentType(ContentType.JSON)
                 .header("Authorization", accessToken.serialize())
@@ -570,13 +601,16 @@ public abstract class SetMessagesMethodTest {
         .then()
                 .log().ifValidationFails()
                 .statusCode(200)
-                .body(NAME, equalTo("messagesSet"))
-                .body(ARGUMENTS + ".notUpdated", hasKey(messageId))
-                .body(ARGUMENTS + ".notUpdated[\""+messageId+"\"].type", equalTo("invalidProperties"))
-                .body(ARGUMENTS + ".notUpdated[\""+messageId+"\"].properties", hasSize(2))
-                .body(ARGUMENTS + ".notUpdated[\""+messageId+"\"].properties[0]", equalTo("isUnread"))
-                .body(ARGUMENTS + ".notUpdated[\""+messageId+"\"].properties[1]", equalTo("isFlagged"))
-                .body(ARGUMENTS + ".updated", hasSize(0));
+                .extract().asInputStream();
+                
+        DocumentContext jsonDoc = jsonPath.parse(json);
+        assertThat(jsonDoc.<String>read(NAME)).isEqualTo("messagesSet");
+        assertThat(jsonDoc.<Map<String, ?>>read(ARGUMENTS + ".updated")).isEmpty();
+        String notUpdatedMap = ARGUMENTS + ".notUpdated";
+        assertThat(jsonDoc.<Map<String, ?>>read(notUpdatedMap)).containsOnlyKeys(messageId);
+        String notUpdatedEntry = notUpdatedMap + "." + messageId;
+        assertThat(jsonDoc.<String>read(notUpdatedEntry + ".type")).isEqualTo("invalidProperties");
+        assertThat(jsonDoc.<List<String>>read(notUpdatedEntry + ".properties")).containsExactly("isUnread", "isFlagged");
     }
 
     @Test
@@ -590,7 +624,7 @@ public abstract class SetMessagesMethodTest {
 
         String presumedMessageId = username + "|mailbox|1";
         // When
-        given()
+        InputStream json = given()
                 .accept(ContentType.JSON)
                 .contentType(ContentType.JSON)
                 .header("Authorization", accessToken.serialize())
@@ -599,8 +633,14 @@ public abstract class SetMessagesMethodTest {
                 .post("/jmap")
         // Then
         .then()
-                .spec(getSetMessagesUpdateOKResponseAssertions(presumedMessageId))
-                .log().ifValidationFails();
+            .statusCode(200)
+            .log().ifValidationFails()
+            .extract().asInputStream();
+        DocumentContext jsonDoc = jsonPath.parse(json);
+        assertThat(jsonDoc.<String>read(NAME)).isEqualTo("messagesSet");
+        assertThat(jsonDoc.<List<String>>read(ARGUMENTS + ".updated")).containsExactly(presumedMessageId);
+        assertThat(jsonDoc.<String>read(ARGUMENTS + ".error")).isNullOrEmpty();
+        assertThat(jsonDoc.<Map<String, ?>>read(ARGUMENTS + ".notUpdated")).isEmpty();;
     }
 
     @Test
@@ -622,17 +662,20 @@ public abstract class SetMessagesMethodTest {
         .when()
                 .post("/jmap");
         // Then
-        with()
+        InputStream json = with()
                 .accept(ContentType.JSON)
                 .contentType(ContentType.JSON)
                 .header("Authorization", accessToken.serialize())
                 .body("[[\"getMessages\", {\"ids\": [\"" + presumedMessageId + "\"]}, \"#0\"]]")
                 .post("/jmap")
         .then()
-                .body(NAME, equalTo("messages"))
-                .body(ARGUMENTS + ".list", hasSize(1))
-                .body(ARGUMENTS + ".list[0].isAnswered", equalTo(true))
-                .log().ifValidationFails();
+            .statusCode(200)
+            .extract().asInputStream();
+        
+        DocumentContext jsonDoc = jsonPath.parse(json);
+        assertThat(jsonDoc.<String>read(NAME)).isEqualTo("messages");
+        assertThat(jsonDoc.<List<String>>read(ARGUMENTS + ".list")).hasSize(1);
+        assertThat(jsonDoc.<Boolean>read(ARGUMENTS + ".list[0].isAnswered")).isTrue();
     }
 
     @Test
@@ -641,7 +684,7 @@ public abstract class SetMessagesMethodTest {
 
         String nonExistingMessageId = username + "|mailbox|12345";
 
-        given()
+        InputStream json = given()
             .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .header("Authorization", accessToken.serialize())
@@ -651,11 +694,16 @@ public abstract class SetMessagesMethodTest {
         .then()
             .log().ifValidationFails()
             .statusCode(200)
-            .body(NAME, equalTo("messagesSet"))
-            .body(ARGUMENTS + ".notUpdated", hasKey(nonExistingMessageId))
-            .body(ARGUMENTS + ".notUpdated[\""+nonExistingMessageId+"\"].type", equalTo("notFound"))
-            .body(ARGUMENTS + ".notUpdated[\""+nonExistingMessageId+"\"].description", equalTo("message not found"))
-            .body(ARGUMENTS + ".updated", hasSize(0));
+            .extract().asInputStream();
+            
+        DocumentContext jsonDoc = jsonPath.parse(json);
+        assertThat(jsonDoc.<String>read(NAME)).isEqualTo("messagesSet");
+        assertThat(jsonDoc.<List<String>>read(ARGUMENTS + ".updated")).isEmpty();
+        String notUpdatedMap = ARGUMENTS + ".notUpdated";
+        assertThat(jsonDoc.<Map<String, ?>>read(notUpdatedMap)).containsOnlyKeys(nonExistingMessageId);
+        String notUpdatedEntry = notUpdatedMap + "['" + nonExistingMessageId + "']";
+        assertThat(jsonDoc.<String>read(notUpdatedEntry + "type")).isEqualTo("notFound");
+        assertThat(jsonDoc.<String>read(notUpdatedEntry + "description")).isEqualTo("message not found");
     }
 
     @Test
@@ -678,7 +726,7 @@ public abstract class SetMessagesMethodTest {
                 "  ]" +
                 "]";
 
-        given()
+        InputStream json = given()
                 .accept(ContentType.JSON)
                 .contentType(ContentType.JSON)
                 .header("Authorization", accessToken.serialize())
@@ -688,27 +736,19 @@ public abstract class SetMessagesMethodTest {
         .then()
                 .log().ifValidationFails()
                 .statusCode(200)
-                .body(NAME, equalTo("messagesSet"))
-                .body(ARGUMENTS + ".notCreated", aMapWithSize(0))
-                // note that assertions on result message had to be split between
-                // string-typed values and boolean-typed value assertions on the same .created entry
-                // make sure only one creation has been processed
-                .body(ARGUMENTS + ".created", aMapWithSize(1))
-                // assert server-set attributes are returned
-                .body(ARGUMENTS + ".created", hasEntry(equalTo(messageCreationId), Matchers.allOf(
-                        hasEntry(equalTo("id"), not(isEmptyOrNullString())),
-                        hasEntry(equalTo("blobId"), not(isEmptyOrNullString())),
-                        hasEntry(equalTo("threadId"), not(isEmptyOrNullString())),
-                        hasEntry(equalTo("size"), not(isEmptyOrNullString()))
-                )))
-                // assert that message flags are all unset
-                .body(ARGUMENTS + ".created", hasEntry(equalTo(messageCreationId), Matchers.allOf(
-                        hasEntry(equalTo("isDraft"), equalTo(false)),
-                        hasEntry(equalTo("isUnread"), equalTo(false)),
-                        hasEntry(equalTo("isFlagged"), equalTo(false)),
-                        hasEntry(equalTo("isAnswered"), equalTo(false))
-                )))
-                ;
+                .extract().asInputStream();
+        DocumentContext jsonDoc = jsonPath.parse(json);
+        assertThat(jsonDoc.<String>read(NAME)).isEqualTo("messagesSet");
+        assertThat(jsonDoc.<Map<?, ?>>read(ARGUMENTS + ".notCreated")).isEmpty();
+        assertThat(jsonDoc.<Map<String, Map<String, ?>>>read(ARGUMENTS + ".created"))
+                .containsOnlyKeys(messageCreationId);
+        assertThat(jsonDoc.<Map<String, Map<String, ?>>>read(ARGUMENTS + ".created").get(messageCreationId))
+            .containsKeys("id", "blobId", "threadId", "size");
+        assertThat(jsonDoc.<Map<String, Map<String, Boolean>>>read(ARGUMENTS + ".created").get(messageCreationId))
+            .containsEntry("isDraft", false)
+            .containsEntry("isUnread", false)
+            .containsEntry("isFlagged", false)
+            .containsEntry("isAnswered", false);
     }
 
     @Test
@@ -735,7 +775,7 @@ public abstract class SetMessagesMethodTest {
                 "  ]" +
                 "]";
 
-        given()
+        with()
                 .accept(ContentType.JSON)
                 .contentType(ContentType.JSON)
                 .header("Authorization", accessToken.serialize())
@@ -745,18 +785,20 @@ public abstract class SetMessagesMethodTest {
                 .post("/jmap");
 
         // Then
-        with()
+        InputStream json = given()
                 .accept(ContentType.JSON)
                 .contentType(ContentType.JSON)
                 .header("Authorization", accessToken.serialize())
                 .body("[[\"getMessages\", {\"ids\": [\"" + presumedMessageId + "\"]}, \"#0\"]]")
         .post("/jmap")
         .then()
-                .body(NAME, equalTo("messages"))
-                .body(ARGUMENTS + ".list", hasSize(1))
-                .body(ARGUMENTS + ".list[0].subject", equalTo(messageSubject))
-                .body(ARGUMENTS + ".list[0].mailboxIds", contains(outboxId))
-                ;
+            .statusCode(200)
+            .extract().asInputStream();
+        
+        DocumentContext jsonDoc = jsonPath.parse(json);
+        assertThat(jsonDoc.<String>read(NAME)).isEqualTo("messages");
+        assertThat(jsonDoc.<List<String>>read(ARGUMENTS + ".list")).hasSize(1);
+        assertThat(jsonDoc.<List<String>>read(ARGUMENTS + ".list[0].mailboxIds")).contains(outboxId);
     }
 
     @Test
@@ -802,7 +844,7 @@ public abstract class SetMessagesMethodTest {
 
     private boolean messageHasBeenMovedToSentBox(String sentMailboxId) {
         try {
-            with()
+            InputStream json = with()
                     .accept(ContentType.JSON)
                     .contentType(ContentType.JSON)
                     .header("Authorization", accessToken.serialize())
@@ -811,8 +853,10 @@ public abstract class SetMessagesMethodTest {
                     .post("/jmap")
             .then()
                     .statusCode(200)
-                    .body(SECOND_NAME, equalTo("messages"))
-                    .body(SECOND_ARGUMENTS + ".list", hasSize(1));
+            .extract().asInputStream();
+            DocumentContext jsonDoc = jsonPath.parse(json);
+            assertThat(jsonDoc.<String>read(SECOND_NAME)).isEqualTo("messages");
+            assertThat(jsonDoc.<List<String>>read(SECOND_ARGUMENTS + ".list")).hasSize(1);
             return true;
         } catch(AssertionError e) {
             return false;
@@ -840,22 +884,26 @@ public abstract class SetMessagesMethodTest {
                 "  ]" +
                 "]";
 
-        given()
-                .accept(ContentType.JSON)
-                .contentType(ContentType.JSON)
-                .header("Authorization", accessToken.serialize())
-                .body(requestBody)
-                .when()
-                .post("/jmap")
-                .then()
-                .log().ifValidationFails()
-                .statusCode(200)
-                .body(NAME, equalTo("messagesSet"))
-
-                .body(ARGUMENTS + ".notCreated", hasKey(messageCreationId))
-                .body(ARGUMENTS + ".notCreated[\""+messageCreationId+"\"].type", equalTo("invalidProperties"))
-                .body(ARGUMENTS + ".notCreated[\""+messageCreationId+"\"].description", endsWith("no recipient address set"))
-                .body(ARGUMENTS + ".created", aMapWithSize(0));
+        InputStream json = given()
+            .accept(ContentType.JSON)
+            .contentType(ContentType.JSON)
+            .header("Authorization", accessToken.serialize())
+            .body(requestBody)
+        .when()
+            .post("/jmap")
+        .then()
+            .log().ifValidationFails()
+            .statusCode(200)
+            .extract().asInputStream();
+        
+        DocumentContext jsonDoc = jsonPath.parse(json);
+        assertThat(jsonDoc.<String>read(NAME)).isEqualTo("messagesSet");
+        assertThat(jsonDoc.<Map<?, ?>>read(ARGUMENTS + ".created")).isEmpty();
+        String notCreatedMap = ARGUMENTS + ".notCreated";
+        assertThat(jsonDoc.<Map<String, ?>>read(notCreatedMap)).containsOnlyKeys(messageCreationId);
+        String notCreatedEntry = notCreatedMap + "." + messageCreationId;
+        assertThat(jsonDoc.<String>read(notCreatedEntry + ".type")).isEqualTo("invalidProperties");
+        assertThat(jsonDoc.<String>read(notCreatedEntry + ".description")).endsWith("no recipient address set");
     }
 
     @Test
@@ -877,7 +925,7 @@ public abstract class SetMessagesMethodTest {
                 "  ]" +
                 "]";
 
-        given()
+        InputStream json = given()
                 .accept(ContentType.JSON)
                 .contentType(ContentType.JSON)
                 .header("Authorization", accessToken.serialize())
@@ -887,13 +935,17 @@ public abstract class SetMessagesMethodTest {
         .then()
                 .log().ifValidationFails()
                 .statusCode(200)
-                .body(NAME, equalTo("messagesSet"))
-                .body(ARGUMENTS + ".notCreated", hasKey(messageCreationId))
-                .body(ARGUMENTS + ".notCreated[\""+messageCreationId+"\"].type", equalTo("invalidProperties"))
-                .body(ARGUMENTS + ".notCreated[\""+messageCreationId+"\"].description", endsWith("'from' address is mandatory"))
-                .body(ARGUMENTS + ".notCreated[\""+messageCreationId+"\"].properties", hasSize(1))
-                .body(ARGUMENTS + ".notCreated[\""+messageCreationId+"\"].properties", contains("from"))
-                .body(ARGUMENTS + ".created", aMapWithSize(0));
+                .extract().asInputStream();
+            
+        DocumentContext jsonDoc = jsonPath.parse(json);
+        assertThat(jsonDoc.<String>read(NAME)).isEqualTo("messagesSet");
+        assertThat(jsonDoc.<Map<?, ?>>read(ARGUMENTS + ".created")).isEmpty();
+        String notCreatedMap = ARGUMENTS + ".notCreated";
+        assertThat(jsonDoc.<Map<String, ?>>read(notCreatedMap)).containsOnlyKeys(messageCreationId);
+        String notCreatedEntry = notCreatedMap + "." + messageCreationId;
+        assertThat(jsonDoc.<String>read(notCreatedEntry + ".type")).isEqualTo("invalidProperties");
+        assertThat(jsonDoc.<String>read(notCreatedEntry + ".description")).endsWith("'from' address is mandatory");
+        assertThat(jsonDoc.<List<String>>read(notCreatedEntry + ".properties")).containsExactly("from");
     }
 
     @Test
@@ -917,7 +969,7 @@ public abstract class SetMessagesMethodTest {
                 "  ]" +
                 "]";
 
-        given()
+        InputStream json = given()
                 .accept(ContentType.JSON)
                 .contentType(ContentType.JSON)
                 .header("Authorization", accessToken.serialize())
@@ -927,12 +979,16 @@ public abstract class SetMessagesMethodTest {
         .then()
                 .log().ifValidationFails()
                 .statusCode(200)
-                .body(NAME, equalTo("messagesSet"))
-                .body(ARGUMENTS + ".created", aMapWithSize(1))
-                .body(ARGUMENTS + ".created", hasKey(messageCreationId))
-                .body(ARGUMENTS + ".created[\""+messageCreationId+"\"].headers.from", equalTo(fromAddress))
-                .body(ARGUMENTS + ".created[\""+messageCreationId+"\"].from.name", equalTo(fromAddress))
-                .body(ARGUMENTS + ".created[\""+messageCreationId+"\"].from.email", equalTo(fromAddress));
+                .extract().asInputStream();
+                
+        DocumentContext jsonDoc = jsonPath.parse(json);
+        assertThat(jsonDoc.<String>read(NAME)).isEqualTo("messagesSet");
+        String createdMap = ARGUMENTS + ".created";
+        assertThat(jsonDoc.<Map<String, ?>>read(createdMap)).containsOnlyKeys(messageCreationId);
+        String notCreatedEntry = createdMap + "." + messageCreationId;
+        assertThat(jsonDoc.<String>read(notCreatedEntry + ".headers.from")).isEqualTo(fromAddress);
+        assertThat(jsonDoc.<String>read(notCreatedEntry + ".from.name")).isEqualTo(fromAddress);
+        assertThat(jsonDoc.<String>read(notCreatedEntry + ".from.email")).isEqualTo(fromAddress);
     }
 
     @Test
@@ -956,7 +1012,7 @@ public abstract class SetMessagesMethodTest {
                 "  ]" +
                 "]";
 
-        given()
+        InputStream json = given()
                 .accept(ContentType.JSON)
                 .contentType(ContentType.JSON)
                 .header("Authorization", accessToken.serialize())
@@ -966,12 +1022,14 @@ public abstract class SetMessagesMethodTest {
         .then()
                 .log().ifValidationFails()
                 .statusCode(200)
-                .body(NAME, equalTo("messagesSet"))
-                .body(ARGUMENTS + ".created", aMapWithSize(1))
-                .body(ARGUMENTS + ".created", hasKey(messageCreationId))
-                .body(ARGUMENTS + ".created[\""+messageCreationId+"\"].headers.from", equalTo(fromAddress))
-                .body(ARGUMENTS + ".created[\""+messageCreationId+"\"].from.name", equalTo(fromAddress))
-                .body(ARGUMENTS + ".created[\""+messageCreationId+"\"].from.email", equalTo(fromAddress));
+                .extract().asInputStream();
+        DocumentContext jsonDoc = JsonPath.parse(json);
+        assertThat(jsonDoc.<String>read(NAME)).isEqualTo("messagesSet");
+        assertThat(jsonDoc.<Map<String, Map<String, String>>>read(ARGUMENTS + ".created")).hasSize(1).containsKey(messageCreationId);
+        String createdEntry = ARGUMENTS + ".created." + messageCreationId;
+        assertThat(jsonDoc.<String>read(createdEntry + ".headers.from")).isEqualTo(fromAddress);
+        assertThat(jsonDoc.<String>read(createdEntry + ".from.name")).isEqualTo(fromAddress);
+        assertThat(jsonDoc.<String>read(createdEntry + ".from.email")).isEqualTo(fromAddress);
     }
 
     @Test
@@ -1035,7 +1093,7 @@ public abstract class SetMessagesMethodTest {
                 "  ]" +
                 "]";
 
-        given()
+        InputStream json = given()
                 .accept(ContentType.JSON)
                 .contentType(ContentType.JSON)
                 .header("Authorization", accessToken.serialize())
@@ -1045,13 +1103,17 @@ public abstract class SetMessagesMethodTest {
         .then()
                 .log().ifValidationFails()
                 .statusCode(200)
-                .body(NAME, equalTo("messagesSet"))
-                .body(ARGUMENTS + ".notCreated", hasKey(messageCreationId))
-                .body(ARGUMENTS + ".notCreated[\""+messageCreationId+"\"].type", equalTo("invalidProperties"))
-                .body(ARGUMENTS + ".notCreated[\""+messageCreationId+"\"].properties", hasSize(1))
-                .body(ARGUMENTS + ".notCreated[\""+messageCreationId+"\"].properties", contains("subject"))
-                .body(ARGUMENTS + ".notCreated[\""+messageCreationId+"\"].description", endsWith("'subject' is missing"))
-                .body(ARGUMENTS + ".created", aMapWithSize(0));
+                .extract().asInputStream();
+                
+        DocumentContext jsonDoc = jsonPath.parse(json);
+        assertThat(jsonDoc.<String>read(NAME)).isEqualTo("messagesSet");
+        assertThat(jsonDoc.<Map<String, ?>>read(ARGUMENTS + ".created")).isEmpty();
+        String notCreatedMap = ARGUMENTS + ".notCreated";
+        assertThat(jsonDoc.<Map<String, ?>>read(notCreatedMap)).containsOnlyKeys(messageCreationId);
+        String notCreatedEntry = notCreatedMap + "." + messageCreationId;
+        assertThat(jsonDoc.<String>read(notCreatedEntry + ".type")).isEqualTo("invalidProperties");
+        assertThat(jsonDoc.<List<String>>read(notCreatedEntry + ".properties")).containsExactly("subject");
+        assertThat(jsonDoc.<String>read(notCreatedEntry + ".description")).endsWith("'subject' is missing");
     }
 
 
@@ -1074,7 +1136,7 @@ public abstract class SetMessagesMethodTest {
             "  ]" +
             "]";
 
-        given()
+        InputStream json = given()
             .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .header("Authorization", accessToken.serialize())
@@ -1084,13 +1146,17 @@ public abstract class SetMessagesMethodTest {
         .then()
             .log().ifValidationFails()
             .statusCode(200)
-            .body(NAME, equalTo("messagesSet"))
-            .body(ARGUMENTS + ".notCreated", hasKey(messageCreationId))
-            .body(ARGUMENTS + ".notCreated[\""+messageCreationId+"\"].type", equalTo("invalidProperties"))
-            .body(ARGUMENTS + ".notCreated[\""+messageCreationId+"\"].properties", hasSize(1))
-            .body(ARGUMENTS + ".notCreated[\""+messageCreationId+"\"].properties", contains("from"))
-            .body(ARGUMENTS + ".notCreated[\""+messageCreationId+"\"].description", endsWith("Invalid 'from' field. Must be one of [username@domain.tld]"))
-            .body(ARGUMENTS + ".created", aMapWithSize(0));
+            .extract().asInputStream();
+                
+        DocumentContext jsonDoc = jsonPath.parse(json);
+        assertThat(jsonDoc.<String>read(NAME)).isEqualTo("messagesSet");
+        assertThat(jsonDoc.<Map<String, ?>>read(ARGUMENTS + ".created")).isEmpty();
+        String notCreatedMap = ARGUMENTS + ".notCreated";
+        assertThat(jsonDoc.<Map<String, ?>>read(notCreatedMap)).containsOnlyKeys(messageCreationId);
+        String notCreatedEntry = notCreatedMap + "." + messageCreationId;
+        assertThat(jsonDoc.<String>read(notCreatedEntry + ".type")).isEqualTo("invalidProperties");
+        assertThat(jsonDoc.<List<String>>read(notCreatedEntry + ".properties")).containsExactly("from");
+        assertThat(jsonDoc.<String>read(notCreatedEntry + ".description")).endsWith("Invalid 'from' field. Must be one of [username@domain.tld]");
     }
 
     @Test
@@ -1182,7 +1248,7 @@ public abstract class SetMessagesMethodTest {
 
         // Then
         calmlyAwait.atMost(30, TimeUnit.SECONDS).until( () -> isAnyMessageFoundInRecipientsMailboxes(recipientToken));
-        with()
+        InputStream json = given()
             .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .header("Authorization", recipientToken.serialize())
@@ -1192,9 +1258,12 @@ public abstract class SetMessagesMethodTest {
         .then()
             .log().ifValidationFails()
             .statusCode(200)
-            .body(SECOND_NAME, equalTo("messages"))
-            .body(SECOND_ARGUMENTS + ".list", hasSize(1)) 
-            .body(SECOND_ARGUMENTS + ".list[0].bcc", empty());
+            .extract().asInputStream();
+
+        DocumentContext jsonDoc = jsonPath.parse(json);
+        assertThat(jsonDoc.<String>read(SECOND_NAME)).isEqualTo("messages");
+        assertThat(jsonDoc.<List<String>>read(SECOND_ARGUMENTS + ".list")).hasSize(1);
+        assertThat(jsonDoc.<List<String>>read(SECOND_ARGUMENTS + ".list[0].bcc")).isEmpty();
     }
 
     @Test
@@ -1245,7 +1314,7 @@ public abstract class SetMessagesMethodTest {
 
         // Then
         calmlyAwait.atMost(30, TimeUnit.SECONDS).until( () -> messageHasBeenMovedToSentBox(sentMailboxId));
-        with()
+        InputStream json = given()
             .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .header("Authorization", this.accessToken.serialize())
@@ -1255,9 +1324,11 @@ public abstract class SetMessagesMethodTest {
         .then()
             .log().ifValidationFails()
             .statusCode(200)
-            .body(SECOND_NAME, equalTo("messages"))
-            .body(SECOND_ARGUMENTS + ".list", hasSize(1)) 
-            .body(SECOND_ARGUMENTS + ".list[0].bcc", hasSize(1));
+            .extract().asInputStream();
+        DocumentContext jsonDoc = jsonPath.parse(json);
+        assertThat(jsonDoc.<String>read(SECOND_NAME)).isEqualTo("messages");
+        assertThat(jsonDoc.<List<String>>read(SECOND_ARGUMENTS + ".list")).hasSize(1);
+        assertThat(jsonDoc.<List<String>>read(SECOND_ARGUMENTS + ".list[0].bcc")).hasSize(1);
     }
 
     @Test
@@ -1309,7 +1380,7 @@ public abstract class SetMessagesMethodTest {
 
         // Then
         calmlyAwait.atMost(30, TimeUnit.SECONDS).until( () -> isAnyMessageFoundInRecipientsMailboxes(bccToken));
-        with()
+        InputStream json = given()
             .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .header("Authorization", bccToken.serialize())
@@ -1319,14 +1390,16 @@ public abstract class SetMessagesMethodTest {
         .then()
             .log().ifValidationFails()
             .statusCode(200)
-            .body(SECOND_NAME, equalTo("messages"))
-            .body(SECOND_ARGUMENTS + ".list", hasSize(1)) 
-            .body(SECOND_ARGUMENTS + ".list[0].bcc", empty());
+            .extract().asInputStream();
+        DocumentContext jsonDoc = jsonPath.parse(json);
+        assertThat(jsonDoc.<String>read(SECOND_NAME)).isEqualTo("messages");
+        assertThat(jsonDoc.<List<String>>read(SECOND_ARGUMENTS + ".list")).hasSize(1);
+        assertThat(jsonDoc.<List<String>>read(SECOND_ARGUMENTS + ".list[0].bcc")).isEmpty();
     }
 
     private boolean isAnyMessageFoundInRecipientsMailboxes(AccessToken recipientToken) {
         try {
-            with()
+            InputStream json = with()
                     .accept(ContentType.JSON)
                     .contentType(ContentType.JSON)
                     .header("Authorization", recipientToken.serialize())
@@ -1335,9 +1408,10 @@ public abstract class SetMessagesMethodTest {
                     .post("/jmap")
             .then()
                     .statusCode(200)
-                    .body(NAME, equalTo("messageList"))
-                    .body(ARGUMENTS + ".messageIds", hasSize(1))
-            ;
+                    .extract().asInputStream();
+            DocumentContext jsonDoc = jsonPath.parse(json);
+            assertThat(jsonDoc.<String>read(NAME)).isEqualTo("messageList");
+            assertThat(jsonDoc.<List<String>>read(ARGUMENTS + ".messageIds")).hasSize(1);
             return true;
         } catch(AssertionError e) {
             return false;
@@ -1391,7 +1465,7 @@ public abstract class SetMessagesMethodTest {
 
     private boolean isHtmlMessageReceived(AccessToken recipientToken) {
         try {
-            with()
+            InputStream json = given()
                 .accept(ContentType.JSON)
                 .contentType(ContentType.JSON)
                 .header("Authorization", recipientToken.serialize())
@@ -1399,10 +1473,12 @@ public abstract class SetMessagesMethodTest {
             .post("/jmap")
             .then()
                 .statusCode(200)
-                .body(SECOND_NAME, equalTo("messages"))
-                .body(SECOND_ARGUMENTS + ".list", hasSize(1))
-                .body(SECOND_ARGUMENTS + ".list[0].htmlBody", equalTo("Hello <b>someone</b>, and thank you for joining example.com!"))
-            ;
+                .extract().asInputStream();
+            DocumentContext jsonDoc = jsonPath.parse(json);
+            assertThat(jsonDoc.<String>read(SECOND_NAME)).isEqualTo("messages");
+            assertThat(jsonDoc.<List<String>>read(SECOND_ARGUMENTS + ".list")).hasSize(1);
+            assertThat(jsonDoc.<String>read(SECOND_ARGUMENTS + ".list[0].htmlBody"))
+                .isEqualTo("Hello <b>someone</b>, and thank you for joining example.com!");
             return true;
         } catch(AssertionError e) {
             return false;

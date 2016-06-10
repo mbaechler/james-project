@@ -21,7 +21,11 @@ package org.apache.james.jmap;
 
 import static io.restassured.RestAssured.with;
 
+import java.io.InputStream;
+
 import org.apache.james.jmap.api.access.AccessToken;
+
+import com.jayway.jsonpath.JsonPath;
 
 import io.restassured.http.ContentType;
 
@@ -29,27 +33,25 @@ public class JmapAuthentication {
 
     public static AccessToken authenticateJamesUser(String username, String password) {
         String continuationToken = getContinuationToken(username);
-
-        return AccessToken.fromString(
-            with()
+        InputStream json = with()
                 .contentType(ContentType.JSON)
                 .accept(ContentType.JSON)
                 .body("{\"token\": \"" + continuationToken + "\", \"method\": \"password\", \"password\": \"" + password + "\"}")
-            .post("/authentication")
+                .post("/authentication")
                 .body()
-                .jsonPath()
-                .getString("accessToken")
+                .asInputStream();
+        return AccessToken.fromString(
+            JsonPath.parse(json).read("accessToken")
         );
     }
 
     private static String getContinuationToken(String username) {
-        return with()
+        InputStream json = with()
             .contentType(ContentType.JSON)
             .accept(ContentType.JSON)
             .body("{\"username\": \"" + username + "\", \"clientName\": \"Mozilla Thunderbird\", \"clientVersion\": \"42.0\", \"deviceName\": \"Joe Blogg’s iPhone\"}")
         .post("/authentication")
-            .body()
-            .path("continuationToken")
-            .toString();
+            .body().asInputStream();
+        return JsonPath.parse(json).read("continuationToken");
     }
 }
