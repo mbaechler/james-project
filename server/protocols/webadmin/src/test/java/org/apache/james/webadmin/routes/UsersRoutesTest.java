@@ -47,7 +47,8 @@ import org.junit.runner.RunWith;
 
 import com.google.common.base.Charsets;
 import com.jayway.restassured.RestAssured;
-import com.jayway.restassured.parsing.Parser;
+import com.jayway.restassured.builder.RequestSpecBuilder;
+import com.jayway.restassured.http.ContentType;
 
 import de.bechte.junit.runners.context.HierarchicalContextRunner;
 
@@ -65,7 +66,10 @@ public class UsersRoutesTest {
 
         RestAssured.port = webAdminServer.getPort().toInt();
         RestAssured.config = newConfig().encoderConfig(encoderConfig().defaultContentCharset(Charsets.UTF_8));
-        RestAssured.defaultParser = Parser.JSON;
+        RestAssured.requestSpecification = new RequestSpecBuilder()
+        		.setContentType(ContentType.JSON)
+        		.setAccept(ContentType.JSON)
+        		.build();
         RestAssured.basePath = UserRoutes.USERS;
     }
 
