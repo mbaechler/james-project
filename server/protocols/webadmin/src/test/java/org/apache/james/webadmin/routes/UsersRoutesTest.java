@@ -64,13 +64,13 @@ public class UsersRoutesTest {
         webAdminServer.configure(NO_CONFIGURATION);
         webAdminServer.await();
 
-        RestAssured.port = webAdminServer.getPort().toInt();
-        RestAssured.config = newConfig().encoderConfig(encoderConfig().defaultContentCharset(Charsets.UTF_8));
         RestAssured.requestSpecification = new RequestSpecBuilder()
         		.setContentType(ContentType.JSON)
         		.setAccept(ContentType.JSON)
+        		.setConfig(newConfig().encoderConfig(encoderConfig().defaultContentCharset(Charsets.UTF_8)))
+        		.setPort(webAdminServer.getPort().toInt())
+        		.setBasePath(UserRoutes.USERS)
         		.build();
-        RestAssured.basePath = UserRoutes.USERS;
     }
 
     @After
