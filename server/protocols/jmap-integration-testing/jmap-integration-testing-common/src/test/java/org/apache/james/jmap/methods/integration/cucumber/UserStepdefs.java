@@ -45,7 +45,7 @@ public class UserStepdefs {
 
     private final MainStepdefs mainStepdefs;
     
-    protected Map<String, String> passwordByUsers;
+    protected Map<String, String> passwordByUser;
     protected Set<String> domains;
     protected Map<String, AccessToken> tokenByUser;
     protected String lastConnectedUser;
@@ -54,7 +54,7 @@ public class UserStepdefs {
     private UserStepdefs(MainStepdefs mainStepdefs) {
         this.mainStepdefs = mainStepdefs;
         this.domains = new HashSet<>();
-        this.passwordByUsers = new HashMap<>();
+        this.passwordByUser = new HashMap<>();
         this.tokenByUser = new HashMap<>();
     }
 
@@ -79,7 +79,7 @@ public class UserStepdefs {
     public void createUser(String username) throws Exception {
         String password = generatePassword(username);
         mainStepdefs.jmapServer.serverProbe().addUser(username, password);
-        passwordByUsers.put(username, password);
+        passwordByUser.put(username, password);
     }
 
     @Given("^a connected user \"([^\"]*)\"$")
@@ -96,7 +96,7 @@ public class UserStepdefs {
     
     @Given("^\"([^\"]*)\" is connected$")
     public void connectUser(String username) throws Throwable {
-        String password = passwordByUsers.get(username);
+        String password = passwordByUser.get(username);
         Preconditions.checkState(password != null, "unknown user " + username);
         AccessToken accessToken = JmapAuthentication.authenticateJamesUser(username, password);
         tokenByUser.put(username, accessToken);

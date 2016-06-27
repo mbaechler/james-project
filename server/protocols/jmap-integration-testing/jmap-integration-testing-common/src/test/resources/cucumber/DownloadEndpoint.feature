@@ -45,7 +45,7 @@ Feature: Download endpoint
     Then the user should receive a not found response
 
   @Ignore
-  Scenario: A user should not have access to someone else attachment
+  Scenario: A user should have access to a shared attachment
     Given "usera@domain.tld" shares its mailbox "INBOX" with "userb@domain.tld"
     And "userb@domain.tld" is connected
     When "userb@domain.tld" downloads "a1"
