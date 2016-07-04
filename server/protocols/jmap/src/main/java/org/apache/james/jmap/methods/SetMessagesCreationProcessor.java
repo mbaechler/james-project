@@ -63,6 +63,8 @@ import org.apache.james.mailbox.store.mail.model.MailboxMessage;
 import org.apache.james.mailbox.store.mail.model.impl.PropertyBuilder;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailboxMessage;
 import org.apache.mailet.Mail;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
@@ -71,6 +73,7 @@ import com.google.common.collect.ImmutableList;
 
 public class SetMessagesCreationProcessor implements SetMessagesProcessor {
 
+    private static final Logger LOG = LoggerFactory.getLogger(SetMailboxesCreationProcessor.class);
     private final MailboxSessionMapperFactory mailboxSessionMapperFactory;
     private final MIMEMessageConverter mimeMessageConverter;
     private final MailSpool mailSpool;
@@ -148,6 +151,7 @@ public class SetMessagesCreationProcessor implements SetMessagesProcessor {
                         .build());
 
         } catch (MailboxException | MessagingException e) {
+            LOG.error("Unexpected error while creating message", e);
             responseBuilder.notCreated(create.getCreationId(), 
                     SetError.builder()
                         .type("error")
