@@ -23,6 +23,7 @@ import static com.jayway.restassured.RestAssured.given;
 import static com.jayway.restassured.RestAssured.with;
 import static com.jayway.restassured.config.EncoderConfig.encoderConfig;
 import static com.jayway.restassured.config.RestAssuredConfig.newConfig;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.endsWith;
@@ -127,8 +128,6 @@ public abstract class SetMessagesMethodTest {
                 .map(x -> x.get("id"))
                 .findFirst().get();
     }
-    
-
     
     private List<Map<String, String>> getAllMailboxesIds(AccessToken accessToken) {
         return with()
@@ -1282,10 +1281,10 @@ public abstract class SetMessagesMethodTest {
             .then()
                     .statusCode(200)
                     .body(NAME, equalTo("messageList"))
-                    .body(ARGUMENTS + ".messageIds", hasSize(1))
-            ;
+                    .body(ARGUMENTS + ".messageIds", hasSize(1));
             return true;
-        } catch(AssertionError e) {
+            
+        } catch (AssertionError e) {
             return false;
         }
     }
@@ -1333,6 +1332,54 @@ public abstract class SetMessagesMethodTest {
         calmlyAwait.atMost(30, TimeUnit.SECONDS).until( () -> isHtmlMessageReceived(recipientToken));
     }
 
+
+    @Test
+    public void setMessagesWhenSavingToDraftsShouldNotSendMessage() throws Exception {
+        String sender = username;
+        jmapServer.serverProbe().createMailbox(MailboxConstants.USER_NAMESPACE, sender, "sent");
+        jmapServer.serverProbe().createMailbox(MailboxConstants.USER_NAMESPACE, sender, "drafts");
+        String recipientAddress = "recipient" + "@" + USERS_DOMAIN;
+        String recipientPassword = "password";
+        jmapServer.serverProbe().addUser(recipientAddress, recipientPassword);
+        jmapServer.serverProbe().createMailbox(MailboxConstants.USER_NAMESPACE, recipientAddress, "inbox");
+        await();
+        AccessToken recipientToken = JmapAuthentication.authenticateJamesUser(recipientAddress, recipientPassword);
+
+        String senderDraftsMailboxId = getMailboxId(accessToken, Role.DRAFTS);
+
+        String messageCreationId = "creationId";
+        String fromAddress = username;
+        String requestBody = "[" +
+                "  [" +
+                "    \"setMessages\","+
+                "    {" +
+                "      \"create\": { \"" + messageCreationId  + "\" : {" +
+                "        \"from\": { \"email\": \"" + fromAddress + "\"}," +
+                "        \"to\": [{ \"name\": \"BOB\", \"email\": \"" + recipientAddress + "\"}]," +
+                "        \"cc\": [{ \"name\": \"ALICE\"}]," +
+                "        \"subject\": \"Thank you for joining example.com!\"," +
+                "        \"textBody\": \"Hello someone, and thank you for joining example.com!\"," +
+                "        \"mailboxIds\": [\"" + senderDraftsMailboxId + "\"]" +
+                "        \"isDraft\": false" +
+                "      }}" +
+                "    }," +
+                "    \"#0\"" +
+                "  ]" +
+                "]";
+
+        given()
+            .header("Authorization", this.accessToken.serialize())
+            .body(requestBody)
+        .when()
+            .post("/jmap");
+
+        //We need to wait for an async event to not happen, we couldn't found any
+        //robust way to check that.
+        Thread.sleep(TimeUnit.SECONDS.toMillis(5));
+        assertThat(isAnyMessageFoundInRecipientsMailboxes(recipientToken)).isFalse();
+    }
+
+
     private boolean isHtmlMessageReceived(AccessToken recipientToken) {
         try {
             with()
@@ -1377,8 +1424,6 @@ public abstract class SetMessagesMethodTest {
                 "]";
 
         given()
-                .accept(ContentType.JSON)
-                .contentType(ContentType.JSON)
                 .header("Authorization", this.accessToken.serialize())
                 .body(requestBody)
         .when()
