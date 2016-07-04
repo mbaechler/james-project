@@ -67,8 +67,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 
 public class SetMessagesCreationProcessor implements SetMessagesProcessor {
@@ -114,21 +114,13 @@ public class SetMessagesCreationProcessor implements SetMessagesProcessor {
             MessageWithId created = handleOutboxMessages(create, mailboxSession);
             responseBuilder.created(created.getCreationId(), created.getValue());
 
-        } catch (MailboxUnhandledRequestException e) {
-            responseBuilder.notCreated(create.getCreationId(), 
-                    SetError.builder()
-                        .type("invalidProperties")
-                        .properties(MessageProperty.mailboxIds)
-                        .description("This mailbox can't handle this request")
-                        .properties()
-                        .build());
-
         } catch (MailboxSendingNotAllowedException e) {
             responseBuilder.notCreated(create.getCreationId(), 
                     SetError.builder()
                         .type("invalidProperties")
                         .properties(MessageProperty.from)
-                        .description("Invalid 'from' field. Must be one of " + e.getAllowedFroms())
+                        .description("Invalid 'from' field. Must be one of " + 
+                                Joiner.on(", ").join(e.getAllowedFroms()))
                         .build());
 
         } catch (MailboxNotImplementedException e) {
@@ -147,7 +139,7 @@ public class SetMessagesCreationProcessor implements SetMessagesProcessor {
             responseBuilder.notCreated(create.getCreationId(), 
                     SetError.builder()
                         .type("error")
-                        .description("outbox can't be found")
+                        .description(e.getMailboxName() + " can't be found")
                         .build());
 
         } catch (MailboxException | MessagingException e) {
@@ -162,7 +154,10 @@ public class SetMessagesCreationProcessor implements SetMessagesProcessor {
     
     private void validateImplementedFeature(CreationMessageEntry entry, MailboxSession session) throws MailboxNotImplementedException {
         if (isAppendToMailboxWithRole(Role.DRAFTS, entry.getValue(), session)) {
-            throw new MailboxNotImplementedException();
+            throw new MailboxNotImplementedException("Drafts saving is not implemented");
+        }
+        if (!isAppendToMailboxWithRole(Role.OUTBOX, entry.getValue(), session)) {
+            throw new MailboxNotImplementedException("The only implemented feature is sending via outbox");
         }
     }
     
@@ -192,7 +187,7 @@ public class SetMessagesCreationProcessor implements SetMessagesProcessor {
     private MessageWithId handleOutboxMessages(CreationMessageEntry entry, MailboxSession session) throws MailboxException, MessagingException {
         Mailbox outbox = getMailboxWithRole(session, Role.OUTBOX).orElseThrow(() -> new MailboxNotFoundException(Role.OUTBOX.serialize()));
         if (!isRequestForSending(entry.getValue(), session)) {
-            throw new MailboxUnhandledRequestException();
+            throw new IllegalStateException("Messages for everything but outbox should have been filtered earlier");
         }
         Function<Long, MessageId> idGenerator = uid -> generateMessageId(session, outbox, uid);
         return createMessageInOutboxAndSend(entry, session, outbox, idGenerator);
@@ -290,12 +285,16 @@ public class SetMessagesCreationProcessor implements SetMessagesProcessor {
     }
 
     private void sendMessage(MailboxMessage mailboxMessage, Message jmapMessage, MailboxSession session) throws MessagingException {
+        Mail mail = buildMessage(mailboxMessage, jmapMessage);
+        MailMetadata metadata = new MailMetadata(jmapMessage.getId(), session.getUser().getUserName());
+        mailSpool.send(mail, metadata);
+    }
+
+    private Mail buildMessage(MailboxMessage mailboxMessage, Message jmapMessage) throws MessagingException {
         try {
-            Mail mail = mailFactory.build(mailboxMessage, jmapMessage);
-            MailMetadata metadata = new MailMetadata(jmapMessage.getId(), session.getUser().getUserName());
-            mailSpool.send(mail, metadata);
+            return mailFactory.build(mailboxMessage, jmapMessage);
         } catch (IOException e) {
-            Throwables.propagate(e);
+            throw new MessagingException("error building message to send", e);
         }
     }
 }

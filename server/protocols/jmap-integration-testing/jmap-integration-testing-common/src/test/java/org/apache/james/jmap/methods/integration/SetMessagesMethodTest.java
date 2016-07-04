@@ -1359,7 +1359,7 @@ public abstract class SetMessagesMethodTest {
                 "        \"cc\": [{ \"name\": \"ALICE\"}]," +
                 "        \"subject\": \"Thank you for joining example.com!\"," +
                 "        \"textBody\": \"Hello someone, and thank you for joining example.com!\"," +
-                "        \"mailboxIds\": [\"" + senderDraftsMailboxId + "\"]" +
+                "        \"mailboxIds\": [\"" + senderDraftsMailboxId + "\"], " +
                 "        \"isDraft\": false" +
                 "      }}" +
                 "    }," +
@@ -1371,7 +1371,9 @@ public abstract class SetMessagesMethodTest {
             .header("Authorization", this.accessToken.serialize())
             .body(requestBody)
         .when()
-            .post("/jmap");
+            .post("/jmap")
+        .then()
+            .statusCode(200);
 
         //We need to wait for an async event to not happen, we couldn't found any
         //robust way to check that.
@@ -1379,7 +1381,52 @@ public abstract class SetMessagesMethodTest {
         assertThat(isAnyMessageFoundInRecipientsMailboxes(recipientToken)).isFalse();
     }
 
+    @Test
+    public void setMessagesWhenSavingToRegularMailboxShouldNotSendMessage() throws Exception {
+        String sender = username;
+        jmapServer.serverProbe().createMailbox(MailboxConstants.USER_NAMESPACE, sender, "sent");
+        jmapServer.serverProbe().createMailbox(MailboxConstants.USER_NAMESPACE, sender, "drafts");
+        jmapServer.serverProbe().createMailbox(MailboxConstants.USER_NAMESPACE, sender, "regular");
+        Mailbox regularMailbox = jmapServer.serverProbe().getMailbox(MailboxConstants.USER_NAMESPACE, sender, "regular");
+        String recipientAddress = "recipient" + "@" + USERS_DOMAIN;
+        String recipientPassword = "password";
+        jmapServer.serverProbe().addUser(recipientAddress, recipientPassword);
+        await();
 
+        String messageCreationId = "creationId";
+        String fromAddress = username;
+        String requestBody = "[" +
+                "  [" +
+                "    \"setMessages\","+
+                "    {" +
+                "      \"create\": { \"" + messageCreationId  + "\" : {" +
+                "        \"from\": { \"email\": \"" + fromAddress + "\"}," +
+                "        \"to\": [{ \"name\": \"BOB\", \"email\": \"" + recipientAddress + "\"}]," +
+                "        \"cc\": [{ \"name\": \"ALICE\"}]," +
+                "        \"subject\": \"Thank you for joining example.com!\"," +
+                "        \"textBody\": \"Hello someone, and thank you for joining example.com!\"," +
+                "        \"mailboxIds\": [\"" + regularMailbox.getMailboxId().serialize() + "\"]" +
+                "      }}" +
+                "    }," +
+                "    \"#0\"" +
+                "  ]" +
+                "]";
+
+        String notCreatedMessage = ARGUMENTS + ".notCreated[\""+messageCreationId+"\"]";
+        given()
+            .header("Authorization", this.accessToken.serialize())
+            .body(requestBody)
+        .when()
+            .post("/jmap")
+        .then()
+            .statusCode(200)
+            .body(ARGUMENTS + ".notCreated", hasKey(messageCreationId))
+            .body(notCreatedMessage + ".type", equalTo("invalidProperties"))
+            .body(notCreatedMessage + ".description", equalTo("Not yet implemented"))
+            .body(ARGUMENTS + ".created", aMapWithSize(0));
+    }
+
+    
     private boolean isHtmlMessageReceived(AccessToken recipientToken) {
         try {
             with()
