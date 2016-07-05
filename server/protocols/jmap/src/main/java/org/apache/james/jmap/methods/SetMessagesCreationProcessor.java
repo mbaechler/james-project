@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.inject.Inject;
 import javax.mail.Flags;
@@ -33,8 +34,11 @@ import javax.mail.MessagingException;
 import javax.mail.internet.SharedInputStream;
 import javax.mail.util.SharedByteArrayInputStream;
 
+import org.apache.james.jmap.exceptions.AttachmentsNotFoundException;
 import org.apache.james.jmap.methods.ValueWithId.CreationMessageEntry;
 import org.apache.james.jmap.methods.ValueWithId.MessageWithId;
+import org.apache.james.jmap.model.Attachment;
+import org.apache.james.jmap.model.BlobId;
 import org.apache.james.jmap.model.CreationMessage;
 import org.apache.james.jmap.model.CreationMessageId;
 import org.apache.james.jmap.model.Message;
@@ -43,6 +47,7 @@ import org.apache.james.jmap.model.MessageId;
 import org.apache.james.jmap.model.MessageProperties;
 import org.apache.james.jmap.model.MessageProperties.MessageProperty;
 import org.apache.james.jmap.model.SetError;
+import org.apache.james.jmap.model.SetMessagesError;
 import org.apache.james.jmap.model.SetMessagesRequest;
 import org.apache.james.jmap.model.SetMessagesResponse;
 import org.apache.james.jmap.model.SetMessagesResponse.Builder;
@@ -52,16 +57,21 @@ import org.apache.james.jmap.send.MailMetadata;
 import org.apache.james.jmap.send.MailSpool;
 import org.apache.james.jmap.utils.SystemMailboxesProvider;
 import org.apache.james.mailbox.MailboxSession;
+import org.apache.james.mailbox.exception.AttachmentNotFoundException;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.exception.MailboxNotFoundException;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.MailboxSessionMapperFactory;
+import org.apache.james.mailbox.store.mail.AttachmentMapper;
+import org.apache.james.mailbox.store.mail.AttachmentMapperFactory;
 import org.apache.james.mailbox.store.mail.MessageMapper;
+import org.apache.james.mailbox.store.mail.model.AttachmentId;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.MailboxId;
 import org.apache.james.mailbox.store.mail.model.MailboxMessage;
 import org.apache.james.mailbox.store.mail.model.impl.PropertyBuilder;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailboxMessage;
+import org.apache.james.util.streams.ImmutableCollectors;
 import org.apache.mailet.Mail;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,6 +90,7 @@ public class SetMessagesCreationProcessor implements SetMessagesProcessor {
     private final MailFactory mailFactory;
     private final MessageFactory messageFactory;
     private final SystemMailboxesProvider systemMailboxesProvider;
+    private AttachmentMapperFactory attachmentMapperFactory;
 
     
     @VisibleForTesting @Inject
@@ -88,13 +99,15 @@ public class SetMessagesCreationProcessor implements SetMessagesProcessor {
                                  MailSpool mailSpool,
                                  MailFactory mailFactory,
                                  MessageFactory messageFactory,
-                                 SystemMailboxesProvider systemMailboxesProvider) {
+                                 SystemMailboxesProvider systemMailboxesProvider,
+                                 AttachmentMapperFactory attachmentMapperFactory) {
         this.mailboxSessionMapperFactory = mailboxSessionMapperFactory;
         this.mimeMessageConverter = mimeMessageConverter;
         this.mailSpool = mailSpool;
         this.mailFactory = mailFactory;
         this.messageFactory = messageFactory;
         this.systemMailboxesProvider = systemMailboxesProvider;
+        this.attachmentMapperFactory = attachmentMapperFactory;
     }
 
     @Override
@@ -109,7 +122,7 @@ public class SetMessagesCreationProcessor implements SetMessagesProcessor {
     private void handleCreate(CreationMessageEntry create, Builder responseBuilder, MailboxSession mailboxSession) {
         try {
             validateImplementedFeature(create, mailboxSession);
-            validateArguments(create);
+            validateArguments(create, mailboxSession);
             validateRights(create, mailboxSession);
             MessageWithId created = handleOutboxMessages(create, mailboxSession);
             responseBuilder.created(created.getCreationId(), created.getValue());
@@ -123,6 +136,15 @@ public class SetMessagesCreationProcessor implements SetMessagesProcessor {
                                 Joiner.on(", ").join(e.getAllowedFroms()))
                         .build());
 
+        } catch (AttachmentsNotFoundException e) {
+            responseBuilder.notCreated(create.getCreationId(), 
+                    SetMessagesError.builder()
+                        .type("invalidProperties")
+                        .properties(MessageProperty.mailboxIds)
+                        .attachmentsNotFound(e.getAttachmentIds())
+                        .description("Not yet implemented")
+                        .build());
+            
         } catch (MailboxNotImplementedException e) {
             responseBuilder.notCreated(create.getCreationId(), 
                     SetError.builder()
@@ -161,13 +183,38 @@ public class SetMessagesCreationProcessor implements SetMessagesProcessor {
         }
     }
     
-    private void validateArguments(CreationMessageEntry entry) throws MailboxInvalidMessageCreationException {
+    private void validateArguments(CreationMessageEntry entry, MailboxSession session) throws MailboxInvalidMessageCreationException, AttachmentsNotFoundException, MailboxException {
         CreationMessage message = entry.getValue();
         if (!message.isValid()) {
             throw new MailboxInvalidMessageCreationException();
         }
+        assertAttachmentsExist(entry, session);
     }
     
+    @VisibleForTesting void assertAttachmentsExist(CreationMessageEntry entry, MailboxSession session) throws AttachmentsNotFoundException, MailboxException {
+        List<Attachment> attachments = entry.getValue().getAttachments();
+        if (!attachments.isEmpty()) {
+            AttachmentMapper attachmentMapper = attachmentMapperFactory.getAttachmentMapper(session);
+            List<BlobId> notFounds = listAttachmentsNotFound(attachments, attachmentMapper);
+            if (!notFounds.isEmpty()) {
+                throw new AttachmentsNotFoundException(notFounds);
+            }
+        }
+    }
+
+    private List<BlobId> listAttachmentsNotFound(List<Attachment> attachments, AttachmentMapper attachmentMapper) {
+        return attachments.stream()
+            .flatMap(attachment -> {
+                try {
+                    AttachmentId attachmentId = AttachmentId.from(attachment.getBlobId().getRawValue());
+                    attachmentMapper.getAttachment(attachmentId);
+                    return Stream.of();
+                } catch (AttachmentNotFoundException e) {
+                    return Stream.of(attachment.getBlobId());
+                }
+            }).collect(ImmutableCollectors.toImmutableList());
+    }
+
     private void validateRights(CreationMessageEntry entry, MailboxSession session) throws MailboxSendingNotAllowedException {
         List<String> allowedSenders = ImmutableList.of(session.getUser().getUserName());
         if (!isAllowedFromAddress(entry.getValue(), allowedSenders)) {

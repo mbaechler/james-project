@@ -1485,4 +1485,52 @@ public abstract class SetMessagesMethodTest {
                         + "(through reference chain: org.apache.james.jmap.model.Builder[\"mailboxIds\"])"))
                .body(ARGUMENTS + ".updated", hasSize(0));
     }
+    
+    @Test
+    public void setMessagesShouldReturnAttachmentsNotFoundWhenBlobIdDoesntExist() throws Exception {
+        jmapServer.serverProbe().createMailbox(MailboxConstants.USER_NAMESPACE, username, "sent");
+        await();
+        String messageCreationId = "creationId";
+        String fromAddress = username;
+        String outboxId = getOutboxId(accessToken);
+        String requestBody = "[" +
+                "  [" +
+                "    \"setMessages\","+
+                "    {" +
+                "      \"create\": { \"" + messageCreationId  + "\" : {" +
+                "        \"from\": { \"name\": \"Me\", \"email\": \"" + fromAddress + "\"}," +
+                "        \"to\": [{ \"name\": \"BOB\", \"email\": \"someone@example.com\"}]," +
+                "        \"subject\": \"Message with a broken blobId\"," +
+                "        \"textBody\": \"Test body\"," +
+                "        \"mailboxIds\": [\"" + outboxId + "\"], " +
+                "        \"attachments\": [" +
+                "				{\"blobId\" : \"brokenId1\", \"type\" : \"image/gif\", \"size\" : 1337}," +
+                "				{\"blobId\" : \"brokenId2\", \"type\" : \"image/jpeg\", \"size\" : 1337}" +
+                " 			]" +
+                "      }}" +
+                "    }," +
+                "    \"#0\"" +
+                "  ]" +
+                "]";
+
+        String notCreatedPath = ARGUMENTS + ".notCreated[\""+messageCreationId+"\"]";
+
+        given()
+            .header("Authorization", accessToken.serialize())
+            .body(requestBody)
+        .when()
+            .post("/jmap")
+        .then()
+            .statusCode(200)
+            .body(NAME, equalTo("messagesSet"))
+            .body(ARGUMENTS + ".notCreated", hasKey(messageCreationId))
+            .body(notCreatedPath + ".type", equalTo("invalidProperties"))
+            .body(notCreatedPath + ".attachmentsNotFound", contains("brokenId1", "brokenId2"))
+            .body(ARGUMENTS + ".created", aMapWithSize(0));
+    }
+    
+    @Test
+    public void setMessagesShouldGenerateMultipartMixedMessagesWhenMessageHasAttachment() throws Exception {
+    	
+    }
 }

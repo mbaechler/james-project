@@ -89,6 +89,7 @@ public class CreationMessage {
             return mailboxIds(Arrays.asList(mailboxIds));
         }
 
+        @JsonDeserialize
         public Builder mailboxIds(List<String> mailboxIds) {
             this.mailboxIds = ImmutableList.copyOf(mailboxIds);
             return this;
@@ -169,6 +170,11 @@ public class CreationMessage {
             return this;
         }
 
+        public Builder attachments(Attachment... attachments) {
+            return attachments(Arrays.asList(attachments));
+        }
+        
+        @JsonDeserialize
         public Builder attachments(List<Attachment> attachments) {
             this.attachments.addAll(attachments);
             return this;
@@ -190,7 +196,8 @@ public class CreationMessage {
             Preconditions.checkState(headers != null, "'headers' is mandatory");
             ImmutableList<Attachment> attachments = this.attachments.build();
             ImmutableMap<String, SubMessage> attachedMessages = this.attachedMessages.build();
-            Preconditions.checkState(areAttachedMessagesKeysInAttachments(attachments, attachedMessages), "'attachedMessages' keys must be in 'attachments'");
+            //TODO: need to be sorted out
+            //Preconditions.checkState(areAttachedMessagesKeysInAttachments(attachments, attachedMessages), "'attachedMessages' keys must be in 'attachments'");
 
             if (date == null) {
                 date = ZonedDateTime.now();
