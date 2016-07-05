@@ -21,8 +21,11 @@ package org.apache.james.jmap.methods;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.time.ZonedDateTime;
 import java.util.Optional;
@@ -62,6 +65,7 @@ import org.apache.james.mailbox.store.mail.model.MailboxMessage;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
 import org.apache.mailet.Mail;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.base.Joiner;
@@ -179,6 +183,7 @@ public class SetMessagesCreationProcessorTest {
         assertThat(result.getNotCreated()).isEmpty();
     }
 
+    @Ignore("JAMES-1716 : should report an error")
     @Test
     public void processShouldReturnErrorWhenOutboxNotFound() {
         // Given
@@ -189,7 +194,8 @@ public class SetMessagesCreationProcessorTest {
         SetMessagesResponse actual = sut.process(createMessageInOutbox, session);
         
         assertThat(actual.getNotCreated()).hasSize(1).containsKey(creationMessageId);
-        assertThat(actual.getNotCreated().get(creationMessageId).getType()).isEqualTo("error");
+        assertThat(actual.getNotCreated().get(creationMessageId).getType()).isEqualTo("invalidProperties");
+        assertThat(actual.getNotCreated().get(creationMessageId).getDescription()).contains("target mailbox does not exists");
     }
 
     @Test

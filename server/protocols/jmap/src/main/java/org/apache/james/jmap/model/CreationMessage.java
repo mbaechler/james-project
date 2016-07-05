@@ -85,7 +85,7 @@ public class CreationMessage {
             headers = ImmutableMap.builder();
         }
 
-        public Builder mailboxId(String mailboxIds) {
+        public Builder mailboxId(String... mailboxIds) {
             return mailboxIds(Arrays.asList(mailboxIds));
         }
 
