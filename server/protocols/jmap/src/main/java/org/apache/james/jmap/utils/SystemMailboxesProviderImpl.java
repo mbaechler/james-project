@@ -59,7 +59,7 @@ public class SystemMailboxesProviderImpl implements SystemMailboxesProvider {
         ThrowingSupplier<List<MailboxMetaData>> getAllMailboxes = () -> mailboxManager.search(MailboxQuery.builder(session).privateUserMailboxes().build(), session);
         Predicate<MailboxPath> hasSpecifiedRole = path -> hasRole(aRole, path);
         return getAllMailboxes.get().stream()
-        .map(MailboxMetaData::getPath)
+                .map(MailboxMetaData::getPath)
                 .filter(hasSpecifiedRole)
                 .map(loadMailbox(session));
     }
