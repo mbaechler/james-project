@@ -439,7 +439,7 @@ public class RemoteDelivery extends GenericMailet implements Runnable {
         }
 
         // Start Workers Threads.
-        workersThreadCount = Integer.parseInt(getInitParameter("deliveryThreads"));
+        workersThreadCount = 1; Integer.parseInt(getInitParameter("deliveryThreads"));
         initDeliveryThreads();
     }
 

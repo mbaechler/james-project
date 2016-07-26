@@ -59,7 +59,7 @@ public class ConfigurationsPerformer {
     }
 
     private void processOthers(Set<ConfigurationPerformer> processed) {
-        configurationPerformers.stream()
+        configurationPerformers.parallelStream()
             .filter(x -> !processed.contains(x))
             .forEach(ConfigurationPerformer::initModule);
     }

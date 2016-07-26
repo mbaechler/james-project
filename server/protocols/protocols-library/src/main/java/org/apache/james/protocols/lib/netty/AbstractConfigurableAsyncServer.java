@@ -198,10 +198,10 @@ public abstract class AbstractConfigurableAsyncServer extends AbstractAsyncServe
         setListenAddresses(bindAddresses.toArray(new InetSocketAddress[bindAddresses.size()]));
 
         jmxName = config.getString("jmxName", getDefaultJMXName());
-        int ioWorker = config.getInt("ioWorkerCount", DEFAULT_IO_WORKER_COUNT);
+        int ioWorker = 1;//config.getInt("ioWorkerCount", DEFAULT_IO_WORKER_COUNT);
         setIoWorkerCount(ioWorker);
 
-        maxExecutorThreads = config.getInt("maxExecutorCount", DEFAULT_MAX_EXECUTOR_COUNT);
+        maxExecutorThreads = 1;//config.getInt("maxExecutorCount", DEFAULT_MAX_EXECUTOR_COUNT);
 
         
         configureHelloName(config);

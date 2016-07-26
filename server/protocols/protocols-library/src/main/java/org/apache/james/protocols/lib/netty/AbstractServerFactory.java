@@ -20,6 +20,10 @@
 package org.apache.james.protocols.lib.netty;
 
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -29,6 +33,8 @@ import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.james.lifecycle.api.Configurable;
 import org.apache.james.lifecycle.api.LogEnabled;
 import org.slf4j.Logger;
+
+import com.google.common.collect.Lists;
 
 /**
  * Abstract base class for Factories that need to create {@link AbstractConfigurableAsyncServer}'s via configuration files
@@ -62,9 +68,24 @@ public abstract class AbstractServerFactory implements Configurable, LogEnabled 
     @PostConstruct
     public void init() throws Exception {
         servers = createServers(log, config);
-        for (AbstractConfigurableAsyncServer server: servers) {
-            server.init();
+        List<Future<?>> initTasks = Lists.newArrayList();
+        ExecutorService executor = Executors.newCachedThreadPool();
+        for (final AbstractConfigurableAsyncServer server: servers) {
+            initTasks.add(executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        server.init();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }));
         }
+        for (Future<?> task: initTasks) {
+            task.get();
+        }
+        executor.shutdown();
     }
     
     /**
@@ -76,10 +97,25 @@ public abstract class AbstractServerFactory implements Configurable, LogEnabled 
     }
     
     @PreDestroy
-    public void destroy() {
-        for (AbstractConfigurableAsyncServer server: servers) {
-            server.destroy();
+    public void destroy() throws InterruptedException, ExecutionException {
+        List<Future<?>> destroyTasks = Lists.newArrayList();
+        ExecutorService executor = Executors.newCachedThreadPool();
+        for (final AbstractConfigurableAsyncServer server: servers) {
+            destroyTasks.add(executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        server.destroy();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }));
         }
+        for (Future<?> task: destroyTasks) {
+            task.get();
+        }
+        executor.shutdown();
     }
  
 }
