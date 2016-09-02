@@ -17,59 +17,50 @@
  * under the License.                                           *
  ****************************************************************/
 
-
-package org.apache.james.transport.matchers;
-
-import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
+package org.apache.james.mailetcontainer.impl.matchers;
 
 import javax.mail.MessagingException;
 
+import org.apache.james.transport.matchers.All;
+import org.apache.james.transport.matchers.RecipientIs;
 import org.apache.mailet.MailAddress;
 import org.apache.mailet.Matcher;
 import org.apache.mailet.base.test.FakeMail;
 import org.apache.mailet.base.test.FakeMailContext;
 import org.apache.mailet.base.test.FakeMatcherConfig;
+import org.junit.Before;
 
-import junit.framework.TestCase;
+public class BaseMatchersTest {
 
-public abstract class AbstractRecipientIsTest extends TestCase {
-
+    protected FakeMailContext context;
     protected FakeMail mockedMail;
+    protected CompositeMatcher matcher;
 
-    protected Matcher matcher;
-
-    private MailAddress[] recipients;
-
-    public AbstractRecipientIsTest(String arg0)
-            throws UnsupportedEncodingException {
-        super(arg0);
-    }
-
-    protected void setRecipients(MailAddress[] recipients) {
-        this.recipients = recipients;
-    }
-
-    protected void setupMockedMail() throws MessagingException {
+    @Before
+    public void setUp() throws Exception {
         mockedMail = FakeMail.builder()
-                .recipients(Arrays.asList(recipients))
+                .recipients(new MailAddress("test@james.apache.org"), new MailAddress("test2@james.apache.org"))
                 .build();
-
     }
 
-    protected void setupMatcher() throws MessagingException {
-        matcher = createMatcher();
-        FakeMatcherConfig mci = new FakeMatcherConfig("RecipientIs="
-                + getRecipientName(), FakeMailContext.defaultContext());
+    void setupCompositeMatcher(String matcherName, Class<? extends GenericCompositeMatcher> matcherClass)
+            throws Exception {
+        context = FakeMailContext.defaultContext();
+        matcher = matcherClass.newInstance();
+        FakeMatcherConfig mci = new FakeMatcherConfig(matcherName, context);
         matcher.init(mci);
     }
 
-    protected void setupAll() throws MessagingException {
-        setupMockedMail();
-        setupMatcher();
+    void setupChild(String matcherName) throws MessagingException {
+        Matcher child;
+        if (matcherName.equals("All")) {
+            child = new All();
+        }
+        else {
+            child = new RecipientIs();
+        }
+        FakeMatcherConfig sub = new FakeMatcherConfig(matcherName, context);
+        child.init(sub);
+        matcher.add(child);
     }
-
-    protected abstract String getRecipientName();
-
-    protected abstract Matcher createMatcher();
 }
