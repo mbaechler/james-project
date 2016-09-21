@@ -16,8 +16,26 @@
  * specific language governing permissions and limitations      *
  * under the License.                                           *
  ****************************************************************/
-package org.apache.james.mailbox.store.mail.model;
 
-public interface MessageId {
-    String serialize();
+package org.apache.james.mailbox;
+
+import javax.mail.Flags;
+
+import org.apache.james.mailbox.MessageManager.FlagsUpdateMode;
+import org.apache.james.mailbox.model.MessageId;
+import org.apache.james.mailbox.model.MessageResult;
+import org.apache.james.mailbox.model.MessageResult.FetchGroup;
+
+import com.google.common.base.Optional;
+
+public interface MessageIdManager {
+
+    Optional<MessageResult> get(MessageId messageId);
+
+    void setFlags(Flags newState, FlagsUpdateMode replace, MessageId messageId, MailboxSession mailboxSession);
+
+    Optional<MessageResult> getMessages(MessageId messageId, FetchGroup minimal, MailboxSession mailboxSession);
+
+    void expunge(MessageId messageId, MailboxSession mailboxSession);
+
 }

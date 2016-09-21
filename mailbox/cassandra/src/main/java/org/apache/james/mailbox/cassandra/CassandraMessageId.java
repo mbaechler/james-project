@@ -17,48 +17,31 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.jmap.send;
+package org.apache.james.mailbox.cassandra;
 
-import java.util.Objects;
+import java.util.UUID;
 
 import org.apache.james.mailbox.model.MessageId;
 
-import com.google.common.base.Preconditions;
+public class CassandraMessageId implements MessageId {
 
-public class MailMetadata {
-    public static final String MAIL_METADATA_MESSAGE_ID_ATTRIBUTE = "org.apache.james.jmap.send.MailMetaData.messageId";
-    public static final String MAIL_METADATA_USERNAME_ATTRIBUTE = "org.apache.james.jmap.send.MailMetaData.username";
-
-    private final MessageId messageId;
-    private final String username;
-
-    public MailMetadata(MessageId messageId, String username) {
-        Preconditions.checkNotNull(messageId);
-        Preconditions.checkNotNull(username);
-        this.messageId = messageId;
-        this.username = username;
+    public static CassandraMessageId of(UUID uuid) {
+        return new CassandraMessageId(uuid);
+    }
+    
+    public static CassandraMessageId of(String serialized) {
+        return of(UUID.fromString(serialized));
     }
 
-    public MessageId getMessageId() {
-        return messageId;
+    private UUID uuid;
+    
+    private CassandraMessageId(UUID uuid) {
+        this.uuid = uuid;
     }
-
-    public String getUsername() {
-        return username;
-    }
-
+    
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof MailMetadata) {
-            MailMetadata other = (MailMetadata) obj;
-            return Objects.equals(this.messageId, other.messageId)
-                && Objects.equals(this.username, other.username);
-        }
-        return false;
+    public String serialize() {
+        return uuid.toString();
     }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(messageId, username);
-    }
+    
 }

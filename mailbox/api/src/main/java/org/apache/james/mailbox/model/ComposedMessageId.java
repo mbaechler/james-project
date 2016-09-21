@@ -17,48 +17,32 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.jmap.send;
+package org.apache.james.mailbox.model;
 
-import java.util.Objects;
+import org.apache.james.mailbox.MessageUid;
 
-import org.apache.james.mailbox.model.MessageId;
+public class ComposedMessageId {
 
-import com.google.common.base.Preconditions;
-
-public class MailMetadata {
-    public static final String MAIL_METADATA_MESSAGE_ID_ATTRIBUTE = "org.apache.james.jmap.send.MailMetaData.messageId";
-    public static final String MAIL_METADATA_USERNAME_ATTRIBUTE = "org.apache.james.jmap.send.MailMetaData.username";
-
+    private final MailboxId mailboxId;
     private final MessageId messageId;
-    private final String username;
+    private final MessageUid uid;
 
-    public MailMetadata(MessageId messageId, String username) {
-        Preconditions.checkNotNull(messageId);
-        Preconditions.checkNotNull(username);
+    public ComposedMessageId(MailboxId mailboxId, MessageId messageId, MessageUid uid) {
+        this.mailboxId = mailboxId;
         this.messageId = messageId;
-        this.username = username;
+        this.uid = uid;
+    }
+
+    public MailboxId getMailboxId() {
+        return mailboxId;
     }
 
     public MessageId getMessageId() {
         return messageId;
     }
 
-    public String getUsername() {
-        return username;
+    public MessageUid getUid() {
+        return uid;
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof MailMetadata) {
-            MailMetadata other = (MailMetadata) obj;
-            return Objects.equals(this.messageId, other.messageId)
-                && Objects.equals(this.username, other.username);
-        }
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(messageId, username);
-    }
 }

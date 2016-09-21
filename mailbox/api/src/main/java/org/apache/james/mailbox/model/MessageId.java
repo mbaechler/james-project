@@ -17,33 +17,14 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.jmap.send;
+package org.apache.james.mailbox.model;
 
-import javax.inject.Inject;
+public interface MessageId {
 
-import org.apache.james.mailbox.MailboxManager;
-import org.apache.james.mailbox.MessageIdManager;
-import org.apache.james.mailbox.model.MessageId;
-import org.apache.james.mailbox.model.MessageId.Factory;
-import org.apache.james.queue.api.MailQueue.MailQueueItem;
-import org.apache.james.queue.api.MailQueueItemDecoratorFactory;
-
-public class PostDequeueDecoratorFactory implements MailQueueItemDecoratorFactory {
-    private final MailboxManager mailboxManager;
-    private final Factory messageIdFactory;
-    private final MessageIdManager messageIdManager;
-
-    @Inject
-    public PostDequeueDecoratorFactory(MailboxManager mailboxManager, MessageId.Factory messageIdFactory,
-            MessageIdManager messageIdManager) {
-        this.mailboxManager = mailboxManager;
-        this.messageIdFactory = messageIdFactory;
-        this.messageIdManager = messageIdManager;
+    public interface Factory {
+        MessageId fromString(String serialized);
     }
 
-    @Override
-    public MailQueueItemDecorator decorate(MailQueueItem mailQueueItem) {
-        return new PostDequeueDecorator(mailQueueItem, mailboxManager, messageIdFactory, messageIdManager);
-    }
+    String serialize();
 
 }
