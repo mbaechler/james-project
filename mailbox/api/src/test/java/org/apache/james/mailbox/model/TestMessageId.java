@@ -19,10 +19,11 @@
 
 package org.apache.james.mailbox.model;
 
+import com.google.common.base.Objects;
 
 public class TestMessageId implements MessageId {
 
-public static class Factory implements MessageId.Factory {
+    public static class Factory implements MessageId.Factory {
         
         @Override
         public MessageId fromString(String serialized) {
@@ -56,24 +57,16 @@ public static class Factory implements MessageId.Factory {
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + (int) (value ^ (value >>> 32));
-        return result;
+        return Objects.hashCode(value);
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        TestMessageId other = (TestMessageId) obj;
-        if (value != other.value)
-            return false;
-        return true;
+        if (obj instanceof TestMessageId) {
+            TestMessageId other = (TestMessageId) obj;
+            return Objects.equal(this.value, other.value);
+        }
+        return false;
     }
     
 }
