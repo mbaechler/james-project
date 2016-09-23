@@ -35,6 +35,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.junit.rules.TemporaryFolder;
+import org.testcontainers.containers.FixedHostPortGenericContainer;
 import org.testcontainers.containers.GenericContainer;
 
 import com.google.common.base.Charsets;
@@ -52,8 +53,9 @@ public class ForwardSmtpTest extends AbstractSimpleScriptedTestProtocol {
     public static final String PASSWORD = "secret";
 
     private final TemporaryFolder folder = new TemporaryFolder();
-    private final GenericContainer fakeSmtp = new SwarmGenericContainer("weave/rest-smtp-sink:latest")
-            .withAffinityToContainer();
+    private final GenericContainer fakeSmtp = new FixedHostPortGenericContainer<>("weave/rest-smtp-sink:latest")
+            .withFixedExposedPort(25, 25)
+            .withFixedExposedPort(80, 80);
     
     @Rule
     public final RuleChain chain = RuleChain.outerRule(folder).around(fakeSmtp);
@@ -68,7 +70,7 @@ public class ForwardSmtpTest extends AbstractSimpleScriptedTestProtocol {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        InetAddress containerIp = InetAddresses.forString(fakeSmtp.getContainerInfo().getNetworkSettings().getIpAddress());
+        InetAddress containerIp = InetAddress.getLocalHost();
         hostSystem.getInMemoryDnsService()
             .registerRecord("yopmail.com", new InetAddress[]{containerIp}, ImmutableList.of("yopmail.com"), ImmutableList.of());
         hostSystem.addAddressMapping(USER, DOMAIN, "ray@yopmail.com");
