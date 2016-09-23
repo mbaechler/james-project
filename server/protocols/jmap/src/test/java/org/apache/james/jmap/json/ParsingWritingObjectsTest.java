@@ -32,6 +32,7 @@ import org.apache.james.jmap.methods.JmapResponseWriterImpl;
 import org.apache.james.jmap.model.Message;
 import org.apache.james.jmap.model.SubMessage;
 import org.apache.james.mailbox.inmemory.InMemoryId;
+import org.apache.james.mailbox.inmemory.InMemoryMessageId;
 import org.apache.james.mailbox.model.TestMessageId;
 import org.junit.Before;
 import org.junit.Test;
