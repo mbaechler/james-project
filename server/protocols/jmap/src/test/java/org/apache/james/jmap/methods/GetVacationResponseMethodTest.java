@@ -38,7 +38,6 @@ import org.apache.james.jmap.model.GetVacationResponse;
 import org.apache.james.jmap.model.SetMailboxesRequest;
 import org.apache.james.jmap.model.VacationResponse;
 import org.apache.james.mailbox.MailboxSession;
-import org.apache.james.util.MissableOptional;
 import org.apache.james.util.date.ZonedDateTimeProvider;
 import org.junit.Before;
 import org.junit.Test;
