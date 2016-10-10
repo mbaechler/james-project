@@ -40,6 +40,7 @@ import org.apache.jsieve.mail.optional.EnvelopeAccessors;
 import org.apache.mailet.Mail;
 import org.apache.mailet.MailAddress;
 import org.apache.mailet.MailetContext;
+import org.apache.mailet.MailetContext.LogLevel;
 import org.joda.time.DateTime;
 
 import javax.mail.Header;
@@ -178,7 +179,7 @@ public class SieveMailAdapter implements MailAdapter, EnvelopeAccessors, ActionC
     {
         final List<Action> actions = getActions();
         for (final Action action: actions) {
-            getMailetContext().log("Executing action: " + action.toString());
+            getMailetContext().log(LogLevel.INFO, "Executing action: " + action.toString());
             try
             {
                 dispatcher.execute(action, getMail(), this);
@@ -231,7 +232,7 @@ public class SieveMailAdapter implements MailAdapter, EnvelopeAccessors, ActionC
         Set<String> headerNames = new HashSet<String>();
         try
         {
-            Enumeration allHeaders = getMessage().getAllHeaders();
+            Enumeration<?> allHeaders = getMessage().getAllHeaders();
             while (allHeaders.hasMoreElements())
             {
                 headerNames.add(((Header) allHeaders.nextElement()).getName());
@@ -445,7 +446,7 @@ public class SieveMailAdapter implements MailAdapter, EnvelopeAccessors, ActionC
         poster.post(uri, mail);
     }
     
-    public void post(MailAddress sender, Collection recipients, MimeMessage mail) throws MessagingException {
+    public void post(MailAddress sender, Collection<MailAddress> recipients, MimeMessage mail) throws MessagingException {
         getMailetContext().sendMail(sender, recipients, mail);
     }
 
