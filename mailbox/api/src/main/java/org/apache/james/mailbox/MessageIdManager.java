@@ -19,23 +19,24 @@
 
 package org.apache.james.mailbox;
 
+import java.util.List;
+
 import javax.mail.Flags;
 
 import org.apache.james.mailbox.MessageManager.FlagsUpdateMode;
+import org.apache.james.mailbox.exception.MailboxException;
+import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.mailbox.model.MessageResult;
 import org.apache.james.mailbox.model.MessageResult.FetchGroup;
 
-import com.google.common.base.Optional;
-
 public interface MessageIdManager {
 
-    Optional<MessageResult> get(MessageId messageId);
+    void setFlags(Flags newState, FlagsUpdateMode replace, MessageId messageId, MailboxId mailboxId, MailboxSession mailboxSession) throws MailboxException;
 
-    void setFlags(Flags newState, FlagsUpdateMode replace, MessageId messageId, MailboxSession mailboxSession);
+    List<MessageResult> getMessages(List<MessageId> messageId, FetchGroup minimal, MailboxSession mailboxSession);
 
-    Optional<MessageResult> getMessages(MessageId messageId, FetchGroup minimal, MailboxSession mailboxSession);
+    void delete(MessageId messageId, List<MailboxId> mailboxIds, MailboxSession mailboxSession);
 
-    void expunge(MessageId messageId, MailboxSession mailboxSession);
-
+    void setMailboxes(MessageId messageId, List<MailboxId> mailboxIds, MailboxSession mailboxSession);
 }

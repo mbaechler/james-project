@@ -40,7 +40,6 @@ import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MessageIdManager;
 import org.apache.james.mailbox.model.FetchGroupImpl;
 import org.apache.james.mailbox.model.MessageId;
-import org.apache.james.mailbox.model.MessageResult;
 
 import com.fasterxml.jackson.databind.ser.PropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
@@ -49,6 +48,7 @@ import com.github.fge.lambdas.functions.ThrowingFunction;
 import com.github.steveash.guavate.Guavate;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
 public class GetMessagesMethod implements Method {
@@ -123,9 +123,8 @@ public class GetMessagesMethod implements Method {
 
     private Function<MessageId, Stream<MetaDataWithContent>> loadMessage(MailboxSession mailboxSession) {
         ThrowingFunction<MessageId, Stream<MetaDataWithContent>> toMetaDataWithContentStream = (MessageId messageId) -> {
-            com.google.common.base.Optional<MessageResult> maybeMessage = messageIdManager.getMessages(messageId, FetchGroupImpl.FULL_CONTENT, mailboxSession);
-            
-            return maybeMessage.asSet().stream()
+            return messageIdManager.getMessages(ImmutableList.of(messageId), FetchGroupImpl.FULL_CONTENT, mailboxSession)
+                    .stream()
                     .map(Throwing.function(MetaDataWithContent::builderFromMessageResult).sneakyThrow())
                     .map(builder -> builder.messageId(messageId))
                     .map(MetaDataWithContent.Builder::build);

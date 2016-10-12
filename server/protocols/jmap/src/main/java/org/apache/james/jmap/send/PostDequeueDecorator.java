@@ -19,14 +19,16 @@
 package org.apache.james.jmap.send;
 
 import java.io.Serializable;
+import java.util.List;
 
 import org.apache.james.jmap.exceptions.MailboxRoleNotFoundException;
 import org.apache.james.jmap.model.mailbox.Role;
-import org.apache.james.jmap.send.exception.MailShouldBeInOutboxException;
 import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MessageIdManager;
 import org.apache.james.mailbox.exception.MailboxException;
+import org.apache.james.mailbox.model.FetchGroupImpl;
+import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MailboxMetaData;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.model.MailboxQuery;
@@ -40,7 +42,7 @@ import org.apache.mailet.Mail;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
 
 public class PostDequeueDecorator extends MailQueueItemDecorator {
     private static final Logger LOG = LoggerFactory.getLogger(PostDequeueDecorator.class);
@@ -104,36 +106,21 @@ public class PostDequeueDecorator extends MailQueueItemDecorator {
     }
 
     private void moveFromOutboxToSent(MessageId messageId, MailboxSession mailboxSession) throws MailQueueException, MailboxException {
-        Optional<MessageResult> maybeMessage = messageIdManager.get(messageId);
-        if (!maybeMessage.isPresent()) {
+        List<MessageResult> messages = messageIdManager.getMessages(ImmutableList.of(messageId), FetchGroupImpl.MINIMAL, mailboxSession);
+        if (messages.isEmpty()) {
             throw new MailboxException();
         }
-        MessageResult message = maybeMessage.get();
-        MailboxPath outboxMailboxPath = getMailboxPath(message, mailboxSession);
-        ensureMailboxPathIsOutbox(outboxMailboxPath);
-        MailboxPath sentMailboxPath = getSentMailboxPath(mailboxSession);
-        
-        mailboxManager.moveMessages(message.getUid().toRange(), outboxMailboxPath, sentMailboxPath, mailboxSession);
+        messageIdManager.setMailboxes(messageId, ImmutableList.of(getSentMailboxId(mailboxSession)), mailboxSession);
     }
 
-    private MailboxPath getMailboxPath(MessageResult message, MailboxSession mailboxSession) throws MailboxException {
-        return mailboxManager.getMailbox(message.getMailboxId(), mailboxSession).getMailboxPath();
-    }
-    
-    private void ensureMailboxPathIsOutbox(MailboxPath outboxMailboxPath) throws MailShouldBeInOutboxException {
-        if (!hasRole(outboxMailboxPath, Role.OUTBOX)) {
-            throw new MailShouldBeInOutboxException(outboxMailboxPath);
-        }
-    }
-
-    private MailboxPath getSentMailboxPath(MailboxSession session) throws MailboxRoleNotFoundException, MailboxException {
+    private MailboxId getSentMailboxId(MailboxSession session) throws MailboxRoleNotFoundException, MailboxException {
         MailboxQuery allUserMailboxesQuery = MailboxQuery.builder(session)
             .privateUserMailboxes()
             .build();
         return mailboxManager.search(allUserMailboxesQuery, session)
                 .stream()
-                .map(MailboxMetaData::getPath)
-                .filter(path -> hasRole(path, Role.SENT))
+                .filter(meta -> hasRole(meta.getPath(), Role.SENT))
+                .map(MailboxMetaData::getId)
                 .findFirst()
                 .orElseThrow(() -> new MailboxRoleNotFoundException(Role.SENT));
     }
