@@ -32,10 +32,12 @@ import org.apache.james.mailbox.cassandra.modules.CassandraModSeqModule;
 import org.apache.james.mailbox.cassandra.modules.CassandraUidModule;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.mock.MockMailboxSession;
+import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.mailbox.store.mail.AnnotationMapper;
 import org.apache.james.mailbox.store.mail.AttachmentMapper;
 import org.apache.james.mailbox.store.mail.MailboxMapper;
 import org.apache.james.mailbox.store.mail.MessageMapper;
+import org.apache.james.mailbox.store.mail.model.DefaultMessageId;
 import org.apache.james.mailbox.store.mail.model.MapperProvider;
 
 public class CassandraMapperProvider implements MapperProvider {
@@ -108,5 +110,10 @@ public class CassandraMapperProvider implements MapperProvider {
                 cassandra.getConf(),
                 cassandra.getTypesProvider()
             ).getAnnotationMapper(new MockMailboxSession("benwa"));
+    }
+    
+    @Override
+    public MessageId generateMessageId() {
+        return new DefaultMessageId();
     }
 }

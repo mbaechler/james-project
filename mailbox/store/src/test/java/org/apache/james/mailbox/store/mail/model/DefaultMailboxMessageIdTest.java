@@ -18,30 +18,24 @@
  ****************************************************************/
 package org.apache.james.mailbox.store.mail.model;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import org.apache.james.mailbox.MessageUid;
-import org.apache.james.mailbox.store.TestId;
+import org.apache.commons.lang.NotImplementedException;
 import org.junit.Test;
-
-import nl.jqno.equalsverifier.EqualsVerifier;
 
 public class DefaultMailboxMessageIdTest {
 
-    @Test(expected=NullPointerException.class)
-    public void constructorShouldThrowWhenNullMailboxId() {
-        new DefaultMessageId(null, MessageUid.of(1));
+    @Test(expected=NotImplementedException.class)
+    public void serializeShouldThrow() {
+        new DefaultMessageId().serialize();
     }
 
-    @Test
-    public void serializeShouldFormatMailboxIdAndUid() {
-        DefaultMessageId id = new DefaultMessageId(TestId.of(12l), MessageUid.of(1));
-        assertThat(id.serialize()).isEqualTo("12-1");
+    @Test(expected=NotImplementedException.class)
+    public void equalsShouldThrow() {
+        new DefaultMessageId().equals(new DefaultMessageId());
     }
     
-    @Test
-    public void shouldRespectJavaBeanContract() {
-        EqualsVerifier.forClass(DefaultMessageId.class).verify();
+    @Test(expected=NotImplementedException.class)
+    public void hashcodeShouldThrow() {
+        new DefaultMessageId().hashCode();
     }
     
 }

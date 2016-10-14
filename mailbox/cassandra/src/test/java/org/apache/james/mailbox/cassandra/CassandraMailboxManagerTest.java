@@ -33,6 +33,7 @@ import org.apache.james.mailbox.cassandra.modules.CassandraSubscriptionModule;
 import org.apache.james.mailbox.cassandra.modules.CassandraUidModule;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.store.NoMailboxPathLocker;
+import org.apache.james.mailbox.store.mail.model.DefaultMessageId;
 import org.apache.james.mailbox.store.mail.model.impl.MessageParser;
 import org.junit.runner.RunWith;
 import org.xenei.junit.contract.Contract;
@@ -69,7 +70,7 @@ public class CassandraMailboxManagerTest {
                 CASSANDRA.getConf(),
                 CASSANDRA.getTypesProvider());
 
-            CassandraMailboxManager manager = new CassandraMailboxManager(mapperFactory, null, new NoMailboxPathLocker(), new MessageParser());
+            CassandraMailboxManager manager = new CassandraMailboxManager(mapperFactory, null, new NoMailboxPathLocker(), new MessageParser(), new DefaultMessageId.Factory());
             try {
                 manager.init();
             } catch (MailboxException e) {

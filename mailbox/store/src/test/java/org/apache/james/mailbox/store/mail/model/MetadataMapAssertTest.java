@@ -39,6 +39,7 @@ import org.junit.Test;
 public class MetadataMapAssertTest {
 
     private static final MessageUid UID = MessageUid.of(18);
+    private static final TestMessageId MESSAGE_ID = TestMessageId.of(1337);
     private static final Long MODSEQ = 24L;
     private static final Date DATE = new Date();
     private static final String HEADER_STRING = "name: headerName\n\n";
@@ -49,7 +50,7 @@ public class MetadataMapAssertTest {
 
     @Before
     public void setUp() {
-        message1 = new SimpleMailboxMessage(DATE, HEADER_STRING.length() + BODY_STRING.length(),
+        message1 = new SimpleMailboxMessage(MESSAGE_ID, DATE, HEADER_STRING.length() + BODY_STRING.length(),
             HEADER_STRING.length(), new SharedByteArrayInputStream((HEADER_STRING + BODY_STRING).getBytes()), new Flags(), new PropertyBuilder(), MAILBOX_ID);
         message1.setUid(UID);
         message1.setModSeq(MODSEQ);

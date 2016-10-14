@@ -30,6 +30,7 @@ import org.apache.james.mailbox.acl.UnionMailboxACLResolver;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.inmemory.InMemoryMailboxManager;
 import org.apache.james.mailbox.inmemory.InMemoryMailboxSessionMapperFactory;
+import org.apache.james.mailbox.inmemory.InMemoryMessageId;
 import org.apache.james.mailbox.inmemory.quota.InMemoryCurrentQuotaManager;
 import org.apache.james.mailbox.inmemory.quota.InMemoryPerUserMaxQuotaManager;
 import org.apache.james.mailbox.model.MailboxPath;
@@ -83,7 +84,8 @@ public class InMemoryHostSystem extends JamesImapHostSystem {
         MessageParser messageParser = new MessageParser();
 
         InMemoryMailboxSessionMapperFactory mailboxSessionMapperFactory = new InMemoryMailboxSessionMapperFactory();
-        mailboxManager = new InMemoryMailboxManager(mailboxSessionMapperFactory, userManager, new JVMMailboxPathLocker(), aclResolver, groupMembershipResolver, messageParser);
+        mailboxManager = new InMemoryMailboxManager(mailboxSessionMapperFactory, userManager, 
+                new JVMMailboxPathLocker(), aclResolver, groupMembershipResolver, messageParser, new InMemoryMessageId.Factory());
         QuotaRootResolver quotaRootResolver = new DefaultQuotaRootResolver(mailboxManager.getMapperFactory());
 
         InMemoryPerUserMaxQuotaManager perUserMaxQuotaManager = new InMemoryPerUserMaxQuotaManager();

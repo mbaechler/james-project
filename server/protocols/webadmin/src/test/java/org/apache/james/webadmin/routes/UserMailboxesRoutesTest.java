@@ -41,12 +41,12 @@ import org.apache.james.mailbox.exception.MailboxNotFoundException;
 import org.apache.james.mailbox.inmemory.InMemoryId;
 import org.apache.james.mailbox.inmemory.InMemoryMailboxManager;
 import org.apache.james.mailbox.inmemory.InMemoryMailboxSessionMapperFactory;
+import org.apache.james.mailbox.inmemory.InMemoryMessageId;
 import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.model.MailboxQuery;
 import org.apache.james.mailbox.store.JVMMailboxPathLocker;
 import org.apache.james.mailbox.store.SimpleMailboxMetaData;
-import org.apache.james.mailbox.store.TestId;
 import org.apache.james.mailbox.store.mail.model.impl.MessageParser;
 import org.apache.james.user.api.UsersRepository;
 import org.apache.james.webadmin.WebAdminServer;
@@ -104,7 +104,8 @@ public class UserMailboxesRoutesTest {
                 new JVMMailboxPathLocker(),
                 new UnionMailboxACLResolver(),
                 new SimpleGroupMembershipResolver(),
-                new MessageParser());
+                new MessageParser(),
+                new InMemoryMessageId.Factory());
             mailboxManager.init();
 
             createServer(mailboxManager);

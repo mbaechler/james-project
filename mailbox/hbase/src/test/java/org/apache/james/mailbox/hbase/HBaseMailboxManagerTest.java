@@ -35,6 +35,7 @@ import org.apache.james.mailbox.acl.UnionMailboxACLResolver;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.hbase.mail.HBaseModSeqProvider;
 import org.apache.james.mailbox.hbase.mail.HBaseUidProvider;
+import org.apache.james.mailbox.store.mail.model.DefaultMessageId;
 import org.apache.james.mailbox.store.mail.model.impl.MessageParser;
 import org.junit.runner.RunWith;
 import org.xenei.junit.contract.Contract;
@@ -65,7 +66,8 @@ public class HBaseMailboxManagerTest {
                 null,
                 new UnionMailboxACLResolver(),
                 new SimpleGroupMembershipResolver(),
-                new MessageParser());
+                new MessageParser(),
+                new DefaultMessageId.Factory());
 
             try {
                 manager.init();

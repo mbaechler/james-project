@@ -310,6 +310,7 @@ public class CassandraMessageMapper implements MessageMapper {
     private MailboxMessage message(Row row, FetchType fetchType) {
         SimpleMailboxMessage message =
             new SimpleMailboxMessage(
+                null, //TODO
                 row.getDate(INTERNAL_DATE),
                 row.getLong(FULL_CONTENT_OCTETS),
                 row.getInt(BODY_START_OCTET),

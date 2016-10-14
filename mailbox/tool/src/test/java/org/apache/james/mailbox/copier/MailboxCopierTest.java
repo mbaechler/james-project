@@ -34,6 +34,7 @@ import org.apache.james.mailbox.acl.UnionMailboxACLResolver;
 import org.apache.james.mailbox.exception.BadCredentialsException;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.inmemory.InMemoryMailboxSessionMapperFactory;
+import org.apache.james.mailbox.inmemory.InMemoryMessageId;
 import org.apache.james.mailbox.mock.MockMailboxManager;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.Authenticator;
@@ -166,7 +167,8 @@ public class MailboxCopierTest {
             },
             aclResolver,
             groupMembershipResolver,
-            messageParser
+            messageParser,
+            new InMemoryMessageId.Factory()
             );
     
     }

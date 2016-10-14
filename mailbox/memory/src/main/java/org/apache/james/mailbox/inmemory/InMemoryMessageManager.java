@@ -19,7 +19,8 @@ import org.apache.james.mailbox.store.search.MessageSearchIndex;
 public class InMemoryMessageManager extends StoreMessageManager {
 
     public InMemoryMessageManager(MailboxSessionMapperFactory mapperFactory, MessageSearchIndex index, MailboxEventDispatcher dispatcher, MailboxPathLocker locker, Mailbox mailbox, MailboxACLResolver aclResolver, GroupMembershipResolver groupMembershipResolver, QuotaManager quotaManager, QuotaRootResolver quotaRootResolver, MessageParser messageParser) throws MailboxException {
-        super(mapperFactory, index, dispatcher, locker, mailbox, aclResolver, groupMembershipResolver, quotaManager, quotaRootResolver, messageParser);
+        super(mapperFactory, index, dispatcher, locker, mailbox, aclResolver, groupMembershipResolver, quotaManager, 
+                quotaRootResolver, messageParser, new InMemoryMessageId.Factory());
     }
 
     @Override

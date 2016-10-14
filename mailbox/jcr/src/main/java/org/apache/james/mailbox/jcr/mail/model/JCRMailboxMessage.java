@@ -376,7 +376,7 @@ public class JCRMailboxMessage implements MailboxMessage, JCRImapConstants, Pers
 
     @Override
     public MessageId getMessageId() {
-        return new DefaultMessageId(getMailboxId(), getUid());
+        return new DefaultMessageId();
     }
 
     @Override

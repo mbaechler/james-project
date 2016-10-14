@@ -29,6 +29,7 @@ import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.acl.UnionMailboxACLResolver;
 import org.apache.james.mailbox.inmemory.InMemoryMailboxManager;
 import org.apache.james.mailbox.inmemory.InMemoryMailboxSessionMapperFactory;
+import org.apache.james.mailbox.inmemory.InMemoryMessageId;
 import org.apache.james.mailbox.store.AbstractMailboxManagerAttachmentTest;
 import org.apache.james.mailbox.store.Authenticator;
 import org.apache.james.mailbox.store.MailboxSessionMapperFactory;
@@ -44,12 +45,14 @@ public class InMemoryMailboxManagerAttachmentTest extends AbstractMailboxManager
     public InMemoryMailboxManagerAttachmentTest() throws Exception {
         mailboxSessionMapperFactory = new InMemoryMailboxSessionMapperFactory();
         Authenticator noAuthenticator = null;
-        mailboxManager = new InMemoryMailboxManager(mailboxSessionMapperFactory, noAuthenticator, new NoMailboxPathLocker(), new UnionMailboxACLResolver(), null, new MessageParser());
+        mailboxManager = new InMemoryMailboxManager(mailboxSessionMapperFactory, noAuthenticator, 
+                new NoMailboxPathLocker(), new UnionMailboxACLResolver(), null, new MessageParser(), new InMemoryMessageId.Factory());
         mailboxManager.init();
         MessageParser failingMessageParser = mock(MessageParser.class);
         when(failingMessageParser.retrieveAttachments(any(InputStream.class)))
             .thenThrow(new RuntimeException("Message parser set to fail"));
-        parseFailingMailboxManager = new InMemoryMailboxManager(mailboxSessionMapperFactory, noAuthenticator, new NoMailboxPathLocker(), new UnionMailboxACLResolver(), null, failingMessageParser);
+        parseFailingMailboxManager = new InMemoryMailboxManager(mailboxSessionMapperFactory, noAuthenticator, 
+                new NoMailboxPathLocker(), new UnionMailboxACLResolver(), null, failingMessageParser, new InMemoryMessageId.Factory());
         parseFailingMailboxManager.init();
     }
 

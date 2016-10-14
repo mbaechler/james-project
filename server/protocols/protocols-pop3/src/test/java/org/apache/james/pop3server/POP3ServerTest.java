@@ -47,6 +47,7 @@ import org.apache.james.mailbox.acl.SimpleGroupMembershipResolver;
 import org.apache.james.mailbox.acl.UnionMailboxACLResolver;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.inmemory.InMemoryMailboxSessionMapperFactory;
+import org.apache.james.mailbox.inmemory.InMemoryMessageId;
 import org.apache.james.mailbox.model.MailboxConstants;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.Authenticator;
@@ -725,7 +726,7 @@ public class POP3ServerTest {
                     return false;
                 }
             }
-        }, aclResolver, groupMembershipResolver, messageParser);
+        }, aclResolver, groupMembershipResolver, messageParser, new InMemoryMessageId.Factory());
         mailboxManager.init();
 
         protocolHandlerChain.put("mailboxmanager", MailboxManager.class, mailboxManager);

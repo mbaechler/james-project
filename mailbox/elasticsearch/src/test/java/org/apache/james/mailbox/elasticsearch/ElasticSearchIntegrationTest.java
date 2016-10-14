@@ -33,6 +33,7 @@ import org.apache.james.mailbox.elasticsearch.utils.TestingClientProvider;
 import org.apache.james.mailbox.inmemory.InMemoryId;
 import org.apache.james.mailbox.inmemory.InMemoryMailboxManager;
 import org.apache.james.mailbox.inmemory.InMemoryMailboxSessionMapperFactory;
+import org.apache.james.mailbox.inmemory.InMemoryMessageId;
 import org.apache.james.mailbox.store.JVMMailboxPathLocker;
 import org.apache.james.mailbox.store.MailboxSessionMapperFactory;
 import org.apache.james.mailbox.store.FakeAuthenticator;
@@ -76,7 +77,8 @@ public class ElasticSearchIntegrationTest extends AbstractMessageSearchIndexTest
             new JVMMailboxPathLocker(),
             new UnionMailboxACLResolver(),
             new SimpleGroupMembershipResolver(),
-            new MessageParser());
+            new MessageParser(),
+            new InMemoryMessageId.Factory());
         storeMailboxManager.setMessageSearchIndex(messageSearchIndex);
         storeMailboxManager.init();
     }

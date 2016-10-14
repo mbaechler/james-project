@@ -235,7 +235,7 @@ public class HBaseMailboxMessage implements MailboxMessage {
 
     @Override
     public MessageId getMessageId() {
-        return new DefaultMessageId(getMailboxId(), getUid());
+        return new DefaultMessageId();
     }
 
     @Override

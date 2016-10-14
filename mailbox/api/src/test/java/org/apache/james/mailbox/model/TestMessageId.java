@@ -19,16 +19,26 @@
 
 package org.apache.james.mailbox.model;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 import com.google.common.base.Objects;
 
 public class TestMessageId implements MessageId {
 
     public static class Factory implements MessageId.Factory {
         
+        private AtomicLong counter = new AtomicLong();
+        
         @Override
         public MessageId fromString(String serialized) {
             return of(Long.valueOf(serialized));
         }
+        
+        @Override
+        public MessageId generate() {
+            return of(counter.incrementAndGet());
+        }
+
     }
     
     public static TestMessageId of(long value) {

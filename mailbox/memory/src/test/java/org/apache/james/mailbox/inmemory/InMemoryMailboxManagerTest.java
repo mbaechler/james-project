@@ -48,7 +48,9 @@ public class InMemoryMailboxManagerTest {
             MessageParser messageParser = new MessageParser();
 
             InMemoryMailboxSessionMapperFactory mailboxSessionMapperFactory = new InMemoryMailboxSessionMapperFactory();
-            InMemoryMailboxManager mailboxManager = new InMemoryMailboxManager(mailboxSessionMapperFactory, new FakeAuthenticator(), new JVMMailboxPathLocker(), aclResolver, groupMembershipResolver, messageParser);
+            InMemoryMailboxManager mailboxManager = new InMemoryMailboxManager(mailboxSessionMapperFactory, 
+                    new FakeAuthenticator(), new JVMMailboxPathLocker(), aclResolver, groupMembershipResolver, 
+                    messageParser, new InMemoryMessageId.Factory());
 
             try {
                 mailboxManager.init();

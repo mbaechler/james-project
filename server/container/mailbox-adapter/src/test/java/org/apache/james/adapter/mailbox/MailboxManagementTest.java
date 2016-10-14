@@ -25,6 +25,7 @@ import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.acl.SimpleGroupMembershipResolver;
 import org.apache.james.mailbox.acl.UnionMailboxACLResolver;
 import org.apache.james.mailbox.inmemory.InMemoryMailboxSessionMapperFactory;
+import org.apache.james.mailbox.inmemory.InMemoryMessageId;
 import org.apache.james.mailbox.model.MailboxConstants;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.JVMMailboxPathLocker;
@@ -57,7 +58,8 @@ public class MailboxManagementTest {
             new JVMMailboxPathLocker(),
             new UnionMailboxACLResolver(),
             new SimpleGroupMembershipResolver(),
-            new MessageParser());
+            new MessageParser(),
+            new InMemoryMessageId.Factory());
         mailboxManager.init();
         mailboxManagerManagement = new MailboxManagerManagement();
         mailboxManagerManagement.setMailboxManager(mailboxManager);

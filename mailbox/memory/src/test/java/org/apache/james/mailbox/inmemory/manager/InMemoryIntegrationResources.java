@@ -27,6 +27,7 @@ import org.apache.james.mailbox.acl.UnionMailboxACLResolver;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.inmemory.InMemoryMailboxManager;
 import org.apache.james.mailbox.inmemory.InMemoryMailboxSessionMapperFactory;
+import org.apache.james.mailbox.inmemory.InMemoryMessageId;
 import org.apache.james.mailbox.inmemory.quota.InMemoryCurrentQuotaManager;
 import org.apache.james.mailbox.inmemory.quota.InMemoryPerUserMaxQuotaManager;
 import org.apache.james.mailbox.manager.IntegrationResources;
@@ -59,7 +60,8 @@ public class InMemoryIntegrationResources implements IntegrationResources {
             new NoMailboxPathLocker(),
             new UnionMailboxACLResolver(),
             groupMembershipResolver,
-            new MessageParser());
+            new MessageParser(),
+            new InMemoryMessageId.Factory());
         manager.init();
         return manager;
     }

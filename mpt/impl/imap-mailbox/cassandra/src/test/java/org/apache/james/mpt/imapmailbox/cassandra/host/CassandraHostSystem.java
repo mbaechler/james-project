@@ -47,6 +47,7 @@ import org.apache.james.mailbox.quota.QuotaRootResolver;
 import org.apache.james.mailbox.store.JVMMailboxPathLocker;
 import org.apache.james.mailbox.store.FakeAuthenticator;
 import org.apache.james.mailbox.store.StoreSubscriptionManager;
+import org.apache.james.mailbox.store.mail.model.DefaultMessageId;
 import org.apache.james.mailbox.store.mail.model.impl.MessageParser;
 import org.apache.james.mailbox.store.quota.DefaultQuotaRootResolver;
 import org.apache.james.mailbox.store.quota.ListeningCurrentQuotaUpdater;
@@ -88,7 +89,7 @@ public class CassandraHostSystem extends JamesImapHostSystem {
 
         CassandraMailboxSessionMapperFactory mapperFactory = new CassandraMailboxSessionMapperFactory(uidProvider, modSeqProvider, session, new CassandraTypesProvider(mailboxModule, session));
         
-        mailboxManager = new CassandraMailboxManager(mapperFactory, userManager, new JVMMailboxPathLocker(), new MessageParser());
+        mailboxManager = new CassandraMailboxManager(mapperFactory, userManager, new JVMMailboxPathLocker(), new MessageParser(), new DefaultMessageId.Factory()); 
         QuotaRootResolver quotaRootResolver = new DefaultQuotaRootResolver(mapperFactory);
 
         CassandraPerUserMaxQuotaManager perUserMaxQuotaManager = new CassandraPerUserMaxQuotaManager(session);

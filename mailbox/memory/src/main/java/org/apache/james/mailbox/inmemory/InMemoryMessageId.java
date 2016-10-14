@@ -18,15 +18,24 @@
  ****************************************************************/
 package org.apache.james.mailbox.inmemory;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.apache.james.mailbox.model.MessageId;
 
 public class InMemoryMessageId implements MessageId {
 
     public static class Factory implements MessageId.Factory {
         
+        private AtomicLong counter = new AtomicLong();
+        
         @Override
         public MessageId fromString(String serialized) {
             return of(Long.valueOf(serialized));
+        }
+        
+        @Override
+        public MessageId generate() {
+            return of(counter.incrementAndGet());
         }
     }
     
