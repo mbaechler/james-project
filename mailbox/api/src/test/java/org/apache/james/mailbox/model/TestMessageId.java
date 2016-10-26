@@ -17,48 +17,66 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.jmap.send;
+package org.apache.james.mailbox.model;
 
-import java.util.Objects;
+import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.james.mailbox.model.MessageId;
+import com.google.common.base.Objects;
 
-import com.google.common.base.Preconditions;
+public class TestMessageId implements MessageId {
 
-public class MailMetadata {
-    public static final String MAIL_METADATA_MESSAGE_ID_ATTRIBUTE = "org.apache.james.jmap.send.MailMetaData.messageId";
-    public static final String MAIL_METADATA_USERNAME_ATTRIBUTE = "org.apache.james.jmap.send.MailMetaData.username";
+    public static class Factory implements MessageId.Factory {
+        
+        private AtomicLong counter = new AtomicLong();
+        
+        @Override
+        public MessageId fromString(String serialized) {
+            return of(Long.valueOf(serialized));
+        }
+        
+        @Override
+        public MessageId generate() {
+            return of(counter.incrementAndGet());
+        }
 
-    private final MessageId messageId;
-    private final String username;
-
-    public MailMetadata(MessageId messageId, String username) {
-        Preconditions.checkNotNull(messageId);
-        Preconditions.checkNotNull(username);
-        this.messageId = messageId;
-        this.username = username;
+    }
+    
+    public static TestMessageId of(long value) {
+        return new TestMessageId(value);
     }
 
-    public MessageId getMessageId() {
-        return messageId;
-    }
+    private final long value;
 
-    public String getUsername() {
-        return username;
+    private TestMessageId(long value) {
+        this.value = value;
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof MailMetadata) {
-            MailMetadata other = (MailMetadata) obj;
-            return Objects.equals(this.messageId, other.messageId)
-                && Objects.equals(this.username, other.username);
-        }
-        return false;
+    public String serialize() {
+        return String.valueOf(value);
+    }
+
+    @Override
+    public String toString() {
+        return String.valueOf(value);
+    }
+
+    public long getRawId() {
+        return value;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(messageId, username);
+        return Objects.hashCode(value);
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof TestMessageId) {
+            TestMessageId other = (TestMessageId) obj;
+            return Objects.equal(this.value, other.value);
+        }
+        return false;
+    }
+    
 }
