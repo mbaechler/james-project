@@ -226,6 +226,9 @@ public class MailboxEventAnalyserTest {
                             done = true;
                             return new MessageResult() {
 
+                                public MailboxId getMailboxId() {
+                                    return null;
+                                };
                                 
                                 public int compareTo(MessageResult o) {
                                     return 0;
