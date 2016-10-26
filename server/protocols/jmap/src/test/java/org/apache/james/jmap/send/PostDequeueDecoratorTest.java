@@ -36,7 +36,6 @@ import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MessageManager;
 import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.acl.GroupMembershipResolver;
-import org.apache.james.mailbox.inmemory.InMemoryMessageId;
 import org.apache.james.mailbox.inmemory.manager.InMemoryIntegrationResources;
 import org.apache.james.mailbox.model.ComposedMessageId;
 import org.apache.james.mailbox.model.FetchGroupImpl;
@@ -44,6 +43,7 @@ import org.apache.james.mailbox.model.MailboxConstants;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.model.MessageRange;
 import org.apache.james.mailbox.model.MessageResultIterator;
+import org.apache.james.mailbox.model.TestMessageId;
 import org.apache.james.queue.api.MailQueue.MailQueueItem;
 import org.apache.mailet.Mail;
 import org.apache.mailet.base.test.FakeMail;
@@ -75,7 +75,7 @@ public class PostDequeueDecoratorTest {
         mockedMailQueueItem = mock(MailQueueItem.class);
         mail = FakeMail.defaultFakeMail();
         when(mockedMailQueueItem.getMail()).thenReturn(mail);
-        testee = new PostDequeueDecorator(mockedMailQueueItem, mailboxManager, new InMemoryMessageId.Factory(), 
+        testee = new PostDequeueDecorator(mockedMailQueueItem, mailboxManager, new TestMessageId.Factory(), 
                 inMemoryIntegrationResources.createMessageIdManager(mailboxManager));
     }
     

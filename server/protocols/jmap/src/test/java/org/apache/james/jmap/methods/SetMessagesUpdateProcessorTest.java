@@ -29,8 +29,8 @@ import org.apache.james.jmap.model.MessageProperties;
 import org.apache.james.jmap.model.SetMessagesRequest;
 import org.apache.james.jmap.model.SetMessagesResponse;
 import org.apache.james.jmap.model.UpdateMessagePatch;
-import org.apache.james.mailbox.inmemory.InMemoryMessageId;
 import org.apache.james.mailbox.model.MessageId;
+import org.apache.james.mailbox.model.TestMessageId;
 import org.junit.Test;
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -67,7 +67,7 @@ public class SetMessagesUpdateProcessorTest {
                 .thenReturn(mockInvalidPatch);
 
         SetMessagesUpdateProcessor sut = new SetMessagesUpdateProcessor(mockConverter, null);
-        MessageId requestMessageId = InMemoryMessageId.of(1);
+        MessageId requestMessageId = TestMessageId.of(1);
         SetMessagesRequest requestWithInvalidUpdate = SetMessagesRequest.builder()
                 .update(ImmutableMap.of(requestMessageId, JsonNodeFactory.instance.objectNode()))
                 .build();

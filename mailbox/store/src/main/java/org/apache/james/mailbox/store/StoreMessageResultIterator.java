@@ -29,6 +29,7 @@ import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.Content;
 import org.apache.james.mailbox.model.Headers;
+import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MessageAttachment;
 import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.mailbox.model.MessageRange;
@@ -198,6 +199,8 @@ public class StoreMessageResultIterator implements MessageResultIterator {
 
         private final MessageId messageId;
 
+        private final MailboxId mailboxId;
+
         private long modSeq = -1;
 
         public UnloadedMessageResult(MailboxMessage message, MailboxException exception) {
@@ -208,6 +211,7 @@ public class StoreMessageResultIterator implements MessageResultIterator {
             flags = message.createFlags();
             modSeq = message.getModSeq();
             messageId = message.getMessageId();
+            mailboxId = message.getMailboxId();
             this.exception = exception;
         }
 
@@ -298,6 +302,11 @@ public class StoreMessageResultIterator implements MessageResultIterator {
         @Override
         public List<MessageAttachment> getAttachments() throws MailboxException {
             throw exception;
+        }
+
+        @Override
+        public MailboxId getMailboxId() {
+            return mailboxId;
         }
 
     }

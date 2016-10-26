@@ -18,7 +18,6 @@
  ****************************************************************/
 package org.apache.james.jmap.send.exception;
 
-import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.queue.api.MailQueue.MailQueueException;
 

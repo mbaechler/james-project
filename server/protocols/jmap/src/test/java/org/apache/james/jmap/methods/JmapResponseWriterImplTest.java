@@ -33,7 +33,7 @@ import org.apache.james.jmap.model.Property;
 import org.apache.james.jmap.model.ProtocolRequest;
 import org.apache.james.jmap.model.ProtocolResponse;
 import org.apache.james.mailbox.inmemory.InMemoryId;
-import org.apache.james.mailbox.inmemory.InMemoryMessageId;
+import org.apache.james.mailbox.model.TestMessageId;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -51,7 +51,7 @@ public class JmapResponseWriterImplTest {
 
     @Before
     public void setup() {
-        testee = new JmapResponseWriterImpl(new ObjectMapperFactory(new InMemoryId.Factory(), new InMemoryMessageId.Factory()));
+        testee = new JmapResponseWriterImpl(new ObjectMapperFactory(new InMemoryId.Factory(), new TestMessageId.Factory()));
     }
 
     @Ignore
