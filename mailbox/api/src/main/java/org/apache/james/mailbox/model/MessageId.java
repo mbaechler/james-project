@@ -24,6 +24,8 @@ public interface MessageId {
     interface Factory {
 
         MessageId generate();
+
+        MessageId fromString(String serialized);
         
     }
     
