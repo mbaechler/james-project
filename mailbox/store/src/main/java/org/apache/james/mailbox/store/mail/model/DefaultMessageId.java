@@ -10,6 +10,11 @@ public class DefaultMessageId implements MessageId {
         public MessageId generate() {
             return new DefaultMessageId();
         }
+
+        @Override
+        public MessageId fromString(String serialized) {
+            throw new IllegalStateException("Capabilities should prevent calling this method");
+        }
         
     }
 

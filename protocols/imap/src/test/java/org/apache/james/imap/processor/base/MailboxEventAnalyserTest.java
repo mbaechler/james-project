@@ -316,6 +316,11 @@ public class MailboxEventAnalyserTest {
                                 public List<MessageAttachment> getAttachments() {
                                     throw new UnsupportedOperationException("Not implemented");
                                 }
+
+                                @Override
+                                public MailboxId getMailboxId() {
+                                    throw new UnsupportedOperationException("Not implemented");
+                                }
                                 
                             };
                         }

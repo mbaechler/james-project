@@ -23,6 +23,7 @@ import static net.javacrumbs.jsonunit.core.Option.IGNORING_ARRAY_ORDER;
 import static net.javacrumbs.jsonunit.fluent.JsonFluentAssert.assertThatJson;
 import static org.apache.james.jmap.json.ParsingWritingObjects.MESSAGE;
 import static org.apache.james.jmap.json.ParsingWritingObjects.SUB_MESSAGE;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.apache.commons.io.IOUtils;
@@ -31,7 +32,7 @@ import org.apache.james.jmap.methods.JmapResponseWriterImpl;
 import org.apache.james.jmap.model.Message;
 import org.apache.james.jmap.model.SubMessage;
 import org.apache.james.mailbox.inmemory.InMemoryId;
-import org.apache.james.mailbox.inmemory.InMemoryMessageId;
+import org.apache.james.mailbox.model.TestMessageId;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -44,7 +45,7 @@ public class ParsingWritingObjectsTest {
 
     @Before
     public void setup() {
-        testee = new ObjectMapperFactory(new InMemoryId.Factory(), new InMemoryMessageId.Factory());
+        testee = new ObjectMapperFactory(new InMemoryId.Factory(), new TestMessageId.Factory());
     }
 
     @Test

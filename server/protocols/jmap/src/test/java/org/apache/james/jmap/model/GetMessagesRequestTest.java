@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.apache.james.jmap.model.MessageProperties.HeaderProperty;
 import org.apache.james.jmap.model.MessageProperties.MessageProperty;
-import org.apache.james.mailbox.inmemory.InMemoryMessageId;
+import org.apache.james.mailbox.model.TestMessageId;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
@@ -34,7 +34,7 @@ public class GetMessagesRequestTest {
     @Test
     public void shouldAllowOptionalAccountId() {
         GetMessagesRequest result = GetMessagesRequest.builder()
-                .ids(ImmutableList.of(InMemoryMessageId.of(1)))
+                .ids(ImmutableList.of(TestMessageId.of(1)))
                 .build();
         assertThat(result).isNotNull();
         assertThat(result.getAccountId()).isEmpty();

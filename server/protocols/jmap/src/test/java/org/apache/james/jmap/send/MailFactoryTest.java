@@ -39,7 +39,7 @@ import org.apache.james.mailbox.FlagsBuilder;
 import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.inmemory.InMemoryId;
-import org.apache.james.mailbox.inmemory.InMemoryMessageId;
+import org.apache.james.mailbox.model.TestMessageId;
 import org.apache.mailet.Mail;
 import org.apache.mailet.MailAddress;
 import org.junit.Before;
@@ -74,7 +74,7 @@ public class MailFactoryTest {
                 .sharedContent(new SharedByteArrayInputStream(content.getBytes(Charsets.UTF_8)))
                 .attachments(ImmutableList.of())
                 .mailboxId(InMemoryId.of(3))
-                .messageId(InMemoryMessageId.of(2))
+                .messageId(TestMessageId.of(2))
                 .build();
         MessagePreviewGenerator messagePreview = mock(MessagePreviewGenerator.class);
         when(messagePreview.forTextBody(any())).thenReturn("text preview");

@@ -20,7 +20,7 @@ package org.apache.james.jmap.model;
 
 import org.apache.james.jmap.json.ObjectMapperFactory;
 import org.apache.james.mailbox.inmemory.InMemoryId;
-import org.apache.james.mailbox.inmemory.InMemoryMessageId;
+import org.apache.james.mailbox.model.TestMessageId;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -34,7 +34,7 @@ public class FilterTest {
 
     @Before
     public void setup() {
-        parser = new ObjectMapperFactory(new InMemoryId.Factory(), new InMemoryMessageId.Factory()).forParsing();
+        parser = new ObjectMapperFactory(new InMemoryId.Factory(), new TestMessageId.Factory()).forParsing();
     }
 
     @Test
