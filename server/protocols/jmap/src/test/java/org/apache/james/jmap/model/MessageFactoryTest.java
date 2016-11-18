@@ -40,7 +40,6 @@ import org.apache.james.mailbox.model.AttachmentId;
 import org.apache.james.mailbox.model.Cid;
 import org.apache.james.mailbox.model.MessageAttachment;
 import org.apache.james.mailbox.model.TestMessageId;
-import org.apache.james.mailbox.store.mail.model.DefaultMessageId;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -280,7 +279,7 @@ public class MessageFactoryTest {
             .content(new ByteArrayInputStream(headers.getBytes(Charsets.UTF_8)))
             .attachments(ImmutableList.of())
             .mailboxId(MAILBOX_ID)
-            .messageId(new DefaultMessageId())
+            .messageId(new TestMessageId.Factory().generate())
             .build();
 
         Message testee = messageFactory.fromMetaDataWithContent(testMail);
@@ -307,7 +306,7 @@ public class MessageFactoryTest {
                 .content(new ByteArrayInputStream((StringUtils.repeat("0123456789", 101).getBytes(Charsets.UTF_8))))
                 .attachments(ImmutableList.of())
                 .mailboxId(MAILBOX_ID)
-                .messageId(MessageId.of("test|test|2"))
+                .messageId(TestMessageId.of(2))
                 .build();
 
         Message testee = messageFactory.fromMetaDataWithContent(testMail);
