@@ -23,4 +23,13 @@ public class DefaultMessageId implements MessageId {
         throw new IllegalStateException("Capabilities should prevent calling this method");
     }
     
+    @Override
+    public final boolean equals(Object obj) {
+        throw new IllegalStateException("Capabilities should prevent calling this method");
+    }
+    
+    @Override
+    public final int hashCode() {
+        throw new IllegalStateException("Capabilities should prevent calling this method");
+    }
 }
