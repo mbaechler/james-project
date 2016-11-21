@@ -1,15 +1,3 @@
-package org.apache.james;
-import org.apache.james.CassandraJamesServerMain;
-import org.apache.james.JmapJamesServer;
-import org.apache.james.backends.cassandra.EmbeddedCassandra;
-import org.apache.james.mailbox.elasticsearch.EmbeddedElasticSearch;
-import org.apache.james.modules.CassandraJmapServerModule;
-import org.junit.rules.RuleChain;
-import org.junit.rules.TemporaryFolder;
-import org.junit.rules.TestRule;
-import org.junit.runner.Description;
-import org.junit.runners.model.Statement;
-
 /****************************************************************
  * Licensed to the Apache Software Foundation (ASF) under one   *
  * or more contributor license agreements.  See the NOTICE file *
@@ -28,6 +16,17 @@ import org.junit.runners.model.Statement;
  * specific language governing permissions and limitations      *
  * under the License.                                           *
  ****************************************************************/
+
+package org.apache.james;
+import org.apache.james.backends.cassandra.EmbeddedCassandra;
+import org.apache.james.mailbox.elasticsearch.EmbeddedElasticSearch;
+import org.apache.james.modules.CassandraJmapServerModule;
+import org.junit.rules.RuleChain;
+import org.junit.rules.TemporaryFolder;
+import org.junit.rules.TestRule;
+import org.junit.runner.Description;
+import org.junit.runners.model.Statement;
+
 
 public class CassandraJmapTestRule implements TestRule {
 
