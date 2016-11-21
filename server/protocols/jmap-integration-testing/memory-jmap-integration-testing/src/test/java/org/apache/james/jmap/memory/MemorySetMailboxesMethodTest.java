@@ -20,12 +20,9 @@
 package org.apache.james.jmap.memory;
 
 import org.apache.james.JmapJamesServer;
-import org.apache.james.MemoryJamesServerMain;
 import org.apache.james.MemoryJmapTestRule;
 import org.apache.james.jmap.methods.integration.SetMailboxesMethodTest;
-import org.apache.james.jmap.servers.MemoryJmapServerModule;
 import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
 
 public class MemorySetMailboxesMethodTest extends SetMailboxesMethodTest {
 

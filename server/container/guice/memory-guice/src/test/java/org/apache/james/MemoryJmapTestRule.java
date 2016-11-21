@@ -19,7 +19,6 @@
 
 package org.apache.james;
 
-import org.apache.james.jmap.methods.GetMessageListMethod;
 import org.apache.james.modules.TestFilesystemModule;
 import org.apache.james.modules.TestJMAPServerModule;
 import org.junit.rules.TemporaryFolder;
@@ -29,13 +28,15 @@ import org.junit.runners.model.Statement;
 
 public class MemoryJmapTestRule implements TestRule {
 
+    private static final int LIMIT_TO_3_MESSAGES = 3;
+    
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     public JmapJamesServer jmapServer() {
         return new JmapJamesServer()
                 .combineWith(MemoryJamesServerMain.inMemoryServerModule)
                 .overrideWith(new TestFilesystemModule(temporaryFolder),
-                        new TestJMAPServerModule(GetMessageListMethod.DEFAULT_MAXIMUM_LIMIT));
+                        new TestJMAPServerModule(LIMIT_TO_3_MESSAGES));
     }
 
     @Override
