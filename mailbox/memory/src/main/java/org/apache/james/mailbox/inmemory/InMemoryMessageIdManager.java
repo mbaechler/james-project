@@ -101,7 +101,7 @@ public class InMemoryMessageIdManager implements MessageIdManager {
             Optional<MessageResult> maybeMessage = findMessageWithId(messageManager, messageId, FetchGroupImpl.MINIMAL, mailboxSession);
             if (maybeMessage.isPresent()) {
                 MessageRange range = maybeMessage.get().getUid().toRange();
-                messageManager.setFlags(new Flags(Flags.Flag.DELETED), FlagsUpdateMode.REMOVE, range, mailboxSession);
+                messageManager.setFlags(new Flags(Flags.Flag.DELETED), FlagsUpdateMode.ADD, range, mailboxSession);
                 messageManager.expunge(range, mailboxSession);
             }
         }

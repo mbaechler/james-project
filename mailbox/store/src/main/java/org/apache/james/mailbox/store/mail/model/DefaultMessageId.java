@@ -18,6 +18,9 @@ public class DefaultMessageId implements MessageId {
         
     }
 
+    public DefaultMessageId() {
+    }
+    
     @Override
     public String serialize() {
         throw new IllegalStateException("Capabilities should prevent calling this method");
