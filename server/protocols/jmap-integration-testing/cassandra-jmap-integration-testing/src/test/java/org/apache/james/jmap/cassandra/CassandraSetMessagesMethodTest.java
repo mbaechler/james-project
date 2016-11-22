@@ -19,15 +19,21 @@
 
 package org.apache.james.jmap.cassandra;
 
+import java.util.Random;
+
 import org.apache.james.CassandraJmapTestRule;
 import org.apache.james.JmapJamesServer;
 import org.apache.james.jmap.methods.integration.SetMessagesMethodTest;
+import org.apache.james.mailbox.model.MessageId;
+import org.apache.james.mailbox.model.TestMessageId;
 import org.junit.Rule;
 
 public class CassandraSetMessagesMethodTest extends SetMessagesMethodTest {
 
     @Rule 
     public CassandraJmapTestRule rule = new CassandraJmapTestRule();
+    
+    private Random random = new Random();
     
     @Override
     protected JmapJamesServer createJmapServer() {
@@ -37,6 +43,11 @@ public class CassandraSetMessagesMethodTest extends SetMessagesMethodTest {
     @Override
     protected void await() {
         rule.await();
+    }
+    
+    @Override
+    protected MessageId randomMessageId() {
+        return TestMessageId.of(random.nextInt(1000000) + 100);
     }
     
 }
