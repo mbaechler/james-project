@@ -26,8 +26,10 @@ import org.apache.james.JmapJamesServer;
 import org.apache.james.jmap.methods.integration.SetMessagesMethodTest;
 import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.mailbox.model.TestMessageId;
+import org.junit.Ignore;
 import org.junit.Rule;
 
+@Ignore("needs messageIdManager cassandra impl")
 public class CassandraSetMessagesMethodTest extends SetMessagesMethodTest {
 
     @Rule 
