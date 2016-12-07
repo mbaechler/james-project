@@ -27,10 +27,12 @@ import org.apache.http.client.fluent.Request;
 import org.apache.http.client.fluent.Response;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.james.util.streams.SwarmGenericContainer;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.testcontainers.containers.GenericContainer;
 
+@Ignore("unstable test")
 public class ContainerTest {
 
     @Rule public GenericContainer container = new SwarmGenericContainer("nginx:1.7.1")
