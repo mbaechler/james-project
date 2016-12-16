@@ -360,13 +360,6 @@ public class ActiveMQMailQueue extends JMSMailQueue implements ActiveMQSupport {
             } catch (JMSException e1) {
                 // ignore here
             }
-
-            try {
-                if (connection != null)
-                    connection.close();
-            } catch (JMSException e1) {
-                // ignore here
-            }
         }
 
         // if we came to this point we should just fallback to super method

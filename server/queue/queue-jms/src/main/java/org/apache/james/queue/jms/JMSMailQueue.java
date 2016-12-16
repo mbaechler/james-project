@@ -138,13 +138,6 @@ public class JMSMailQueue implements ManageableMailQueue, JMSSupport, MailPriori
                     } catch (JMSException e1) {
                         // ignore here
                     }
-
-                    try {
-                        if (connection != null)
-                            connection.close();
-                    } catch (JMSException e1) {
-                        // ignore here
-                    }
                 }
 
             } catch (Exception e) {
@@ -171,12 +164,6 @@ public class JMSMailQueue implements ManageableMailQueue, JMSSupport, MailPriori
                     // ignore here
                 }
 
-                try {
-                    if (connection != null)
-                        connection.close();
-                } catch (JMSException e1) {
-                    // ignore here
-                }
                 throw new MailQueueException("Unable to dequeue next message", e);
             }
         }
@@ -226,12 +213,6 @@ public class JMSMailQueue implements ManageableMailQueue, JMSSupport, MailPriori
                 // ignore here
             }
 
-            try {
-                if (connection != null)
-                    connection.close();
-            } catch (JMSException e) {
-                // ignore here
-            }
         }
     }
 
@@ -525,12 +506,6 @@ public class JMSMailQueue implements ManageableMailQueue, JMSSupport, MailPriori
                 // ignore here
             }
 
-            try {
-                if (connection != null)
-                    connection.close();
-            } catch (JMSException e1) {
-                // ignore here
-            }
         }
     }
 
@@ -600,12 +575,6 @@ public class JMSMailQueue implements ManageableMailQueue, JMSSupport, MailPriori
                 // ignore here
             }
 
-            try {
-                if (connection != null)
-                    connection.close();
-            } catch (JMSException e1) {
-                // ignore here
-            }
         }
     }
 
@@ -678,12 +647,6 @@ public class JMSMailQueue implements ManageableMailQueue, JMSSupport, MailPriori
                 // ignore here
             }
 
-            try {
-                if (connection != null)
-                    connection.close();
-            } catch (JMSException e1) {
-                // ignore here
-            }
         }
     }
 
@@ -800,12 +763,6 @@ public class JMSMailQueue implements ManageableMailQueue, JMSSupport, MailPriori
                         // ignore here
                     }
 
-                    try {
-                        if (myConnection != null)
-                            myConnection.close();
-                    } catch (JMSException e1) {
-                        // ignore here
-                    }
                 }
             };
 
@@ -825,12 +782,6 @@ public class JMSMailQueue implements ManageableMailQueue, JMSSupport, MailPriori
                 // ignore here
             }
 
-            try {
-                if (connection != null)
-                    connection.close();
-            } catch (JMSException e1) {
-                // ignore here
-            }
             logger.error("Unable to browse queue " + queueName, e);
             throw new MailQueueException("Unable to browse queue " + queueName, e);
         }
