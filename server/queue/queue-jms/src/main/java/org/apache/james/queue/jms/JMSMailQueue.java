@@ -58,6 +58,8 @@ import org.apache.mailet.Mail;
 import org.apache.mailet.MailAddress;
 import org.slf4j.Logger;
 
+import com.google.common.base.Throwables;
+
 /**
  * <p>
  * {@link MailQueue} implementation which use a JMS Queue for the<br>
@@ -72,14 +74,19 @@ import org.slf4j.Logger;
 public class JMSMailQueue implements ManageableMailQueue, JMSSupport, MailPrioritySupport {
 
     protected final String queueName;
-    protected final ConnectionFactory connectionFactory;
+    protected final Connection connection;
     protected final MailQueueItemDecoratorFactory mailQueueItemDecoratorFactory;
     protected final Metric enqueuedMailsMetric;
     protected final Logger logger;
     public final static String FORCE_DELIVERY = "FORCE_DELIVERY";
 
     public JMSMailQueue(ConnectionFactory connectionFactory, MailQueueItemDecoratorFactory mailQueueItemDecoratorFactory, String queueName, Metric enqueuedMailsMetric, Logger logger) {
-        this.connectionFactory = connectionFactory;
+        try {
+        	connection = connectionFactory.createConnection();
+            connection.start();
+        } catch (JMSException e) {
+        	throw Throwables.propagate(e);
+        }
         this.mailQueueItemDecoratorFactory = mailQueueItemDecoratorFactory;
         this.queueName = queueName;
         this.enqueuedMailsMetric = enqueuedMailsMetric;
@@ -100,16 +107,12 @@ public class JMSMailQueue implements ManageableMailQueue, JMSSupport, MailPriori
      */
     @Override
     public MailQueueItem deQueue() throws MailQueueException {
-        Connection connection = null;
         Session session = null;
         Message message;
         MessageConsumer consumer = null;
 
         while (true) {
             try {
-                connection = connectionFactory.createConnection();
-                connection.start();
-
                 session = connection.createSession(true, Session.SESSION_TRANSACTED);
                 Queue queue = session.createQueue(queueName);
                 consumer = session.createConsumer(queue, getMessageSelector());
@@ -182,7 +185,6 @@ public class JMSMailQueue implements ManageableMailQueue, JMSSupport, MailPriori
 
     @Override
     public void enQueue(Mail mail, long delay, TimeUnit unit) throws MailQueueException {
-        Connection connection = null;
         Session session = null;
 
         long mydelay = 0;
@@ -193,8 +195,6 @@ public class JMSMailQueue implements ManageableMailQueue, JMSSupport, MailPriori
 
         try {
 
-            connection = connectionFactory.createConnection();
-            connection.start();
             session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             int msgPrio = NORMAL_PRIORITY;
@@ -491,13 +491,10 @@ public class JMSMailQueue implements ManageableMailQueue, JMSSupport, MailPriori
     @SuppressWarnings("unchecked")
     @Override
     public long getSize() throws MailQueueException {
-        Connection connection = null;
         Session session = null;
         QueueBrowser browser = null;
         int size = 0;
         try {
-            connection = connectionFactory.createConnection();
-            connection.start();
             session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue(queueName);
 
@@ -539,7 +536,6 @@ public class JMSMailQueue implements ManageableMailQueue, JMSSupport, MailPriori
 
     @Override
     public long flush() throws MailQueueException {
-        Connection connection = null;
         Session session = null;
         Message message = null;
         MessageConsumer consumer = null;
@@ -547,8 +543,6 @@ public class JMSMailQueue implements ManageableMailQueue, JMSSupport, MailPriori
         boolean first = true;
         long count = 0;
         try {
-            connection = connectionFactory.createConnection();
-            connection.start();
 
             session = connection.createSession(true, Session.SESSION_TRANSACTED);
             Queue queue = session.createQueue(queueName);
@@ -635,7 +629,6 @@ public class JMSMailQueue implements ManageableMailQueue, JMSSupport, MailPriori
      * @return messages
      */
     public List<Message> removeWithSelector(String selector) throws MailQueueException {
-        Connection connection = null;
         Session session = null;
         Message message = null;
         MessageConsumer consumer = null;
@@ -643,9 +636,6 @@ public class JMSMailQueue implements ManageableMailQueue, JMSSupport, MailPriori
         List<Message> messages = new ArrayList<Message>();
 
         try {
-            connection = connectionFactory.createConnection();
-            connection.start();
-
             session = connection.createSession(true, Session.SESSION_TRANSACTED);
             Queue queue = session.createQueue(queueName);
             consumer = session.createConsumer(queue, selector);
@@ -738,12 +728,9 @@ public class JMSMailQueue implements ManageableMailQueue, JMSSupport, MailPriori
     @Override
     @SuppressWarnings("unchecked")
     public MailQueueIterator browse() throws MailQueueException {
-        Connection connection = null;
         Session session = null;
         QueueBrowser browser = null;
         try {
-            connection = connectionFactory.createConnection();
-            connection.start();
             session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue(queueName);
 

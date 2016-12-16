@@ -288,7 +288,6 @@ public class ActiveMQMailQueue extends JMSMailQueue implements ActiveMQSupport {
     @Override
     public long getSize() throws MailQueueException {
 
-        Connection connection = null;
         Session session = null;
         MessageConsumer consumer = null;
         MessageProducer producer = null;
@@ -296,9 +295,6 @@ public class ActiveMQMailQueue extends JMSMailQueue implements ActiveMQSupport {
         long size;
 
         try {
-            connection = connectionFactory.createConnection();
-            connection.start();
-
             session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             replyTo = session.createTemporaryQueue();
             consumer = session.createConsumer(replyTo);
