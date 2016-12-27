@@ -79,6 +79,11 @@
                 <artifactId>james-server-guice-smtp</artifactId>
                 <version>3.0.0-beta6-SNAPSHOT</version>
             </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>james-server-guice-webadmin</artifactId>
+                <version>3.0.0-beta6-SNAPSHOT</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -97,6 +102,7 @@
         <module>protocols/managedsieve</module>
         <module>protocols/pop</module>
         <module>protocols/smtp</module>
+        <module>protocols/webadmin</module>
     </modules>
 </project>
 
