@@ -24,6 +24,9 @@ import org.apache.james.mailets.configuration.CommonProcessors;
 import org.apache.james.mailets.configuration.MailetContainer;
 import org.apache.james.mailets.utils.IMAPMessageReader;
 import org.apache.james.mailets.utils.SMTPMessageSender;
+import org.apache.james.probe.DataProbe;
+import org.apache.james.utils.PojoDataProbe;
+import org.apache.james.utils.PojoMailboxProbe;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -79,12 +82,13 @@ public class CommonMailetConfigurationTest {
 
     @Test
     public void simpleMailShouldBeSent() throws Exception {
-        jamesServer.getServerProbe().addDomain(DEFAULT_DOMAIN);
+        DataProbe dataProbe = jamesServer.getProbe(PojoDataProbe.class);
+        dataProbe.addDomain(DEFAULT_DOMAIN);
         String from = "user@" + DEFAULT_DOMAIN;
-        jamesServer.getServerProbe().addUser(from, PASSWORD);
+        dataProbe.addUser(from, PASSWORD);
         String recipient = "user2@" + DEFAULT_DOMAIN;
-        jamesServer.getServerProbe().addUser(recipient, PASSWORD);
-        jamesServer.getServerProbe().createMailbox(MailboxConstants.USER_NAMESPACE, recipient, "INBOX");
+        dataProbe.addUser(recipient, PASSWORD);
+        jamesServer.getProbe(PojoMailboxProbe.class).createMailbox(MailboxConstants.USER_NAMESPACE, recipient, "INBOX");
 
         try (SMTPMessageSender messageSender = SMTPMessageSender.noAuthentication(LOCALHOST_IP, SMTP_PORT, DEFAULT_DOMAIN);
              IMAPMessageReader imapMessageReader = new IMAPMessageReader(LOCALHOST_IP, IMAP_PORT)) {

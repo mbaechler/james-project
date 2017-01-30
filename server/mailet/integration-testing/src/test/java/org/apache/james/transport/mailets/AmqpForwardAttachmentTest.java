@@ -43,7 +43,10 @@ import org.apache.james.mailets.configuration.MailetContainer;
 import org.apache.james.mailets.configuration.ProcessorConfiguration;
 import org.apache.james.mailets.utils.IMAPMessageReader;
 import org.apache.james.mailets.utils.SMTPMessageSender;
+import org.apache.james.probe.DataProbe;
 import org.apache.james.util.streams.SwarmGenericContainer;
+import org.apache.james.utils.PojoDataProbe;
+import org.apache.james.utils.PojoMailboxProbe;
 import org.apache.mailet.Mail;
 import org.apache.mailet.MailAddress;
 import org.apache.mailet.base.test.FakeMail;
@@ -97,7 +100,7 @@ public class AmqpForwardAttachmentTest {
     private Channel channel;
     private String queueName;
     private Connection connection;
-
+    
     @Before
     public void setup() throws Exception {
         @SuppressWarnings("deprecation")
@@ -146,10 +149,11 @@ public class AmqpForwardAttachmentTest {
         Duration slowPacedPollInterval = Duration.FIVE_HUNDRED_MILLISECONDS;
         calmlyAwait = Awaitility.with().pollInterval(slowPacedPollInterval).and().with().pollDelay(slowPacedPollInterval).await();
 
-        jamesServer.getServerProbe().addDomain(JAMES_APACHE_ORG);
-        jamesServer.getServerProbe().addUser(FROM, PASSWORD);
-        jamesServer.getServerProbe().addUser(RECIPIENT, PASSWORD);
-        jamesServer.getServerProbe().createMailbox(MailboxConstants.USER_NAMESPACE, RECIPIENT, "INBOX");
+        DataProbe dataprobe = jamesServer.getProbe(PojoDataProbe.class);
+        dataprobe.addDomain(JAMES_APACHE_ORG);
+        dataprobe.addUser(FROM, PASSWORD);
+        dataprobe.addUser(RECIPIENT, PASSWORD);
+        jamesServer.getProbe(PojoMailboxProbe.class).createMailbox(MailboxConstants.USER_NAMESPACE, RECIPIENT, "INBOX");
         
         ConnectionFactory factory = new ConnectionFactory();
         factory.setUri(amqpUri);

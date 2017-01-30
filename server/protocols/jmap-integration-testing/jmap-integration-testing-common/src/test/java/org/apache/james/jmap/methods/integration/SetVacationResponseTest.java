@@ -35,6 +35,7 @@ import org.apache.james.jmap.api.vacation.AccountId;
 import org.apache.james.jmap.api.vacation.Vacation;
 import org.apache.james.jmap.api.vacation.VacationPatch;
 import org.apache.james.util.ValuePatch;
+import org.apache.james.utils.PojoDataProbe;
 import org.apache.james.utils.JmapGuiceProbe;
 import org.junit.After;
 import org.junit.Before;
@@ -75,8 +76,8 @@ public abstract class SetVacationResponseTest {
                     .getJmapPort())
                 .build();
 
-        jmapServer.serverProbe().addDomain(USERS_DOMAIN);
-        jmapServer.serverProbe().addUser(USER, PASSWORD);
+        jmapServer.getProbe(PojoDataProbe.class).addDomain(USERS_DOMAIN);
+        jmapServer.getProbe(PojoDataProbe.class).addUser(USER, PASSWORD);
         accessToken = JmapAuthentication.authenticateJamesUser(USER, PASSWORD);
 
         await();

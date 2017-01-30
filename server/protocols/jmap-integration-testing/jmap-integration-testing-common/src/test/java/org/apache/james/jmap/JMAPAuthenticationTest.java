@@ -34,6 +34,7 @@ import java.util.UUID;
 
 import org.apache.james.GuiceJamesServer;
 import org.apache.james.jmap.model.ContinuationToken;
+import org.apache.james.utils.PojoDataProbe;
 import org.apache.james.utils.JmapGuiceProbe;
 import org.junit.After;
 import org.junit.Before;
@@ -74,8 +75,8 @@ public abstract class JMAPAuthenticationTest {
 
         
         String domain = "domain.tld";
-        jmapServer.serverProbe().addDomain(domain);
-        jmapServer.serverProbe().addUser(userCredentials.getUsername(), userCredentials.getPassword());
+        jmapServer.getProbe(PojoDataProbe.class).addDomain(domain);
+        jmapServer.getProbe(PojoDataProbe.class).addUser(userCredentials.getUsername(), userCredentials.getPassword());
         
     }
     
