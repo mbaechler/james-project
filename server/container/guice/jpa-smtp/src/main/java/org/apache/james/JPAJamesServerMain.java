@@ -25,7 +25,6 @@ import org.apache.james.modules.data.JPADataModule;
 import org.apache.james.modules.protocols.ProtocolHandlerModule;
 import org.apache.james.modules.protocols.SMTPServerModule;
 import org.apache.james.modules.server.ActiveMQQueueModule;
-import org.apache.james.modules.server.JMXServerModule;
 import org.apache.james.modules.server.RawPostDequeueDecoratorModule;
 import org.apache.openjpa.persistence.OpenJPAPersistence;
 
@@ -46,7 +45,7 @@ public class JPAJamesServerMain {
 
     public static void main(String[] args) throws Exception {
         GuiceJamesServer server = new GuiceJamesServer()
-                    .combineWith(jpaServerModule, protocols, new JMXServerModule());
+                    .combineWith(jpaServerModule, protocols);
         server.start();
     }
 

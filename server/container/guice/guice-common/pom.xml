@@ -133,10 +133,6 @@
             <dependencies>
                 <dependency>
                     <groupId>${project.groupId}</groupId>
-                    <artifactId>james-server-cli</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>${project.groupId}</groupId>
                     <artifactId>james-server-core</artifactId>
                 </dependency>
                 <dependency>
