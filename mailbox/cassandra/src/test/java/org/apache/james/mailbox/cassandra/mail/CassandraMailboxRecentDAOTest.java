@@ -53,6 +53,7 @@ public class CassandraMailboxRecentDAOTest {
     @After
     public void tearDown() {
         cassandra.clearAllTables();
+        cassandra.close();
     }
 
     @Test
@@ -121,9 +122,9 @@ public class CassandraMailboxRecentDAOTest {
     public void getRecentMessageUidsInMailboxShouldNotTimeoutWhenOverPagingLimit() throws Exception {
         int pageSize = 5000;
         int size = pageSize + 1000;
-        FluentFutureStream.of(IntStream.range(0, size)
-            .mapToObj(i -> testee.addToRecent(CASSANDRA_ID, MessageUid.of(i + 1))))
-            .join();
+        IntStream.range(0, size)
+            .parallel()
+            .forEach(i -> testee.addToRecent(CASSANDRA_ID, MessageUid.of(i + 1)).join());
 
         assertThat(testee.getRecentMessageUidsInMailbox(CASSANDRA_ID).join()
             .collect(Guavate.toImmutableList())).hasSize(size);

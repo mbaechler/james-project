@@ -21,6 +21,7 @@ package org.apache.james.mailbox.store.mail.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -103,8 +104,9 @@ public abstract class MessageIdMapperTest {
     }
 
     @After
-    public void tearDown() throws MailboxException {
+    public void tearDown() throws MailboxException, IOException {
         mapperProvider.clearMapper();
+        mapperProvider.close();
     }
 
     @Test

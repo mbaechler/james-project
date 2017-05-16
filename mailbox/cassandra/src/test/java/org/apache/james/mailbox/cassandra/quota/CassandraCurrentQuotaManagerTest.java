@@ -24,6 +24,7 @@ import org.apache.james.mailbox.cassandra.modules.CassandraQuotaModule;
 import org.apache.james.mailbox.store.quota.StoreCurrentQuotaManager;
 import org.apache.james.mailbox.store.quota.StoreCurrentQuotaManagerTest;
 import org.junit.After;
+import org.junit.AfterClass;
 
 public class CassandraCurrentQuotaManagerTest extends StoreCurrentQuotaManagerTest {
 
@@ -39,4 +40,8 @@ public class CassandraCurrentQuotaManagerTest extends StoreCurrentQuotaManagerTe
         CASSANDRA_CLUSTER.clearAllTables();
     }
 
+    @AfterClass
+    public static void stop() {
+        CASSANDRA_CLUSTER.close();
+    }
 }

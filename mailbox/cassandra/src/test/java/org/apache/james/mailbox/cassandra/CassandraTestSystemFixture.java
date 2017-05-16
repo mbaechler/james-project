@@ -57,19 +57,7 @@ import org.apache.james.mailbox.store.mail.model.impl.MessageParser;
 import org.apache.james.mailbox.store.quota.DefaultQuotaRootResolver;
 
 public class CassandraTestSystemFixture {
-    public static final CassandraCluster CASSANDRA = CassandraCluster.create(new CassandraModuleComposite(
-        new CassandraAclModule(),
-        new CassandraMailboxModule(),
-        new CassandraMessageModule(),
-        new CassandraMailboxCounterModule(),
-        new CassandraMailboxRecentsModule(),
-        new CassandraFirstUnseenModule(),
-        new CassandraDeletedMessageModule(),
-        new CassandraUidModule(),
-        new CassandraModSeqModule(),
-        new CassandraAttachmentModule(),
-        new CassandraAnnotationModule(),
-        new CassandraApplicableFlagsModule()));
+    public static CassandraCluster CASSANDRA;
     public static final int MOD_SEQ = 452;
     public static final int MAX_ACL_RETRY = 10;
 
@@ -122,5 +110,25 @@ public class CassandraTestSystemFixture {
 
     public static void clean() {
         CASSANDRA.clearAllTables();
+    }
+
+    public static void init() {
+        CASSANDRA = CassandraCluster.create(new CassandraModuleComposite(
+            new CassandraAclModule(),
+            new CassandraMailboxModule(),
+            new CassandraMessageModule(),
+            new CassandraMailboxCounterModule(),
+            new CassandraMailboxRecentsModule(),
+            new CassandraFirstUnseenModule(),
+            new CassandraDeletedMessageModule(),
+            new CassandraUidModule(),
+            new CassandraModSeqModule(),
+            new CassandraAttachmentModule(),
+            new CassandraAnnotationModule(),
+            new CassandraApplicableFlagsModule()));
+    }
+
+    public static void stop() {
+        CASSANDRA.close();
     }
 }

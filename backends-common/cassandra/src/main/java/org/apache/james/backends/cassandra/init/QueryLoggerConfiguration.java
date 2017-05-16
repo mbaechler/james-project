@@ -117,7 +117,7 @@ public class QueryLoggerConfiguration {
     }
 
     public QueryLogger getQueryLogger(Cluster cluster) {
-        QueryLogger.Builder builder = QueryLogger.builder(cluster);
+        QueryLogger.Builder builder = QueryLogger.builder();
 
         percentileTracker.map(percentileTracker ->
             slowQueryLatencyThresholdPercentile.map(slowQueryLatencyThresholdPercentile ->

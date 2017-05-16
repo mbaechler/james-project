@@ -122,8 +122,9 @@ public abstract class MessageWithAttachmentMapperTest {
     }
 
     @After
-    public void tearDown() throws MailboxException {
+    public void tearDown() throws MailboxException, IOException {
         mapperProvider.clearMapper();
+        mapperProvider.close();
     }
 
     @Test

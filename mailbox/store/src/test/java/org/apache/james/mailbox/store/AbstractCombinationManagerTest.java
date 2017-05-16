@@ -50,6 +50,7 @@ import org.apache.james.mailbox.model.SearchQuery;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.google.common.base.Predicate;
@@ -76,6 +77,11 @@ public abstract class AbstractCombinationManagerTest {
     private CombinationManagerTestSystem testingData;
 
     public abstract CombinationManagerTestSystem createTestingData() throws Exception ;
+
+    @BeforeClass
+    public static void init() {
+
+    }
 
     @Before
     public void setUp() throws Exception {

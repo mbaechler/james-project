@@ -41,6 +41,7 @@ import org.apache.james.mailbox.store.json.event.EventConverter;
 import org.apache.james.mailbox.store.json.event.MailboxConverter;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
 import org.apache.james.mailbox.util.EventCollector;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -126,6 +127,11 @@ public class CassandraBasedRegisteredDistributedMailboxDelegatingListenerTest {
         registeredDelegatingMailboxListener1.addListener(MAILBOX_PATH_1, eventCollectorMailbox1, mailboxSession);
         registeredDelegatingMailboxListener2.addListener(MAILBOX_PATH_1, eventCollectorMailbox2, mailboxSession);
         registeredDelegatingMailboxListener3.addListener(MAILBOX_PATH_2, eventCollectorMailbox3, mailboxSession);
+    }
+
+    @After
+    public void tearDown() {
+        cassandraClusterSingleton.close();
     }
 
     @Test

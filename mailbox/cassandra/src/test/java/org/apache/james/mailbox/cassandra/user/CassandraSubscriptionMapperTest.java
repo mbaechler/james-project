@@ -23,6 +23,7 @@ import org.apache.james.mailbox.cassandra.modules.CassandraSubscriptionModule;
 import org.apache.james.mailbox.store.user.SubscriptionMapper;
 import org.apache.james.mailbox.store.user.SubscriptionMapperTest;
 import org.junit.After;
+import org.junit.AfterClass;
 
 public class CassandraSubscriptionMapperTest extends SubscriptionMapperTest {
 
@@ -37,5 +38,10 @@ public class CassandraSubscriptionMapperTest extends SubscriptionMapperTest {
     @After
     public void tearDown() {
         CLUSTER.clearAllTables();
+    }
+
+    @AfterClass
+    public static void stop() {
+        CLUSTER.close();
     }
 }

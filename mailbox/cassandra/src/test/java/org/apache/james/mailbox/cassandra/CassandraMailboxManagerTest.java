@@ -36,23 +36,36 @@ import org.apache.james.mailbox.cassandra.modules.CassandraModSeqModule;
 import org.apache.james.mailbox.cassandra.modules.CassandraSubscriptionModule;
 import org.apache.james.mailbox.cassandra.modules.CassandraUidModule;
 import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 
 public class CassandraMailboxManagerTest extends MailboxManagerTest {
 
-    private static final CassandraCluster CASSANDRA = CassandraCluster.create(new CassandraModuleComposite(
-        new CassandraAclModule(),
-        new CassandraMailboxModule(),
-        new CassandraMessageModule(),
-        new CassandraMailboxCounterModule(),
-        new CassandraMailboxRecentsModule(),
-        new CassandraFirstUnseenModule(),
-        new CassandraUidModule(),
-        new CassandraModSeqModule(),
-        new CassandraSubscriptionModule(),
-        new CassandraAttachmentModule(),
-        new CassandraDeletedMessageModule(),
-        new CassandraAnnotationModule(),
-        new CassandraApplicableFlagsModule()));
+    @BeforeClass
+    public static void init() {
+        CASSANDRA = CassandraCluster.create(new CassandraModuleComposite(
+            new CassandraAclModule(),
+            new CassandraMailboxModule(),
+            new CassandraMessageModule(),
+            new CassandraMailboxCounterModule(),
+            new CassandraMailboxRecentsModule(),
+            new CassandraFirstUnseenModule(),
+            new CassandraUidModule(),
+            new CassandraModSeqModule(),
+            new CassandraSubscriptionModule(),
+            new CassandraAttachmentModule(),
+            new CassandraDeletedMessageModule(),
+            new CassandraAnnotationModule(),
+            new CassandraApplicableFlagsModule()));
+    }
+
+    @AfterClass
+    public static void close() {
+        CASSANDRA.close();
+    }
+
+
+    private static CassandraCluster CASSANDRA;
 
     @Override
     protected MailboxManager provideMailboxManager() {
