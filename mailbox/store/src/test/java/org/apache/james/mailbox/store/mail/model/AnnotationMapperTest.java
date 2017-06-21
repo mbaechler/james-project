@@ -35,8 +35,6 @@ import org.junit.rules.ExpectedException;
 
 import com.google.common.collect.ImmutableSet;
 
-import java.io.IOException;
-
 public abstract class AnnotationMapperTest {
     private static final MailboxAnnotationKey PRIVATE_USER_KEY = new MailboxAnnotationKey("/private/commentuser");
     private static final MailboxAnnotationKey PRIVATE_UPPER_CASE_KEY = new MailboxAnnotationKey("/PRIVATE/COMMENT");
@@ -74,7 +72,7 @@ public abstract class AnnotationMapperTest {
     }
 
     @After
-    public void tearDown() throws MailboxException, IOException {
+    public void tearDown() throws Exception {
         mapperProvider.clearMapper();
         mapperProvider.close();
     }

@@ -28,20 +28,20 @@ import org.junit.AfterClass;
 
 public class CassandraCurrentQuotaManagerTest extends StoreCurrentQuotaManagerTest {
 
-    private static final CassandraCluster CASSANDRA_CLUSTER = CassandraCluster.create(new CassandraQuotaModule());
+    private static final CassandraCluster cassandra = CassandraCluster.create(new CassandraQuotaModule());
 
     @Override
     protected StoreCurrentQuotaManager provideTestee() {
-        return new CassandraCurrentQuotaManager(CASSANDRA_CLUSTER.getConf());
+        return new CassandraCurrentQuotaManager(cassandra.getConf());
     }
 
     @After
     public void tearDown() {
-        CASSANDRA_CLUSTER.clearAllTables();
+        cassandra.clearAllTables();
     }
 
     @AfterClass
     public static void stop() {
-        CASSANDRA_CLUSTER.close();
+        cassandra.close();
     }
 }

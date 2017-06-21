@@ -50,21 +50,23 @@ import org.junit.BeforeClass;
 
 public class CassandraMailboxManagerAttachmentTest extends AbstractMailboxManagerAttachmentTest {
 
+    private static CassandraCluster cassandra;
 
     @BeforeClass
     public static void init() {
-        cassandra = CassandraCluster.create(new CassandraModuleComposite(
-            new CassandraAclModule(),
-            new CassandraMailboxModule(),
-            new CassandraMessageModule(),
-            new CassandraMailboxCounterModule(),
-            new CassandraMailboxRecentsModule(),
-            new CassandraFirstUnseenModule(),
-            new CassandraDeletedMessageModule(),
-            new CassandraModSeqModule(),
-            new CassandraUidModule(),
-            new CassandraAttachmentModule(),
-            new CassandraApplicableFlagsModule()));
+        cassandra = CassandraCluster.create(
+                new CassandraModuleComposite(
+                    new CassandraAclModule(),
+                    new CassandraMailboxModule(),
+                    new CassandraMessageModule(),
+                    new CassandraMailboxCounterModule(),
+                    new CassandraMailboxRecentsModule(),
+                    new CassandraFirstUnseenModule(),
+                    new CassandraDeletedMessageModule(),
+                    new CassandraModSeqModule(),
+                    new CassandraUidModule(),
+                    new CassandraAttachmentModule(),
+                    new CassandraApplicableFlagsModule()));
     }
 
     @AfterClass
@@ -72,7 +74,6 @@ public class CassandraMailboxManagerAttachmentTest extends AbstractMailboxManage
         cassandra.close();
     }
 
-    private static CassandraCluster cassandra;
     public static final int MAX_ACL_RETRY = 10;
 
     private CassandraMailboxSessionMapperFactory mailboxSessionMapperFactory;

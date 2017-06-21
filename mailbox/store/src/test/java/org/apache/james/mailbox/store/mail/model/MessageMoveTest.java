@@ -21,7 +21,6 @@ package org.apache.james.mailbox.store.mail.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.IOException;
 import java.util.Date;
 
 import javax.mail.Flags;
@@ -79,7 +78,7 @@ public abstract class MessageMoveTest {
     }
 
     @After
-    public void tearDown() throws MailboxException, IOException {
+    public void tearDown() throws Exception {
         mapperProvider.clearMapper();
         mapperProvider.close();
     }

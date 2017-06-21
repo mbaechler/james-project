@@ -27,21 +27,21 @@ import org.junit.AfterClass;
 
 public class CassandraSubscriptionMapperTest extends SubscriptionMapperTest {
 
-    private static final CassandraCluster CLUSTER = CassandraCluster.create(new CassandraSubscriptionModule());
+    private static final CassandraCluster cassandra = CassandraCluster.create(new CassandraSubscriptionModule());
 
     @Override
     protected SubscriptionMapper createSubscriptionMapper() {
-        CLUSTER.ensureAllTables();
-        return new CassandraSubscriptionMapper(CLUSTER.getConf());
+        cassandra.ensureAllTables();
+        return new CassandraSubscriptionMapper(cassandra.getConf());
     }
 
     @After
     public void tearDown() {
-        CLUSTER.clearAllTables();
+        cassandra.clearAllTables();
     }
 
     @AfterClass
     public static void stop() {
-        CLUSTER.close();
+        cassandra.close();
     }
 }

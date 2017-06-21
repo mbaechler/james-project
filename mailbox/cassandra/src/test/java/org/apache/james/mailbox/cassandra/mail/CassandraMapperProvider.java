@@ -66,19 +66,20 @@ public class CassandraMapperProvider implements MapperProvider {
 
 
     public CassandraMapperProvider() {
-        this.cassandra = CassandraCluster.create(new CassandraModuleComposite(
-            new CassandraAclModule(),
-            new CassandraMailboxModule(),
-            new CassandraMessageModule(),
-            new CassandraMailboxCounterModule(),
-            new CassandraMailboxRecentsModule(),
-            new CassandraModSeqModule(),
-            new CassandraUidModule(),
-            new CassandraAttachmentModule(),
-            new CassandraAnnotationModule(),
-            new CassandraFirstUnseenModule(),
-            new CassandraApplicableFlagsModule(),
-            new CassandraDeletedMessageModule()));
+        this.cassandra = CassandraCluster.create(
+                new CassandraModuleComposite(
+                    new CassandraAclModule(),
+                    new CassandraMailboxModule(),
+                    new CassandraMessageModule(),
+                    new CassandraMailboxCounterModule(),
+                    new CassandraMailboxRecentsModule(),
+                    new CassandraModSeqModule(),
+                    new CassandraUidModule(),
+                    new CassandraAttachmentModule(),
+                    new CassandraAnnotationModule(),
+                    new CassandraFirstUnseenModule(),
+                    new CassandraApplicableFlagsModule(),
+                    new CassandraDeletedMessageModule()));
         messageUidProvider = new MessageUidProvider();
         cassandraModSeqProvider = new CassandraModSeqProvider(this.cassandra.getConf());
     }

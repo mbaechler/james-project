@@ -21,7 +21,6 @@ package org.apache.james.mailbox.store.mail.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.IOException;
 import java.util.List;
 
 import org.apache.james.mailbox.exception.AttachmentNotFoundException;
@@ -33,8 +32,8 @@ import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
-import org.junit.rules.ExpectedException;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
@@ -57,7 +56,7 @@ public abstract class AttachmentMapperTest {
     }
 
     @After
-    public void tearDown() throws MailboxException, IOException {
+    public void tearDown() throws Exception {
         mapperProvider.clearMapper();
         mapperProvider.close();
     }

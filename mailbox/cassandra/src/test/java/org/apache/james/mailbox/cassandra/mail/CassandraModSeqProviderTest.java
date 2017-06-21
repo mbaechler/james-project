@@ -48,10 +48,11 @@ public class CassandraModSeqProviderTest {
 
     @Before
     public void setUpClass() throws Exception {
-        cassandra = CassandraCluster.create(new CassandraModuleComposite(
-            new CassandraAclModule(),
-            new CassandraMailboxModule(),
-            new CassandraModSeqModule()));
+        cassandra = CassandraCluster.create(
+                new CassandraModuleComposite(
+                    new CassandraAclModule(),
+                    new CassandraMailboxModule(),
+                    new CassandraModSeqModule()));
         cassandra.ensureAllTables();
         modSeqProvider = new CassandraModSeqProvider(cassandra.getConf());
         CassandraMailboxDAO mailboxDAO = new CassandraMailboxDAO(cassandra.getConf(), cassandra.getTypesProvider(), MAX_RETRY);
