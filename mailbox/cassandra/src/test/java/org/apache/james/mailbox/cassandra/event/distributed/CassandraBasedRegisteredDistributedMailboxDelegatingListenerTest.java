@@ -57,7 +57,7 @@ public class CassandraBasedRegisteredDistributedMailboxDelegatingListenerTest {
     public static final int CASSANDRA_TIME_OUT_IN_S = 10;
     public static final int SCHEDULER_PERIOD_IN_S = 20;
 
-    private CassandraCluster cassandraClusterSingleton = CassandraCluster.create(new CassandraRegistrationModule());
+    private CassandraCluster cassandra = CassandraCluster.create(new CassandraRegistrationModule());
     private RegisteredDelegatingMailboxListener registeredDelegatingMailboxListener1;
     private RegisteredDelegatingMailboxListener registeredDelegatingMailboxListener2;
     private RegisteredDelegatingMailboxListener registeredDelegatingMailboxListener3;
@@ -74,8 +74,8 @@ public class CassandraBasedRegisteredDistributedMailboxDelegatingListenerTest {
         PublisherReceiver publisherReceiver = new PublisherReceiver();
         DistantMailboxPathRegister mailboxPathRegister1 = new DistantMailboxPathRegister(
             new CassandraMailboxPathRegisterMapper(
-                cassandraClusterSingleton.getConf(),
-                cassandraClusterSingleton.getTypesProvider(),
+                cassandra.getConf(),
+                cassandra.getTypesProvider(),
                 CASSANDRA_TIME_OUT_IN_S),
             SCHEDULER_PERIOD_IN_S);
         registeredDelegatingMailboxListener1 = new RegisteredDelegatingMailboxListener(
@@ -88,8 +88,8 @@ public class CassandraBasedRegisteredDistributedMailboxDelegatingListenerTest {
             mailboxPathRegister1);
         DistantMailboxPathRegister mailboxPathRegister2 = new DistantMailboxPathRegister(
             new CassandraMailboxPathRegisterMapper(
-                cassandraClusterSingleton.getConf(),
-                cassandraClusterSingleton.getTypesProvider(),
+                cassandra.getConf(),
+                cassandra.getTypesProvider(),
                 CASSANDRA_TIME_OUT_IN_S),
             SCHEDULER_PERIOD_IN_S);
         registeredDelegatingMailboxListener2 = new RegisteredDelegatingMailboxListener(
@@ -102,8 +102,8 @@ public class CassandraBasedRegisteredDistributedMailboxDelegatingListenerTest {
             mailboxPathRegister2);
         DistantMailboxPathRegister mailboxPathRegister3 = new DistantMailboxPathRegister(
             new CassandraMailboxPathRegisterMapper(
-                cassandraClusterSingleton.getConf(),
-                cassandraClusterSingleton.getTypesProvider(),
+                cassandra.getConf(),
+                cassandra.getTypesProvider(),
                 CASSANDRA_TIME_OUT_IN_S),
             SCHEDULER_PERIOD_IN_S);
         registeredDelegatingMailboxListener3 = new RegisteredDelegatingMailboxListener(
@@ -131,7 +131,7 @@ public class CassandraBasedRegisteredDistributedMailboxDelegatingListenerTest {
 
     @After
     public void tearDown() {
-        cassandraClusterSingleton.close();
+        cassandra.close();
     }
 
     @Test
