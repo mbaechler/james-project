@@ -60,7 +60,7 @@ public class CassandraTestSystemFixture {
     
     public static final int MOD_SEQ = 452;
     public static final int MAX_ACL_RETRY = 10;
-    public static CassandraCluster cassandra;
+    private static CassandraCluster cassandra;
     
     public static CassandraMailboxSessionMapperFactory createMapperFactory() {
         cassandra.ensureAllTables();
