@@ -27,7 +27,6 @@ import org.apache.james.backends.cassandra.CassandraCluster;
 import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.cassandra.CassandraId;
 import org.apache.james.mailbox.cassandra.modules.CassandraMailboxRecentsModule;
-import org.apache.james.util.FluentFutureStream;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

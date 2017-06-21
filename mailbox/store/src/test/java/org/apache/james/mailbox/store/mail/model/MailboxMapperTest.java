@@ -23,7 +23,6 @@ import static org.apache.james.mailbox.store.mail.model.ListMailboxAssert.assert
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
-import java.io.IOException;
 import java.util.List;
 
 import org.apache.james.mailbox.exception.MailboxException;

@@ -21,7 +21,6 @@ package org.apache.james.mailbox.store.mail.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
