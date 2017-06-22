@@ -144,10 +144,10 @@ public class SelectedMailboxImplTest {
         };
     }
 
-    private Answer generateEmitEventAnswer(final AtomicInteger success) {
-        return new Answer() {
+    private Answer<Void> generateEmitEventAnswer(final AtomicInteger success) {
+        return new Answer<Void>() {
             @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
+            public Void answer(InvocationOnMock invocation) throws Throwable {
                 Object[] args = invocation.getArguments();
                 final MailboxListener mailboxListener = (MailboxListener) args[1];
                 executorService.submit(new Runnable() {
