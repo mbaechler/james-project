@@ -19,22 +19,29 @@
 
 package org.apache.james.mpt.imapmailbox.cassandra;
 
+import org.apache.james.backends.cassandra.DockerCassandraRule;
 import org.apache.james.mpt.api.ImapHostSystem;
-import org.apache.james.mpt.imapmailbox.suite.MailboxWithLongNameError;
+import org.apache.james.mpt.imapmailbox.suite.MailboxWithLongNameSuccess;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Ignore;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
-public class CassandraMailboxWithLongNameError extends MailboxWithLongNameError {
+@Ignore("MAILBOX-303 creation support huge key but deletion does not")
+public class CassandraMailboxWithLongNameSuccess extends MailboxWithLongNameSuccess {
+
+    @ClassRule public static DockerCassandraRule cassandraServer = new DockerCassandraRule();
 
     private ImapHostSystem system;
-
+    
     @Before
     public void setUp() throws Exception {
-        Injector injector = Guice.createInjector(new CassandraMailboxTestModule());
+        Injector injector = Guice.createInjector(new CassandraMailboxTestModule(cassandraServer.getIp(), cassandraServer.getBindingPort()));
         system = injector.getInstance(ImapHostSystem.class);
+        system.beforeTest();
         super.setUp();
     }
     

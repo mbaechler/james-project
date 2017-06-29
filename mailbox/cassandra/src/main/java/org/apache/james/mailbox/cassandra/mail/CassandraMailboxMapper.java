@@ -29,7 +29,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 
-import org.apache.james.backends.cassandra.CassandraConfiguration;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.james.backends.cassandra.init.CassandraConfiguration;
 import org.apache.james.backends.cassandra.utils.CassandraAsyncExecutor;
 import org.apache.james.mailbox.cassandra.ids.CassandraId;
 import org.apache.james.mailbox.exception.MailboxException;
@@ -45,7 +46,6 @@ import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
 import org.apache.james.util.CompletableFutureUtil;
 import org.apache.james.util.FluentFutureStream;
 import org.apache.james.util.OptionalUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.exceptions.InvalidQueryException;
