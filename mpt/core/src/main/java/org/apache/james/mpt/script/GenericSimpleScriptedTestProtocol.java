@@ -75,16 +75,19 @@ public class GenericSimpleScriptedTestProtocol<T extends HostSystem, SELF extend
         this.prepareCommands = new ArrayList<PrepareCommand<? super T>>();
     }
 
+    @SuppressWarnings("unchecked")
     public SELF withLocale(Locale locale) {
         this.locale = locale;
         return (SELF) this;
     }
     
+    @SuppressWarnings("unchecked")
     public SELF withUser(String user, String password) {
         prepareCommands.add(new CreateUser(user, password));
         return (SELF) this;
     }
     
+    @SuppressWarnings("unchecked")
     public SELF withPreparedCommand(PrepareCommand<? super T> command) {
         prepareCommands.add(command);
         return (SELF) this;

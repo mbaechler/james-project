@@ -31,7 +31,7 @@ public class CassandraForwardSmtpTest extends ForwardSmtpTest {
 
     @Before
     public void setUp() throws Exception {
-        Injector injector = Guice.createInjector(new SmtpTestModule());
+        Injector injector = Guice.createInjector(new SmtpTestModule(SmtpTestModule.Port.SMTP));
         system = injector.getInstance(SmtpHostSystem.class);
         system.beforeTest();
         super.setUp();

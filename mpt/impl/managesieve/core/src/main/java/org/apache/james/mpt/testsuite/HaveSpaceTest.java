@@ -21,7 +21,9 @@ package org.apache.james.mpt.testsuite;
 
 import java.util.Locale;
 
+import org.apache.james.mpt.api.HostSystem;
 import org.apache.james.mpt.host.ManageSieveHostSystem;
+import org.apache.james.mpt.script.GenericSimpleScriptedTestProtocol.PrepareCommand;
 import org.apache.james.mpt.script.SimpleScriptedTestProtocol;
 import org.junit.After;
 import org.junit.Before;
@@ -41,10 +43,15 @@ public abstract class HaveSpaceTest {
     public void setUp() throws Exception {
         hostSystem = createManageSieveHostSystem();
         hostSystem.beforeTest();
-        hostSystem.setMaxQuota(USER, 50);
         simpleScriptedTestProtocol = new SimpleScriptedTestProtocol("/org/apache/james/managesieve/scripts/", hostSystem)
                 .withUser(USER, PASSWORD)
-                .withLocale(Locale.US);
+                .withLocale(Locale.US)
+                .withPreparedCommand(new PrepareCommand<HostSystem>() {
+                    @Override
+                    public void prepare(HostSystem system) throws Exception {
+                        ((ManageSieveHostSystem) system).setMaxQuota(USER, 50);
+                    }
+                });
     }
     
     @After
