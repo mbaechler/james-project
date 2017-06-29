@@ -107,9 +107,4 @@ public class InMemoryMessageIdManagerTestSystem extends MessageIdManagerTestSyst
             .first();
     }
 
-    @Override
-    public void clean() {
-
-    }
-
 }

@@ -37,7 +37,6 @@ import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.ComposedMessageId;
 import org.apache.james.mailbox.model.MailboxConstants;
 import org.apache.james.mailbox.model.MailboxPath;
-import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.LoggerFactory;
 
@@ -51,8 +50,8 @@ public abstract class MailboxManagerStressTest {
 
     protected abstract MailboxManager provideManager();
 
-    @Before
-    public final void setUp() throws MailboxException {
+    
+    public void setUp() throws MailboxException, Exception {
         this.mailboxManager = provideManager();
     }
 

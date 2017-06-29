@@ -21,10 +21,16 @@ package org.apache.james.domainlist.memory;
 
 import org.apache.james.domainlist.api.DomainList;
 import org.apache.james.domainlist.lib.AbstractDomainListTest;
+import org.junit.Before;
 import org.slf4j.LoggerFactory;
 
 public class MemoryDomainListTest extends AbstractDomainListTest {
 
+    @Before
+    public void setUp() throws Exception {
+        super.setUp();
+    }
+    
     @Override
     protected DomainList createDomainList() {
         MemoryDomainList testee = new MemoryDomainList();

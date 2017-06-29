@@ -265,12 +265,6 @@
                     <scope>test</scope>
                 </dependency>
                 <dependency>
-                    <groupId>org.cassandraunit</groupId>
-                    <artifactId>cassandra-unit</artifactId>
-                    <version>${cassandra-unit.version}</version>
-                    <scope>test</scope>
-                </dependency>
-                <dependency>
                     <groupId>org.testcontainers</groupId>
                     <artifactId>testcontainers</artifactId>
                     <scope>test</scope>

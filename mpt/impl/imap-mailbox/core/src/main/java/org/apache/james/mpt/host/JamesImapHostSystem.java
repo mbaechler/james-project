@@ -19,9 +19,6 @@
 
 package org.apache.james.mpt.host;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.configuration.plist.PropertyListConfiguration;
@@ -32,7 +29,6 @@ import org.apache.james.imap.api.process.ImapProcessor;
 import org.apache.james.imap.decode.ImapDecoder;
 import org.apache.james.imap.decode.main.ImapRequestStreamHandler;
 import org.apache.james.imap.encode.ImapEncoder;
-import org.apache.james.mailbox.MailboxSession.User;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.Authenticator;
 import org.apache.james.mailbox.store.Authorizator;
@@ -48,18 +44,17 @@ import com.google.common.base.Throwables;
 
 public abstract class JamesImapHostSystem implements ImapHostSystem {
 
-    private final MemoryUsersRepository memoryUsersRepository;
-    private final Set<User> users;
-    protected final Authorizator authorizator;
-    protected final Authenticator authenticator;
+    private MemoryUsersRepository memoryUsersRepository;
+    protected Authorizator authorizator;
+    protected Authenticator authenticator;
 
     private ImapDecoder decoder;
     private ImapEncoder encoder;
     private ImapProcessor processor;
 
-    public JamesImapHostSystem() {
-        super();
-        users = new HashSet<User>();
+
+    @Override
+    public void beforeTest() throws Exception {
         memoryUsersRepository = MemoryUsersRepository.withoutVirtualHosting();
         try {
             memoryUsersRepository.configure(userRepositoryConfiguration());
@@ -69,6 +64,11 @@ public abstract class JamesImapHostSystem implements ImapHostSystem {
         authenticator = new UserRepositoryAuthenticator(memoryUsersRepository);
         authorizator = new UserRepositoryAuthorizator(memoryUsersRepository);
     }
+    
+    @Override
+    public void afterTest() throws Exception {
+    }
+    
 
     public void configure(ImapDecoder decoder, ImapEncoder encoder,
             final ImapProcessor processor) {
@@ -87,18 +87,7 @@ public abstract class JamesImapHostSystem implements ImapHostSystem {
             throws Exception {
         return new Session(continuation);
     }
-
-    public void beforeTest() throws Exception {
-    }
     
-    public void afterTest() throws Exception {
-        users.clear();
-        memoryUsersRepository.clear();
-        resetData();
-    }
-    
-    protected abstract void resetData() throws Exception;
-
     public abstract void createMailbox(MailboxPath mailboxPath) throws Exception;
 
     class Session implements org.apache.james.mpt.api.Session {
@@ -145,14 +134,6 @@ public abstract class JamesImapHostSystem implements ImapHostSystem {
             in.nextLine(line);
         }
 
-    }
-
-    public void afterTests() throws Exception {
-        // default do nothing
-    }
-
-    public void beforeTests() throws Exception {
-        // default do nothing
     }
 
     private HierarchicalConfiguration userRepositoryConfiguration() {

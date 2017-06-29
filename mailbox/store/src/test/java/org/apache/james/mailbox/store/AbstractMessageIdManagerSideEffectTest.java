@@ -53,8 +53,6 @@ import org.apache.james.mailbox.quota.QuotaManager;
 import org.apache.james.mailbox.store.event.MailboxEventDispatcher;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.quota.QuotaImpl;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -83,7 +81,6 @@ public abstract class AbstractMessageIdManagerSideEffectTest {
 
     protected abstract MessageIdManagerTestSystem createTestSystem(QuotaManager quotaManager, MailboxEventDispatcher dispatcher) throws Exception;
 
-    @Before
     public void setUp() throws Exception {
         dispatcher = mock(MailboxEventDispatcher.class);
         quotaManager = mock(QuotaManager.class);
@@ -97,10 +94,6 @@ public abstract class AbstractMessageIdManagerSideEffectTest {
         mailbox3 = testingData.createMailbox(MailboxManagerFixture.MAILBOX_PATH3, session);
     }
 
-    @After
-    public void tearDown() {
-        testingData.clean();
-    }
 
     @Test
     public void deleteShouldCallEventDispatcher() throws Exception {

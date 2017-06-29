@@ -249,12 +249,6 @@
                     <scope>test</scope>
                 </dependency>
                 <dependency>
-                    <groupId>org.cassandraunit</groupId>
-                    <artifactId>cassandra-unit</artifactId>
-                    <version>${cassandra-unit.version}</version>
-                    <scope>test</scope>
-                </dependency>
-                <dependency>
                     <groupId>org.hamcrest</groupId>
                     <artifactId>java-hamcrest</artifactId>
                     <scope>test</scope>

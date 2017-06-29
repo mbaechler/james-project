@@ -105,9 +105,12 @@ public class SwarmGenericContainer implements TestRule {
         container.stop();
     }
 
-    @SuppressWarnings("deprecation")
+    public Integer getMappedPort(int originalPort) {
+        return container.getMappedPort(originalPort);
+    }
+
     public String getIp() {
-        return getContainerInfo().getNetworkSettings().getIpAddress();
+        return container.getContainerIpAddress();
     }
 
     public InspectContainerResponse getContainerInfo() {

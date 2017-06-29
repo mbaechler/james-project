@@ -35,7 +35,7 @@ public class CassandraJmapTestRule implements TestRule {
 
     public static CassandraJmapTestRule defaultTestRule() {
         return new CassandraJmapTestRule(
-                AggregateGuiceModuleTestRule.of(new EmbeddedElasticSearchRule(), new EmbeddedCassandraRule()));
+                AggregateGuiceModuleTestRule.of(new EmbeddedElasticSearchRule(), new DockerCassandraRule()));
     }
 
     private GuiceModuleTestRule guiceModuleTestRule;

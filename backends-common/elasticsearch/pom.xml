@@ -173,7 +173,6 @@
                     <artifactId>james-server-util-java8</artifactId>
                     <scope>test</scope>
                     <type>test-jar</type>
-                    <version>${project.version}</version>
                 </dependency>
                 <dependency>
                     <groupId>org.testcontainers</groupId>

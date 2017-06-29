@@ -27,6 +27,7 @@ import java.util.EnumSet;
 import org.apache.activemq.store.PersistenceAdapter;
 import org.apache.activemq.store.memory.MemoryPersistenceAdapter;
 import org.apache.james.backends.cassandra.CassandraCluster;
+import org.apache.james.backends.cassandra.DockerCassandraRule;
 import org.apache.james.backends.cassandra.components.CassandraModule;
 import org.apache.james.backends.es.EmbeddedElasticSearch;
 import org.apache.james.jmap.methods.GetMessageListMethod;
@@ -52,13 +53,15 @@ public class JamesCapabilitiesServerTest {
     private GuiceJamesServer server;
     private TemporaryFolder temporaryFolder = new TemporaryFolder();
     private EmbeddedElasticSearch embeddedElasticSearch = new EmbeddedElasticSearch(temporaryFolder, MailboxElasticsearchConstants.MAILBOX_INDEX);
-
+    private DockerCassandraRule cassandraServer = new DockerCassandraRule();
+    
     @Rule
-    public RuleChain chain = RuleChain.outerRule(temporaryFolder).around(embeddedElasticSearch);
+    public RuleChain chain = RuleChain.outerRule(temporaryFolder).around(embeddedElasticSearch).around(cassandraServer);
 
     @After
     public void teardown() {
         server.stop();
+        
     }
     
     private GuiceJamesServer createCassandraJamesServer(final MailboxManager mailboxManager) {
@@ -80,7 +83,7 @@ public class JamesCapabilitiesServerTest {
                     @Provides
                     @Singleton
                     Session provideSession(CassandraModule cassandraModule) {
-                        CassandraCluster cassandra = CassandraCluster.create(cassandraModule);
+                        CassandraCluster cassandra = CassandraCluster.create(cassandraModule, cassandraServer.getIp(), cassandraServer.getBindingPort());
                         return cassandra.getConf();
                     }
 

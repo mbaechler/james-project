@@ -77,12 +77,13 @@ public class LuceneSearchHostSystem extends JamesImapHostSystem {
 
     @Override
     public void beforeTest() throws Exception {
+        super.beforeTest();
         this.tempFile = Files.createTempDir();
         initFields();
     }
 
     @Override
-    public void resetData() throws Exception {
+    public void afterTest() throws Exception {
         tempFile.deleteOnExit();
 
         resetUserMetaData();
@@ -91,7 +92,6 @@ public class LuceneSearchHostSystem extends JamesImapHostSystem {
         mailboxManager.deleteEverything(session);
         mailboxManager.endProcessingRequest(session);
         mailboxManager.logout(session, false);
-        
     }
 
     public void resetUserMetaData() throws Exception {

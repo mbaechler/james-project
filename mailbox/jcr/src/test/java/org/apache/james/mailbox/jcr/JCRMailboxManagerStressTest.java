@@ -29,6 +29,7 @@ import org.apache.jackrabbit.core.RepositoryImpl;
 import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.MailboxManagerStressTest;
 import org.junit.After;
+import org.junit.Before;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
@@ -37,6 +38,11 @@ public class JCRMailboxManagerStressTest extends MailboxManagerStressTest {
 
     private Optional<RepositoryImpl> repository = Optional.absent();
 
+    @Before
+    public void setUp() throws Exception {
+        super.setUp();
+    }
+    
     @Override
     protected MailboxManager provideManager() {
         String user = "user";

@@ -19,13 +19,16 @@
 package org.apache.james.mailbox.cassandra.mail;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+
 import javax.mail.Flags;
 import javax.mail.util.SharedByteArrayInputStream;
 
 import org.apache.james.backends.cassandra.CassandraCluster;
+import org.apache.james.backends.cassandra.DockerCassandraRule;
 import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.cassandra.CassandraId;
 import org.apache.james.mailbox.cassandra.CassandraMessageId;
@@ -40,13 +43,13 @@ import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.mailbox.store.mail.MessageMapper;
 import org.apache.james.mailbox.store.mail.model.impl.PropertyBuilder;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailboxMessage;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import com.github.steveash.guavate.Guavate;
 import com.google.common.collect.ImmutableList;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 public class CassandraMessageDAOTest {
     private static final int BODY_START = 16;
@@ -54,6 +57,8 @@ public class CassandraMessageDAOTest {
     private static final String CONTENT = "Subject: Test7 \n\nBody7\n.\n";
     private static final MessageUid messageUid = MessageUid.of(1);
 
+    @ClassRule public static DockerCassandraRule cassandraServer = new DockerCassandraRule();
+    
     private CassandraCluster cassandra;
 
     private CassandraMessageDAO testee;
@@ -67,9 +72,7 @@ public class CassandraMessageDAOTest {
 
     @Before
     public void setUp() {
-        cassandra = CassandraCluster.create(new CassandraMessageModule());
-        cassandra.ensureAllTables();
-
+        cassandra = CassandraCluster.create(new CassandraMessageModule(), cassandraServer.getIp(), cassandraServer.getBindingPort());
         messageIdFactory = new CassandraMessageId.Factory();
         messageId = messageIdFactory.generate();
         testee = new CassandraMessageDAO(cassandra.getConf(), cassandra.getTypesProvider());
@@ -91,7 +94,6 @@ public class CassandraMessageDAOTest {
 
     @After
     public void tearDown() {
-        cassandra.clearAllTables();
         cassandra.close();
     }
 

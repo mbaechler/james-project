@@ -59,6 +59,4 @@ public abstract class MessageIdManagerTestSystem {
     public abstract MessageId createNotUsedMessageId();
 
     public abstract void deleteMailbox(MailboxId mailboxId, MailboxSession session);
-
-    public abstract void clean();
 }

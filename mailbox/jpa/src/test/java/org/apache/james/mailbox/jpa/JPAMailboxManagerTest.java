@@ -24,6 +24,7 @@ import org.apache.james.mailbox.MailboxManagerTest;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.jpa.openjpa.OpenJPAMailboxManager;
 import org.junit.After;
+import org.junit.Before;
 
 import com.google.common.base.Optional;
 
@@ -32,6 +33,11 @@ public class JPAMailboxManagerTest extends MailboxManagerTest {
     private static final JpaTestCluster JPA_TEST_CLUSTER = JpaTestCluster.create(JPAMailboxFixture.MAILBOX_PERSISTANCE_CLASSES);
     private Optional<OpenJPAMailboxManager> openJPAMailboxManager = Optional.absent();
 
+    @Before
+    public void setUp() throws Exception {
+        super.setUp();
+    }
+    
     @Override
     protected MailboxManager provideMailboxManager() {
         if (!openJPAMailboxManager.isPresent()) {

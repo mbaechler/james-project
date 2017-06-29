@@ -22,10 +22,9 @@ package org.apache.james.mailbox.cassandra;
 import static org.mockito.Mockito.mock;
 
 import org.apache.james.backends.cassandra.CassandraCluster;
-import org.apache.james.backends.cassandra.init.CassandraModuleComposite;
+import org.apache.james.mailbox.cassandra.mail.CassandraApplicableFlagDAO;
 import org.apache.james.mailbox.cassandra.mail.CassandraDeletedMessageDAO;
 import org.apache.james.mailbox.cassandra.mail.CassandraFirstUnseenDAO;
-import org.apache.james.mailbox.cassandra.mail.CassandraApplicableFlagDAO;
 import org.apache.james.mailbox.cassandra.mail.CassandraMailboxCounterDAO;
 import org.apache.james.mailbox.cassandra.mail.CassandraMailboxDAO;
 import org.apache.james.mailbox.cassandra.mail.CassandraMailboxPathDAO;
@@ -35,18 +34,6 @@ import org.apache.james.mailbox.cassandra.mail.CassandraMessageIdDAO;
 import org.apache.james.mailbox.cassandra.mail.CassandraMessageIdToImapUidDAO;
 import org.apache.james.mailbox.cassandra.mail.CassandraModSeqProvider;
 import org.apache.james.mailbox.cassandra.mail.CassandraUidProvider;
-import org.apache.james.mailbox.cassandra.modules.CassandraAclModule;
-import org.apache.james.mailbox.cassandra.modules.CassandraAnnotationModule;
-import org.apache.james.mailbox.cassandra.modules.CassandraApplicableFlagsModule;
-import org.apache.james.mailbox.cassandra.modules.CassandraAttachmentModule;
-import org.apache.james.mailbox.cassandra.modules.CassandraDeletedMessageModule;
-import org.apache.james.mailbox.cassandra.modules.CassandraFirstUnseenModule;
-import org.apache.james.mailbox.cassandra.modules.CassandraMailboxCounterModule;
-import org.apache.james.mailbox.cassandra.modules.CassandraMailboxModule;
-import org.apache.james.mailbox.cassandra.modules.CassandraMailboxRecentsModule;
-import org.apache.james.mailbox.cassandra.modules.CassandraMessageModule;
-import org.apache.james.mailbox.cassandra.modules.CassandraModSeqModule;
-import org.apache.james.mailbox.cassandra.modules.CassandraUidModule;
 import org.apache.james.mailbox.quota.QuotaManager;
 import org.apache.james.mailbox.store.Authenticator;
 import org.apache.james.mailbox.store.Authorizator;
@@ -59,10 +46,8 @@ import org.apache.james.mailbox.store.quota.DefaultQuotaRootResolver;
 public class CassandraTestSystemFixture {
     
     public static final int MOD_SEQ = 452;
-    private static CassandraCluster cassandra;
-    
-    public static CassandraMailboxSessionMapperFactory createMapperFactory() {
-        cassandra.ensureAllTables();
+
+    public static CassandraMailboxSessionMapperFactory createMapperFactory(CassandraCluster cassandra) {
         CassandraUidProvider uidProvider = new CassandraUidProvider(cassandra.getConf());
         CassandraModSeqProvider modSeqProvider = new CassandraModSeqProvider(cassandra.getConf());
         CassandraMessageId.Factory messageIdFactory = new CassandraMessageId.Factory();
@@ -106,30 +91,5 @@ public class CassandraTestSystemFixture {
             new CassandraMessageId.Factory(),
             quotaManager,
             new DefaultQuotaRootResolver(mapperFactory));
-    }
-
-    public static void clean() {
-        cassandra.clearAllTables();
-    }
-
-    public static void init() {
-        cassandra = CassandraCluster.create(
-                new CassandraModuleComposite(
-                    new CassandraAclModule(),
-                    new CassandraMailboxModule(),
-                    new CassandraMessageModule(),
-                    new CassandraMailboxCounterModule(),
-                    new CassandraMailboxRecentsModule(),
-                    new CassandraFirstUnseenModule(),
-                    new CassandraDeletedMessageModule(),
-                    new CassandraUidModule(),
-                    new CassandraModSeqModule(),
-                    new CassandraAttachmentModule(),
-                    new CassandraAnnotationModule(),
-                    new CassandraApplicableFlagsModule()));
-    }
-
-    public static void stop() {
-        cassandra.close();
     }
 }

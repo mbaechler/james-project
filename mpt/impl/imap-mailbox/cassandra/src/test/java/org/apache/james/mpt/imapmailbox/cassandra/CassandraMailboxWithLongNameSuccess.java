@@ -16,35 +16,43 @@
  * specific language governing permissions and limitations      *
  * under the License.                                           *
  ****************************************************************/
-package org.apache.james.backends.cassandra;
 
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
+package org.apache.james.mpt.imapmailbox.cassandra;
 
-import org.apache.cassandra.exceptions.ConfigurationException;
-import org.apache.thrift.transport.TTransportException;
-import org.cassandraunit.utils.EmbeddedCassandraServerHelper;
+import org.apache.james.backends.cassandra.DockerCassandraRule;
+import org.apache.james.mpt.api.ImapHostSystem;
+import org.apache.james.mpt.imapmailbox.suite.MailboxWithLongNameSuccess;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Ignore;
 
-import com.google.common.base.Throwables;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 
-public class EmbeddedCassandra {
+@Ignore("creation support huge key but deletion does not")
+public class CassandraMailboxWithLongNameSuccess extends MailboxWithLongNameSuccess {
 
-    private int port;
+    @ClassRule public static DockerCassandraRule cassandraServer = new DockerCassandraRule();
 
-    public static EmbeddedCassandra createStartServer() {
-        return new EmbeddedCassandra();
+    private ImapHostSystem system;
+    
+    @Before
+    public void setUp() throws Exception {
+        Injector injector = Guice.createInjector(new CassandraMailboxTestModule(cassandraServer.getIp(), cassandraServer.getBindingPort()));
+        system = injector.getInstance(ImapHostSystem.class);
+        system.beforeTest();
+        super.setUp();
+    }
+    
+    @Override
+    protected ImapHostSystem createImapHostSystem() {
+        return system;
     }
 
-    private EmbeddedCassandra() {
-        try {
-            EmbeddedCassandraServerHelper.startEmbeddedCassandra(EmbeddedCassandraServerHelper.CASSANDRA_RNDPORT_YML_FILE, TimeUnit.SECONDS.toMillis(20));
-            port = EmbeddedCassandraServerHelper.getNativeTransportPort();
-        } catch (ConfigurationException | TTransportException | IOException e) {
-            Throwables.propagate(e);
-        }
+    @After
+    public void tearDown() throws Exception {
+        system.afterTest();
     }
-
-    public int getPort() {
-        return port;
-    }
+    
 }

@@ -20,17 +20,33 @@
 package org.apache.james.domainlist.cassandra;
 
 import org.apache.james.backends.cassandra.CassandraCluster;
+import org.apache.james.backends.cassandra.DockerCassandraRule;
 import org.apache.james.domainlist.api.DomainList;
 import org.apache.james.domainlist.lib.AbstractDomainListTest;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
 import org.slf4j.LoggerFactory;
 
 public class CassandraDomainListTest extends AbstractDomainListTest {
 
+    @ClassRule public static DockerCassandraRule cassandraServer = new DockerCassandraRule();
+    
     private CassandraCluster cassandra;
 
+    @Before
+    public void setUp() throws Exception {
+        cassandra = CassandraCluster.create(new CassandraDomainListModule(), cassandraServer.getIp(), cassandraServer.getBindingPort());
+        super.setUp();
+    }
+
+    @After
+    public void tearDown() {
+        cassandra.close();
+    }
+    
     @Override
     protected DomainList createDomainList() {
-        cassandra = CassandraCluster.create(new CassandraDomainListModule());
         CassandraDomainList testee = new CassandraDomainList(cassandra.getConf());
         testee.setLog(LoggerFactory.getLogger(getClass()));
         testee.setDNSService(getDNSServer("localhost"));

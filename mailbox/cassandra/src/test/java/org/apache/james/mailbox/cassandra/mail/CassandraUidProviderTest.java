@@ -25,6 +25,7 @@ import java.util.stream.LongStream;
 
 import org.apache.james.backends.cassandra.CassandraCluster;
 import org.apache.james.backends.cassandra.CassandraConfiguration;
+import org.apache.james.backends.cassandra.DockerCassandraRule;
 import org.apache.james.backends.cassandra.init.CassandraModuleComposite;
 import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.cassandra.modules.CassandraAclModule;
@@ -34,6 +35,7 @@ import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import com.github.fge.lambdas.Throwing;
@@ -41,10 +43,15 @@ import com.google.common.base.Optional;
 
 public class CassandraUidProviderTest {
 
-    private final CassandraCluster cassandra = CassandraCluster.create(new CassandraModuleComposite(
-        new CassandraAclModule(),
-        new CassandraMailboxModule(),
-        new CassandraUidModule()));
+    @ClassRule public static DockerCassandraRule cassandraServer = new DockerCassandraRule();
+    
+    
+    private final CassandraModuleComposite modules = new CassandraModuleComposite(
+            new CassandraAclModule(),
+            new CassandraMailboxModule(),
+            new CassandraUidModule());
+    
+    private final CassandraCluster cassandra = CassandraCluster.create(modules, cassandraServer.getIp(), cassandraServer.getBindingPort());
     
     private CassandraUidProvider uidProvider;
     private CassandraMailboxMapper mapper;
@@ -52,7 +59,6 @@ public class CassandraUidProviderTest {
 
     @Before
     public void setUpClass() throws Exception {
-        cassandra.ensureAllTables();
         uidProvider = new CassandraUidProvider(cassandra.getConf());
         CassandraMailboxDAO mailboxDAO = new CassandraMailboxDAO(cassandra.getConf(), cassandra.getTypesProvider());
         CassandraMailboxPathDAO mailboxPathDAO = new CassandraMailboxPathDAO(cassandra.getConf(), cassandra.getTypesProvider());
@@ -64,7 +70,6 @@ public class CassandraUidProviderTest {
     
     @After
     public void cleanUp() {
-        cassandra.clearAllTables();
         cassandra.close();
     }
 

@@ -24,15 +24,22 @@ import org.apache.james.user.jpa.model.JPAUser;
 import org.apache.james.user.lib.AbstractUsersRepository;
 import org.apache.james.user.lib.AbstractUsersRepositoryTest;
 import org.junit.After;
+import org.junit.Before;
 import org.slf4j.LoggerFactory;
 
 public class JpaUsersRepositoryTest extends AbstractUsersRepositoryTest {
 
     private static final JpaTestCluster JPA_TEST_CLUSTER = JpaTestCluster.create(JPAUser.class);
 
-    @After
+    @Before
     @Override
+    public void setUp() throws Exception {
+        super.setUp();
+    }
+    
+    @After
     public void tearDown() throws Exception {
+        super.tearDown();
         JPA_TEST_CLUSTER.clear("JAMES_USER");
     }
 

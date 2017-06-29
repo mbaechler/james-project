@@ -209,11 +209,6 @@
                     <version>18.0</version>
                 </dependency>
                 <dependency>
-                    <groupId>org.cassandraunit</groupId>
-                    <artifactId>cassandra-unit</artifactId>
-                    <scope>test</scope>
-                </dependency>
-                <dependency>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-simple</artifactId>
                 </dependency>

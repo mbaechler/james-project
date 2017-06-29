@@ -245,14 +245,13 @@
                     <version>1.7.6</version>
                 </dependency>
                 <dependency>
-                    <groupId>org.cassandraunit</groupId>
-                    <artifactId>cassandra-unit</artifactId>
-                    <version>${cassandra-unit.version}</version>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-simple</artifactId>
                     <scope>test</scope>
                 </dependency>
                 <dependency>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-simple</artifactId>
+                    <groupId>org.testcontainers</groupId>
+                    <artifactId>testcontainers</artifactId>
                     <scope>test</scope>
                 </dependency>
             </dependencies>

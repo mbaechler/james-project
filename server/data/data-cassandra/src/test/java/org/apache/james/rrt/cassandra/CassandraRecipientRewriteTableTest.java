@@ -34,20 +34,17 @@ public class CassandraRecipientRewriteTableTest extends AbstractRecipientRewrite
     private CassandraCluster cassandra;
 
     @Before
-    @Override
     public void setUp() throws Exception {
-        cassandra = CassandraCluster.create(new CassandraRRTModule());
-        cassandra.ensureAllTables();
+        cassandra = CassandraCluster.create(new CassandraRRTModule(), RewriteTablesTest.cassandraServer.getIp(), RewriteTablesTest.cassandraServer.getBindingPort());
         super.setUp();
     }
 
     @After
-    @Override
     public void tearDown() throws Exception {
         super.tearDown();
-        cassandra.clearAllTables();
         cassandra.close();
     }
+
 
     @Override
     protected AbstractRecipientRewriteTable getRecipientRewriteTable() throws Exception {

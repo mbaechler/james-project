@@ -30,6 +30,8 @@ import org.apache.james.filesystem.api.mock.MockFileSystem;
 import org.apache.james.lifecycle.api.LifecycleUtil;
 import org.apache.james.user.api.UsersRepositoryException;
 import org.apache.james.user.lib.AbstractUsersRepository;
+import org.junit.After;
+import org.junit.Before;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -37,6 +39,17 @@ import org.slf4j.LoggerFactory;
  */
 public class JamesUsersJdbcRepositoryTest extends AbstractUsersJdbcRepositoryTest {
 
+    @Before
+    public void setUp() throws Exception {
+        super.setUp();
+    }
+    
+    @After
+    public void tearDown() throws Exception {
+        super.tearDown();
+    }
+
+    
     /**
      * Create the repository to be tested.
      *

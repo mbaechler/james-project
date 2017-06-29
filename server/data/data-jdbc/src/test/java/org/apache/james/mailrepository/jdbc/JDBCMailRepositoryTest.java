@@ -31,12 +31,6 @@ import org.slf4j.LoggerFactory;
 
 public class JDBCMailRepositoryTest extends AbstractMailRepositoryTest {
 
-    /**
-     * @return
-     * @throws ServiceException
-     * @throws ConfigurationException
-     * @throws Exception
-     */
     @Override
     protected MailRepository getMailRepository() throws Exception {
         MockFileSystem fs = new MockFileSystem();

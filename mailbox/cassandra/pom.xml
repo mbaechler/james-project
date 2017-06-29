@@ -183,6 +183,12 @@
                 </dependency>
                 <dependency>
                     <groupId>${project.groupId}</groupId>
+                    <artifactId>apache-james-backends-cassandra</artifactId>
+                    <scope>test</scope>
+                    <type>test-jar</type>
+                </dependency>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
                     <artifactId>apache-james-mailbox-api</artifactId>
                 </dependency>
                 <dependency>
@@ -234,9 +240,8 @@
                     <scope>test</scope>
                 </dependency>
                 <dependency>
-                    <groupId>org.cassandraunit</groupId>
-                    <artifactId>cassandra-unit</artifactId>
-                    <version>${cassandra-unit.version}</version>
+                    <groupId>org.testcontainers</groupId>
+                    <artifactId>testcontainers</artifactId>
                     <scope>test</scope>
                 </dependency>
                 <dependency>

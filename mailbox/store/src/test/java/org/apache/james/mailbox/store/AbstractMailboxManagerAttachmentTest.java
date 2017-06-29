@@ -44,8 +44,6 @@ import org.apache.james.mailbox.store.mail.MessageMapper;
 import org.apache.james.mailbox.store.mail.MessageMapper.FetchType;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.MailboxMessage;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import com.google.common.base.Optional;
@@ -67,10 +65,6 @@ public abstract class AbstractMailboxManagerAttachmentTest {
     protected abstract MailboxManager getParseFailingMailboxManager();
     protected abstract MailboxSessionMapperFactory getMailboxSessionMapperFactory();
     
-    protected void clean() {
-    }
-
-    @Before
     public void setUp() throws Exception {
         mailboxSession = new MockMailboxSession(USERNAME);
         messageMapper = getMailboxSessionMapperFactory().getMessageMapper(mailboxSession);
@@ -81,11 +75,6 @@ public abstract class AbstractMailboxManagerAttachmentTest {
         inbox = mailboxMapper.findMailboxByPath(inboxPath);
         inboxMessageManager = mailboxManager.getMailbox(inboxPath, mailboxSession);
         attachmentMapper = getMailboxSessionMapperFactory().getAttachmentMapper(mailboxSession);
-    }
-
-    @After
-    public void tearDown() {
-        clean();
     }
 
     @Test

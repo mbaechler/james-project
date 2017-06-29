@@ -23,6 +23,7 @@ import java.util.Optional;
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 
+import org.apache.commons.lang.RandomStringUtils;
 import org.apache.james.backends.cassandra.components.CassandraModule;
 import org.apache.james.backends.cassandra.init.CassandraTableManager;
 import org.apache.james.backends.cassandra.init.CassandraTypesProvider;
@@ -37,8 +38,7 @@ import com.datastax.driver.core.exceptions.NoHostAvailableException;
 import com.google.common.base.Throwables;
 
 public final class CassandraCluster implements AutoCloseable {
-    private static final String CLUSTER_IP = "localhost";
-    private static final String KEYSPACE_NAME = "apache_james";
+
     private static final int REPLICATION_FACTOR = 1;
 
     private static final long SLEEP_BEFORE_RETRY = 200;
@@ -48,19 +48,21 @@ public final class CassandraCluster implements AutoCloseable {
     private Session session;
     private CassandraTypesProvider typesProvider;
     private Cluster cluster;
+    private String keyspace;
 
-    public static CassandraCluster create(CassandraModule module) throws RuntimeException {
-        return new CassandraCluster(module, EmbeddedCassandra.createStartServer());
+    public static CassandraCluster create(CassandraModule module, String host, int port) {
+        return new CassandraCluster(module, host, port);
     }
-
+    
     @Inject
-    private CassandraCluster(CassandraModule module, EmbeddedCassandra embeddedCassandra) throws RuntimeException {
+    private CassandraCluster(CassandraModule module, String host, int port) throws RuntimeException {
         this.module = module;
         try {
             cluster = ClusterBuilder.builder()
-                .host(CLUSTER_IP)
-                .port(embeddedCassandra.getPort())
+                .host(host)
+                .port(port)
                 .build();
+            keyspace = RandomStringUtils.randomAlphabetic(10);
             session = new FunctionRunnerWithRetry(MAX_RETRY).executeAndRetrieveObject(CassandraCluster.this::tryInitializeSession);
             typesProvider = new CassandraTypesProvider(module, session);
         } catch (Exception exception) {
@@ -68,12 +70,10 @@ public final class CassandraCluster implements AutoCloseable {
         }
     }
 
+
+
     public Session getConf() {
         return session;
-    }
-
-    public void ensureAllTables() {
-        new CassandraTableManager(module, session).ensureAllTables();
     }
 
     @PreDestroy
@@ -84,11 +84,11 @@ public final class CassandraCluster implements AutoCloseable {
     private Optional<Session> tryInitializeSession() {
         try {
             Cluster clusterWithInitializedKeyspace = ClusterWithKeyspaceCreatedFactory
-                .config(getCluster(), KEYSPACE_NAME)
+                .config(getCluster(), keyspace)
                 .replicationFactor(REPLICATION_FACTOR)
                 .disableDurableWrites()
                 .clusterWithInitializedKeyspace();
-            return Optional.of(new SessionWithInitializedTablesFactory(module).createSession(clusterWithInitializedKeyspace, KEYSPACE_NAME));
+            return Optional.of(new SessionWithInitializedTablesFactory(module).createSession(clusterWithInitializedKeyspace, keyspace));
         } catch (NoHostAvailableException exception) {
             sleep(SLEEP_BEFORE_RETRY);
             return Optional.empty();
@@ -113,6 +113,6 @@ public final class CassandraCluster implements AutoCloseable {
 
     @Override
     public void close() {
-        cluster.close();
+        cluster.closeAsync();
     }
 }

@@ -29,9 +29,7 @@ import org.apache.james.user.api.AlreadyExistInUsersRepositoryException;
 import org.apache.james.user.api.UsersRepositoryException;
 import org.apache.james.user.api.model.User;
 import org.apache.mailet.MailAddress;
-import org.junit.After;
 import org.junit.Assume;
-import org.junit.Before;
 import org.junit.Test;
 
 import com.google.common.base.Optional;
@@ -56,7 +54,6 @@ public abstract class AbstractUsersRepositoryTest {
     private String user3;
     private String admin;
     
-    @Before 
     public void setUp() throws Exception { 
         this.usersRepository = getUsersRepository();
         SimpleDomainList domainList = new SimpleDomainList();
@@ -68,7 +65,6 @@ public abstract class AbstractUsersRepositoryTest {
         admin = login("admin");
     }
 
-    @After
     public void tearDown() throws Exception {
         disposeUsersRepository();
     }

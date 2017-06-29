@@ -40,14 +40,12 @@ public class CassandraStepdefs {
 
     @Before
     public void setup() throws Throwable {
-        cassandra = CassandraCluster.create(new CassandraRRTModule());
-        cassandra.ensureAllTables();
+        cassandra = CassandraCluster.create(new CassandraRRTModule(), RewriteTablesTest.cassandraServer.getIp(), RewriteTablesTest.cassandraServer.getBindingPort());
         mainStepdefs.rewriteTable = getRecipientRewriteTable(); 
     }
 
     @After
     public void tearDown() {
-        cassandra.clearAllTables();
         cassandra.close();
     }
 

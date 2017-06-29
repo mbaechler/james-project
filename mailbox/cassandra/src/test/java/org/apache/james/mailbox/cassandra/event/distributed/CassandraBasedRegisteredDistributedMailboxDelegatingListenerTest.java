@@ -24,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.TreeMap;
 
 import org.apache.james.backends.cassandra.CassandraCluster;
+import org.apache.james.backends.cassandra.DockerCassandraRule;
 import org.apache.james.backends.cassandra.utils.CassandraUtils;
 import org.apache.james.mailbox.MailboxListener;
 import org.apache.james.mailbox.MailboxSession;
@@ -44,6 +45,7 @@ import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
 import org.apache.james.mailbox.util.EventCollector;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 /**
@@ -58,7 +60,9 @@ public class CassandraBasedRegisteredDistributedMailboxDelegatingListenerTest {
     public static final int CASSANDRA_TIME_OUT_IN_S = 10;
     public static final int SCHEDULER_PERIOD_IN_S = 20;
 
-    private CassandraCluster cassandra = CassandraCluster.create(new CassandraRegistrationModule());
+    @ClassRule public static DockerCassandraRule cassandraServer = new DockerCassandraRule();
+    
+    private CassandraCluster cassandra = CassandraCluster.create(new CassandraRegistrationModule(), cassandraServer.getIp(), cassandraServer.getBindingPort());
     private RegisteredDelegatingMailboxListener registeredDelegatingMailboxListener1;
     private RegisteredDelegatingMailboxListener registeredDelegatingMailboxListener2;
     private RegisteredDelegatingMailboxListener registeredDelegatingMailboxListener3;

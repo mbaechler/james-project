@@ -17,35 +17,46 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.mpt.imapmailbox.cassandra;
+package org.apache.james.backends.cassandra;
 
-import org.apache.james.mpt.api.ImapHostSystem;
-import org.apache.james.mpt.imapmailbox.suite.MailboxWithLongNameError;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.rules.TestRule;
+import org.junit.runner.Description;
+import org.junit.runners.model.Statement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.GenericContainer;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
 
-public class CassandraMailboxWithLongNameError extends MailboxWithLongNameError {
+public class DockerCassandraRule implements TestRule {
 
-    private ImapHostSystem system;
+    private static final Logger logger = LoggerFactory.getLogger(DockerCassandraRule.class);
 
-    @Before
-    public void setUp() throws Exception {
-        Injector injector = Guice.createInjector(new CassandraMailboxTestModule());
-        system = injector.getInstance(ImapHostSystem.class);
-        super.setUp();
-    }
-    
+    private static final int CASSANDRA_PORT = 9042;
+
+    private GenericContainer<?> cassandraContainer = new GenericContainer<>("cassandra_3_11_java_8:latest")
+        .withExposedPorts(CASSANDRA_PORT)
+        .withLogConsumer(outputFrame -> logger.info(outputFrame.getUtf8String()))
+        .waitingFor(new CassandraWaitStrategy());
+
+
     @Override
-    protected ImapHostSystem createImapHostSystem() {
-        return system;
+    public Statement apply(Statement base, Description description) {
+        return cassandraContainer.apply(base, description);
     }
 
-    @After
-    public void tearDown() throws Exception {
-        system.afterTest();
+    public void start() {
+        cassandraContainer.start();
+    }
+
+    public void stop() {
+        cassandraContainer.stop();
     }
     
+    public String getIp() {
+        return cassandraContainer.getContainerIpAddress();
+    }
+
+    public int getBindingPort() {
+        return cassandraContainer.getMappedPort(CASSANDRA_PORT);
+    }
 }

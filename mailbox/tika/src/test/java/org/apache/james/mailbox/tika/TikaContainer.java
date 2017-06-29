@@ -64,7 +64,7 @@ public class TikaContainer extends ExternalResource {
     }
 
     public int getPort() {
-        return DEFAULT_TIKA_PORT;
+        return tika.getMappedPort(DEFAULT_TIKA_PORT);
     }
 
     public int getTimeoutInMillis() {

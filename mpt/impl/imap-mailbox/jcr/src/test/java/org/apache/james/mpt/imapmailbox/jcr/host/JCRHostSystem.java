@@ -117,7 +117,8 @@ public class JCRHostSystem extends JamesImapHostSystem {
         }
     }
 
-    public void resetData() throws Exception {
+    @Override
+    public void afterTest() throws Exception {
         resetUserMetaData();
       
     }
@@ -130,8 +131,7 @@ public class JCRHostSystem extends JamesImapHostSystem {
         dir.mkdirs();
     }
 
-
-    @Override
+    //JCR tests are broken partly because of that method not being run 
     public void afterTests() throws Exception {
         shutdownRepository();
     }

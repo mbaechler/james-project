@@ -25,12 +25,14 @@ import java.util.List;
 import java.util.Optional;
 
 import org.apache.james.backends.cassandra.CassandraCluster;
+import org.apache.james.backends.cassandra.DockerCassandraRule;
 import org.apache.james.mailbox.cassandra.CassandraId;
 import org.apache.james.mailbox.cassandra.mail.CassandraMailboxPathDAO.CassandraIdAndPath;
 import org.apache.james.mailbox.cassandra.modules.CassandraMailboxModule;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import com.github.steveash.guavate.Guavate;
@@ -50,22 +52,21 @@ public class CassandraMailboxPathDAOTest {
     public static final MailboxPath USER_OUTBOX_MAILBOXPATH = new MailboxPath(PRIVATE_NAMESPACE, USER, "OUTBOX");
     public static final MailboxPath OTHER_USER_MAILBOXPATH = new MailboxPath(PRIVATE_NAMESPACE, OTHER_USER, "INBOX");
 
+    @ClassRule public static DockerCassandraRule cassandraServer = new DockerCassandraRule();
+    
     private CassandraCluster cassandra;
 
     private CassandraMailboxPathDAO testee;
 
     @Before
     public void setUp() throws Exception {
-        cassandra = CassandraCluster.create(new CassandraMailboxModule());
-        cassandra.ensureAllTables();
-
+        cassandra = CassandraCluster.create(new CassandraMailboxModule(), cassandraServer.getIp(), cassandraServer.getBindingPort());
         testee = new CassandraMailboxPathDAO(cassandra.getConf(), cassandra.getTypesProvider());
 
     }
 
     @After
     public void tearDown() throws Exception {
-        cassandra.clearAllTables();
         cassandra.close();
     }
 

@@ -24,6 +24,7 @@ import java.util.Date;
 import javax.mail.Flags;
 import javax.mail.util.SharedByteArrayInputStream;
 
+import org.apache.james.backends.cassandra.CassandraCluster;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MessageIdManager;
 import org.apache.james.mailbox.MessageUid;
@@ -44,8 +45,8 @@ import com.google.common.base.Throwables;
 
 public class CassandraMessageIdManagerTestSystem extends MessageIdManagerTestSystem {
 
-    public static MessageIdManagerTestSystem createTestingData(QuotaManager quotaManager, MailboxEventDispatcher dispatcher) throws Exception {
-        CassandraMailboxSessionMapperFactory mapperFactory = CassandraTestSystemFixture.createMapperFactory();
+    public static MessageIdManagerTestSystem createTestingData(CassandraCluster cassandra, QuotaManager quotaManager, MailboxEventDispatcher dispatcher) throws Exception {
+        CassandraMailboxSessionMapperFactory mapperFactory = CassandraTestSystemFixture.createMapperFactory(cassandra);
 
         return new CassandraMessageIdManagerTestSystem(CassandraTestSystemFixture.createMessageIdManager(mapperFactory, quotaManager, dispatcher),
             new CassandraMessageId.Factory(),
@@ -97,11 +98,6 @@ public class CassandraMessageIdManagerTestSystem extends MessageIdManagerTestSys
         }
     }
 
-    @Override
-    public void clean() {
-        CassandraTestSystemFixture.clean();
-    }
-
     private static MailboxMessage createMessage(MailboxId mailboxId, Flags flags, MessageId messageId, MessageUid uid) {
         MailboxMessage mailboxMessage = new SimpleMailboxMessage(messageId, new Date(), 1596, 1256,
             new SharedByteArrayInputStream("subject: any\n\nbody".getBytes(Charsets.UTF_8)), flags, new PropertyBuilder(), mailboxId);
@@ -109,14 +105,5 @@ public class CassandraMessageIdManagerTestSystem extends MessageIdManagerTestSys
         mailboxMessage.setUid(uid);
         return mailboxMessage;
     }
-
-    public static void init() {
-        CassandraTestSystemFixture.init();
-    }
-
-    public static void stop() {
-        CassandraTestSystemFixture.stop();
-    }
-
 
 }
