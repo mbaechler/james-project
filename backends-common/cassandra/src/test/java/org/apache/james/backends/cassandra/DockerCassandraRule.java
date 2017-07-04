@@ -26,6 +26,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 
+import com.google.common.collect.ImmutableMap;
+
 
 public class DockerCassandraRule implements TestRule {
 
@@ -34,6 +36,8 @@ public class DockerCassandraRule implements TestRule {
     private static final int CASSANDRA_PORT = 9042;
 
     private GenericContainer<?> cassandraContainer = new GenericContainer<>("cassandra_3_11_java_8:latest")
+        .withCreateContainerCmdModifier(cmd -> cmd.getHostConfig()
+                    .withTmpFs(ImmutableMap.of("/var/lib/cassandra", "rw,exec,size=1g")))
         .withExposedPorts(CASSANDRA_PORT)
         .withLogConsumer(outputFrame -> logger.info(outputFrame.getUtf8String()))
         .waitingFor(new CassandraWaitStrategy());
