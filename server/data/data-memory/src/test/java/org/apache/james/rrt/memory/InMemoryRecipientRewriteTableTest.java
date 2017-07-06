@@ -23,10 +23,22 @@ import org.apache.commons.configuration.DefaultConfigurationBuilder;
 import org.apache.james.rrt.api.RecipientRewriteTableException;
 import org.apache.james.rrt.lib.AbstractRecipientRewriteTable;
 import org.apache.james.rrt.lib.AbstractRecipientRewriteTableTest;
+import org.junit.After;
+import org.junit.Before;
 import org.slf4j.LoggerFactory;
 
 public class InMemoryRecipientRewriteTableTest extends AbstractRecipientRewriteTableTest {
 
+    @Before
+    public void setUp() throws Exception {
+        super.setUp();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        super.tearDown();
+    }
+    
     @Override
     protected AbstractRecipientRewriteTable getRecipientRewriteTable() throws Exception {
         AbstractRecipientRewriteTable rrt = new MemoryRecipientRewriteTable();

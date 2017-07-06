@@ -20,22 +20,25 @@ package org.apache.james.rrt.cassandra;
 
 import org.apache.commons.configuration.DefaultConfigurationBuilder;
 import org.apache.james.backends.cassandra.CassandraCluster;
+import org.apache.james.backends.cassandra.DockerCassandraRule;
 import org.apache.james.backends.cassandra.utils.CassandraUtils;
 import org.apache.james.rrt.api.RecipientRewriteTableException;
 import org.apache.james.rrt.lib.AbstractRecipientRewriteTable;
 import org.apache.james.rrt.lib.AbstractRecipientRewriteTableTest;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
 import org.slf4j.LoggerFactory;
 
-import cucumber.api.java.After;
-import cucumber.api.java.Before;
-
 public class CassandraRecipientRewriteTableTest extends AbstractRecipientRewriteTableTest {
+
+    @ClassRule public static DockerCassandraRule cassandraServer = new DockerCassandraRule();
 
     private CassandraCluster cassandra;
 
     @Before
     public void setUp() throws Exception {
-        cassandra = CassandraCluster.create(new CassandraRRTModule(), RewriteTablesTest.cassandraServer.getIp(), RewriteTablesTest.cassandraServer.getBindingPort());
+        cassandra = CassandraCluster.create(new CassandraRRTModule(), cassandraServer.getIp(), cassandraServer.getBindingPort());
         super.setUp();
     }
 

@@ -24,6 +24,8 @@ import org.apache.james.rrt.api.RecipientRewriteTableException;
 import org.apache.james.rrt.jpa.model.JPARecipientRewrite;
 import org.apache.james.rrt.lib.AbstractRecipientRewriteTable;
 import org.apache.james.rrt.lib.AbstractRecipientRewriteTableTest;
+import org.junit.After;
+import org.junit.Before;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -32,6 +34,16 @@ import org.slf4j.LoggerFactory;
 public class JPARecipientRewriteTableTest extends AbstractRecipientRewriteTableTest {
 
     private static final JpaTestCluster JPA_TEST_CLUSTER = JpaTestCluster.create(JPARecipientRewrite.class);
+
+    @Before
+    public void setUp() throws Exception {
+        super.setUp();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        super.tearDown();
+    }
 
     @Override
     protected AbstractRecipientRewriteTable getRecipientRewriteTable() throws Exception {

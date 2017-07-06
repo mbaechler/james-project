@@ -29,6 +29,7 @@ import org.apache.james.rrt.lib.AbstractRecipientRewriteTableTest;
 import org.apache.james.rrt.lib.Mappings;
 import org.apache.james.rrt.lib.MappingsImpl;
 import org.apache.james.rrt.lib.MappingsImpl.Builder;
+import org.junit.After;
 import org.junit.Before;
 import org.slf4j.LoggerFactory;
 
@@ -42,12 +43,17 @@ public class XMLRecipientRewriteTableTest extends AbstractRecipientRewriteTableT
     private final DefaultConfigurationBuilder defaultConfiguration = new DefaultConfigurationBuilder();
 
     @Before
-    @Override
     public void setUp() throws Exception {
         defaultConfiguration.setDelimiterParsingDisabled(true);
         super.setUp();
     }
 
+    @After
+    public void tearDown() throws Exception {
+        super.tearDown();
+    }
+
+    
     @Override
     protected AbstractRecipientRewriteTable getRecipientRewriteTable() throws Exception {
         XMLRecipientRewriteTable localVirtualUserTable = new XMLRecipientRewriteTable();
