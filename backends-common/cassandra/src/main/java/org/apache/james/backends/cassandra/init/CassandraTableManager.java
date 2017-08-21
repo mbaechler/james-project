@@ -25,9 +25,11 @@ import org.apache.james.backends.cassandra.components.CassandraModule;
 import org.apache.james.backends.cassandra.components.CassandraTable;
 import org.apache.james.backends.cassandra.utils.CassandraAsyncExecutor;
 import org.apache.james.util.FluentFutureStream;
+import org.apache.james.util.streams.JamesCollectors;
 
 public class CassandraTableManager {
 
+    public static final int TABLE_MANAGEMENT_PARRALLEL_OPERATION_COUNT = 4;
     private final CassandraAsyncExecutor executor;
     private final CassandraModule module;
 
@@ -37,22 +39,26 @@ public class CassandraTableManager {
     }
 
     public CassandraTableManager ensureAllTables() {
-        FluentFutureStream.of(
-            module.moduleTables()
-                .stream()
-                .map(CassandraTable::getCreateStatement)
+        module.moduleTables()
+            .stream()
+            .map(CassandraTable::getCreateStatement)
+            .collect(JamesCollectors.chunker(TABLE_MANAGEMENT_PARRALLEL_OPERATION_COUNT))
+            .map(statementBatch -> statementBatch.stream()
                 .map(executor::executeVoid))
-            .join();
+            .map(FluentFutureStream::of)
+            .map(FluentFutureStream::join);
         return this;
     }
 
     public void clearAllTables() {
-        FluentFutureStream.of(
-            module.moduleTables()
-                .stream()
-                .map(CassandraTable::getName)
-                .map(QueryBuilder::truncate)
+        module.moduleTables()
+            .stream()
+            .map(CassandraTable::getName)
+            .map(QueryBuilder::truncate)
+            .collect(JamesCollectors.chunker(TABLE_MANAGEMENT_PARRALLEL_OPERATION_COUNT))
+            .map(statementBatch -> statementBatch.stream()
                 .map(executor::executeVoid))
-            .join();
+            .map(FluentFutureStream::of)
+            .map(FluentFutureStream::join);
     }
 }
