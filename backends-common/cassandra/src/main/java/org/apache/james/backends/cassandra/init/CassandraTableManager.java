@@ -19,13 +19,14 @@
 
 package org.apache.james.backends.cassandra.init;
 
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.querybuilder.QueryBuilder;
 import org.apache.james.backends.cassandra.components.CassandraModule;
 import org.apache.james.backends.cassandra.components.CassandraTable;
 import org.apache.james.backends.cassandra.utils.CassandraAsyncExecutor;
 import org.apache.james.util.FluentFutureStream;
 import org.apache.james.util.streams.JamesCollectors;
+
+import com.datastax.driver.core.Session;
+import com.datastax.driver.core.querybuilder.QueryBuilder;
 
 public class CassandraTableManager {
 
@@ -46,7 +47,7 @@ public class CassandraTableManager {
             .map(statementBatch -> statementBatch.stream()
                 .map(executor::executeVoid))
             .map(FluentFutureStream::of)
-            .map(FluentFutureStream::join);
+            .forEach(FluentFutureStream::join);
         return this;
     }
 
@@ -59,6 +60,6 @@ public class CassandraTableManager {
             .map(statementBatch -> statementBatch.stream()
                 .map(executor::executeVoid))
             .map(FluentFutureStream::of)
-            .map(FluentFutureStream::join);
+            .forEach(FluentFutureStream::join);
     }
 }
