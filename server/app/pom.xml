@@ -976,6 +976,7 @@
                                 <goals>
                                     <goal>single</goal>
                                 </goals>
+				<phase>package</phase>
                             </execution>
                         </executions>
                     </plugin>
