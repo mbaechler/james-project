@@ -97,7 +97,9 @@ public class CassandraMailboxMapper implements MailboxMapper {
                 .orElseThrow(() -> new MailboxNotFoundException(path));
         } catch (CompletionException e) {
             if (e.getCause() instanceof InvalidQueryException) {
-                if (StringUtils.containsIgnoreCase(e.getCause().getMessage(), VALUES_MAY_NOT_BE_LARGER_THAN_64_K)) {
+                String errorMessage = e.getCause().getMessage();
+                if (StringUtils.containsIgnoreCase(errorMessage, VALUES_MAY_NOT_BE_LARGER_THAN_64_K)||
+                    StringUtils.containsIgnoreCase(errorMessage, CLUSTERING_COLUMNS_IS_TOO_LONG)) {
                     throw new TooLongMailboxNameException("too long mailbox name");
                 }
                 throw new MailboxException("It has error with cassandra storage", e.getCause());

@@ -26,7 +26,6 @@ import org.apache.james.jmap.methods.integration.SetMailboxesMethodTest;
 import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Rule;
-import org.junit.Test;
 
 public class CassandraSetMailboxesMethodTest extends SetMailboxesMethodTest {
 
@@ -47,24 +46,13 @@ public class CassandraSetMailboxesMethodTest extends SetMailboxesMethodTest {
     }
 
     @Override
-    @Ignore("MAILBOX-303")
+    @Ignore
     public void setMailboxesShouldCreateWhenOverLimitName() throws Exception {
     }
 
     @Override
-    @Ignore("MAILBOX-303")
+    @Ignore
     public void setMailboxesShouldUpdateMailboxWhenOverLimitName() throws Exception {
     }
-    
-    
-    @Override
-    @Ignore("MAILBOX-303")
-    public void setMailboxesShouldNotCreateWhenOverLimitName() {
-    }
-    
 
-    @Test
-    @Ignore("MAILBOX-303")
-    public void setMailboxesShouldNotUpdateMailboxWhenOverLimitName() {
-    }
 }

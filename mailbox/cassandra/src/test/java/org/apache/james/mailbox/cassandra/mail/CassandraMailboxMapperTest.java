@@ -39,7 +39,6 @@ import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,7 +69,6 @@ public class CassandraMailboxMapperTest {
         cassandra.close();
     }
 
-    @Ignore("MAILBOX-303 the limit of 64 for an index value doesn't exist anymore in cassandra 3.X")
     @Test
     public void saveShouldNotRemoveOldMailboxPathWhenCreatingTheNewMailboxPathFails() throws Exception {
         testee.save(new SimpleMailbox(MAILBOX_PATH, UID_VALIDITY));
