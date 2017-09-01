@@ -33,10 +33,10 @@ public class ContainerLifecycleConfiguration {
     }
 
     public static class Builder {
-        private static int DEFAULT_TTL = 20;
+        private static int DEFAULT_ITERATIONS_BETWEEN_RESTART = 20;
 
         private GenericContainer<?> container;
-        private int ttl = DEFAULT_TTL;
+        private int iterationsBetweenRestart = DEFAULT_ITERATIONS_BETWEEN_RESTART;
 
         private Builder() {}
 
@@ -45,35 +45,35 @@ public class ContainerLifecycleConfiguration {
             return this;
         }
 
-        public Builder ttl(int ttl) {
-            this.ttl = ttl;
+        public Builder iterationsBetweenRestart(int iterationsBetweenRestart) {
+            this.iterationsBetweenRestart = iterationsBetweenRestart;
             return this;
         }
 
         public ContainerLifecycleConfiguration build() {
             Preconditions.checkState(container != null);
-            return new ContainerLifecycleConfiguration(container, ttl);
+            return new ContainerLifecycleConfiguration(container, iterationsBetweenRestart);
         }
     }
 
     private final GenericContainer<?> container;
-    private final int ttl;
-    private AtomicInteger nbTestBeforeRestart;
+    private final int iterationsBetweenRestart;
+    private AtomicInteger iterationsBeforeRestart;
 
-    public ContainerLifecycleConfiguration(GenericContainer<?> container, int ttl) {
+    public ContainerLifecycleConfiguration(GenericContainer<?> container, int iterationsBetweenRestart) {
         this.container = container;
-        this.ttl = ttl;
-        this.nbTestBeforeRestart = new AtomicInteger(ttl);
+        this.iterationsBetweenRestart = iterationsBetweenRestart;
+        this.iterationsBeforeRestart = new AtomicInteger(iterationsBetweenRestart);
     }
 
     private void restartContainer() {
-        nbTestBeforeRestart.set(ttl);
+        iterationsBeforeRestart.set(iterationsBetweenRestart);
         container.stop();
         container.start();
     }
 
     private boolean needsRestart() {
-        return nbTestBeforeRestart.decrementAndGet() <= 0;
+        return iterationsBeforeRestart.decrementAndGet() <= 0;
     }
 
     private void restartContainerIfNeeded() {

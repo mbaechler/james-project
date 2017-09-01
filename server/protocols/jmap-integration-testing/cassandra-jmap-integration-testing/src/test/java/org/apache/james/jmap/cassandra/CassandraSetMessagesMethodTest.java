@@ -35,7 +35,7 @@ public class CassandraSetMessagesMethodTest extends SetMessagesMethodTest {
     @ClassRule
     public static DockerCassandraRule cassandra = new DockerCassandraRule();
 
-    public static ContainerLifecycleConfiguration cassandraLifecycleConfiguration = ContainerLifecycleConfiguration.builder().ttl(20).container(cassandra.getRawContainer()).build();
+    public static ContainerLifecycleConfiguration cassandraLifecycleConfiguration = ContainerLifecycleConfiguration.builder().iterationsBetweenRestart(20).container(cassandra.getRawContainer()).build();
 
     @Rule
     public CassandraJmapTestRule rule = CassandraJmapTestRule.defaultTestRule();
