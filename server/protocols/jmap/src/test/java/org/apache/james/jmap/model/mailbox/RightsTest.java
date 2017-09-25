@@ -149,4 +149,27 @@ public class RightsTest {
                 .build());
     }
 
+    @Test
+    public void toMailboxAclShouldReturnEmptyAclWhenEmpty() {
+        Rights rights = Rights.EMPTY;
+
+        assertThat(rights.toMailboxAcl())
+            .isEqualTo(new MailboxACL());
+    }
+
+    @Test
+    public void toMailboxActShouldReturnActConversion() throws Exception {
+        String user1 = "user1";
+        String user2 = "user2";
+        Rights rights = Rights.builder()
+            .delegateTo(new Rights.Username(user1), Rights.Right.Administer, Rights.Right.T_Delete)
+            .delegateTo(new Rights.Username(user2), Rights.Right.Expunge, Rights.Right.Lookup)
+            .build();
+
+        assertThat(rights.toMailboxAcl())
+            .isEqualTo(new MailboxACL(ImmutableMap.of(
+                EntryKey.createUser(user1), new Rfc4314Rights("at"),
+                EntryKey.createUser(user2), new Rfc4314Rights("el"))));
+    }
+
 }

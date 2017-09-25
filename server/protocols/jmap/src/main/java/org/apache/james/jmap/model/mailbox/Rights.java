@@ -24,38 +24,50 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BinaryOperator;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.james.mailbox.model.MailboxACL;
 import org.apache.james.mailbox.model.MailboxACL.EntryKey;
+import org.apache.james.mailbox.model.MailboxACL.Rfc4314Rights;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
+import com.github.fge.lambdas.Throwing;
 import com.github.steveash.guavate.Guavate;
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
 
 public class Rights {
     public enum Right {
-        Administer('a'),
-        Expunge('e'),
-        Insert('i'),
-        Lookup('l'),
-        Read('r'),
-        Seen('s'),
-        T_Delete('t'),
-        Write('w');
+        Administer('a', MailboxACL.Right.Administer),
+        Expunge('e', MailboxACL.Right.PerformExpunge),
+        Insert('i', MailboxACL.Right.Insert),
+        Lookup('l', MailboxACL.Right.Lookup),
+        Read('r', MailboxACL.Right.Read),
+        Seen('s', MailboxACL.Right.WriteSeenFlag),
+        T_Delete('t', MailboxACL.Right.DeleteMessages),
+        Write('w', MailboxACL.Right.Write);
 
         private final char imapRight;
+        private final MailboxACL.Right right;
 
-        Right(char imapRight) {
+        Right(char imapRight, MailboxACL.Right right) {
             this.imapRight = imapRight;
+            this.right = right;
         }
 
         @JsonValue
         public char getImapRight() {
             return imapRight;
+        }
+
+        public MailboxACL.Right getRight() {
+            return right;
         }
 
         public static boolean exists(char c) {
@@ -74,6 +86,7 @@ public class Rights {
     public static class Username {
         private final String value;
 
+     //   @JsonCreator
         public Username(String value) {
             this.value = value;
         }
@@ -181,13 +194,43 @@ public class Rights {
 
     private final Multimap<Username, Right> rights;
 
-    public Rights(Multimap<Username, Right> rights) {
+    @JsonCreator
+    public Rights(Map<Username, List<Right>> rights) {
+        this(rights.entrySet()
+            .stream()
+            .flatMap(e -> e.getValue().stream().map(value -> Pair.of(e.getKey(), value)))
+            .collect(Guavate.toImmutableListMultimap(Pair::getKey, Pair::getValue)));
+    }
+
+    private Rights(Multimap<Username, Right> rights) {
         this.rights = rights;
     }
 
     @JsonAnyGetter
     public Map<Username, Collection<Right>> getRights() {
         return rights.asMap();
+    }
+
+    public MailboxACL toMailboxAcl() {
+        BinaryOperator<MailboxACL> union = Throwing.binaryOperator(MailboxACL::union);
+
+        return rights.asMap()
+            .entrySet()
+            .stream()
+            .map(entry -> new MailboxACL(
+                ImmutableMap.of(
+                    EntryKey.createUser(entry.getKey().value),
+                    toMailboxAclRights(entry.getValue()))))
+            .reduce(new MailboxACL(), union);
+    }
+
+    private Rfc4314Rights toMailboxAclRights(Collection<Right> rights) {
+        BinaryOperator<Rfc4314Rights> union = Throwing.binaryOperator(Rfc4314Rights::union);
+
+        return rights.stream()
+            .map(Right::getRight)
+            .map(Throwing.function(Rfc4314Rights::new))
+            .reduce(new Rfc4314Rights(), union);
     }
 
     @Override

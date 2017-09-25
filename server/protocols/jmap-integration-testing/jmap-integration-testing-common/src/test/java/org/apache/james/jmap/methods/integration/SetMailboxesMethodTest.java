@@ -32,6 +32,7 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
@@ -49,14 +50,16 @@ import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.probe.MailboxProbe;
 import org.apache.james.modules.MailboxProbeImpl;
 import org.apache.james.probe.DataProbe;
-import org.apache.james.utils.JmapGuiceProbe;
 import org.apache.james.utils.DataProbeImpl;
+import org.apache.james.utils.JmapGuiceProbe;
 import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.builder.RequestSpecBuilder;
 import com.jayway.restassured.http.ContentType;
@@ -65,6 +68,7 @@ public abstract class SetMailboxesMethodTest {
 
     private static final String NAME = "[0][0]";
     private static final String ARGUMENTS = "[0][1]";
+    private static final String FIRST_MAILBOX = ARGUMENTS + ".list[0]";
     private static final String USERS_DOMAIN = "domain.tld";
     private static int MAILBOX_NAME_LENGTH_64K = 65536;
 
@@ -137,9 +141,9 @@ public abstract class SetMailboxesMethodTest {
         given()
             .header("Authorization", this.accessToken.serialize())
             .body(requestBody)
-            .when()
+        .when()
             .post("/jmap")
-            .then()
+        .then()
             .statusCode(200)
             .body(NAME, equalTo("mailboxesSet"))
             .body(ARGUMENTS + ".notCreated", aMapWithSize(1))
@@ -1151,6 +1155,273 @@ public abstract class SetMailboxesMethodTest {
             .statusCode(200)
             .body(NAME, equalTo("mailboxesSet"))
             .body(ARGUMENTS + ".updated", contains(mailboxId));
+    }
+
+    @Test
+    public void updateShouldReturnOkWhenClearingSharedWith() {
+        jmapServer.getProbe(MailboxProbeImpl.class).createMailbox(MailboxConstants.USER_NAMESPACE, username, "myBox");
+        Mailbox mailbox = jmapServer.getProbe(MailboxProbeImpl.class).getMailbox(MailboxConstants.USER_NAMESPACE, username, "myBox");
+        String mailboxId = mailbox.getMailboxId().serialize();
+        String requestBody =
+            "[" +
+                "  [ \"setMailboxes\"," +
+                "    {" +
+                "      \"update\": {" +
+                "        \"" + mailboxId + "\" : {" +
+                "          \"sharedWith\" : {}" +
+                "        }" +
+                "      }" +
+                "    }," +
+                "    \"#0\"" +
+                "  ]" +
+                "]";
+
+        given()
+            .header("Authorization", this.accessToken.serialize())
+            .body(requestBody)
+        .when()
+            .post("/jmap")
+        .then()
+            .statusCode(200)
+            .body(NAME, equalTo("mailboxesSet"))
+            .body(ARGUMENTS + ".updated", contains(mailboxId));
+    }
+
+    @Test
+    public void updateShouldReturnOkWhenSettingNewACL() {
+        jmapServer.getProbe(MailboxProbeImpl.class).createMailbox(MailboxConstants.USER_NAMESPACE, username, "myBox");
+        Mailbox mailbox = jmapServer.getProbe(MailboxProbeImpl.class).getMailbox(MailboxConstants.USER_NAMESPACE, username, "myBox");
+        String mailboxId = mailbox.getMailboxId().serialize();
+        String requestBody =
+            "[" +
+                "  [ \"setMailboxes\"," +
+                "    {" +
+                "      \"update\": {" +
+                "        \"" + mailboxId + "\" : {" +
+                "          \"sharedWith\" : {\"user\": [\"a\", \"w\"]}" +
+                "        }" +
+                "      }" +
+                "    }," +
+                "    \"#0\"" +
+                "  ]" +
+                "]";
+
+        given()
+            .header("Authorization", this.accessToken.serialize())
+            .body(requestBody)
+        .when()
+            .post("/jmap")
+        .then()
+            .statusCode(200)
+            .body(NAME, equalTo("mailboxesSet"))
+            .body(ARGUMENTS + ".updated", contains(mailboxId));
+    }
+
+    @Test
+    public void updateShouldCreateStoredDataWhenSettingNewACL() {
+        String myBox = "myBox";
+        String user = "user";
+        jmapServer.getProbe(MailboxProbeImpl.class).createMailbox(MailboxConstants.USER_NAMESPACE, username, myBox);
+        Mailbox mailbox = jmapServer.getProbe(MailboxProbeImpl.class).getMailbox(MailboxConstants.USER_NAMESPACE, username, "myBox");
+        String mailboxId = mailbox.getMailboxId().serialize();
+        String requestBody =
+            "[" +
+                "  [ \"setMailboxes\"," +
+                "    {" +
+                "      \"update\": {" +
+                "        \"" + mailboxId + "\" : {" +
+                "          \"sharedWith\" : {\"" + user + "\": [\"a\", \"w\"]}" +
+                "        }" +
+                "      }" +
+                "    }," +
+                "    \"#0\"" +
+                "  ]" +
+                "]";
+
+        with()
+            .header("Authorization", this.accessToken.serialize())
+            .body(requestBody)
+            .post("/jmap");
+
+        given()
+            .header("Authorization", accessToken.serialize())
+            .body("[[\"getMailboxes\", {\"ids\": [\"" + mailboxId + "\"]}, \"#0\"]]")
+        .when()
+            .post("/jmap")
+        .then()
+            .statusCode(200)
+            .body(NAME, equalTo("mailboxes"))
+            .body(FIRST_MAILBOX + ".name", equalTo(myBox))
+            .body(FIRST_MAILBOX + ".sharedWith", hasEntry(user, ImmutableList.of("a", "w")));
+    }
+
+    @Test
+    public void updateShouldModifyStoredDataWhenUpdatingACL() {
+        String myBox = "myBox";
+        String user = "user";
+        jmapServer.getProbe(MailboxProbeImpl.class).createMailbox(MailboxConstants.USER_NAMESPACE, username, myBox);
+        Mailbox mailbox = jmapServer.getProbe(MailboxProbeImpl.class).getMailbox(MailboxConstants.USER_NAMESPACE, username, "myBox");
+        String mailboxId = mailbox.getMailboxId().serialize();
+        String requestBody1 =
+            "[" +
+                "  [ \"setMailboxes\"," +
+                "    {" +
+                "      \"update\": {" +
+                "        \"" + mailboxId + "\" : {" +
+                "          \"sharedWith\" : {\"" + user + "\": [\"a\", \"w\"]}" +
+                "        }" +
+                "      }" +
+                "    }," +
+                "    \"#0\"" +
+                "  ]" +
+                "]";
+        String requestBody2 =
+            "[" +
+                "  [ \"setMailboxes\"," +
+                "    {" +
+                "      \"update\": {" +
+                "        \"" + mailboxId + "\" : {" +
+                "          \"sharedWith\" : {\"" + user + "\": [\"a\", \"t\"]}" +
+                "        }" +
+                "      }" +
+                "    }," +
+                "    \"#0\"" +
+                "  ]" +
+                "]";
+
+        with()
+            .header("Authorization", this.accessToken.serialize())
+            .body(requestBody1)
+            .post("/jmap");
+
+        with()
+            .header("Authorization", this.accessToken.serialize())
+            .body(requestBody2)
+            .post("/jmap");
+
+        given()
+            .header("Authorization", accessToken.serialize())
+            .body("[[\"getMailboxes\", {\"ids\": [\"" + mailboxId + "\"]}, \"#0\"]]")
+        .when()
+            .post("/jmap")
+        .then()
+            .statusCode(200)
+            .body(NAME, equalTo("mailboxes"))
+            .body(FIRST_MAILBOX + ".name", equalTo(myBox))
+            .body(FIRST_MAILBOX + ".sharedWith", hasEntry(user, ImmutableList.of("a", "t")));
+    }
+
+    @Test
+    public void updateShouldClearStoredDataWhenDeleteACL() {
+        String myBox = "myBox";
+        String user = "user";
+        jmapServer.getProbe(MailboxProbeImpl.class).createMailbox(MailboxConstants.USER_NAMESPACE, username, myBox);
+        Mailbox mailbox = jmapServer.getProbe(MailboxProbeImpl.class).getMailbox(MailboxConstants.USER_NAMESPACE, username, "myBox");
+        String mailboxId = mailbox.getMailboxId().serialize();
+        String requestBody1 =
+            "[" +
+                "  [ \"setMailboxes\"," +
+                "    {" +
+                "      \"update\": {" +
+                "        \"" + mailboxId + "\" : {" +
+                "          \"sharedWith\" : {\"" + user + "\": [\"a\", \"w\"]}" +
+                "        }" +
+                "      }" +
+                "    }," +
+                "    \"#0\"" +
+                "  ]" +
+                "]";
+        String requestBody2 =
+            "[" +
+                "  [ \"setMailboxes\"," +
+                "    {" +
+                "      \"update\": {" +
+                "        \"" + mailboxId + "\" : {" +
+                "          \"sharedWith\" : {}" +
+                "        }" +
+                "      }" +
+                "    }," +
+                "    \"#0\"" +
+                "  ]" +
+                "]";
+
+        with()
+            .header("Authorization", this.accessToken.serialize())
+            .body(requestBody1)
+            .post("/jmap");
+
+        with()
+            .header("Authorization", this.accessToken.serialize())
+            .body(requestBody2)
+            .post("/jmap");
+
+        given()
+            .header("Authorization", accessToken.serialize())
+            .body("[[\"getMailboxes\", {\"ids\": [\"" + mailboxId + "\"]}, \"#0\"]]")
+        .when()
+            .post("/jmap")
+        .then()
+            .statusCode(200)
+            .body(NAME, equalTo("mailboxes"))
+            .body(FIRST_MAILBOX + ".name", equalTo(myBox))
+            .body(FIRST_MAILBOX + ".sharedWith", is(ImmutableMap.of()));
+    }
+
+    @Test
+    public void updateShouldModifyStoredDataWhenSwithingACLUser() {
+        String myBox = "myBox";
+        String user1 = "user1";
+        String user2 = "user2";
+        jmapServer.getProbe(MailboxProbeImpl.class).createMailbox(MailboxConstants.USER_NAMESPACE, username, myBox);
+        Mailbox mailbox = jmapServer.getProbe(MailboxProbeImpl.class).getMailbox(MailboxConstants.USER_NAMESPACE, username, "myBox");
+        String mailboxId = mailbox.getMailboxId().serialize();
+        String requestBody1 =
+            "[" +
+                "  [ \"setMailboxes\"," +
+                "    {" +
+                "      \"update\": {" +
+                "        \"" + mailboxId + "\" : {" +
+                "          \"sharedWith\" : {\"" + user1 + "\": [\"a\", \"w\"]}" +
+                "        }" +
+                "      }" +
+                "    }," +
+                "    \"#0\"" +
+                "  ]" +
+                "]";
+        String requestBody2 =
+            "[" +
+                "  [ \"setMailboxes\"," +
+                "    {" +
+                "      \"update\": {" +
+                "        \"" + mailboxId + "\" : {" +
+                "          \"sharedWith\" : {\"" + user2 + "\": [\"a\", \"w\"]}" +
+                "        }" +
+                "      }" +
+                "    }," +
+                "    \"#0\"" +
+                "  ]" +
+                "]";
+
+        with()
+            .header("Authorization", this.accessToken.serialize())
+            .body(requestBody1)
+            .post("/jmap");
+
+        with()
+            .header("Authorization", this.accessToken.serialize())
+            .body(requestBody2)
+            .post("/jmap");
+
+        given()
+            .header("Authorization", accessToken.serialize())
+            .body("[[\"getMailboxes\", {\"ids\": [\"" + mailboxId + "\"]}, \"#0\"]]")
+        .when()
+            .post("/jmap")
+        .then()
+            .statusCode(200)
+            .body(NAME, equalTo("mailboxes"))
+            .body(FIRST_MAILBOX + ".name", equalTo(myBox))
+            .body(FIRST_MAILBOX + ".sharedWith", hasEntry(user2, ImmutableList.of("a", "w")));
     }
 
     @Test
