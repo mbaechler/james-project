@@ -34,7 +34,7 @@ public class SimpleMailboxACLJsonConverter {
 
     interface Rfc4314RightsMixIn {
         @JsonValue
-        int serializeAsInteger();
+        int serialize();
     }
 
     static class ACLKeyDeserializer extends KeyDeserializer {

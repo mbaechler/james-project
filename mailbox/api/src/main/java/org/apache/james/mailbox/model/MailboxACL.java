@@ -265,11 +265,6 @@ public class MailboxACL {
             return value.contains(Right.forChar(right.asCharacter()));
         }
 
-        /* Used for json serialization (probably a bad idea) */
-        public int serializeAsInteger() {
-            return value.stream().mapToInt(x -> 1 << x.ordinal()).sum();
-        }
-
         public boolean equals(Object o) {
             if (o instanceof Rfc4314Rights) {
                 Rfc4314Rights that = (Rfc4314Rights) o;
