@@ -45,6 +45,9 @@ import org.apache.james.GuiceJamesServer;
 import org.apache.james.jmap.DefaultMailboxes;
 import org.apache.james.jmap.HttpJmapAuthentication;
 import org.apache.james.jmap.api.access.AccessToken;
+import org.apache.james.mailbox.model.MailboxACL;
+import org.apache.james.mailbox.model.MailboxACL.Rfc4314Rights;
+import org.apache.james.mailbox.model.MailboxACL.Right;
 import org.apache.james.mailbox.model.MailboxConstants;
 import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MailboxPath;
@@ -74,6 +77,7 @@ public abstract class GetMailboxesMethodTest {
 
     private AccessToken accessToken;
     private String alice;
+    private String bob;
     private GuiceJamesServer jmapServer;
     private MailboxProbe mailboxProbe;
     
@@ -92,10 +96,12 @@ public abstract class GetMailboxesMethodTest {
 
         String domain = "domain.tld";
         alice = "alice@" + domain;
+        bob = "bob@" + domain;
         String password = "password";
         DataProbe dataProbe = jmapServer.getProbe(DataProbeImpl.class);
         dataProbe.addDomain(domain);
         dataProbe.addUser(alice, password);
+        dataProbe.addUser(bob, password);
         accessToken = HttpJmapAuthentication.authenticateJamesUser(baseUri(), alice, password);
     }
 
@@ -486,5 +492,23 @@ public abstract class GetMailboxesMethodTest {
             .body(ARGUMENTS + ".list", hasSize(1))
             .body(FIRST_MAILBOX + ".role", equalTo(DefaultMailboxes.OUTBOX.toLowerCase(Locale.US)));
     }
+
+    @Test
+    public void getMailboxesShouldReturnMailboxesWhenShared() throws Exception {
+        String mailboxName = "name";
+        MailboxId bobMailbox = mailboxProbe.createMailbox(MailboxConstants.USER_NAMESPACE, bob, mailboxName);
+        mailboxProbe.addRights(MailboxConstants.USER_NAMESPACE, bob, mailboxName, alice, new Rfc4314Rights(Right.Read).serialize());
+
+        given()
+            .header("Authorization", accessToken.serialize())
+            .body("[[\"getMailboxes\", {\"ids\": [\"" + bobMailbox.serialize() + "\"]}, \"#0\"]]")
+            .when()
+            .post("/jmap")
+            .then()
+            .statusCode(200)
+            .body(NAME, equalTo("mailboxes"))
+            .body(ARGUMENTS + ".list.name", hasItem(mailboxName));
+    }
+
 
 }
