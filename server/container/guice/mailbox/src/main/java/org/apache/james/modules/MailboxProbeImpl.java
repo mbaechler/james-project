@@ -41,6 +41,7 @@ import org.apache.james.mailbox.model.MailboxACL.EditMode;
 import org.apache.james.mailbox.model.MailboxACL.EntryKey;
 import org.apache.james.mailbox.model.MailboxACL.Rfc4314Rights;
 import org.apache.james.mailbox.model.MailboxConstants;
+import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MailboxMetaData;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.model.MailboxQuery;
@@ -67,12 +68,13 @@ public class MailboxProbeImpl implements GuiceProbe, MailboxProbe {
     }
 
     @Override
-    public void createMailbox(String namespace, String user, String name) {
+    public MailboxId createMailbox(String namespace, String user, String name) {
         MailboxSession mailboxSession = null;
         try {
             mailboxSession = mailboxManager.createSystemSession(user);
             mailboxManager.startProcessingRequest(mailboxSession);
-            mailboxManager.createMailbox(new MailboxPath(namespace, user, name), mailboxSession);
+            return mailboxManager.createMailbox(new MailboxPath(namespace, user, name), mailboxSession)
+                    .orElseThrow(() -> new MailboxException("mailbox name is probably empty"));
         } catch (MailboxException e) {
             throw Throwables.propagate(e);
         } finally {
