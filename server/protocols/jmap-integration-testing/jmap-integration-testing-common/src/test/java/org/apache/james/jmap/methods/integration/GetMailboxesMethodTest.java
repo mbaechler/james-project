@@ -93,6 +93,7 @@ public abstract class GetMailboxesMethodTest {
                 .setConfig(newConfig().encoderConfig(encoderConfig().defaultContentCharset(Charsets.UTF_8)))
                 .setPort(jmapServer.getProbe(JmapGuiceProbe.class).getJmapPort())
                 .build();
+        RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
 
         String domain = "domain.tld";
         alice = "alice@" + domain;
