@@ -36,6 +36,7 @@ import org.apache.james.mailbox.MessageManager;
 import org.apache.james.mailbox.SubscriptionManager;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.ComposedMessageId;
+import org.apache.james.mailbox.model.MailboxACL;
 import org.apache.james.mailbox.model.MailboxACL.ACLCommand;
 import org.apache.james.mailbox.model.MailboxACL.EditMode;
 import org.apache.james.mailbox.model.MailboxACL.EntryKey;
@@ -202,8 +203,7 @@ public class MailboxProbeImpl implements GuiceProbe, MailboxProbe {
         MailboxSession mailboxSession = mailboxManager.createSystemSession(user);
         MailboxPath mailboxPath = new MailboxPath(namespace, user, mailboxName);
 
-        EntryKey key = EntryKey.createUser(targetUser);
-        ACLCommand mailboxACLCommand = new ACLCommand(key, EditMode.REPLACE, new Rfc4314Rights(rights));
+        ACLCommand mailboxACLCommand = MailboxACL.command().forUser(targetUser).rights(new Rfc4314Rights(rights)).asReplacement();
         mailboxManager.applyRightsCommand(mailboxPath, mailboxACLCommand, mailboxSession);
     }
 }

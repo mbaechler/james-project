@@ -38,6 +38,7 @@ import org.apache.james.mailbox.cassandra.modules.CassandraAclModule;
 import org.apache.james.mailbox.cassandra.table.CassandraACLTable;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MailboxACL;
+import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -105,7 +106,7 @@ public class CassandraACLMapperTest {
         MailboxACL.Rfc4314Rights rights = new MailboxACL.Rfc4314Rights(MailboxACL.Right.Read);
 
         cassandraACLMapper.updateACL(MAILBOX_ID,
-            new MailboxACL.ACLCommand(key, MailboxACL.EditMode.ADD, rights));
+            MailboxACL.command().key(key).rights(rights).asAddition());
 
         assertThat(cassandraACLMapper.getACL(MAILBOX_ID).join())
             .isEqualTo(new MailboxACL().union(key, rights));
@@ -116,9 +117,9 @@ public class CassandraACLMapperTest {
         MailboxACL.EntryKey keyBob = new MailboxACL.EntryKey("bob", MailboxACL.NameType.user, false);
         MailboxACL.Rfc4314Rights rights = new MailboxACL.Rfc4314Rights(MailboxACL.Right.Read);
 
-        cassandraACLMapper.updateACL(MAILBOX_ID, new MailboxACL.ACLCommand(keyBob, MailboxACL.EditMode.ADD, rights));
+        cassandraACLMapper.updateACL(MAILBOX_ID, MailboxACL.command().key(keyBob).rights(rights).asAddition());
         MailboxACL.EntryKey keyAlice = new MailboxACL.EntryKey("alice", MailboxACL.NameType.user, false);
-        cassandraACLMapper.updateACL(MAILBOX_ID, new MailboxACL.ACLCommand(keyAlice, MailboxACL.EditMode.ADD, rights));
+        cassandraACLMapper.updateACL(MAILBOX_ID, MailboxACL.command().key(keyAlice).rights(rights).asAddition());
 
         assertThat(cassandraACLMapper.getACL(MAILBOX_ID).join())
             .isEqualTo(new MailboxACL().union(keyBob, rights).union(keyAlice, rights));
@@ -129,8 +130,8 @@ public class CassandraACLMapperTest {
         MailboxACL.EntryKey key = new MailboxACL.EntryKey("bob", MailboxACL.NameType.user, false);
         MailboxACL.Rfc4314Rights rights = new MailboxACL.Rfc4314Rights(MailboxACL.Right.Read);
 
-        cassandraACLMapper.updateACL(MAILBOX_ID, new MailboxACL.ACLCommand(key, MailboxACL.EditMode.ADD, rights));
-        cassandraACLMapper.updateACL(MAILBOX_ID, new MailboxACL.ACLCommand(key, MailboxACL.EditMode.REMOVE, rights));
+        cassandraACLMapper.updateACL(MAILBOX_ID, MailboxACL.command().key(key).rights(rights).asAddition());
+        cassandraACLMapper.updateACL(MAILBOX_ID, MailboxACL.command().key(key).rights(rights).asRemoval());
 
         assertThat(cassandraACLMapper.getACL(MAILBOX_ID).join()).isEqualTo(MailboxACL.EMPTY);
     }
@@ -140,8 +141,8 @@ public class CassandraACLMapperTest {
         MailboxACL.EntryKey key = new MailboxACL.EntryKey("bob", MailboxACL.NameType.user, false);
         MailboxACL.Rfc4314Rights rights = new MailboxACL.Rfc4314Rights(MailboxACL.Right.Read);
 
-        cassandraACLMapper.updateACL(MAILBOX_ID, new MailboxACL.ACLCommand(key, MailboxACL.EditMode.ADD, rights));
-        cassandraACLMapper.updateACL(MAILBOX_ID, new MailboxACL.ACLCommand(key, MailboxACL.EditMode.REPLACE, null));
+        cassandraACLMapper.updateACL(MAILBOX_ID, MailboxACL.command().key(key).rights(rights).asAddition());
+        cassandraACLMapper.updateACL(MAILBOX_ID, MailboxACL.command().key(key).noRights().asReplacement());
 
         assertThat(cassandraACLMapper.getACL(MAILBOX_ID).join()).isEqualTo(MailboxACL.EMPTY);
     }
@@ -151,7 +152,7 @@ public class CassandraACLMapperTest {
         MailboxACL.EntryKey key = new MailboxACL.EntryKey("bob", MailboxACL.NameType.user, false);
         MailboxACL.Rfc4314Rights rights = new MailboxACL.Rfc4314Rights(MailboxACL.Right.Read);
 
-        cassandraACLMapper.updateACL(MAILBOX_ID, new MailboxACL.ACLCommand(key, MailboxACL.EditMode.REPLACE, rights));
+        cassandraACLMapper.updateACL(MAILBOX_ID, MailboxACL.command().key(key).rights(rights).asReplacement());
 
         assertThat(cassandraACLMapper.getACL(MAILBOX_ID).join()).isEqualTo(new MailboxACL().union(key, rights));
     }
@@ -166,7 +167,7 @@ public class CassandraACLMapperTest {
         MailboxACL.EntryKey key = new MailboxACL.EntryKey("bob", MailboxACL.NameType.user, false);
         MailboxACL.Rfc4314Rights rights = new MailboxACL.Rfc4314Rights(MailboxACL.Right.Read);
 
-        cassandraACLMapper.updateACL(MAILBOX_ID, new MailboxACL.ACLCommand(key, MailboxACL.EditMode.ADD, rights));
+        cassandraACLMapper.updateACL(MAILBOX_ID, MailboxACL.command().key(key).rights(rights).asAddition());
 
         assertThat(cassandraACLMapper.getACL(MAILBOX_ID).join()).isEqualTo(new MailboxACL().union(key, rights));
     }
@@ -190,7 +191,7 @@ public class CassandraACLMapperTest {
         CountDownLatch countDownLatch = new CountDownLatch(2);
         MailboxACL.EntryKey keyBenwa = new MailboxACL.EntryKey("benwa", MailboxACL.NameType.user, false);
         MailboxACL.Rfc4314Rights rights = new MailboxACL.Rfc4314Rights(MailboxACL.Right.Read);
-        cassandraACLMapper.updateACL(MAILBOX_ID, new MailboxACL.ACLCommand(keyBenwa, MailboxACL.EditMode.ADD, rights));
+        cassandraACLMapper.updateACL(MAILBOX_ID, MailboxACL.command().key(keyBenwa).rights(rights).asAddition());
 
         MailboxACL.EntryKey keyBob = new MailboxACL.EntryKey("bob", MailboxACL.NameType.user, false);
         MailboxACL.EntryKey keyAlice = new MailboxACL.EntryKey("alice", MailboxACL.NameType.user, false);
@@ -216,7 +217,7 @@ public class CassandraACLMapperTest {
                 CassandraConfiguration.DEFAULT_CONFIGURATION,
                 runnable);
             try {
-                aclMapper.updateACL(MAILBOX_ID, new MailboxACL.ACLCommand(key, MailboxACL.EditMode.ADD, rights));
+                aclMapper.updateACL(MAILBOX_ID, MailboxACL.command().key(key).rights(rights).asAddition());
             } catch (MailboxException exception) {
                 throw Throwables.propagate(exception);
             }
