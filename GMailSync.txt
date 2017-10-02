@@ -40,6 +40,19 @@ James :
 	x A JWT token to use for calling OP for a given GMail account
   James should also provide endpoints for modification and deletion of GMail accounts
 
+  (It means storage, user deletion event handling, CRUD endpoints)
+
+  Estimation : 13 points
+
+- Token refreshing
+
+  Given the registered refresh URL, call OP when needed to get an token.
+
+  Also, be careful to group calls to avoid overloading refresh API for a same token
+
+  Estimation : 5 points
+
+
 - Write a full synchronization process
 
   There's no guarantee that history will be available. That means James must be able to
@@ -48,17 +61,38 @@ James :
 
   James can leverage immutable message.id for applying changes that way.
 
+  Estimation : 20 points
+
 - Write process that handles incremental sync with polling and historyId storage
 
   This process is supposed to be run at a configured frequency with a scheduler.
   Each time it's triggered, it should call history.list with last historyId it knows.
   For each GMail event type, it then applies modifications to James mailbox. On new message, it requires downloading the raw email.
 
+  Estimation : 20 points
+
+- Test env
+
+  To write the GMail connector, we need to put in place some test accounts on GMail and build some automated process for the developper to check his/her code. We don't try to reach CI automation for that.
+
+  Estimation : 8 points
+
 - Propagate James events to GMail
 
   The sync component should register to events on the mailboxes in sync with GMail and call GMail APIs to remotely apply local modifications.
   A failed command would mean GMail data changed in an incompatible way.
   In any cases, right after a GMail command, it should schedule a incremental sync.
+
+  Estimation : 13 points
+
+- Implement a durable Mailbox Pub/Sub with an MQ to replace in-memory event dispatch
+
+  Estimation : 13 points
+
+- Find a way to run mailets on synchronized emails
+
+  Estimation : (very poor) 40 points
+
 
 OP :
 - Expose an endpoint to allow an external process to trigger a Google OAuth token refresh
