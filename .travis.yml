@@ -1,1 +1,11 @@
+sudo: required
+
 language: java
+
+services:
+  - docker
+
+install:
+  - docker build -t james/project dockerfiles/compilation/java-8
+  - docker run -v $PWD:/origin -t james/project -s
+  
