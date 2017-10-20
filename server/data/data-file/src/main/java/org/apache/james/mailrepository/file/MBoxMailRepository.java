@@ -364,9 +364,9 @@ public class MBoxMailRepository implements MailRepository, Configurable {
                 return messAct.messageAction(previousMessageSeparator, messageBuffer.toString(), prevMessageStart);
             }
         } catch (IOException ioEx) {
-            LOGGER.error("Unable to write file (General I/O problem) " + mboxFile, ioEx);
+            LOGGER.error("Unable to write file (General I/O problem) {}", mboxFile, ioEx);
         } catch (PatternSyntaxException e) {
-            LOGGER.error("Bad regex passed " + mboxFile, e);
+            LOGGER.error("Bad regex passed {}", mboxFile, e);
         } finally {
             if ((LOGGER.isDebugEnabled())) {
                 String logBuffer = this.getClass().getName() + " Finished parsing " + mboxFile;
@@ -442,7 +442,7 @@ public class MBoxMailRepository implements MailRepository, Configurable {
                 public MimeMessage messageAction(String messageSeparator, String bodyText, long messageStart) {
                     try {
                         if (key.equals(generateKeyValue(bodyText))) {
-                            LOGGER.debug(this.getClass().getName() + " Located message. Returning MIME message");
+                            LOGGER.debug("{} Located message. Returning MIME message", this.getClass().getName());
                             return convertTextToMimeMessage(bodyText);
                         }
                     } catch (NoSuchAlgorithmException e) {
@@ -453,9 +453,9 @@ public class MBoxMailRepository implements MailRepository, Configurable {
             };
             foundMessage = this.parseMboxFile(ins, op);
         } catch (FileNotFoundException e) {
-            LOGGER.error("Unable to save(open) file (File not found) " + mboxFile, e);
+            LOGGER.error("Unable to save(open) file (File not found) {}", mboxFile, e);
         } catch (IOException e) {
-            LOGGER.error("Unable to write file (General I/O problem) " + mboxFile, e);
+            LOGGER.error("Unable to write file (General I/O problem) {}", mboxFile, e);
         } finally {
             if (foundMessage == null) {
                 if ((LOGGER.isDebugEnabled())) {
@@ -468,7 +468,7 @@ public class MBoxMailRepository implements MailRepository, Configurable {
                 try {
                     ins.close();
                 } catch (IOException e) {
-                    LOGGER.error("Unable to close file (General I/O problem) " + mboxFile, e);
+                    LOGGER.error("Unable to close file (General I/O problem) {}", mboxFile, e);
                 }
         }
         return foundMessage;
@@ -513,16 +513,16 @@ public class MBoxMailRepository implements MailRepository, Configurable {
             });
             // System.out.println("Done Load keys!");
         } catch (FileNotFoundException e) {
-            LOGGER.error("Unable to save(open) file (File not found) " + mboxFile, e);
+            LOGGER.error("Unable to save(open) file (File not found) {}", mboxFile, e);
             this.mList = new Hashtable<>((int) DEFAULTMLISTCAPACITY);
         } catch (IOException e) {
-            LOGGER.error("Unable to write file (General I/O problem) " + mboxFile, e);
+            LOGGER.error("Unable to write file (General I/O problem) {}", mboxFile, e);
         } finally {
             if (ins != null)
                 try {
                     ins.close();
                 } catch (IOException e) {
-                    LOGGER.error("Unable to close file (General I/O problem) " + mboxFile, e);
+                    LOGGER.error("Unable to close file (General I/O problem) {}", mboxFile, e);
                 }
         }
     }
@@ -551,7 +551,7 @@ public class MBoxMailRepository implements MailRepository, Configurable {
             }
 
         } catch (IOException | MessagingException e) {
-            LOGGER.error("Unable to parse mime message for " + mboxFile, e);
+            LOGGER.error("Unable to parse mime message for {}", mboxFile, e);
         }
         // And save only the new stuff to disk
         RandomAccessFile saveFile;
@@ -563,9 +563,9 @@ public class MBoxMailRepository implements MailRepository, Configurable {
             saveFile.close();
 
         } catch (FileNotFoundException e) {
-            LOGGER.error("Unable to save(open) file (File not found) " + mboxFile, e);
+            LOGGER.error("Unable to save(open) file (File not found) {}", mboxFile, e);
         } catch (IOException e) {
-            LOGGER.error("Unable to write file (General I/O problem) " + mboxFile, e);
+            LOGGER.error("Unable to write file (General I/O problem) {}", mboxFile, e);
         }
     }
 
@@ -650,7 +650,7 @@ public class MBoxMailRepository implements MailRepository, Configurable {
                     Thread.sleep(LOCKSLEEPDELAY);
                     sleepCount++;
                 } catch (InterruptedException e) {
-                    LOGGER.error("File lock wait for " + mboxFile + " interrupted!", e);
+                    LOGGER.error("File lock wait for {} interrupted!", mboxFile, e);
 
                 }
             }
@@ -725,7 +725,7 @@ public class MBoxMailRepository implements MailRepository, Configurable {
                     } catch (NoSuchAlgorithmException e) {
                         LOGGER.error("MD5 not supported! ", e);
                     } catch (IOException e) {
-                        LOGGER.error("Unable to write file (General I/O problem) " + mboxFile, e);
+                        LOGGER.error("Unable to write file (General I/O problem) {}", mboxFile, e);
                     }
                     return null;
                 }
@@ -751,9 +751,9 @@ public class MBoxMailRepository implements MailRepository, Configurable {
             }
 
         } catch (FileNotFoundException e) {
-            LOGGER.error("Unable to save(open) file (File not found) " + mboxFile, e);
+            LOGGER.error("Unable to save(open) file (File not found) {}", mboxFile, e);
         } catch (IOException e) {
-            LOGGER.error("Unable to write file (General I/O problem) " + mboxFile, e);
+            LOGGER.error("Unable to write file (General I/O problem) {}", mboxFile, e);
         }
     }
 
