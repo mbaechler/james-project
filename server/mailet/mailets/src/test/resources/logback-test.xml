@@ -1,23 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
-        <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
-                <resetJUL>true</resetJUL>
-        </contextListener>
-
-        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <appender name="LOG_FILE" class="ch.qos.logback.core.FileAppender">
+                <file>test.log</file>
                 <encoder>
                         <pattern>%d{HH:mm:ss.SSS} [%-5level] %logger{15} - %msg%n%rEx</pattern>
                         <immediateFlush>false</immediateFlush>
                 </encoder>
         </appender>
 
-        <root level="DEBUG">
-                <appender-ref ref="CONSOLE" />
+        <logger name="org.apache.james" level="DEBUG" />
+
+        <root level="INFO">
+                <appender-ref ref="LOG_FILE" />
         </root>
-
-        <logger name="org.apache.james" level="DEBUG"/>
-
-        <logger name="com.datastax.driver.core.QueryLogger.SLOW" level="DEBUG" />
 
 </configuration>

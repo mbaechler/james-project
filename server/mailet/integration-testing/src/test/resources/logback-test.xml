@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
-        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-                <encoder>
-                        <pattern>%d{HH:mm:ss.SSS} %highlight([%-5level]) %logger{15} - %msg%n%rEx</pattern>
-                        <immediateFlush>false</immediateFlush>
-                </encoder>
-        </appender>
+    <appender name="LOG_FILE" class="ch.qos.logback.core.FileAppender">
+        <file>test.log</file>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%-5level] %logger{15} - %msg%n%rEx</pattern>
+            <immediateFlush>false</immediateFlush>
+        </encoder>
+    </appender>
 
-        <root level="WARN">
-                <appender-ref ref="CONSOLE" />
-        </root>
+    <logger name="org.apache.james" level="DEBUG" />
 
-        <logger name="org.apache.james" level="DEBUG"/>
+    <root level="INFO">
+        <appender-ref ref="LOG_FILE" />
+    </root>
 
 </configuration>
