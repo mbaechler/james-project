@@ -145,6 +145,22 @@ public class UserStepdefs {
         mainStepdefs.aclProbe.addRights(mailboxPath, shareTo, rights);
     }
 
+    @Given("^\"([^\"]*)\" shares its mailbox with write right \"([^\"]*)\" with \"([^\"]*)\"$")
+    public void shareMailboxWithWriteRight(String owner, String mailbox, String shareTo) throws Throwable {
+        MailboxPath mailboxPath = MailboxPath.forUser(owner, mailbox);
+        MailboxACL.Rfc4314Rights rights = new MailboxACL.Rfc4314Rights(MailboxACL.Right.Lookup, MailboxACL.Right.Read, MailboxACL.Right.Write);
+
+        mainStepdefs.aclProbe.addRights(mailboxPath, shareTo, rights);
+    }
+
+    @Given("^\"([^\"]*)\" does not share its mailbox \"([^\"]*)\" with \"([^\"]*)\"$")
+    public void notShareMailbox(String owner, String mailbox, String shareTo) throws Throwable {
+        MailboxPath mailboxPath = MailboxPath.forUser(owner, mailbox);
+        MailboxACL.Rfc4314Rights rights = new MailboxACL.Rfc4314Rights();
+
+        mainStepdefs.aclProbe.replaceRights(mailboxPath, shareTo, rights);
+    }
+
     private String generatePassword(String username) {
         return Hashing.murmur3_128().hashString(username, Charsets.UTF_8).toString();
     }
