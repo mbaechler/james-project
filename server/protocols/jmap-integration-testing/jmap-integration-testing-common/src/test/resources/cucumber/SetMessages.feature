@@ -117,7 +117,7 @@ Feature: SetMessages method on shared folders
     Then message "mDraft" is not updated
     And "bob@domain.tld" should see message "mDraft" with keywords $Draft
 
-  Scenario: A user can update the flags on a draft
+  Scenario: A user can destroy a draft
     Given "bob@domain.tld" has a mailbox "Drafts"
     And "bob@domain.tld" creates a draft message "mDraft" in mailbox "Drafts"
     When "bob@domain.tld" destroys message "mDraft"
