@@ -124,7 +124,7 @@ Feature: SetMessages method on shared folders
     Then "bob@domain.tld" ask for message "mDraft"
     And the notFound list should contain "mDraft"
 
-  Scenario: Draft creation in outbox is disabled
+  Scenario: Draft creation in outbox is not allowed
     Given "bob@domain.tld" has a mailbox "Outbox"
     When "bob@domain.tld" creates a draft message "mDraft" in mailbox "Outbox"
     Then message "mDraft" is not created
