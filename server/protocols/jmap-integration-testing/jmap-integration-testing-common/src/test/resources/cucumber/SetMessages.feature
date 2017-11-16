@@ -135,6 +135,17 @@ Feature: SetMessages method on shared folders
     When "bob@domain.tld" moves "mDraft" to user mailbox "shared"
     Then message "mDraft" is not updated
 
+  Scenario: A user can move draft out of draft mailbox when removing draft flag
+    Given "bob@domain.tld" has a mailbox "Drafts"
+    And "bob@domain.tld" creates a draft message "mDraft" in mailbox "Drafts"
+    When the user moves "mDraft" to user mailbox "shared" and set flags ""
+    Then message "mDraft" is updated
+
+  Scenario: A user can move non-draft messages to draft mailbox when setting $Draft
+    Given "bob@domain.tld" has a mailbox "Drafts"
+    When the user moves "mBob" to user mailbox "Drafts" and set flags "$Draft"
+    Then message "mBob" is updated
+
   Scenario: A user can not copy draft out of draft mailbox
     Given "bob@domain.tld" has a mailbox "Drafts"
     And "bob@domain.tld" creates a draft message "mDraft" in mailbox "Drafts"
