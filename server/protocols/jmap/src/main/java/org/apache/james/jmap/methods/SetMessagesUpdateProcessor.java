@@ -118,7 +118,7 @@ public class SetMessagesUpdateProcessor implements SetMessagesProcessor {
                 }
             }
         } catch (DraftMessageMailboxUpdateException e) {
-            handleDraftMessageMailboxUpdateException(messageId, builder);
+            handleDraftMessageMailboxUpdateException(messageId, builder, e);
         } catch (MailboxException e) {
             handleMessageUpdateException(messageId, builder, e);
         } catch (IllegalArgumentException e) {
@@ -144,14 +144,14 @@ public class SetMessagesUpdateProcessor implements SetMessagesProcessor {
     }
 
     private void assertValidUpdate(List<Flags> futureFlags, boolean targetHasDraft, boolean targetHasNonDraft) throws DraftMessageMailboxUpdateException {
-        assertNoMessageIntersetingDraftMailboxes(targetHasDraft, targetHasNonDraft);
+        assertMessageIsNotInDraftAndNonDraftMailboxes(targetHasDraft, targetHasNonDraft);
         assertNoNonDraftMessageInsideDraftMailbox(futureFlags, targetHasDraft);
         assertNoDraftMessageOutOfDraftMailbox(futureFlags, targetHasNonDraft);
     }
 
-    private void assertNoMessageIntersetingDraftMailboxes(boolean targetHasDraft, boolean targetHasNonDraft) throws DraftMessageMailboxUpdateException {
+    private void assertMessageIsNotInDraftAndNonDraftMailboxes(boolean targetHasDraft, boolean targetHasNonDraft) throws DraftMessageMailboxUpdateException {
         if (targetHasDraft && targetHasNonDraft) {
-            throw new DraftMessageMailboxUpdateException();
+            throw new DraftMessageMailboxUpdateException("One can not have a message in mailboxes that don't have all the `draft` role");
         }
     }
 
@@ -159,7 +159,7 @@ public class SetMessagesUpdateProcessor implements SetMessagesProcessor {
         if (targetHasDraft) {
             boolean anyNonDraftMessage = futureFlags.stream().anyMatch(flags -> !flags.contains(Flags.Flag.DRAFT));
             if (anyNonDraftMessage) {
-                throw new DraftMessageMailboxUpdateException();
+                throw new DraftMessageMailboxUpdateException("Messages without '$Draft' keyword are prohibited in drafts mailboxes");
             }
         }
     }
@@ -168,7 +168,7 @@ public class SetMessagesUpdateProcessor implements SetMessagesProcessor {
         if (targetHasNonDraft) {
             boolean anyDraftMessage = futureFlags.stream().anyMatch(flags -> flags.contains(Flags.Flag.DRAFT));
             if (anyDraftMessage) {
-                throw new DraftMessageMailboxUpdateException();
+                throw new DraftMessageMailboxUpdateException("Messages with '$Draft' keyword are prohibited in non drafts mailboxes");
             }
         }
     }
@@ -229,11 +229,12 @@ public class SetMessagesUpdateProcessor implements SetMessagesProcessor {
     }
 
     private SetMessagesResponse.Builder handleDraftMessageMailboxUpdateException(MessageId messageId,
-                                                                     SetMessagesResponse.Builder builder) {
+                                                                     SetMessagesResponse.Builder builder,
+                                                                     DraftMessageMailboxUpdateException e) {
         return builder.notUpdated(ImmutableMap.of(messageId, SetError.builder()
             .type("invalidArguments")
             .properties(MessageProperties.MessageProperty.mailboxIds)
-            .description("Draft messages can not be moved or copied out of the Draft mailbox")
+            .description(e.getMessage())
             .build()));
     }
 
