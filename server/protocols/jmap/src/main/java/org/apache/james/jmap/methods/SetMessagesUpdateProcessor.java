@@ -151,14 +151,14 @@ public class SetMessagesUpdateProcessor implements SetMessagesProcessor {
                 .map(mailboxIdFactory::fromString)
                 .collect(Guavate.toImmutableList());
 
-            assertNoDraftMailbox(mailboxSession, mailboxIds);
-            assertNoDraftMessage(originalFlags);
+            assertNotDraftMailbox(mailboxSession, mailboxIds);
+            assertNotDraftMessage(originalFlags);
 
             messageIdManager.setInMailboxes(messageId, mailboxIds, mailboxSession);
         }
     }
 
-    private void assertNoDraftMessage(Stream<Flags> originalFlags) throws DraftMessageMailboxUpdateException {
+    private void assertNotDraftMessage(Stream<Flags> originalFlags) throws DraftMessageMailboxUpdateException {
         boolean isADraftMessage = originalFlags
             .anyMatch(flags -> flags.contains(Flags.Flag.DRAFT));
         if (isADraftMessage) {
@@ -166,7 +166,7 @@ public class SetMessagesUpdateProcessor implements SetMessagesProcessor {
         }
     }
 
-    private void assertNoDraftMailbox(MailboxSession mailboxSession, List<MailboxId> mailboxIds) throws MailboxException {
+    private void assertNotDraftMailbox(MailboxSession mailboxSession, List<MailboxId> mailboxIds) throws MailboxException {
         Stream<MessageManager> draftMailboxes = systemMailboxesProvider.getMailboxByRole(Role.DRAFTS, mailboxSession);
 
         boolean containsDraftMailboxes = draftMailboxes.map(MessageManager::getId).anyMatch(mailboxIds::contains);
