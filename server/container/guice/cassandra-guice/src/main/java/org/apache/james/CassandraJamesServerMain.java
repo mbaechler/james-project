@@ -19,6 +19,8 @@
 
 package org.apache.james;
 
+import org.apache.james.mailbox.extractor.TextExtractor;
+import org.apache.james.mailbox.store.extractor.DefaultTextExtractor;
 import org.apache.james.modules.MailboxModule;
 import org.apache.james.modules.data.CassandraDomainListModule;
 import org.apache.james.modules.data.CassandraJmapModule;
@@ -81,7 +83,7 @@ public class CassandraJamesServerMain {
         new ElasticSearchMailboxModule(),
         new ElasticSearchMetricReporterModule(),
         new MailboxModule(),
-        new TikaMailboxModule());
+        binder -> binder.bind(TextExtractor.class).to(DefaultTextExtractor.class));
 
     public static void main(String[] args) throws Exception {
         GuiceJamesServer server = new GuiceJamesServer()
