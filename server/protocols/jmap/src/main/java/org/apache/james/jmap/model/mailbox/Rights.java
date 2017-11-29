@@ -190,7 +190,7 @@ public class Rights {
             return false;
         }
         if (key.getNameType() != MailboxACL.NameType.user) {
-            LOGGER.info(key.getNameType() + " is not supported. Only 'user' is.");
+            //LOGGER.info(key.getNameType() + " is not supported. Only 'user' is.");
             return false;
         }
         return true;
