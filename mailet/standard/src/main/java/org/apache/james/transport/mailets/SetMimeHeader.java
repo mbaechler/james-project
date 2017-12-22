@@ -64,7 +64,7 @@ public class SetMimeHeader extends GenericMailet {
     @Override
     public void service(Mail mail) {
         try {
-            MimeMessage message = mail.getMessage () ;
+            MimeMessage message = mail.getMessage();
 
             message.addHeader(headerName, headerValue);
             message.saveChanges();
@@ -75,7 +75,7 @@ public class SetMimeHeader extends GenericMailet {
 
     @Override
     public String getMailetInfo() {
-        return "SetMimeHeader Mailet" ;
+        return "SetMimeHeader Mailet";
     }
 
 }

@@ -56,7 +56,7 @@ public class InMemoryDNSService implements DNSService {
         registerRecord(hostname, ImmutableList.of(address), ImmutableList.of(mxRecord), emptyTxtRecords);
     }
 
-    public void registerRecord(String hostname, List<InetAddress> addresses, Collection<String> mxRecords, Collection<String> txtRecords ){
+    public void registerRecord(String hostname, List<InetAddress> addresses, Collection<String> mxRecords, Collection<String> txtRecords){
         records.put(hostname, dnsRecordFor(mxRecords, txtRecords, addresses));
     }
 
