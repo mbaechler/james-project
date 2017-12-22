@@ -54,18 +54,18 @@ import com.google.common.collect.ImmutableList;
 public class MatcherSplitter {
 
     /** Headername which is used to indicate that the matcher matched */
-    public final static String MATCHER_MATCHED_ATTRIBUTE = "matched";
+    public static final String MATCHER_MATCHED_ATTRIBUTE = "matched";
 
     /** Headername under which the matcher is stored */
-    public final static String MATCHER_PROPERTY = "matcher";
+    public static final String MATCHER_PROPERTY = "matcher";
 
-    public final static String ON_MATCH_EXCEPTION_PROPERTY = "onMatchException";
+    public static final String ON_MATCH_EXCEPTION_PROPERTY = "onMatchException";
 
-    public final static String LOGGER_PROPERTY = "logger";
+    public static final String LOGGER_PROPERTY = "logger";
 
-    public final static String MAILETCONTAINER_PROPERTY = "container";
+    public static final String MAILETCONTAINER_PROPERTY = "container";
 
-    public final static String METRIC_FACTORY = "metricFactory";
+    public static final String METRIC_FACTORY = "metricFactory";
 
     /**
      * Generate a List of MailMessage instances for the give @Body. This is done
