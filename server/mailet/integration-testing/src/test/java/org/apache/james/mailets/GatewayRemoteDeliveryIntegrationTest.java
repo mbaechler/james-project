@@ -227,6 +227,7 @@ public class GatewayRemoteDeliveryIntegrationTest {
                 .body("", hasSize(0));
         }
     }
+    
     @Test
     public void remoteDeliveryShouldBounceUponFailure() throws Exception {
         String gatewayProperty = "invalid.domain";

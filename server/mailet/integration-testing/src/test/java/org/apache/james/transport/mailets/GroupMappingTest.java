@@ -101,6 +101,7 @@ public class GroupMappingTest {
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     private InetAddress containerIp;
+    
     @Before
     public void setup() throws Exception {
 
