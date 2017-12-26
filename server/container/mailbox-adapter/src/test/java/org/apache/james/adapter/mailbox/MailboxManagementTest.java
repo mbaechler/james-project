@@ -275,7 +275,7 @@ public class MailboxManagementTest {
         assertThat(iterator.hasNext()).isFalse();
     }
 
-	
+
     @Test(expected = NullPointerException.class)
     public void deleteMailboxShouldThrowOnNullNamespace() {
         mailboxManagerManagement.deleteMailbox(null, "a", "a");

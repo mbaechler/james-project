@@ -71,12 +71,12 @@ public class DomainsRoutesTest {
         webAdminServer.await();
 
         RestAssured.requestSpecification = new RequestSpecBuilder()
-        		.setContentType(ContentType.JSON)
-        		.setAccept(ContentType.JSON)
-        		.setConfig(newConfig().encoderConfig(encoderConfig().defaultContentCharset(StandardCharsets.UTF_8)))
-        		.setPort(webAdminServer.getPort().toInt())
-        		.setBasePath(DomainsRoutes.DOMAINS)
-        		.build();
+                .setContentType(ContentType.JSON)
+                .setAccept(ContentType.JSON)
+                .setConfig(newConfig().encoderConfig(encoderConfig().defaultContentCharset(StandardCharsets.UTF_8)))
+                .setPort(webAdminServer.getPort().toInt())
+                .setBasePath(DomainsRoutes.DOMAINS)
+                .build();
 
     }
 

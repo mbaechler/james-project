@@ -80,12 +80,12 @@ public abstract class ForwardSmtpTest {
         hostSystem.addAddressMapping(USER, DOMAIN, "ray@yopmail.com");
 
         RestAssured.requestSpecification = new RequestSpecBuilder()
-        		.setContentType(ContentType.JSON)
-        		.setAccept(ContentType.JSON)
-        		.setConfig(newConfig().encoderConfig(encoderConfig().defaultContentCharset(Charsets.UTF_8)))
-        		.setPort(80)
-        		.setBaseUri("http://" + containerIp.getHostAddress())
-        		.build();
+                .setContentType(ContentType.JSON)
+                .setAccept(ContentType.JSON)
+                .setConfig(newConfig().encoderConfig(encoderConfig().defaultContentCharset(Charsets.UTF_8)))
+                .setPort(80)
+                .setBaseUri("http://" + containerIp.getHostAddress())
+                .build();
 
         Duration slowPacedPollInterval = Duration.FIVE_HUNDRED_MILLISECONDS;
         ConditionFactory calmlyAwait = Awaitility.with()

@@ -348,7 +348,7 @@ public class ServerCmdTest {
         testee.executeCommandLine(commandLine);
         control.verify();
     }
-	
+
     @Test
     public void listUserMailboxesMappingsCommandShouldWork() throws Exception {
         String user = "user@domain";
@@ -827,8 +827,8 @@ public class ServerCmdTest {
             control.verify();
         }
     }
-	
-	
+
+
     @Test(expected = InvalidArgumentNumberException.class)
     public void importEmlFileToMailboxCommandShouldThrowOnMissingArguments() throws Exception {
         String user = "user@domain";
@@ -1139,7 +1139,7 @@ public class ServerCmdTest {
             control.verify();
         }
     }
-	
+
     @Test(expected = InvalidArgumentNumberException.class)
     public void listUserMailboxesMappingsCommandShouldThrowOnAdditionalArguments() throws Exception {
         String user = "user@domain";
