@@ -181,7 +181,7 @@ public class SMIMESignIntegrationTest {
     }
 
     @Test
-    public void NonAuthenticatedMessagesShouldNotBeSigned() throws Exception {
+    public void nonAuthenticatedMessagesShouldNotBeSigned() throws Exception {
         try (SMTPMessageSender messageSender = SMTPMessageSender.noAuthentication(LOCALHOST_IP, SMTP_PORT, DEFAULT_DOMAIN);
              IMAPMessageReader imapMessageReader = new IMAPMessageReader(LOCALHOST_IP, IMAP_PORT)) {
             messageSender.sendMessage(FROM, RECIPIENT);

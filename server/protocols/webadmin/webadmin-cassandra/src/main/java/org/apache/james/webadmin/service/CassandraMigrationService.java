@@ -38,10 +38,11 @@ import com.google.common.base.Preconditions;
 
 public class CassandraMigrationService {
     public static final String LATEST_VERSION = "latestVersion";
+    private static final Logger LOG = LoggerFactory.getLogger(CassandraMigrationService.class);
+
     private final CassandraSchemaVersionDAO schemaVersionDAO;
     private final int latestVersion;
     private final Map<Integer, Migration> allMigrationClazz;
-    private final Logger LOG = LoggerFactory.getLogger(CassandraMigrationService.class);
 
     @Inject
     public CassandraMigrationService(CassandraSchemaVersionDAO schemaVersionDAO, Map<Integer, Migration> allMigrationClazz, @Named(LATEST_VERSION) int latestVersion) {
