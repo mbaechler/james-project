@@ -18,32 +18,33 @@
  ****************************************************************/
 package org.apache.james.mailetcontainer.lib;
 
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.DefaultConfigurationBuilder;
-import org.apache.commons.configuration.HierarchicalConfiguration;
-import org.apache.james.server.core.MailImpl;
-import org.apache.james.mailetcontainer.api.mock.ExceptionThrowingMailet;
-import org.apache.james.mailetcontainer.api.mock.ExceptionThrowingMatcher;
-import org.apache.james.mailetcontainer.api.mock.MockMailet;
-import org.apache.james.mailetcontainer.api.mock.MockMatcher;
-import org.apache.james.mailetcontainer.lib.AbstractStateMailetProcessor.MailetProcessorListener;
-import org.apache.mailet.Mail;
-import org.apache.james.core.MailAddress;
-import org.apache.mailet.Mailet;
-import org.apache.mailet.Matcher;
-import org.junit.Test;
-
-import javax.mail.MessagingException;
-import java.io.ByteArrayInputStream;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.concurrent.CountDownLatch;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+
+import java.io.ByteArrayInputStream;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.concurrent.CountDownLatch;
+
+import javax.mail.MessagingException;
+
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.DefaultConfigurationBuilder;
+import org.apache.commons.configuration.HierarchicalConfiguration;
+import org.apache.james.core.MailAddress;
+import org.apache.james.mailetcontainer.api.mock.ExceptionThrowingMailet;
+import org.apache.james.mailetcontainer.api.mock.ExceptionThrowingMatcher;
+import org.apache.james.mailetcontainer.api.mock.MockMailet;
+import org.apache.james.mailetcontainer.api.mock.MockMatcher;
+import org.apache.james.mailetcontainer.lib.AbstractStateMailetProcessor.MailetProcessorListener;
+import org.apache.james.server.core.MailImpl;
+import org.apache.mailet.Mail;
+import org.apache.mailet.Mailet;
+import org.apache.mailet.Matcher;
+import org.junit.Test;
 
 
 public abstract class AbstractStateMailetProcessorTest {

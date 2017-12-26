@@ -36,8 +36,8 @@ import javax.mail.Session;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.MimeMessage;
 
-import org.apache.mailet.Mail;
 import org.apache.james.core.MailAddress;
+import org.apache.mailet.Mail;
 import org.apache.mailet.base.test.FakeMail;
 import org.apache.mailet.base.test.FakeMailContext;
 import org.apache.mailet.base.test.FakeMailetConfig;

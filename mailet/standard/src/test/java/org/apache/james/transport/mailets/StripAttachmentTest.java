@@ -22,6 +22,7 @@ package org.apache.james.transport.mailets;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -29,6 +30,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
 import javax.mail.BodyPart;
 import javax.mail.MessagingException;
 import javax.mail.Part;
@@ -36,8 +38,8 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
-import org.apache.james.transport.mailets.StripAttachment.OutputFileName;
 import org.apache.commons.io.IOUtils;
+import org.apache.james.transport.mailets.StripAttachment.OutputFileName;
 import org.apache.mailet.Mail;
 import org.apache.mailet.Mailet;
 import org.apache.mailet.MailetException;

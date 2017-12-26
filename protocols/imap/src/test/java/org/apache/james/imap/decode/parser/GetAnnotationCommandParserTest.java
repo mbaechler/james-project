@@ -20,6 +20,7 @@
 package org.apache.james.imap.decode.parser;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -31,10 +32,10 @@ import org.apache.james.imap.message.request.GetAnnotationRequest;
 import org.apache.james.imap.message.request.GetAnnotationRequest.Depth;
 import org.apache.james.mailbox.model.MailboxAnnotationKey;
 import org.apache.james.protocols.imap.DecodingException;
-
-import com.google.common.base.Charsets;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.google.common.base.Charsets;
 
 public class GetAnnotationCommandParserTest {
 
