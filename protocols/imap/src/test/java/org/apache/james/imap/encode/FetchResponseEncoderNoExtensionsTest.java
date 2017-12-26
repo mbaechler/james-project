@@ -113,12 +113,18 @@ public class FetchResponseEncoderNoExtensionsTest  {
         context.checking(new Expectations() {{
                     final long octets = 2279L;
                     final long lines = 48L;
-                    allowing(stubStructure).getMediaType(); will(returnValue("TEXT"));
-                    allowing(stubStructure).getSubType(); will(returnValue("HTML"));
-                    allowing(stubStructure).getOctets();will(returnValue(octets));
-                    allowing(stubStructure).getLines();will(returnValue(lines));
-                    allowing(stubStructure).getParameters(); will(returnValue(parameterList));
-                    allowing(stubStructure).getEncoding(); will(returnValue("7BIT"));
+                    allowing(stubStructure).getMediaType();
+                    will(returnValue("TEXT"));
+                    allowing(stubStructure).getSubType();
+                    will(returnValue("HTML"));
+                    allowing(stubStructure).getOctets();
+                    will(returnValue(octets));
+                    allowing(stubStructure).getLines();
+                    will(returnValue(lines));
+                    allowing(stubStructure).getParameters();
+                    will(returnValue(parameterList));
+                    allowing(stubStructure).getEncoding();
+                    will(returnValue("7BIT"));
                     ignoring(stubStructure);
                 }
             }

@@ -61,17 +61,27 @@ public class NamespaceResponseEncoderTest {
         context.checking(new Expectations() {
             {
                 final Sequence sequence = context.sequence("Composition order");
-                oneOf(mockComposer).untagged(); inSequence(sequence);
+                oneOf(mockComposer).untagged();
+                inSequence(sequence);
                 oneOf(mockComposer).commandName(ImapConstants.NAMESPACE_COMMAND_NAME);
-                oneOf(mockComposer).nil(); inSequence(sequence);
-                oneOf(mockComposer).nil(); inSequence(sequence);
-                oneOf(mockComposer).openParen();  inSequence(sequence);
-                oneOf(mockComposer).openParen(); inSequence(sequence);
-                oneOf(mockComposer).quote(aPrefix + aDeliminator); inSequence(sequence);
-                oneOf(mockComposer).quote(aDeliminator); inSequence(sequence);
-                oneOf(mockComposer).closeParen(); inSequence(sequence);
-                oneOf(mockComposer).closeParen(); inSequence(sequence);
-                oneOf(mockComposer).end(); inSequence(sequence);
+                oneOf(mockComposer).nil();
+                inSequence(sequence);
+                oneOf(mockComposer).nil();
+                inSequence(sequence);
+                oneOf(mockComposer).openParen();
+                inSequence(sequence);
+                oneOf(mockComposer).openParen();
+                inSequence(sequence);
+                oneOf(mockComposer).quote(aPrefix + aDeliminator);
+                inSequence(sequence);
+                oneOf(mockComposer).quote(aDeliminator);
+                inSequence(sequence);
+                oneOf(mockComposer).closeParen();
+                inSequence(sequence);
+                oneOf(mockComposer).closeParen();
+                inSequence(sequence);
+                oneOf(mockComposer).end();
+                inSequence(sequence);
             }
         });
         List<NamespaceResponse.Namespace> namespaces = new ArrayList<>();
@@ -89,17 +99,27 @@ public class NamespaceResponseEncoderTest {
         context.checking(new Expectations() {
             {
                 final Sequence sequence = context.sequence("Composition order");
-                oneOf(mockComposer).untagged(); inSequence(sequence);
+                oneOf(mockComposer).untagged();
+                inSequence(sequence);
                 oneOf(mockComposer).commandName(ImapConstants.NAMESPACE_COMMAND_NAME);
-                oneOf(mockComposer).nil(); inSequence(sequence);
-                oneOf(mockComposer).openParen(); inSequence(sequence);
-                oneOf(mockComposer).openParen(); inSequence(sequence);
-                oneOf(mockComposer).quote(aPrefix + aDeliminator); inSequence(sequence);
-                oneOf(mockComposer).quote(aDeliminator); inSequence(sequence);
-                oneOf(mockComposer).closeParen(); inSequence(sequence);
-                oneOf(mockComposer).closeParen(); inSequence(sequence);
-                oneOf(mockComposer).nil(); inSequence(sequence);
-                oneOf(mockComposer).end(); inSequence(sequence);
+                oneOf(mockComposer).nil();
+                inSequence(sequence);
+                oneOf(mockComposer).openParen();
+                inSequence(sequence);
+                oneOf(mockComposer).openParen();
+                inSequence(sequence);
+                oneOf(mockComposer).quote(aPrefix + aDeliminator);
+                inSequence(sequence);
+                oneOf(mockComposer).quote(aDeliminator);
+                inSequence(sequence);
+                oneOf(mockComposer).closeParen();
+                inSequence(sequence);
+                oneOf(mockComposer).closeParen();
+                inSequence(sequence);
+                oneOf(mockComposer).nil(); 
+                inSequence(sequence);
+                oneOf(mockComposer).end(); 
+                inSequence(sequence);
             }
         });
         List<NamespaceResponse.Namespace> namespaces = new ArrayList<>();
@@ -117,17 +137,27 @@ public class NamespaceResponseEncoderTest {
         context.checking(new Expectations() {
             {
                 final Sequence sequence = context.sequence("Composition order");
-                oneOf(mockComposer).untagged(); inSequence(sequence);
+                oneOf(mockComposer).untagged(); 
+                inSequence(sequence);
                 oneOf(mockComposer).commandName(ImapConstants.NAMESPACE_COMMAND_NAME);
-                oneOf(mockComposer).openParen(); inSequence(sequence);
-                oneOf(mockComposer).openParen(); inSequence(sequence);
-                oneOf(mockComposer).quote(aPrefix + aDeliminator); inSequence(sequence);
-                oneOf(mockComposer).quote(aDeliminator); inSequence(sequence);
-                oneOf(mockComposer).closeParen(); inSequence(sequence);
-                oneOf(mockComposer).closeParen(); inSequence(sequence);
-                oneOf(mockComposer).nil(); inSequence(sequence);
-                oneOf(mockComposer).nil(); inSequence(sequence);
-                oneOf(mockComposer).end(); inSequence(sequence);
+                oneOf(mockComposer).openParen(); 
+                inSequence(sequence);
+                oneOf(mockComposer).openParen(); 
+                inSequence(sequence);
+                oneOf(mockComposer).quote(aPrefix + aDeliminator); 
+                inSequence(sequence);
+                oneOf(mockComposer).quote(aDeliminator); 
+                inSequence(sequence);
+                oneOf(mockComposer).closeParen(); 
+                inSequence(sequence);
+                oneOf(mockComposer).closeParen(); 
+                inSequence(sequence);
+                oneOf(mockComposer).nil(); 
+                inSequence(sequence);
+                oneOf(mockComposer).nil(); 
+                inSequence(sequence);
+                oneOf(mockComposer).end(); 
+                inSequence(sequence);
             }
         });
         List<NamespaceResponse.Namespace> namespaces = new ArrayList<>();
@@ -147,21 +177,35 @@ public class NamespaceResponseEncoderTest {
         context.checking(new Expectations() {
             {
                 final Sequence sequence = context.sequence("Composition order");
-                oneOf(mockComposer).untagged(); inSequence(sequence);
+                oneOf(mockComposer).untagged();
+                inSequence(sequence);
                 oneOf(mockComposer).commandName(ImapConstants.NAMESPACE_COMMAND_NAME);
-                oneOf(mockComposer).openParen(); inSequence(sequence);
-                oneOf(mockComposer).openParen(); inSequence(sequence);
-                oneOf(mockComposer).quote(aPrefix + aDeliminator); inSequence(sequence);
-                oneOf(mockComposer).quote(aDeliminator); inSequence(sequence);
-                oneOf(mockComposer).closeParen(); inSequence(sequence);
-                oneOf(mockComposer).openParen(); inSequence(sequence);
-                oneOf(mockComposer).quote(anotherPrefix + anotherDeliminator); inSequence(sequence);
-                oneOf(mockComposer).quote(anotherDeliminator); inSequence(sequence);
-                oneOf(mockComposer).closeParen(); inSequence(sequence);
-                oneOf(mockComposer).closeParen(); inSequence(sequence);
-                oneOf(mockComposer).nil(); inSequence(sequence);
-                oneOf(mockComposer).nil(); inSequence(sequence);
-                oneOf(mockComposer).end(); inSequence(sequence);
+                oneOf(mockComposer).openParen();
+                inSequence(sequence);
+                oneOf(mockComposer).openParen();
+                inSequence(sequence);
+                oneOf(mockComposer).quote(aPrefix + aDeliminator);
+                inSequence(sequence);
+                oneOf(mockComposer).quote(aDeliminator);
+                inSequence(sequence);
+                oneOf(mockComposer).closeParen();
+                inSequence(sequence);
+                oneOf(mockComposer).openParen();
+                inSequence(sequence);
+                oneOf(mockComposer).quote(anotherPrefix + anotherDeliminator);
+                inSequence(sequence);
+                oneOf(mockComposer).quote(anotherDeliminator);
+                inSequence(sequence);
+                oneOf(mockComposer).closeParen();
+                inSequence(sequence);
+                oneOf(mockComposer).closeParen();
+                inSequence(sequence);
+                oneOf(mockComposer).nil();
+                inSequence(sequence);
+                oneOf(mockComposer).nil();
+                inSequence(sequence);
+                oneOf(mockComposer).end();
+                inSequence(sequence);
             }
         });
         List<NamespaceResponse.Namespace> namespaces = new ArrayList<>();
@@ -178,12 +222,17 @@ public class NamespaceResponseEncoderTest {
         context.checking(new Expectations() {
             {
                 final Sequence sequence = context.sequence("Composition order");
-                oneOf(mockComposer).untagged(); inSequence(sequence);
+                oneOf(mockComposer).untagged();
+                inSequence(sequence);
                 oneOf(mockComposer).commandName(ImapConstants.NAMESPACE_COMMAND_NAME);
-                oneOf(mockComposer).nil(); inSequence(sequence);
-                oneOf(mockComposer).nil(); inSequence(sequence);
-                oneOf(mockComposer).nil(); inSequence(sequence);
-                oneOf(mockComposer).end(); inSequence(sequence);
+                oneOf(mockComposer).nil();
+                inSequence(sequence);
+                oneOf(mockComposer).nil();
+                inSequence(sequence);
+                oneOf(mockComposer).nil();
+                inSequence(sequence);
+                oneOf(mockComposer).end();
+                inSequence(sequence);
             }
         });
         subject.doEncode(new NamespaceResponse(null, null, null), mockComposer,

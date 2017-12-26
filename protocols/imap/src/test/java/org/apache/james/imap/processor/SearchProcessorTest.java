@@ -140,9 +140,11 @@ public class SearchProcessorTest {
     private void allowUnsolicitedResponses() {
         mockery.checking(new Expectations() {{
                     atMost(1).of(session).getAttribute(
-                            with(equal(ImapSessionUtils.MAILBOX_USER_ATTRIBUTE_SESSION_KEY)));will(returnValue("user"));
+                            with(equal(ImapSessionUtils.MAILBOX_USER_ATTRIBUTE_SESSION_KEY)));
+                    will(returnValue("user"));
                     atMost(1).of(session).getAttribute(
-                            with(equal(ImapSessionUtils.MAILBOX_SESSION_ATTRIBUTE_SESSION_KEY)));will(returnValue(mailboxSession));
+                            with(equal(ImapSessionUtils.MAILBOX_SESSION_ATTRIBUTE_SESSION_KEY)));
+                    will(returnValue(mailboxSession));
                 }
             }
         );
@@ -154,10 +156,14 @@ public class SearchProcessorTest {
         final IdRange[] ids = { new IdRange(1, Long.MAX_VALUE) };
         final SearchQuery.UidRange[] ranges = { new SearchQuery.UidRange(MessageUid.of(42), MessageUid.of(100)) };
         mockery.checking(new Expectations() {{
-                    allowing(selectedMailbox).existsCount();will(returnValue(100L));
-                    oneOf(selectedMailbox).uid(with(equal(1)));will(returnValue(Optional.of(MessageUid.of(42))));
-                    allowing(selectedMailbox).getFirstUid(); will(returnValue(Optional.of(MessageUid.of(1))));
-                    allowing(selectedMailbox).getLastUid(); will(returnValue(Optional.of(MessageUid.of(100))));
+                    allowing(selectedMailbox).existsCount();
+                    will(returnValue(100L));
+                    oneOf(selectedMailbox).uid(with(equal(1)));
+                    will(returnValue(Optional.of(MessageUid.of(42))));
+                    allowing(selectedMailbox).getFirstUid();
+                    will(returnValue(Optional.of(MessageUid.of(1))));
+                    allowing(selectedMailbox).getLastUid();
+                    will(returnValue(Optional.of(MessageUid.of(100))));
                 }
             }
         );
@@ -171,11 +177,16 @@ public class SearchProcessorTest {
         final IdRange[] ids = { new IdRange(1, 5) };
         final SearchQuery.UidRange[] ranges = { new SearchQuery.UidRange(MessageUid.of(42), MessageUid.of(1729)) };
         mockery.checking(new Expectations() {{
-                    allowing(selectedMailbox).existsCount();will(returnValue(2L));
-                    oneOf(selectedMailbox).uid(with(equal(1)));will(returnValue(Optional.of(MessageUid.of(42L))));
-                    oneOf(selectedMailbox).uid(with(equal(5)));will(returnValue(Optional.of(MessageUid.of(1729L))));
-                    allowing(selectedMailbox).getFirstUid(); will(returnValue(Optional.of(MessageUid.of(1L))));
-                    allowing(selectedMailbox).getLastUid(); will(returnValue(Optional.of(MessageUid.MAX_VALUE)));
+                    allowing(selectedMailbox).existsCount();
+                    will(returnValue(2L));
+                    oneOf(selectedMailbox).uid(with(equal(1)));
+                    will(returnValue(Optional.of(MessageUid.of(42L))));
+                    oneOf(selectedMailbox).uid(with(equal(5)));
+                    will(returnValue(Optional.of(MessageUid.of(1729L))));
+                    allowing(selectedMailbox).getFirstUid();
+                    will(returnValue(Optional.of(MessageUid.of(1L))));
+                    allowing(selectedMailbox).getLastUid();
+                    will(returnValue(Optional.of(MessageUid.MAX_VALUE)));
                 }
             }
         );
@@ -189,8 +200,10 @@ public class SearchProcessorTest {
         final IdRange[] ids = { new IdRange(1) };
         final SearchQuery.UidRange[] ranges = { new SearchQuery.UidRange(MessageUid.of(42)) };
         mockery.checking(new Expectations() {{
-                    allowing(selectedMailbox).existsCount();will(returnValue(1L));
-                    exactly(2).of(selectedMailbox).uid(with(equal(1)));will(returnValue(Optional.of(MessageUid.of(42L))));
+                    allowing(selectedMailbox).existsCount();
+                    will(returnValue(1L));
+                    exactly(2).of(selectedMailbox).uid(with(equal(1)));
+                    will(returnValue(Optional.of(MessageUid.of(42L))));
                 }
             }
         );
@@ -206,16 +219,24 @@ public class SearchProcessorTest {
 
     private void expectsGetSelectedMailbox() throws Exception {
         mockery.checking(new Expectations() {{
-                    atMost(1).of(mailboxManager).getMailbox(with(equal(mailboxPath)),  with(same(mailboxSession)));will(returnValue(mailbox));
-                    atMost(1).of(mailboxManager).getMailbox(with(equal(mailboxPath)), with(same(mailboxSession)));will(returnValue(mailbox));
-                    allowing(session).getSelected();will(returnValue(selectedMailbox));
-                    atMost(1).of(selectedMailbox).isRecentUidRemoved();will(returnValue(false));
-                    atLeast(1).of(selectedMailbox).isSizeChanged();will(returnValue(false));
-                    atLeast(1).of(selectedMailbox).getPath();will(returnValue(mailboxPath));
-                    atMost(1).of(selectedMailbox).flagUpdateUids();will(returnValue(Collections.EMPTY_LIST));
+                    atMost(1).of(mailboxManager).getMailbox(with(equal(mailboxPath)),  with(same(mailboxSession)));
+                    will(returnValue(mailbox));
+                    atMost(1).of(mailboxManager).getMailbox(with(equal(mailboxPath)), with(same(mailboxSession)));
+                    will(returnValue(mailbox));
+                    allowing(session).getSelected();
+                    will(returnValue(selectedMailbox));
+                    atMost(1).of(selectedMailbox).isRecentUidRemoved();
+                    will(returnValue(false));
+                    atLeast(1).of(selectedMailbox).isSizeChanged();
+                    will(returnValue(false));
+                    atLeast(1).of(selectedMailbox).getPath();
+                    will(returnValue(mailboxPath));
+                    atMost(1).of(selectedMailbox).flagUpdateUids();
+                    will(returnValue(Collections.EMPTY_LIST));
                     atMost(1).of(selectedMailbox).resetEvents();
                     
-                    oneOf(selectedMailbox).getRecent();will(returnValue(new ArrayList<MessageUid>()));
+                    oneOf(selectedMailbox).getRecent();
+                    will(returnValue(new ArrayList<MessageUid>()));
                 }
             }
         );
@@ -429,9 +450,12 @@ public class SearchProcessorTest {
     @Test
     public void testUID() throws Exception {
         mockery.checking(new Expectations() {{
-                    allowing(selectedMailbox).getFirstUid();will(returnValue(Optional.of(MessageUid.of(1))));
-                    allowing(selectedMailbox).getLastUid();will(returnValue(Optional.of(MessageUid.of(1048))));
-                    allowing(selectedMailbox).existsCount();will(returnValue(1L));
+                    allowing(selectedMailbox).getFirstUid();
+                    will(returnValue(Optional.of(MessageUid.of(1))));
+                    allowing(selectedMailbox).getLastUid();
+                    will(returnValue(Optional.of(MessageUid.of(1048))));
+                    allowing(selectedMailbox).existsCount();
+                    will(returnValue(1L));
                 }
             }
         );
@@ -489,17 +513,21 @@ public class SearchProcessorTest {
     private void check(SearchKey key, final SearchQuery query) throws Exception {        
         mockery.checking(new Expectations() {{
                     allowing(session).getAttribute(
-                            with(equal(SearchProcessor.SEARCH_MODSEQ))); will(returnValue(null));
+                            with(equal(SearchProcessor.SEARCH_MODSEQ)));
+                    will(returnValue(null));
                     allowing(session).setAttribute(SearchProcessor.SEARCH_MODSEQ, null);
                     allowing(session).getAttribute(
-                            with(equal(ImapSessionUtils.MAILBOX_SESSION_ATTRIBUTE_SESSION_KEY))); will(returnValue((MailboxSession) mailboxSession));
+                            with(equal(ImapSessionUtils.MAILBOX_SESSION_ATTRIBUTE_SESSION_KEY)));
+                    will(returnValue((MailboxSession) mailboxSession));
                     oneOf(mailbox).search(
                             with(equal(query)),
-                            with(equal(mailboxSession)));will(
-                                    returnValue(new ArrayList<MessageUid>().iterator()));
+                            with(equal(mailboxSession)));
+                    will(returnValue(new ArrayList<MessageUid>().iterator()));
                     oneOf(responder).respond(with(equal(new SearchResponse(EMPTY, null))));
-                    allowing(selectedMailbox).getApplicableFlags(); will(returnValue(new Flags()));
-                    allowing(selectedMailbox).hasNewApplicableFlags(); will(returnValue(false));
+                    allowing(selectedMailbox).getApplicableFlags();
+                    will(returnValue(new Flags()));
+                    allowing(selectedMailbox).hasNewApplicableFlags();
+                    will(returnValue(false));
                   
                 }
             }
@@ -513,7 +541,8 @@ public class SearchProcessorTest {
                     oneOf(serverResponseFactory).taggedOk(
                             with(equal(TAG)),
                             with(same(command)), 
-                            with(equal(HumanReadableText.COMPLETED)));will(returnValue(statusResponse));    
+                            with(equal(HumanReadableText.COMPLETED)));
+                    will(returnValue(statusResponse));
                     oneOf(responder).respond(with(same(statusResponse)));
                 }
             }

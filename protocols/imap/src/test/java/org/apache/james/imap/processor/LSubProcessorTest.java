@@ -148,7 +148,8 @@ public class LSubProcessorTest {
         subscriptions.add(CHILD_TWO);
 
         mockery.checking(new Expectations() {{
-                    oneOf(mailboxSession).getUser(); will(returnValue(USER));
+                    oneOf(mailboxSession).getUser();
+                    will(returnValue(USER));
                     oneOf(responder).respond(with(
                             equal(new LSubResponse(CHILD_ONE, false, HIERARCHY_DELIMITER))));
                     oneOf(responder).respond(with(
@@ -176,7 +177,8 @@ public class LSubProcessorTest {
         subscriptions.add(CHILD_TWO);
 
         mockery.checking(new Expectations() {{
-                    oneOf(mailboxSession).getUser(); will(returnValue(USER));
+                    oneOf(mailboxSession).getUser();
+                    will(returnValue(USER));
                     oneOf(responder).respond(with(
                             equal(new LSubResponse(PARENT, true, HIERARCHY_DELIMITER))));
                 }
@@ -203,7 +205,8 @@ public class LSubProcessorTest {
         subscriptions.add(CHILD_TWO);
 
         mockery.checking(new Expectations() {{
-                    oneOf(mailboxSession).getUser(); will(returnValue(USER));
+                    oneOf(mailboxSession).getUser();
+                    will(returnValue(USER));
                     oneOf(responder).respond(with(
                             equal(new LSubResponse(PARENT, false, HIERARCHY_DELIMITER))));
                 }
@@ -222,7 +225,8 @@ public class LSubProcessorTest {
     @Test
     public void testSelectAll() throws Exception {
         mockery.checking(new Expectations() {{
-                    oneOf(mailboxSession).getUser(); will(returnValue(USER));
+                    oneOf(mailboxSession).getUser();
+                    will(returnValue(USER));
                     oneOf(responder).respond(with(equal(
                             new LSubResponse(MAILBOX_A, false, HIERARCHY_DELIMITER))));
                     oneOf(responder).respond(with(equal(
@@ -250,7 +254,8 @@ public class LSubProcessorTest {
                     oneOf(serverResponseFactory).taggedOk(
                             with(equal(TAG)),
                             with(same(command)),
-                            with(equal(HumanReadableText.COMPLETED)));will(returnValue(statusResponse));
+                            with(equal(HumanReadableText.COMPLETED)));
+                    will(returnValue(statusResponse));
                     oneOf(responder).respond(with(same(statusResponse)));          
                 }
             }
@@ -261,9 +266,12 @@ public class LSubProcessorTest {
         mockery.checking(new Expectations() {{
                     exactly(2).of(session).getAttribute(ImapSessionUtils.MAILBOX_SESSION_ATTRIBUTE_SESSION_KEY);
                             will(returnValue(mailboxSession));
-                            allowing(mailboxSession).getPathDelimiter(); will(returnValue(HIERARCHY_DELIMITER));
-                    oneOf(mailboxSession).getUser(); will(returnValue(USER));
-                    oneOf(manager).subscriptions(with(same(mailboxSession)));will(returnValue(subscriptions));     
+                            allowing(mailboxSession).getPathDelimiter();
+                            will(returnValue(HIERARCHY_DELIMITER));
+                    oneOf(mailboxSession).getUser();
+                    will(returnValue(USER));
+                    oneOf(manager).subscriptions(with(same(mailboxSession)));
+                    will(returnValue(subscriptions));
                 }
             }
         );

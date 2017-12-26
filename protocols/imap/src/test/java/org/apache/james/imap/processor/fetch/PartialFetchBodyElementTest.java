@@ -40,7 +40,8 @@ public class PartialFetchBodyElementTest {
     public void setUp() throws Exception {
         mockBodyElement = mockery.mock(BodyElement.class);
         mockery.checking(new Expectations() {{
-                    oneOf(mockBodyElement).getName();will(returnValue("Name"));
+                    oneOf(mockBodyElement).getName();
+                    will(returnValue("Name"));
                 }
             }
         );
@@ -53,7 +54,8 @@ public class PartialFetchBodyElementTest {
         PartialFetchBodyElement element = new PartialFetchBodyElement(
                 mockBodyElement, 0, NUMBER_OF_OCTETS);
         mockery.checking(new Expectations() {{
-                    oneOf(mockBodyElement).size();will(returnValue(new Long(moreThanNumberOfOctets)));
+                    oneOf(mockBodyElement).size();
+                    will(returnValue(new Long(moreThanNumberOfOctets)));
                 }
             }
         );
@@ -69,7 +71,8 @@ public class PartialFetchBodyElementTest {
         PartialFetchBodyElement element = new PartialFetchBodyElement(
                 mockBodyElement, 0, NUMBER_OF_OCTETS);
         mockery.checking(new Expectations() {{
-                    oneOf(mockBodyElement).size();will(returnValue(new Long(lessThanNumberOfOctets)));
+                    oneOf(mockBodyElement).size();
+                    will(returnValue(new Long(lessThanNumberOfOctets)));
                 }
             }
         );
@@ -84,7 +87,8 @@ public class PartialFetchBodyElementTest {
         PartialFetchBodyElement element = new PartialFetchBodyElement(
                 mockBodyElement, 10, NUMBER_OF_OCTETS);
         mockery.checking(new Expectations() {{
-                    oneOf(mockBodyElement).size();will(returnValue(new Long(size)));
+                    oneOf(mockBodyElement).size();
+                    will(returnValue(new Long(size)));
                 }
             }
         );
@@ -99,7 +103,8 @@ public class PartialFetchBodyElementTest {
         PartialFetchBodyElement element = new PartialFetchBodyElement(
                 mockBodyElement, 10, NUMBER_OF_OCTETS);
         mockery.checking(new Expectations() {{
-                    oneOf(mockBodyElement).size();will(returnValue(new Long(size)));
+                    oneOf(mockBodyElement).size();
+                    will(returnValue(new Long(size)));
                 }
             }
         );
@@ -113,7 +118,8 @@ public class PartialFetchBodyElementTest {
         PartialFetchBodyElement element = new PartialFetchBodyElement(
                 mockBodyElement, 1000, NUMBER_OF_OCTETS);
         mockery.checking(new Expectations() {{
-                    oneOf(mockBodyElement).size();will(returnValue(new Long(size)));
+                    oneOf(mockBodyElement).size();
+                    will(returnValue(new Long(size)));
                 }
             }
         );
@@ -128,7 +134,8 @@ public class PartialFetchBodyElementTest {
         PartialFetchBodyElement element = new PartialFetchBodyElement(
                 mockBodyElement, 1000, NUMBER_OF_OCTETS);
         mockery.checking(new Expectations() {{
-                    oneOf(mockBodyElement).size();will(returnValue(new Long(size)));
+                    oneOf(mockBodyElement).size();
+                    will(returnValue(new Long(size)));
                 }
             }
         );
