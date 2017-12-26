@@ -47,23 +47,23 @@ public class JmxSieveProbe implements SieveProbe, JmxProbe {
     }
 
     @Override
-    public void setSieveQuota(long quota) throws Exception {
-        sieveRepositoryManagement.setQuota(quota);
-    }
-
-    @Override
-    public void removeSieveQuota() throws Exception {
-        sieveRepositoryManagement.removeQuota();
-    }
-
-    @Override
     public long getSieveQuota(String user) throws Exception {
         return sieveRepositoryManagement.getQuota(user);
     }
 
     @Override
+    public void setSieveQuota(long quota) throws Exception {
+        sieveRepositoryManagement.setQuota(quota);
+    }
+
+    @Override
     public void setSieveQuota(String user, long quota) throws Exception {
         sieveRepositoryManagement.setQuota(user, quota);
+    }
+
+    @Override
+    public void removeSieveQuota() throws Exception {
+        sieveRepositoryManagement.removeQuota();
     }
 
     @Override

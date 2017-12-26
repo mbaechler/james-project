@@ -60,10 +60,6 @@ public class MailUtil {
     public static MimeMessage createMimeMessage() throws MessagingException {
         return createMimeMessage(null, null);
     }
-    
-    public static MimeMessage createMimeMessageWithSubject(String subject) throws MessagingException {
-        return createMimeMessage(null, null, subject);
-    }
 
     public static MimeMessage createMimeMessage(String headerName, String headerValue) throws MessagingException {
         return createMimeMessage(headerName, headerValue, "testmail");
@@ -80,6 +76,10 @@ public class MailUtil {
         return mimeMessageBuilder.build();
     }
     
+    public static MimeMessage createMimeMessageWithSubject(String subject) throws MessagingException {
+        return createMimeMessage(null, null, subject);
+    }
+
     public static String toString(Mail mail, String charset) throws IOException, MessagingException {
         ByteArrayOutputStream rawMessage = new ByteArrayOutputStream();
         mail.getMessage().writeTo(

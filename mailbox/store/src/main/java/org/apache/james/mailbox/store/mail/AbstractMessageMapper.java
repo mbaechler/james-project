@@ -139,16 +139,16 @@ public abstract class AbstractMessageMapper extends TransactionalMapper implemen
     }
 
     /**
+     * Copy the MailboxMessage to the Mailbox, using the given uid and modSeq for the new MailboxMessage
+     */
+    protected abstract MessageMetaData copy(Mailbox mailbox, MessageUid uid, long modSeq, MailboxMessage original) throws MailboxException;
+
+    /**
      * Save the {@link MailboxMessage} for the given {@link Mailbox} and return the {@link MessageMetaData}
      */
     protected abstract MessageMetaData save(Mailbox mailbox, MailboxMessage message) throws MailboxException;
 
     
-    /**
-     * Copy the MailboxMessage to the Mailbox, using the given uid and modSeq for the new MailboxMessage
-     */
-    protected abstract MessageMetaData copy(Mailbox mailbox, MessageUid uid, long modSeq, MailboxMessage original) throws MailboxException;
-
     @Override
     public Iterator<MessageUid> listAllMessageUids(Mailbox mailbox) throws MailboxException {
         return Iterators.transform(findInMailbox(mailbox, MessageRange.all(), FetchType.Metadata, UNLIMITED),

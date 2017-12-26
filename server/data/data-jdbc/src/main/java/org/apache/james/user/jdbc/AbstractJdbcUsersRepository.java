@@ -153,6 +153,64 @@ public abstract class AbstractJdbcUsersRepository extends AbstractJamesUsersRepo
     }
 
     /**
+     * Gets a user by name, ignoring case if specified. If the specified SQL
+     * statement has been defined, this method overrides the basic
+     * implementation in AbstractJamesUsersRepository to increase performance.
+     *
+     * @param name
+     *            the name of the user being retrieved
+     * @param ignoreCase
+     *            whether the name is regarded as case-insensitive
+     *
+     * @return the user being retrieved, null if the user doesn't exist
+     * @throws UsersRepositoryException
+     */
+    protected User getUserByName(String name, boolean ignoreCase) throws UsersRepositoryException {
+        // See if this statement has been set, if not, use
+        // simple superclass method.
+        if (userByNameCaseInsensitiveSql == null) {
+            return getUserByNameIterating(name, ignoreCase);
+        }
+
+        // Always get the user via case-insensitive SQL,
+        // then check case if necessary.
+        Connection conn = null;
+        PreparedStatement getUsersStatement = null;
+        ResultSet rsUsers = null;
+        try {
+            conn = openConnection();
+            // Get a ResultSet containing all users.
+            String sql = userByNameCaseInsensitiveSql;
+            getUsersStatement = conn.prepareStatement(sql);
+
+            getUsersStatement.setString(1, name.toLowerCase(Locale.US));
+
+            rsUsers = getUsersStatement.executeQuery();
+
+            // For case-insensitive matching, the first matching user will be
+            // returned.
+            User user = null;
+            while (rsUsers.next()) {
+                User rowUser = readUserFromResultSet(rsUsers);
+                String actualName = rowUser.getUserName();
+
+                // Check case before we assume it's the right one.
+                if (ignoreCase || actualName.equals(name)) {
+                    user = rowUser;
+                    break;
+                }
+            }
+            return user;
+        } catch (SQLException sqlExc) {
+            throw new UsersRepositoryException("Error accessing database", sqlExc);
+        } finally {
+            theJDBCUtil.closeJDBCResultSet(rsUsers);
+            theJDBCUtil.closeJDBCStatement(getUsersStatement);
+            theJDBCUtil.closeJDBCConnection(conn);
+        }
+    }
+
+    /**
      * Returns whether or not this user is in the repository
      * 
      * @return true or false
@@ -574,64 +632,6 @@ public abstract class AbstractJdbcUsersRepository extends AbstractJamesUsersRepo
         }
         // Not found - return null
         return null;
-    }
-
-    /**
-     * Gets a user by name, ignoring case if specified. If the specified SQL
-     * statement has been defined, this method overrides the basic
-     * implementation in AbstractJamesUsersRepository to increase performance.
-     *
-     * @param name
-     *            the name of the user being retrieved
-     * @param ignoreCase
-     *            whether the name is regarded as case-insensitive
-     *
-     * @return the user being retrieved, null if the user doesn't exist
-     * @throws UsersRepositoryException
-     */
-    protected User getUserByName(String name, boolean ignoreCase) throws UsersRepositoryException {
-        // See if this statement has been set, if not, use
-        // simple superclass method.
-        if (userByNameCaseInsensitiveSql == null) {
-            return getUserByNameIterating(name, ignoreCase);
-        }
-
-        // Always get the user via case-insensitive SQL,
-        // then check case if necessary.
-        Connection conn = null;
-        PreparedStatement getUsersStatement = null;
-        ResultSet rsUsers = null;
-        try {
-            conn = openConnection();
-            // Get a ResultSet containing all users.
-            String sql = userByNameCaseInsensitiveSql;
-            getUsersStatement = conn.prepareStatement(sql);
-
-            getUsersStatement.setString(1, name.toLowerCase(Locale.US));
-
-            rsUsers = getUsersStatement.executeQuery();
-
-            // For case-insensitive matching, the first matching user will be
-            // returned.
-            User user = null;
-            while (rsUsers.next()) {
-                User rowUser = readUserFromResultSet(rsUsers);
-                String actualName = rowUser.getUserName();
-
-                // Check case before we assume it's the right one.
-                if (ignoreCase || actualName.equals(name)) {
-                    user = rowUser;
-                    break;
-                }
-            }
-            return user;
-        } catch (SQLException sqlExc) {
-            throw new UsersRepositoryException("Error accessing database", sqlExc);
-        } finally {
-            theJDBCUtil.closeJDBCResultSet(rsUsers);
-            theJDBCUtil.closeJDBCStatement(getUsersStatement);
-            theJDBCUtil.closeJDBCConnection(conn);
-        }
     }
 
     /**

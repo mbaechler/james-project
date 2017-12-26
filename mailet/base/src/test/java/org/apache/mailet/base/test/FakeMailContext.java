@@ -124,13 +124,13 @@ public class FakeMailContext implements MailetContext {
                 return this;
             }
 
-            public Builder fromMailet() {
-                this.fromMailet = Optional.of(true);
+            public Builder recipients(MailAddress... recipients) {
+                this.recipients = Optional.<Collection<MailAddress>>of(ImmutableList.copyOf(recipients));
                 return this;
             }
 
-            public Builder recipients(MailAddress... recipients) {
-                this.recipients = Optional.<Collection<MailAddress>>of(ImmutableList.copyOf(recipients));
+            public Builder fromMailet() {
+                this.fromMailet = Optional.of(true);
                 return this;
             }
 
@@ -192,6 +192,10 @@ public class FakeMailContext implements MailetContext {
             }
         }
 
+        public Optional<String> getSubject() {
+            return subject;
+        }
+
         public MailAddress getSender() {
             return sender;
         }
@@ -206,10 +210,6 @@ public class FakeMailContext implements MailetContext {
 
         public String getState() {
             return state;
-        }
-
-        public Optional<String> getSubject() {
-            return subject;
         }
 
         @Override
@@ -374,6 +374,47 @@ public class FakeMailContext implements MailetContext {
         t.printStackTrace(System.out);
     }
 
+    public void log(LogLevel level, String message) {
+        if (logger.isPresent()) {
+            switch (level) {
+            case INFO:
+                logger.get().info(message);
+                break;
+            case WARN:
+                logger.get().warn(message);
+                break;
+            case ERROR:
+                logger.get().error(message);
+                break;
+            default:
+                logger.get().debug(message);
+            }
+        } else {
+            System.out.println("[" + level + "]" + message);
+        }
+    }
+
+    public void log(LogLevel level, String message, Throwable t) {
+        if (logger.isPresent()) {
+            switch (level) {
+            case INFO:
+                logger.get().info(message, t);
+                break;
+            case WARN:
+                logger.get().warn(message, t);
+                break;
+            case ERROR:
+                logger.get().error(message, t);
+                break;
+            default:
+                logger.get().debug(message, t);
+            }
+        } else {
+            System.out.println("[" + level + "]" + message);
+            t.printStackTrace(System.out);
+        }
+    }
+    
     public void removeAttribute(String name) {
         // trivial implementation
     }
@@ -418,6 +459,10 @@ public class FakeMailContext implements MailetContext {
         attributes.put(name,object);
     }
 
+    public void setAttribute(String name, Object value) {
+        throw new UnsupportedOperationException("MOCKed method");
+    }
+
     public void storeMail(MailAddress sender, MailAddress recipient, MimeMessage msg) throws MessagingException {
         // trivial implementation
     }
@@ -427,51 +472,6 @@ public class FakeMailContext implements MailetContext {
      */
     public Iterator<HostAddress> getSMTPHostAddresses(String domainName) {
         return null;  // trivial implementation
-    }
-
-    public void setAttribute(String name, Object value) {
-        throw new UnsupportedOperationException("MOCKed method");
-    }
-
-    public void log(LogLevel level, String message) {
-        if (logger.isPresent()) {
-            switch (level) {
-            case INFO:
-                logger.get().info(message);
-                break;
-            case WARN:
-                logger.get().warn(message);
-                break;
-            case ERROR:
-                logger.get().error(message);
-                break;
-            default:
-                logger.get().debug(message);
-            }
-        } else {
-            System.out.println("[" + level + "]" + message);
-        }
-    }
-
-    public void log(LogLevel level, String message, Throwable t) {
-        if (logger.isPresent()) {
-            switch (level) {
-            case INFO:
-                logger.get().info(message, t);
-                break;
-            case WARN:
-                logger.get().warn(message, t);
-                break;
-            case ERROR:
-                logger.get().error(message, t);
-                break;
-            default:
-                logger.get().debug(message, t);
-            }
-        } else {
-            System.out.println("[" + level + "]" + message);
-            t.printStackTrace(System.out);
-        }
     }
 
     public List<String> dnsLookup(String name, RecordType type) throws LookupException {

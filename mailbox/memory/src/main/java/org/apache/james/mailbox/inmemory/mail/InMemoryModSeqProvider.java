@@ -44,6 +44,10 @@ public class InMemoryModSeqProvider implements ModSeqProvider {
         return nextModSeq((InMemoryId) mailboxId);
     }
 
+    private long nextModSeq(InMemoryId mailboxId) {
+        return getHighest(mailboxId).incrementAndGet();
+    }
+
     @Override
     public long highestModSeq(MailboxSession session, Mailbox mailbox) throws MailboxException {
         return getHighest((InMemoryId) mailbox.getMailboxId()).get();
@@ -64,9 +68,5 @@ public class InMemoryModSeqProvider implements ModSeqProvider {
             }
         }
         return uid;
-    }
-
-    private long nextModSeq(InMemoryId mailboxId) {
-        return getHighest(mailboxId).incrementAndGet();
     }
 }

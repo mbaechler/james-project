@@ -134,6 +134,21 @@ public class MessageResultImpl implements MessageResult {
     }
 
     /**
+     * @see
+     * org.apache.james.mailbox.model.MessageResult#getFullContent(org.apache.james.mailbox.model.MessageResult.MimePath)
+     */
+    public Content getFullContent(MimePath path) throws MailboxException {
+        final Content result;
+        final PartContent partContent = getPartContent(path);
+        if (partContent == null) {
+            result = null;
+        } else {
+            result = partContent.getFull();
+        }
+        return result;
+    }
+    
+    /**
      * @see org.apache.james.mailbox.model.MessageResult#getBody()
      */
     public final Content getBody() throws IOException {
@@ -141,18 +156,6 @@ public class MessageResultImpl implements MessageResult {
             bodyContent = new InputStreamContent(message, Type.Body);
         }
         return bodyContent;
-    }
-
-
-    /**
-     * Renders suitably for logging.
-     * 
-     * @return a <code>String</code> representation of this object.
-     */
-    public String toString() {
-        final String TAB = " ";
-
-        return "MessageResultImpl ( " + "uid = " + getUid() + TAB + "flags = " + getFlags() + TAB + "size = " + getSize() + TAB + "internalDate = " + getInternalDate() + ")";
     }
 
     /**
@@ -169,6 +172,17 @@ public class MessageResultImpl implements MessageResult {
         }
         return result;
     }
+    
+    /**
+     * Renders suitably for logging.
+     * 
+     * @return a <code>String</code> representation of this object.
+     */
+    public String toString() {
+        final String TAB = " ";
+
+        return "MessageResultImpl ( " + "uid = " + getUid() + TAB + "flags = " + getFlags() + TAB + "size = " + getSize() + TAB + "internalDate = " + getInternalDate() + ")";
+    }
 
     /**
      * @see
@@ -181,21 +195,6 @@ public class MessageResultImpl implements MessageResult {
             result = null;
         } else {
             result = partContent.getMimeBody();
-        }
-        return result;
-    }
-
-    /**
-     * @see
-     * org.apache.james.mailbox.model.MessageResult#getFullContent(org.apache.james.mailbox.model.MessageResult.MimePath)
-     */
-    public Content getFullContent(MimePath path) throws MailboxException {
-        final Content result;
-        final PartContent partContent = getPartContent(path);
-        if (partContent == null) {
-            result = null;
-        } else {
-            result = partContent.getFull();
         }
         return result;
     }

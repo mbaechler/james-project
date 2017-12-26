@@ -80,6 +80,11 @@ public class HBaseModSeqProvider implements ModSeqProvider {
     }
 
     @Override
+    public long highestModSeq(MailboxSession session, MailboxId mailboxId) throws MailboxException {
+        throw new NotImplementedException();
+    }
+    
+    @Override
     public long nextModSeq(MailboxSession session, Mailbox mailbox) throws MailboxException {
         return nextModSeq(session, mailbox.getMailboxId());
     }
@@ -105,9 +110,4 @@ public class HBaseModSeqProvider implements ModSeqProvider {
         }
     }
 
-
-    @Override
-    public long highestModSeq(MailboxSession session, MailboxId mailboxId) throws MailboxException {
-        throw new NotImplementedException();
-    }
 }

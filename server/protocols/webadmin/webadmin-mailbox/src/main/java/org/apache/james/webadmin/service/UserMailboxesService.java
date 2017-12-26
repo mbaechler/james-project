@@ -102,18 +102,18 @@ public class UserMailboxesService {
             .forEach(Throwing.consumer(path -> deleteMailbox(mailboxSession, path)));
     }
 
-    private Stream<MailboxPath> listChildren(MailboxPath mailboxPath, MailboxSession mailboxSession) throws MailboxException {
-        return listUserMailboxes(mailboxSession)
-            .map(MailboxMetaData::getPath)
-            .filter(path -> path.getHierarchyLevels(mailboxSession.getPathDelimiter()).contains(mailboxPath));
-    }
-
     private void deleteMailbox(MailboxSession mailboxSession, MailboxPath mailboxPath) throws MailboxException {
         try {
             mailboxManager.deleteMailbox(mailboxPath, mailboxSession);
         } catch (MailboxNotFoundException e) {
             LOGGER.info("Attempt to delete mailbox {} for user {} that does not exists", mailboxPath.getName(), mailboxPath.getUser());
         }
+    }
+
+    private Stream<MailboxPath> listChildren(MailboxPath mailboxPath, MailboxSession mailboxSession) throws MailboxException {
+        return listUserMailboxes(mailboxSession)
+            .map(MailboxMetaData::getPath)
+            .filter(path -> path.getHierarchyLevels(mailboxSession.getPathDelimiter()).contains(mailboxPath));
     }
 
     private void usernamePreconditions(String username) throws UsersRepositoryException {

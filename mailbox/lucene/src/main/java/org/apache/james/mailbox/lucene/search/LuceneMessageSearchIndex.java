@@ -896,6 +896,65 @@ public class LuceneMessageSearchIndex extends ListeningMessageSearchIndex {
             throw new UnsupportedSearchException();
         }
     }
+
+    /**
+     * Return a {@link Query} which is builded based on the given {@link Criterion}
+     * 
+     * @param criterion
+     * @return query
+     * @throws UnsupportedSearchException
+     */
+    private Query createQuery(Criterion criterion, Query inMailboxes, Collection<MessageUid> recentUids) throws MailboxException {
+        if (criterion instanceof SearchQuery.InternalDateCriterion) {
+            SearchQuery.InternalDateCriterion crit = (SearchQuery.InternalDateCriterion) criterion;
+            return createInternalDateQuery(crit);
+        } else if (criterion instanceof SearchQuery.SizeCriterion) {
+            SearchQuery.SizeCriterion crit = (SearchQuery.SizeCriterion) criterion;
+            return createSizeQuery(crit);
+        } else if (criterion instanceof SearchQuery.HeaderCriterion) {
+            HeaderCriterion crit = (HeaderCriterion) criterion;
+            return createHeaderQuery(crit);
+        } else if (criterion instanceof SearchQuery.UidCriterion) {
+            SearchQuery.UidCriterion crit = (SearchQuery.UidCriterion) criterion;
+            return createUidQuery(crit);
+        } else if (criterion instanceof SearchQuery.FlagCriterion) {
+            FlagCriterion crit = (FlagCriterion) criterion;
+            return createFlagQuery(toString(crit.getFlag()), crit.getOperator().isSet(), inMailboxes, recentUids);
+        } else if (criterion instanceof SearchQuery.AttachmentCriterion) {
+            AttachmentCriterion crit = (AttachmentCriterion) criterion;
+            return createAttachmentQuery(crit.getOperator().isSet());
+        } else if (criterion instanceof SearchQuery.CustomFlagCriterion) {
+            CustomFlagCriterion crit = (CustomFlagCriterion) criterion;
+            return createFlagQuery(crit.getFlag(), crit.getOperator().isSet(), inMailboxes, recentUids);
+        } else if (criterion instanceof SearchQuery.TextCriterion) {
+            SearchQuery.TextCriterion crit = (SearchQuery.TextCriterion) criterion;
+            return createTextQuery(crit);
+        } else if (criterion instanceof SearchQuery.AllCriterion) {
+            return createAllQuery((AllCriterion) criterion);
+        } else if (criterion instanceof SearchQuery.ConjunctionCriterion) {
+            SearchQuery.ConjunctionCriterion crit = (SearchQuery.ConjunctionCriterion) criterion;
+            return createConjunctionQuery(crit, inMailboxes, recentUids);
+        } else if (criterion instanceof SearchQuery.ModSeqCriterion) {
+            return createModSeqQuery((SearchQuery.ModSeqCriterion) criterion);
+        }
+        throw new UnsupportedSearchException();
+
+    }
+
+    private Query createQuery(MessageRange range) {
+        switch (range.getType()) {
+        case ONE:
+            return NumericRangeQuery.newLongRange(UID_FIELD, 
+                    range.getUidFrom().asLong(), 
+                    range.getUidTo().asLong(), true, true);
+        case FROM:
+            return NumericRangeQuery.newLongRange(UID_FIELD, 
+                    range.getUidFrom().asLong(), 
+                    MessageUid.MAX_VALUE.asLong(), true, true);
+        default:
+            return NumericRangeQuery.newLongRange(UID_FIELD, MessageUid.MIN_VALUE.asLong(), MessageUid.MAX_VALUE.asLong(), true, true);
+        }
+    }
     
     private DateTools.Resolution toResolution(DateResolution res) {
         switch (res) {
@@ -1204,52 +1263,6 @@ public class LuceneMessageSearchIndex extends ListeningMessageSearchIndex {
         }
 
     }
-    
-    /**
-     * Return a {@link Query} which is builded based on the given {@link Criterion}
-     * 
-     * @param criterion
-     * @return query
-     * @throws UnsupportedSearchException
-     */
-    private Query createQuery(Criterion criterion, Query inMailboxes, Collection<MessageUid> recentUids) throws MailboxException {
-        if (criterion instanceof SearchQuery.InternalDateCriterion) {
-            SearchQuery.InternalDateCriterion crit = (SearchQuery.InternalDateCriterion) criterion;
-            return createInternalDateQuery(crit);
-        } else if (criterion instanceof SearchQuery.SizeCriterion) {
-            SearchQuery.SizeCriterion crit = (SearchQuery.SizeCriterion) criterion;
-            return createSizeQuery(crit);
-        } else if (criterion instanceof SearchQuery.HeaderCriterion) {
-            HeaderCriterion crit = (HeaderCriterion) criterion;
-            return createHeaderQuery(crit);
-        } else if (criterion instanceof SearchQuery.UidCriterion) {
-            SearchQuery.UidCriterion crit = (SearchQuery.UidCriterion) criterion;
-            return createUidQuery(crit);
-        } else if (criterion instanceof SearchQuery.FlagCriterion) {
-            FlagCriterion crit = (FlagCriterion) criterion;
-            return createFlagQuery(toString(crit.getFlag()), crit.getOperator().isSet(), inMailboxes, recentUids);
-        } else if (criterion instanceof SearchQuery.AttachmentCriterion) {
-            AttachmentCriterion crit = (AttachmentCriterion) criterion;
-            return createAttachmentQuery(crit.getOperator().isSet());
-        } else if (criterion instanceof SearchQuery.CustomFlagCriterion) {
-            CustomFlagCriterion crit = (CustomFlagCriterion) criterion;
-            return createFlagQuery(crit.getFlag(), crit.getOperator().isSet(), inMailboxes, recentUids);
-        } else if (criterion instanceof SearchQuery.TextCriterion) {
-            SearchQuery.TextCriterion crit = (SearchQuery.TextCriterion) criterion;
-            return createTextQuery(crit);
-        } else if (criterion instanceof SearchQuery.AllCriterion) {
-            return createAllQuery((AllCriterion) criterion);
-        } else if (criterion instanceof SearchQuery.ConjunctionCriterion) {
-            SearchQuery.ConjunctionCriterion crit = (SearchQuery.ConjunctionCriterion) criterion;
-            return createConjunctionQuery(crit, inMailboxes, recentUids);
-        } else if (criterion instanceof SearchQuery.ModSeqCriterion) {
-            return createModSeqQuery((SearchQuery.ModSeqCriterion) criterion);
-        }
-        throw new UnsupportedSearchException();
-
-    }
-
-    
 
     /**
      * @see org.apache.james.mailbox.store.search.ListeningMessageSearchIndex#add(org.apache.james.mailbox.MailboxSession, org.apache.james.mailbox.store.mail.model.Mailbox, MailboxMessage)
@@ -1350,21 +1363,6 @@ public class LuceneMessageSearchIndex extends ListeningMessageSearchIndex {
         }
         
     }
-    
-    private Query createQuery(MessageRange range) {
-        switch (range.getType()) {
-        case ONE:
-            return NumericRangeQuery.newLongRange(UID_FIELD, 
-                    range.getUidFrom().asLong(), 
-                    range.getUidTo().asLong(), true, true);
-        case FROM:
-            return NumericRangeQuery.newLongRange(UID_FIELD, 
-                    range.getUidFrom().asLong(), 
-                    MessageUid.MAX_VALUE.asLong(), true, true);
-        default:
-            return NumericRangeQuery.newLongRange(UID_FIELD, MessageUid.MIN_VALUE.asLong(), MessageUid.MAX_VALUE.asLong(), true, true);
-        }
-    }
 
     @Override
     public void delete(MailboxSession session, Mailbox mailbox, List<MessageUid> expungedUids) throws MailboxException {
@@ -1372,11 +1370,6 @@ public class LuceneMessageSearchIndex extends ListeningMessageSearchIndex {
         for (MessageRange messageRange : messageRanges) {
             delete(mailbox, messageRange);
         }
-    }
-
-    @Override
-    public void deleteAll(MailboxSession session, Mailbox mailbox) throws MailboxException {
-        delete(mailbox, MessageRange.all());
     }
 
     public void delete(Mailbox mailbox, MessageRange range) throws MailboxException {
@@ -1390,4 +1383,10 @@ public class LuceneMessageSearchIndex extends ListeningMessageSearchIndex {
             throw new MailboxException("Unable to delete message from index", e);
         }
     }
+    
+    @Override
+    public void deleteAll(MailboxSession session, Mailbox mailbox) throws MailboxException {
+        delete(mailbox, MessageRange.all());
+    }
+
 }

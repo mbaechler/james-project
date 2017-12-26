@@ -23,13 +23,13 @@ public interface SieveProbe {
 
     long getSieveQuota() throws Exception;
 
-    void setSieveQuota(long quota) throws Exception;
-
-    void removeSieveQuota() throws Exception;
-
     long getSieveQuota(String user) throws Exception;
 
+    void setSieveQuota(long quota) throws Exception;
+
     void setSieveQuota(String user, long quota) throws Exception;
+
+    void removeSieveQuota() throws Exception;
 
     void removeSieveQuota(String user) throws Exception;
 

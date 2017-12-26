@@ -136,6 +136,22 @@ public class CassandraModSeqProvider implements ModSeqProvider {
             .orElseThrow(() -> new MailboxException("Can not retrieve modseq for " + mailboxId));
     }
 
+    public CompletableFuture<Optional<Long>> nextModSeq(CassandraId mailboxId) {
+        return findHighestModSeq(mailboxId)
+            .thenCompose(modSeq -> {
+                if (modSeq.isFirst()) {
+                    return tryInsertModSeq(mailboxId, FIRST_MODSEQ);
+                }
+                return tryUpdateModSeq(mailboxId, modSeq);
+            }).thenCompose(firstInsert -> {
+                    if (firstInsert.isPresent()) {
+                        return CompletableFuture.completedFuture(firstInsert);
+                    }
+                    return handleRetries(mailboxId);
+                })
+            .thenApply(optional -> optional.map(ModSeq::getValue));
+    }
+
     @Override
     public long highestModSeq(MailboxSession mailboxSession, Mailbox mailbox) throws MailboxException {
         return unbox(() -> findHighestModSeq((CassandraId) mailbox.getMailboxId()).join().getValue());
@@ -180,22 +196,6 @@ public class CassandraModSeqProvider implements ModSeqProvider {
         return Optional.empty();
     }
     
-    public CompletableFuture<Optional<Long>> nextModSeq(CassandraId mailboxId) {
-        return findHighestModSeq(mailboxId)
-            .thenCompose(modSeq -> {
-                if (modSeq.isFirst()) {
-                    return tryInsertModSeq(mailboxId, FIRST_MODSEQ);
-                }
-                return tryUpdateModSeq(mailboxId, modSeq);
-            }).thenCompose(firstInsert -> {
-                    if (firstInsert.isPresent()) {
-                        return CompletableFuture.completedFuture(firstInsert);
-                    }
-                    return handleRetries(mailboxId);
-                })
-            .thenApply(optional -> optional.map(ModSeq::getValue));
-    }
-
     private CompletableFuture<Optional<ModSeq>> handleRetries(CassandraId mailboxId) {
         return runner.executeAsyncAndRetrieveObject(
             () -> findHighestModSeq(mailboxId)

@@ -132,6 +132,13 @@ public class MappingsImpl implements Mappings, Serializable {
     }
 
     @Override
+    public boolean contains(Type type) {
+        Preconditions.checkNotNull(type);
+        return mappings.stream()
+            .anyMatch(hasType(type));
+    }
+
+    @Override
     public int size() {
         return mappings.size();
     }
@@ -163,13 +170,6 @@ public class MappingsImpl implements Mappings, Serializable {
     
     private Predicate<Mapping> hasType(final Mapping.Type type) {
         return mapping -> mapping.getType().equals(type);
-    }
-    
-    @Override
-    public boolean contains(Type type) {
-        Preconditions.checkNotNull(type);
-        return mappings.stream()
-            .anyMatch(hasType(type));
     }
     
     @Override

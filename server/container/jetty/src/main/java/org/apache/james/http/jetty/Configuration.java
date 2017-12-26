@@ -81,15 +81,15 @@ public class Configuration {
                 filters.put(filterUrl, filter);
                 return this;
             }
-            
-            public FilterBinder and(Filter filter) {
-                return with(filter);
-            }
 
             public FilterBinder with(Class<? extends Filter> filterClass) {
                 Preconditions.checkNotNull(filterClass);
                 filters.put(filterUrl, filterClass);
                 return this;
+            }
+
+            public FilterBinder and(Filter filter) {
+                return with(filter);
             }
 
             public Configuration.Builder only() {

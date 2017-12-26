@@ -64,6 +64,12 @@ public class ProtocolHandlerChainImpl extends AbstractProtocolHandlerChain imple
         return handlers.add(handler);
     }
 
+    public void add(int index, ProtocolHandler element) {
+        checkReadOnly();
+
+        handlers.add(index, element);
+    }
+    
     @Override
     protected List<ProtocolHandler> getHandlers() {
         return ImmutableList.copyOf(handlers);
@@ -127,6 +133,12 @@ public class ProtocolHandlerChainImpl extends AbstractProtocolHandlerChain imple
         return handlers.remove(o);
     }
 
+    public ProtocolHandler remove(int index) {
+        checkReadOnly();
+
+        return (ProtocolHandler) handlers.remove(index);
+    }
+    
     /*
      * (non-Javadoc)
      * @see java.util.List#containsAll(java.util.Collection)
@@ -199,26 +211,6 @@ public class ProtocolHandlerChainImpl extends AbstractProtocolHandlerChain imple
         checkReadOnly();
 
         return (ProtocolHandler) handlers.set(index, element);
-    }
-
-    /*
-     * (non-Javadoc)
-     * @see java.util.List#add(int, java.lang.Object)
-     */
-    public void add(int index, ProtocolHandler element) {
-        checkReadOnly();
-
-        handlers.add(index, element);
-    }
-
-    /*
-     * (non-Javadoc)
-     * @see java.util.List#remove(int)
-     */
-    public ProtocolHandler remove(int index) {
-        checkReadOnly();
-
-        return (ProtocolHandler) handlers.remove(index);
     }
 
     /*

@@ -51,17 +51,6 @@ public class MailboxAppender {
         return append(mail, user, useSlashAsSeparator(folder, session), session);
     }
 
-    private String useSlashAsSeparator(String urlPath, MailboxSession session) throws MessagingException {
-        String destination = urlPath.replace('/', session.getPathDelimiter());
-        if (Strings.isNullOrEmpty(destination)) {
-            throw new MessagingException("Mail can not be delivered to empty folder");
-        }
-        if (destination.charAt(0) == session.getPathDelimiter()) {
-            destination = destination.substring(1);
-        }
-        return destination;
-    }
-
     private ComposedMessageId append(MimeMessage mail, String user, String folder, MailboxSession session) throws MessagingException {
         mailboxManager.startProcessingRequest(session);
         try {
@@ -72,6 +61,17 @@ public class MailboxAppender {
         } finally {
             closeProcessing(session);
         }
+    }
+
+    private String useSlashAsSeparator(String urlPath, MailboxSession session) throws MessagingException {
+        String destination = urlPath.replace('/', session.getPathDelimiter());
+        if (Strings.isNullOrEmpty(destination)) {
+            throw new MessagingException("Mail can not be delivered to empty folder");
+        }
+        if (destination.charAt(0) == session.getPathDelimiter()) {
+            destination = destination.substring(1);
+        }
+        return destination;
     }
 
     private ComposedMessageId appendMessageToMailbox(MimeMessage mail, MailboxSession session, MailboxPath path) throws MailboxException, MessagingException {

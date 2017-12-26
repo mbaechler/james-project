@@ -869,6 +869,15 @@ public class MessageProcessor extends ProcessorAbstract {
     }
 
     /**
+     * Returns the Blacklisted.
+     *
+     * @return boolean
+     */
+    protected boolean isBlacklistedRecipient() {
+        return fieldBlacklistedRecipient;
+    }
+
+    /**
      * Check if this mail has been bouncing by counting the X-fetched-from
      * headers for this task
      *
@@ -1198,15 +1207,6 @@ public class MessageProcessor extends ProcessorAbstract {
     protected void handleMarkSeenNotPermanent() throws MessagingException {
         getMessageIn().setFlag(Flags.Flag.SEEN, true);
         logStatusWarn("Message marked as SEEN, but the folder does not support a permanent SEEN flag.");
-    }
-
-    /**
-     * Returns the Blacklisted.
-     *
-     * @return boolean
-     */
-    protected boolean isBlacklistedRecipient() {
-        return fieldBlacklistedRecipient;
     }
 
     /**

@@ -64,20 +64,6 @@ public class GetMessageListMethodStepdefs {
         getMessageListFromMailboxIds(mainStepdefs.getMailboxIds(username, mailboxes));
     }
 
-    @When("^\"([^\"]*)\" asks for message list in delegated (?:mailboxes|mailbox) \"([^\"]*)\" from \"([^\"]*)\"$")
-    public void getMessageListFromDelegated(String sharee, List<String> mailboxes, String sharer) throws Exception {
-        userStepdefs.execWithUser(sharee, () ->
-            getMessageListFromMailboxIds(mainStepdefs.getMailboxIds(sharer, mailboxes)));
-    }
-
-    private void getMessageListFromMailboxIds(String mailboxIds) throws Exception {
-        httpClient.post(String.format(
-            "[[\"getMessageList\", {\"filter\":{" +
-                "    \"inMailboxes\":[\"%s\"]" +
-                "}}, \"#0\"]]",
-            mailboxIds));
-    }
-
     @When("^\"([^\"]*)\" asks for message list in mailbox \"([^\"]*)\" with flag \"([^\"]*)\"$")
     public void getMessageList(String username, String mailbox, String flag) throws Exception {
 
@@ -99,6 +85,20 @@ public class GetMessageListMethodStepdefs {
                 "    \"hasKeyword\":\"%s\"" +
                 "}}, \"#0\"]]",
             flag));
+    }
+
+    @When("^\"([^\"]*)\" asks for message list in delegated (?:mailboxes|mailbox) \"([^\"]*)\" from \"([^\"]*)\"$")
+    public void getMessageListFromDelegated(String sharee, List<String> mailboxes, String sharer) throws Exception {
+        userStepdefs.execWithUser(sharee, () ->
+            getMessageListFromMailboxIds(mainStepdefs.getMailboxIds(sharer, mailboxes)));
+    }
+
+    private void getMessageListFromMailboxIds(String mailboxIds) throws Exception {
+        httpClient.post(String.format(
+            "[[\"getMessageList\", {\"filter\":{" +
+                "    \"inMailboxes\":[\"%s\"]" +
+                "}}, \"#0\"]]",
+            mailboxIds));
     }
 
     @Then("^the message list is empty$")

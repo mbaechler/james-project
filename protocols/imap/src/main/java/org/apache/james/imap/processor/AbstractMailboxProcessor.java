@@ -89,15 +89,6 @@ public abstract class AbstractMailboxProcessor<M extends ImapRequest> extends Ab
         process(acceptableMessage, responder, session);
     }
 
-    protected final void process(M message, Responder responder, ImapSession session) {
-        ImapCommand command = message.getCommand();
-        String tag = message.getTag();
-
-        TimeMetric timeMetric = metricFactory.timer(IMAP_PREFIX + command.getName());
-        doProcess(message, command, tag, responder, session);
-        timeMetric.stopAndPublish();
-    }
-
     final void doProcess(M message, ImapCommand command, String tag, Responder responder, ImapSession session) {
         try {
             if (!command.validForState(session.getState())) {
@@ -117,6 +108,16 @@ public abstract class AbstractMailboxProcessor<M extends ImapRequest> extends Ab
         }
     }
 
+    protected abstract void doProcess(M message, ImapSession session, String tag, ImapCommand command, Responder responder);
+
+    protected final void process(M message, Responder responder, ImapSession session) {
+        ImapCommand command = message.getCommand();
+        String tag = message.getTag();
+
+        TimeMetric timeMetric = metricFactory.timer(IMAP_PREFIX + command.getName());
+        doProcess(message, command, tag, responder, session);
+        timeMetric.stopAndPublish();
+    }
 
     protected void flags(Responder responder, SelectedMailbox selected) {
         responder.respond(new FlagsResponse(selected.getApplicableFlags()));
@@ -359,8 +360,6 @@ public abstract class AbstractMailboxProcessor<M extends ImapRequest> extends Ab
         final StatusResponse response = factory.bye(key);
         responder.respond(response);
     }
-
-    protected abstract void doProcess(M message, ImapSession session, String tag, ImapCommand command, Responder responder);
 
     /**
      * Joins the elements of a mailboxPath together and returns them as a string

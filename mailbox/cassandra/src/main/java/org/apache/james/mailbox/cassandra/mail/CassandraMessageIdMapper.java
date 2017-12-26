@@ -185,6 +185,12 @@ public class CassandraMessageIdMapper implements MessageIdMapper {
             .join();
     }
 
+    @Override
+    public void delete(MessageId messageId) {
+        CassandraMessageId cassandraMessageId = (CassandraMessageId) messageId;
+        retrieveAndDeleteIndices(cassandraMessageId, Optional.empty())
+            .join();
+    }
 
     private CompletableFuture<Void> retrieveAndDeleteIndices(CassandraMessageId messageId, Optional<CassandraId> mailboxId) {
         return imapUidDAO.retrieve(messageId, mailboxId)
@@ -192,13 +198,6 @@ public class CassandraMessageIdMapper implements MessageIdMapper {
                 .map(this::deleteIds)
                 .reduce((f1, f2) -> CompletableFuture.allOf(f1, f2))
                 .orElse(CompletableFuture.completedFuture(null)));
-    }
-
-    @Override
-    public void delete(MessageId messageId) {
-        CassandraMessageId cassandraMessageId = (CassandraMessageId) messageId;
-        retrieveAndDeleteIndices(cassandraMessageId, Optional.empty())
-            .join();
     }
 
     private CompletableFuture<Void> deleteIds(ComposedMessageIdWithMetaData metaData) {
@@ -279,10 +278,6 @@ public class CassandraMessageIdMapper implements MessageIdMapper {
         return updateFlags(oldComposedId, newComposedId);
     }
 
-    private boolean identicalFlags(ComposedMessageIdWithMetaData oldComposedId, Flags newFlags) {
-        return oldComposedId.getFlags().equals(newFlags);
-    }
-
     private Optional<Pair<Flags, ComposedMessageIdWithMetaData>> updateFlags(ComposedMessageIdWithMetaData oldComposedId, ComposedMessageIdWithMetaData newComposedId) {
         return imapUidDAO.updateMetadata(newComposedId, oldComposedId.getModSeq())
             .thenCompose(updateSuccess -> Optional.of(updateSuccess)
@@ -293,5 +288,9 @@ public class CassandraMessageIdMapper implements MessageIdMapper {
                 .filter(b -> b)
                 .map(any -> Pair.of(oldComposedId.getFlags(), newComposedId)))
             .join();
+    }
+
+    private boolean identicalFlags(ComposedMessageIdWithMetaData oldComposedId, Flags newFlags) {
+        return oldComposedId.getFlags().equals(newFlags);
     }
 }

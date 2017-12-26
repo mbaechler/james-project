@@ -376,13 +376,13 @@ public class Redirect extends GenericMailet implements RedirectNotify {
         return builder.build();
     }
 
-    private String getRecipientsOrTo() throws MessagingException {
-        return getInitParameter("recipients", getInitParameter("to"));
-    }
-
     @Override
     public List<MailAddress> getRecipients(Mail originalMail) throws MessagingException {
         return RecipientsUtils.from(this).getRecipients(originalMail);
+    }
+
+    private String getRecipientsOrTo() throws MessagingException {
+        return getInitParameter("recipients", getInitParameter("to"));
     }
 
     @Override
@@ -400,13 +400,13 @@ public class Redirect extends GenericMailet implements RedirectNotify {
                     .extract(Optional.of(toOrRecipients)));
     }
 
-    private String getToOrRecipients() throws MessagingException {
-        return getInitParameter("to", getInitParameter("recipients"));
-    }
-
     @Override
     public List<MailAddress> getTo(Mail originalMail) throws MessagingException {
         return TosUtils.from(this).getTo(originalMail);
+    }
+
+    private String getToOrRecipients() throws MessagingException {
+        return getInitParameter("to", getInitParameter("recipients"));
     }
 
     @Override

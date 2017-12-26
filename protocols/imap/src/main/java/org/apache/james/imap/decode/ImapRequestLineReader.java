@@ -718,6 +718,46 @@ public abstract class ImapRequestLineReader {
     }
     
     /**
+     * Parse a range which use a ":" as delimiter
+     */
+    private UidRange parseUidRange(String range) throws DecodingException {
+        int pos = range.indexOf(':');
+        try {
+            if (pos == -1) {
+
+                // Check if its a single "*" and so should return last message
+                // in mailbox. See IMAP-289
+                if (range.length() == 1 && range.charAt(0) == '*') {
+                    return new UidRange(MessageUid.MAX_VALUE);
+                } else {
+                    long value = parseUnsignedInteger(range);
+                    return new UidRange(MessageUid.of(value));
+                }
+            } else {
+                // Make sure we detect the low and high value
+                // See https://issues.apache.org/jira/browse/IMAP-212
+                long val1 = parseUnsignedInteger(range.substring(0, pos));
+                long val2 = parseUnsignedInteger(range.substring(pos + 1));
+
+                // handle "*:*" ranges. See IMAP-289
+                if (val1 == Long.MAX_VALUE && val2 == Long.MAX_VALUE) {
+                    return new UidRange(MessageUid.MAX_VALUE);
+                } else if (val1 <= val2) {
+                    return new UidRange(MessageUid.of(val1), MessageUid.of(val2));
+                } else if (val1 == Long.MAX_VALUE) {
+                    // *:<num> message range must be converted to <num>:*
+                    // See IMAP-290
+                    return new UidRange(MessageUid.of(val2), MessageUid.MAX_VALUE);
+                } else {
+                    return new UidRange(MessageUid.of(val2), MessageUid.of(val1));
+                }
+            }
+        } catch (NumberFormatException e) {
+            throw new DecodingException(HumanReadableText.INVALID_MESSAGESET, "Invalid message set.", e);
+        }
+    }
+    
+    /**
      * Reads the first non-space character in the current line. This method will continue
      * to resume if meet space character until meet the non-space character.
      *
@@ -778,46 +818,6 @@ public abstract class ImapRequestLineReader {
         }
     }
 
-    /**
-     * Parse a range which use a ":" as delimiter
-     */
-    private UidRange parseUidRange(String range) throws DecodingException {
-        int pos = range.indexOf(':');
-        try {
-            if (pos == -1) {
-
-                // Check if its a single "*" and so should return last message
-                // in mailbox. See IMAP-289
-                if (range.length() == 1 && range.charAt(0) == '*') {
-                    return new UidRange(MessageUid.MAX_VALUE);
-                } else {
-                    long value = parseUnsignedInteger(range);
-                    return new UidRange(MessageUid.of(value));
-                }
-            } else {
-                // Make sure we detect the low and high value
-                // See https://issues.apache.org/jira/browse/IMAP-212
-                long val1 = parseUnsignedInteger(range.substring(0, pos));
-                long val2 = parseUnsignedInteger(range.substring(pos + 1));
-
-                // handle "*:*" ranges. See IMAP-289
-                if (val1 == Long.MAX_VALUE && val2 == Long.MAX_VALUE) {
-                    return new UidRange(MessageUid.MAX_VALUE);
-                } else if (val1 <= val2) {
-                    return new UidRange(MessageUid.of(val1), MessageUid.of(val2));
-                } else if (val1 == Long.MAX_VALUE) {
-                    // *:<num> message range must be converted to <num>:*
-                    // See IMAP-290
-                    return new UidRange(MessageUid.of(val2), MessageUid.MAX_VALUE);
-                } else {
-                    return new UidRange(MessageUid.of(val2), MessageUid.of(val1));
-                }
-            }
-        } catch (NumberFormatException e) {
-            throw new DecodingException(HumanReadableText.INVALID_MESSAGESET, "Invalid message set.", e);
-        }
-    }
-    
     private long parseUnsignedInteger(String value) throws DecodingException {
         if (value.length() == 1 && value.charAt(0) == '*') {
             return Long.MAX_VALUE;

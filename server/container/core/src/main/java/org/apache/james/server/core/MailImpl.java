@@ -90,6 +90,22 @@ public class MailImpl implements Disposable, Mail {
         return new MailImpl(mail, deriveNewName(mail.getName()));
     }
 
+    /**
+     * Duplicate the MailImpl, replacing the mail name with the one passed in as
+     * an argument.
+     *
+     * @param newName the name for the duplicated mail
+     * @return a MailImpl that is a duplicate of this one with a different name
+     */
+    @VisibleForTesting Mail duplicate(String newName) {
+        try {
+            return new MailImpl(this, newName);
+        } catch (MessagingException me) {
+            // Ignored. Return null in the case of an error.
+        }
+        return null;
+    }
+    
     public static MailImpl fromMimeMessage(String name, MimeMessage mimeMessage) throws MessagingException {
         MailAddress sender = getSender(mimeMessage);
         ImmutableList<MailAddress> recipients = getRecipients(mimeMessage);
@@ -102,10 +118,20 @@ public class MailImpl implements Disposable, Mail {
             .collect(Guavate.toImmutableList());
     }
 
+    @Override
+    public Collection<MailAddress> getRecipients() {
+        return recipients;
+    }
+
     private static MailAddress getSender(MimeMessage mimeMessage) throws MessagingException {
         Address[] sender = mimeMessage.getFrom();
         Preconditions.checkArgument(sender.length == 1);
         return castToMailAddress(sender[0]);
+    }
+
+    @Override
+    public MailAddress getSender() {
+        return sender;
     }
 
     private static MailAddress castToMailAddress(Address address) throws AddressException {
@@ -291,22 +317,6 @@ public class MailImpl implements Disposable, Mail {
         this.setMessage(new MimeMessageCopyOnWriteProxy(message));
     }
 
-    /**
-     * Duplicate the MailImpl, replacing the mail name with the one passed in as
-     * an argument.
-     *
-     * @param newName the name for the duplicated mail
-     * @return a MailImpl that is a duplicate of this one with a different name
-     */
-    @VisibleForTesting Mail duplicate(String newName) {
-        try {
-            return new MailImpl(this, newName);
-        } catch (MessagingException me) {
-            // Ignored. Return null in the case of an error.
-        }
-        return null;
-    }
-
     @Override
     public String getErrorMessage() {
         return errorMessage;
@@ -325,16 +335,6 @@ public class MailImpl implements Disposable, Mail {
     @Override
     public String getName() {
         return name;
-    }
-
-    @Override
-    public Collection<MailAddress> getRecipients() {
-        return recipients;
-    }
-
-    @Override
-    public MailAddress getSender() {
-        return sender;
     }
 
     @Override

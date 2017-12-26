@@ -191,13 +191,13 @@ public class MailderMailboxMessageNameTest {
             return this;
         }
 
+        public Parts timeSeconds(Integer time) {
+            return timeSeconds(time != null ? time.longValue() : null);
+        }
+        
         public Parts timeMillis(Long time) {
             this.time = time;
             return this;
-        }
-
-        public Parts timeSeconds(Integer time) {
-            return timeSeconds(time != null ? time.longValue() : null);
         }
 
         public Parts copy() {

@@ -52,6 +52,11 @@ public class SortOrder implements Comparable<SortOrder> {
                 .orElse(DEFAULT_SORT_ORDER);
     }
 
+    @JsonValue
+    public int getSortOrder() {
+        return sortOrder;
+    }
+
     public static SortOrder of(int sortOrder) {
         Preconditions.checkArgument(sortOrder >= 0, "'sortOrder' must be positive");
         return new SortOrder(sortOrder);
@@ -61,11 +66,6 @@ public class SortOrder implements Comparable<SortOrder> {
 
     private SortOrder(int sortOrder) {
         this.sortOrder = sortOrder;
-    }
-
-    @JsonValue
-    public int getSortOrder() {
-        return sortOrder;
     }
 
     @Override

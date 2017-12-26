@@ -148,6 +148,16 @@ public class MimeMessageCopyOnWriteProxy extends MimeMessage implements Disposab
     }
 
     @Override
+    public void setRecipients(Message.RecipientType type, String addresses) throws MessagingException {
+        getWrappedMessageForWriting().setRecipients(type, addresses);
+    }
+
+    @Override
+    public void setRecipients(Message.RecipientType type, Address[] addresses) throws MessagingException {
+        getWrappedMessageForWriting().setRecipients(type, addresses);
+    }
+
+    @Override
     public void writeTo(OutputStream os) throws IOException, MessagingException {
         getWrappedMessage().writeTo(os);
     }
@@ -391,12 +401,12 @@ public class MimeMessageCopyOnWriteProxy extends MimeMessage implements Disposab
     }
 
     @Override
-    public void setRecipients(Message.RecipientType type, Address[] addresses) throws MessagingException {
-        getWrappedMessageForWriting().setRecipients(type, addresses);
+    public void addRecipients(Message.RecipientType type, Address[] addresses) throws MessagingException {
+        getWrappedMessageForWriting().addRecipients(type, addresses);
     }
 
     @Override
-    public void addRecipients(Message.RecipientType type, Address[] addresses) throws MessagingException {
+    public void addRecipients(Message.RecipientType type, String addresses) throws MessagingException {
         getWrappedMessageForWriting().addRecipients(type, addresses);
     }
 
@@ -466,6 +476,11 @@ public class MimeMessageCopyOnWriteProxy extends MimeMessage implements Disposab
     }
 
     @Override
+    public void setContent(Multipart mp) throws MessagingException {
+        getWrappedMessageForWriting().setContent(mp);
+    }
+
+    @Override
     public void setText(String text) throws MessagingException {
         getWrappedMessageForWriting().setText(text);
     }
@@ -476,8 +491,8 @@ public class MimeMessageCopyOnWriteProxy extends MimeMessage implements Disposab
     }
 
     @Override
-    public void setContent(Multipart mp) throws MessagingException {
-        getWrappedMessageForWriting().setContent(mp);
+    public void setText(String text, String charset, String subtype) throws MessagingException {
+        getWrappedMessage().setText(text, charset, subtype);
     }
 
     /**
@@ -518,20 +533,6 @@ public class MimeMessageCopyOnWriteProxy extends MimeMessage implements Disposab
         getWrappedMessageForWriting().saveChanges();
     }
 
-    /*
-     * Since JavaMail 1.2
-     */
-
-    @Override
-    public void addRecipients(Message.RecipientType type, String addresses) throws MessagingException {
-        getWrappedMessageForWriting().addRecipients(type, addresses);
-    }
-
-    @Override
-    public void setRecipients(Message.RecipientType type, String addresses) throws MessagingException {
-        getWrappedMessageForWriting().setRecipients(type, addresses);
-    }
-
     @Override
     public void setSender(Address arg0) throws MessagingException {
         getWrappedMessageForWriting().setSender(arg0);
@@ -548,14 +549,6 @@ public class MimeMessageCopyOnWriteProxy extends MimeMessage implements Disposab
 
     public long getMessageSize() throws MessagingException {
         return MimeMessageUtil.getMessageSize(getWrappedMessage());
-    }
-
-    /**
-     * Since javamail 1.4
-     */
-    @Override
-    public void setText(String text, String charset, String subtype) throws MessagingException {
-        getWrappedMessage().setText(text, charset, subtype);
     }
 
 }

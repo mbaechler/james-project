@@ -147,34 +147,19 @@ public class ProtocolSession implements ProtocolInteractor {
     }
 
     /**
-     * adds a new Server Response line to the test elements, with the specified
-     * location.
-     */
-    public void sl(String serverLine, String location) {
-        testElements.add(new ServerResponse(serverLine, location));
-    }
-
-    /**
-     * adds a new Server Unordered Block to the test elements.
-     */
-    public void sub(List<String> serverLines, String location) {
-        testElements.add(new ServerUnorderedBlockResponse(serverLines, location));
-    }
-
-    /**
      * adds a new Client request line to the test elements
      */
     public void cl(int sessionNumber, String clientLine) {
         this.maxSessionNumber = Math.max(this.maxSessionNumber, sessionNumber);
         testElements.add(new ClientRequest(sessionNumber, clientLine));
     }
-
+    
     /**
-     * Adds a continuation. To allow one thread to be used for testing.
+     * adds a new Server Response line to the test elements, with the specified
+     * location.
      */
-    public void cont(int sessionNumber) throws Exception {
-        this.maxSessionNumber = Math.max(this.maxSessionNumber, sessionNumber);
-        testElements.add(new ContinuationElement(sessionNumber));
+    public void sl(String serverLine, String location) {
+        testElements.add(new ServerResponse(serverLine, location));
     }
 
     /**
@@ -185,6 +170,13 @@ public class ProtocolSession implements ProtocolInteractor {
         this.maxSessionNumber = Math.max(this.maxSessionNumber, sessionNumber);
         testElements.add(new ServerResponse(sessionNumber, serverLine, location, lastClientMessage));
     }
+    
+    /**
+     * adds a new Server Unordered Block to the test elements.
+     */
+    public void sub(List<String> serverLines, String location) {
+        testElements.add(new ServerUnorderedBlockResponse(serverLines, location));
+    }
 
     /**
      * adds a new Server Unordered Block to the test elements.
@@ -192,6 +184,14 @@ public class ProtocolSession implements ProtocolInteractor {
     public void sub(int sessionNumber, List<String> serverLines, String location, String lastClientMessage) {
         this.maxSessionNumber = Math.max(this.maxSessionNumber, sessionNumber);
         testElements.add(new ServerUnorderedBlockResponse(sessionNumber, serverLines, location, lastClientMessage));
+    }
+    
+    /**
+     * Adds a continuation. To allow one thread to be used for testing.
+     */
+    public void cont(int sessionNumber) throws Exception {
+        this.maxSessionNumber = Math.max(this.maxSessionNumber, sessionNumber);
+        testElements.add(new ContinuationElement(sessionNumber));
     }
 
     /**

@@ -70,31 +70,6 @@ public class ValueWithUnit {
         return unit;
     }
 
-    public Long getValue() {
-        return value;
-    }
-
-    public long getConvertedValue() {
-        switch (unit) {
-            case G:
-                return value * LongMath.pow(base, 3);
-            case M:
-                return value * LongMath.pow(base, 2);
-            case K:
-                return value * LongMath.pow(base, 1);
-            default:
-                return value;
-        }
-    }
-
-    private static String removeLastCharIfNeeded(String providedLongWithUnitString, Unit unit) {
-        if(unit != Unit.NoUnit) {
-            return providedLongWithUnitString.substring(0, providedLongWithUnitString.length() - 1);
-        } else {
-            return providedLongWithUnitString;
-        }
-    }
-
     private static Unit getUnit(char lastChar) throws Exception {
         switch (lastChar) {
             case 'K' :
@@ -122,6 +97,31 @@ public class ValueWithUnit {
                 return Unit.NoUnit;
             default:
                 throw new Exception("No unit corresponding to char : " + lastChar);
+        }
+    }
+    
+    public Long getValue() {
+        return value;
+    }
+
+    public long getConvertedValue() {
+        switch (unit) {
+            case G:
+                return value * LongMath.pow(base, 3);
+            case M:
+                return value * LongMath.pow(base, 2);
+            case K:
+                return value * LongMath.pow(base, 1);
+            default:
+                return value;
+        }
+    }
+
+    private static String removeLastCharIfNeeded(String providedLongWithUnitString, Unit unit) {
+        if (unit != Unit.NoUnit) {
+            return providedLongWithUnitString.substring(0, providedLongWithUnitString.length() - 1);
+        } else {
+            return providedLongWithUnitString;
         }
     }
 

@@ -167,12 +167,35 @@ public class LimitingFileInputStream extends FileInputStream {
         }
 
         @Override
+        public int read(ByteBuffer dst, long position) throws IOException {
+            if (position > size()) {
+                return 0;
+            }
+            int bufLimit = dst.limit();
+            int left = (int) bytesLeft();
+            int r;
+            if (bufLimit > left) {
+                dst.limit(left);
+                r = channel.read(dst, position);
+                dst.limit(bufLimit);
+            } else {
+                r = channel.read(dst, position);
+            }
+            return r;
+        }
+        
+        @Override
         public int write(ByteBuffer src) throws IOException {
             throw new IOException("Read-Only FileChannel");
         }
 
         @Override
         public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
+            throw new IOException("Read-Only FileChannel");
+        }
+
+        @Override
+        public int write(ByteBuffer src, long position) throws IOException {
             throw new IOException("Read-Only FileChannel");
         }
 
@@ -221,30 +244,6 @@ public class LimitingFileInputStream extends FileInputStream {
         @Override
         public long transferFrom(ReadableByteChannel src, long position, long count) throws IOException {
             throw new IOException("Read-Only FileChannel");
-        }
-
-        @Override
-        public int read(ByteBuffer dst, long position) throws IOException {
-            if (position > size()) {
-                return 0;
-            }
-            int bufLimit = dst.limit();
-            int left = (int) bytesLeft();
-            int r;
-            if (bufLimit > left) {
-                dst.limit(left);
-                r = channel.read(dst, position);
-                dst.limit(bufLimit);
-            } else {
-                r = channel.read(dst, position);
-            }
-            return r;
-        }
-
-        @Override
-        public int write(ByteBuffer src, long position) throws IOException {
-            throw new IOException("Read-Only FileChannel");
-
         }
 
         @Override

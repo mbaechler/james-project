@@ -684,37 +684,6 @@ public class FetchMail implements Runnable, Configurable {
     }
 
     /**
-     * Returns the dynamicAccounts. Initializes if required.
-     *
-     * @return Map
-     */
-    protected Map<DynamicAccountKey, DynamicAccount> getDynamicAccounts() throws ConfigurationException {
-        if (null == getDynamicAccountsBasic()) {
-            updateDynamicAccounts();
-            return getDynamicAccounts();
-        }
-        return fieldDynamicAccounts;
-    }
-
-    /**
-     * Returns the dynamicAccounts.
-     *
-     * @return Map
-     */
-    private Map<DynamicAccountKey, DynamicAccount> getDynamicAccountsBasic() {
-        return fieldDynamicAccounts;
-    }
-
-    /**
-     * Sets the dynamicAccounts.
-     *
-     * @param dynamicAccounts The dynamicAccounts to set
-     */
-    protected void setDynamicAccounts(Map<DynamicAccountKey, DynamicAccount> dynamicAccounts) {
-        fieldDynamicAccounts = dynamicAccounts;
-    }
-
-    /**
      * Compute the dynamicAccounts for the passed parameters. Accounts for
      * existing users are copied and accounts for new users are created.
      *
@@ -746,6 +715,37 @@ public class FetchMail implements Runnable, Configurable {
             accounts.put(key, account);
         }
         return accounts;
+    }
+    
+    /**
+     * Returns the dynamicAccounts. Initializes if required.
+     *
+     * @return Map
+     */
+    protected Map<DynamicAccountKey, DynamicAccount> getDynamicAccounts() throws ConfigurationException {
+        if (null == getDynamicAccountsBasic()) {
+            updateDynamicAccounts();
+            return getDynamicAccounts();
+        }
+        return fieldDynamicAccounts;
+    }
+
+    /**
+     * Returns the dynamicAccounts.
+     *
+     * @return Map
+     */
+    private Map<DynamicAccountKey, DynamicAccount> getDynamicAccountsBasic() {
+        return fieldDynamicAccounts;
+    }
+
+    /**
+     * Sets the dynamicAccounts.
+     *
+     * @param dynamicAccounts The dynamicAccounts to set
+     */
+    protected void setDynamicAccounts(Map<DynamicAccountKey, DynamicAccount> dynamicAccounts) {
+        fieldDynamicAccounts = dynamicAccounts;
     }
 
     /**

@@ -119,24 +119,18 @@ public class CassandraSieveQuotaDAO {
             .thenApply(optional -> optional.map(row -> row.getLong(CassandraSieveClusterQuotaTable.VALUE)));
     }
 
-    public CompletableFuture<Void> setQuota(long quota) {
-        return cassandraAsyncExecutor.executeVoid(
-            updateClusterQuotaStatement.bind()
-                .setLong(CassandraSieveClusterQuotaTable.VALUE, quota)
-                .setString(CassandraSieveClusterQuotaTable.NAME, CassandraSieveClusterQuotaTable.DEFAULT_NAME));
-    }
-
-    public CompletableFuture<Void> removeQuota() {
-        return cassandraAsyncExecutor.executeVoid(
-            deleteClusterQuotaStatement.bind()
-                .setString(CassandraSieveClusterQuotaTable.NAME, CassandraSieveClusterQuotaTable.DEFAULT_NAME));
-    }
-
     public CompletableFuture<Optional<Long>> getQuota(String user) {
         return cassandraAsyncExecutor.executeSingleRow(
             selectUserQuotaStatement.bind()
                 .setString(CassandraSieveQuotaTable.USER_NAME, user))
             .thenApply(optional -> optional.map(row -> row.getLong(CassandraSieveQuotaTable.QUOTA)));
+    }
+
+    public CompletableFuture<Void> setQuota(long quota) {
+        return cassandraAsyncExecutor.executeVoid(
+            updateClusterQuotaStatement.bind()
+                .setLong(CassandraSieveClusterQuotaTable.VALUE, quota)
+                .setString(CassandraSieveClusterQuotaTable.NAME, CassandraSieveClusterQuotaTable.DEFAULT_NAME));
     }
 
     public CompletableFuture<Void> setQuota(String user, long quota) {
@@ -150,6 +144,12 @@ public class CassandraSieveQuotaDAO {
         return cassandraAsyncExecutor.executeVoid(
             deleteUserQuotaStatement.bind()
                 .setString(CassandraSieveQuotaTable.USER_NAME, user));
+    }
+
+    public CompletableFuture<Void> removeQuota() {
+        return cassandraAsyncExecutor.executeVoid(
+            deleteClusterQuotaStatement.bind()
+                .setString(CassandraSieveClusterQuotaTable.NAME, CassandraSieveClusterQuotaTable.DEFAULT_NAME));
     }
 
 }

@@ -348,6 +348,15 @@ public class ServerCmd {
         }
     }
 
+    private void print(Map<String, Mappings> map, PrintStream out) {
+        if (map != null) {
+            for (Entry<String, Mappings> entry : map.entrySet()) {
+                out.println(entry.getKey() + '=' + entry.getValue().serialize());
+            }
+            out.println();
+        }
+    }
+
     private void printStorageQuota(String quotaRootString, SerializableQuota quota, PrintStream printStream) {
         printStream.println(String.format("Storage quota for %s is: %s / %s",
             quotaRootString,
@@ -380,15 +389,6 @@ public class ServerCmd {
             return ValueWithUnit.UNLIMITED;
         }
         return String.valueOf(value);
-    }
-
-    private void print(Map<String, Mappings> map, PrintStream out) {
-        if (map != null) {
-            for (Entry<String, Mappings> entry : map.entrySet()) {
-                out.println(entry.getKey() + '=' + entry.getValue().serialize());
-            }
-            out.println();
-        }
     }
 
     private static void printUsage() {

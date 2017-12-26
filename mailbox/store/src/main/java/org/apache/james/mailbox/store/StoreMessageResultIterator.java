@@ -248,11 +248,19 @@ public class StoreMessageResultIterator implements MessageResultIterator {
             throw exception;
         }
 
+        public Content getFullContent(MimePath path) throws MailboxException {
+            throw exception;
+        }
+
         public Date getInternalDate() {
             return internalDate;
         }
 
         public Content getBody() throws MailboxException {
+            throw exception;
+        }
+
+        public Content getBody(MimePath path) throws MailboxException {
             throw exception;
         }
 
@@ -291,19 +299,11 @@ public class StoreMessageResultIterator implements MessageResultIterator {
             return false;
         }
 
-        public Content getFullContent(MimePath path) throws MailboxException {
-            throw exception;
-        }
-
         public Iterator<Header> iterateHeaders(MimePath path) throws MailboxException {
             throw exception;
         }
 
         public Iterator<Header> iterateMimeHeaders(MimePath path) throws MailboxException {
-            throw exception;
-        }
-
-        public Content getBody(MimePath path) throws MailboxException {
             throw exception;
         }
 

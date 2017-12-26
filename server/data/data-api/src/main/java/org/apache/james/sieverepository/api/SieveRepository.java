@@ -70,17 +70,17 @@ public interface SieveRepository {
 
     boolean hasQuota() throws StorageException;
     
-    long getQuota() throws QuotaNotFoundException, StorageException;
-    
-    void setQuota(long quota) throws StorageException;
-    
-    void removeQuota() throws QuotaNotFoundException, StorageException;
-    
     boolean hasQuota(String user) throws StorageException;
+    
+    long getQuota() throws QuotaNotFoundException, StorageException;
     
     long getQuota(String user) throws QuotaNotFoundException, StorageException;
     
+    void setQuota(long quota) throws StorageException;
+    
     void setQuota(String user, long quota) throws StorageException;
+    
+    void removeQuota() throws QuotaNotFoundException, StorageException;
     
     void removeQuota(String user) throws QuotaNotFoundException, StorageException;
 

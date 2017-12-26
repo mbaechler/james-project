@@ -117,17 +117,6 @@ public class GetMessagesMethodStepdefs {
         userStepdefs.execWithUser(username, () -> appendMessage(messageName, mailbox, subject, content));
     }
 
-    @Given("^\"([^\"]*)\" has a message \"([^\"]*)\" in \"([^\"]*)\" mailbox with content-type \"([^\"]*)\" subject \"([^\"]*)\", content \"([^\"]*)\"$")
-    public void appendMessageWithContentType(String username, String messageName, String mailbox, String contentType, String subject, String content) throws Throwable {
-        userStepdefs.execWithUser(username, () -> appendMessageWithContentType(messageName, mailbox, contentType, subject, content));
-    }
-
-    @Given("^the user has a message \"([^\"]*)\" in \"([^\"]*)\" mailbox with content-type \"([^\"]*)\" subject \"([^\"]*)\", content \"([^\"]*)\"$")
-    public void appendMessageWithContentType(String messageName, String mailbox, String contentType, String subject, String content) throws Throwable {
-        MessageId id = appendMessage(mailbox, ContentType.from(contentType), subject, content, NO_HEADERS);
-        messageIdStepdefs.addMessageId(messageName, id);
-    }
-
     @Given("^\"([^\"]*)\" has a message \"([^\"]*)\" in \"([^\"]*)\" mailbox with content-type \"([^\"]*)\" subject \"([^\"]*)\", content \"([^\"]*)\", headers$")
     public void appendMessage(String username, String messageName, String mailbox, String contentType, String subject, String content, DataTable headers) throws Throwable {
         userStepdefs.execWithUser(username, () -> appendMessage(messageName, mailbox, contentType, subject, content, headers));
@@ -136,6 +125,54 @@ public class GetMessagesMethodStepdefs {
     @Given("^the user has a message \"([^\"]*)\" in \"([^\"]*)\" mailbox with content-type \"([^\"]*)\" subject \"([^\"]*)\", content \"([^\"]*)\", headers$")
     public void appendMessage(String messageName, String mailbox, String contentType, String subject, String content, DataTable headers) throws Exception {
         MessageId id = appendMessage(mailbox, ContentType.from(contentType), subject, content, Optional.of(headers.asMap(String.class, String.class)));
+        messageIdStepdefs.addMessageId(messageName, id);
+    }
+
+    private MessageId appendMessage(String mailbox, ContentType contentType, String subject, String content, Optional<Map<String, String>> headers) throws Exception {
+        ZonedDateTime dateTime = ZonedDateTime.parse("2014-10-30T14:12:00Z");
+        try {
+            return mainStepdefs.mailboxProbe.appendMessage(userStepdefs.getConnectedUser(),
+                MailboxPath.forUser(userStepdefs.getConnectedUser(), mailbox),
+                new ByteArrayInputStream(message(contentType, subject, content, headers).getBytes(Charsets.UTF_8)),
+                Date.from(dateTime.toInstant()), false, new Flags()).getMessageId();
+        } finally {
+            mainStepdefs.awaitMethod.run();
+        }
+    }
+
+    private void appendMessage(String messageName, String mailbox, Flags flags) throws Exception {
+        ZonedDateTime dateTime = ZonedDateTime.parse("2014-10-30T14:12:00Z");
+        boolean isRecent = flags.contains(Flags.Flag.RECENT);
+        MessageId id = mainStepdefs.mailboxProbe.appendMessage(userStepdefs.getConnectedUser(),
+            MailboxPath.forUser(userStepdefs.getConnectedUser(), mailbox),
+            new ByteArrayInputStream("Subject: test\r\n\r\ntestmail".getBytes()),
+            Date.from(dateTime.toInstant()), isRecent, flags)
+            .getMessageId();
+        messageIdStepdefs.addMessageId(messageName, id);
+        mainStepdefs.awaitMethod.run();
+    }
+
+    private void appendMessage(String messageName, String mailbox, String emlFileName) throws Exception {
+        ZonedDateTime dateTime = ZonedDateTime.parse("2014-10-30T14:12:00Z");
+
+        MessageId id = mainStepdefs.mailboxProbe.appendMessage(userStepdefs.getConnectedUser(),
+            MailboxPath.forUser(userStepdefs.getConnectedUser(), mailbox),
+                ClassLoader.getSystemResourceAsStream(emlFileName),
+                Date.from(dateTime.toInstant()), false, new Flags())
+                    .getMessageId();
+
+        messageIdStepdefs.addMessageId(messageName, id);
+        mainStepdefs.awaitMethod.run();
+    }
+
+    @Given("^\"([^\"]*)\" has a message \"([^\"]*)\" in \"([^\"]*)\" mailbox with content-type \"([^\"]*)\" subject \"([^\"]*)\", content \"([^\"]*)\"$")
+    public void appendMessageWithContentType(String username, String messageName, String mailbox, String contentType, String subject, String content) throws Throwable {
+        userStepdefs.execWithUser(username, () -> appendMessageWithContentType(messageName, mailbox, contentType, subject, content));
+    }
+
+    @Given("^the user has a message \"([^\"]*)\" in \"([^\"]*)\" mailbox with content-type \"([^\"]*)\" subject \"([^\"]*)\", content \"([^\"]*)\"$")
+    public void appendMessageWithContentType(String messageName, String mailbox, String contentType, String subject, String content) throws Throwable {
+        MessageId id = appendMessage(mailbox, ContentType.from(contentType), subject, content, NO_HEADERS);
         messageIdStepdefs.addMessageId(messageName, id);
     }
 
@@ -165,18 +202,6 @@ public class GetMessagesMethodStepdefs {
             .getMessageId();
         messageIdStepdefs.addMessageId(messageName, id);
         mainStepdefs.awaitMethod.run();
-    }
-
-    private MessageId appendMessage(String mailbox, ContentType contentType, String subject, String content, Optional<Map<String, String>> headers) throws Exception {
-        ZonedDateTime dateTime = ZonedDateTime.parse("2014-10-30T14:12:00Z");
-        try {
-            return mainStepdefs.mailboxProbe.appendMessage(userStepdefs.getConnectedUser(),
-                MailboxPath.forUser(userStepdefs.getConnectedUser(), mailbox),
-                new ByteArrayInputStream(message(contentType, subject, content, headers).getBytes(Charsets.UTF_8)),
-                Date.from(dateTime.toInstant()), false, new Flags()).getMessageId();
-        } finally {
-            mainStepdefs.awaitMethod.run();
-        }
     }
 
     private String message(ContentType contentType, String subject, String content, Optional<Map<String,String>> headers) {
@@ -363,39 +388,14 @@ public class GetMessagesMethodStepdefs {
         userStepdefs.execWithUser(username, () -> appendMessageWithFlags(messageName, mailbox, flagList));
     }
 
-    @Given("^\"([^\"]*)\" has a message \"([^\"]*)\" in \"([^\"]*)\" mailbox$")
-    public void appendSimpleMessage(String username, String messageName, String mailbox) throws Throwable {
-        userStepdefs.execWithUser(username, () -> appendMessageWithFlags(messageName, mailbox, ImmutableList.of()));
-    }
-
     @Given("^the user has a message \"([^\"]*)\" in the \"([^\"]*)\" mailbox with flags \"([^\"]*)\"$")
     public void appendMessageWithFlags(String messageName, String mailbox, List<String> flagList) throws Exception {
         appendMessage(messageName, mailbox, StringListToFlags.fromFlagList(flagList));
     }
 
-    private void appendMessage(String messageName, String mailbox, Flags flags) throws Exception {
-        ZonedDateTime dateTime = ZonedDateTime.parse("2014-10-30T14:12:00Z");
-        boolean isRecent = flags.contains(Flags.Flag.RECENT);
-        MessageId id = mainStepdefs.mailboxProbe.appendMessage(userStepdefs.getConnectedUser(),
-            MailboxPath.forUser(userStepdefs.getConnectedUser(), mailbox),
-            new ByteArrayInputStream("Subject: test\r\n\r\ntestmail".getBytes()),
-            Date.from(dateTime.toInstant()), isRecent, flags)
-            .getMessageId();
-        messageIdStepdefs.addMessageId(messageName, id);
-        mainStepdefs.awaitMethod.run();
-    }
-
-    private void appendMessage(String messageName, String mailbox, String emlFileName) throws Exception {
-        ZonedDateTime dateTime = ZonedDateTime.parse("2014-10-30T14:12:00Z");
-
-        MessageId id = mainStepdefs.mailboxProbe.appendMessage(userStepdefs.getConnectedUser(),
-            MailboxPath.forUser(userStepdefs.getConnectedUser(), mailbox),
-                ClassLoader.getSystemResourceAsStream(emlFileName),
-                Date.from(dateTime.toInstant()), false, new Flags())
-                    .getMessageId();
-
-        messageIdStepdefs.addMessageId(messageName, id);
-        mainStepdefs.awaitMethod.run();
+    @Given("^\"([^\"]*)\" has a message \"([^\"]*)\" in \"([^\"]*)\" mailbox$")
+    public void appendSimpleMessage(String username, String messageName, String mailbox) throws Throwable {
+        userStepdefs.execWithUser(username, () -> appendMessageWithFlags(messageName, mailbox, ImmutableList.of()));
     }
 
     @When("^\"([^\"]*)\" ask for messages using its accountId$")

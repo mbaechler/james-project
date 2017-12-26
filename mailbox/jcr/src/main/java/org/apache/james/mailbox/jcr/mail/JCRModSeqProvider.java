@@ -53,6 +53,11 @@ public class JCRModSeqProvider extends AbstractLockingModSeqProvider {
     }
 
     @Override
+    public long highestModSeq(MailboxSession session, MailboxId mailboxId) throws MailboxException {
+        throw new NotImplementedException("Not implemented");
+    }
+    
+    @Override
     protected long lockedNextModSeq(MailboxSession session, Mailbox mailbox) throws MailboxException {
         try {
             Session s = repository.login(session);
@@ -65,11 +70,6 @@ public class JCRModSeqProvider extends AbstractLockingModSeqProvider {
         } catch (RepositoryException e) {
             throw new MailboxException("Unable to consume next uid for mailbox " + mailbox, e);
         }
-    }
-
-    @Override
-    public long highestModSeq(MailboxSession session, MailboxId mailboxId) throws MailboxException {
-        throw new NotImplementedException("Not implemented");
     }
 
 }

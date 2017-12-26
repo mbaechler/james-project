@@ -116,6 +116,17 @@ public class SimpleMessageSearchIndex implements MessageSearchIndex {
             .iterator();
     }
 
+    @Override
+    public List<MessageId> search(MailboxSession session, final Collection<MailboxId> mailboxIds, SearchQuery searchQuery, long limit) throws MailboxException {
+        MailboxMapper mailboxManager = mailboxMapperFactory.getMailboxMapper(session);
+
+        Stream<Mailbox> filteredMailboxes = mailboxIds
+            .stream()
+            .map(Throwing.function(mailboxManager::findMailboxById).sneakyThrow());
+
+        return getAsMessageIds(searchResults(session, filteredMailboxes, searchQuery), limit);
+    }
+    
     private List<SearchResult> searchResults(MailboxSession session, Mailbox mailbox, SearchQuery query) throws MailboxException {
         MessageMapper mapper = messageMapperFactory.getMessageMapper(session);
 
@@ -141,17 +152,6 @@ public class SimpleMessageSearchIndex implements MessageSearchIndex {
             }
         }
         return ImmutableList.copyOf(new MessageSearches(hitSet.iterator(), query, textExtractor).iterator());
-    }
-
-    @Override
-    public List<MessageId> search(MailboxSession session, final Collection<MailboxId> mailboxIds, SearchQuery searchQuery, long limit) throws MailboxException {
-        MailboxMapper mailboxManager = mailboxMapperFactory.getMailboxMapper(session);
-
-        Stream<Mailbox> filteredMailboxes = mailboxIds
-            .stream()
-            .map(Throwing.function(mailboxManager::findMailboxById).sneakyThrow());
-
-        return getAsMessageIds(searchResults(session, filteredMailboxes, searchQuery), limit);
     }
 
     private List<SearchResult> searchResults(MailboxSession session, Stream<Mailbox> mailboxes, SearchQuery query) throws MailboxException {

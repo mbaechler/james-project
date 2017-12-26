@@ -144,6 +144,16 @@ public class StoreRightManager implements RightManager {
         assertSharesBelongsToUserDomain(user, ImmutableMap.of(mailboxACLCommand.getEntryKey(), mailboxACLCommand.getRights()));
     }
 
+    @VisibleForTesting
+    void assertSharesBelongsToUserDomain(String user, Map<EntryKey, Rfc4314Rights> entries) throws DifferentDomainException {
+        if (entries.keySet().stream()
+            .filter(entry -> !entry.getNameType().equals(NameType.special))
+            .map(EntryKey::getName)
+            .anyMatch(name -> areDomainsDifferent(name, user))) {
+            throw new DifferentDomainException();
+        }
+    }
+
     public boolean isReadWrite(MailboxSession session, Mailbox mailbox, Flags sharedPermanentFlags) throws UnsupportedRightException {
         Rfc4314Rights rights = myRights(mailbox, session);
 
@@ -195,14 +205,10 @@ public class StoreRightManager implements RightManager {
         setRights(mailboxACL, mapper, mailbox, session);
     }
 
-    @VisibleForTesting
-    void assertSharesBelongsToUserDomain(String user, Map<EntryKey, Rfc4314Rights> entries) throws DifferentDomainException {
-        if (entries.keySet().stream()
-            .filter(entry -> !entry.getNameType().equals(NameType.special))
-            .map(EntryKey::getName)
-            .anyMatch(name -> areDomainsDifferent(name, user))) {
-            throw new DifferentDomainException();
-        }
+    private void setRights(MailboxACL mailboxACL, MailboxMapper mapper, Mailbox mailbox, MailboxSession session) throws MailboxException {
+        ACLDiff aclDiff = mapper.setACL(mailbox, mailboxACL);
+
+        dispatcher.aclUpdated(session, mailbox.generateAssociatedPath(), aclDiff);
     }
 
     @VisibleForTesting
@@ -210,12 +216,6 @@ public class StoreRightManager implements RightManager {
         Optional<String> domain = User.fromUsername(user).getDomainPart();
         Optional<String> otherDomain = User.fromUsername(otherUser).getDomainPart();
         return !domain.equals(otherDomain);
-    }
-
-    private void setRights(MailboxACL mailboxACL, MailboxMapper mapper, Mailbox mailbox, MailboxSession session) throws MailboxException {
-        ACLDiff aclDiff = mapper.setACL(mailbox, mailboxACL);
-
-        dispatcher.aclUpdated(session, mailbox.generateAssociatedPath(), aclDiff);
     }
 
     /**

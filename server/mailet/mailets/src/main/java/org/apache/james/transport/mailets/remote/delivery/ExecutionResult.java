@@ -39,12 +39,12 @@ public class ExecutionResult {
         return new ExecutionResult(ExecutionState.TEMPORARY_FAILURE, Optional.of(e));
     }
 
-    public static ExecutionResult permanentFailure(Exception e) {
-        return new ExecutionResult(ExecutionState.PERMANENT_FAILURE, Optional.of(e));
-    }
-
     public static ExecutionResult temporaryFailure() {
         return new ExecutionResult(ExecutionState.TEMPORARY_FAILURE, Optional.empty());
+    }
+
+    public static ExecutionResult permanentFailure(Exception e) {
+        return new ExecutionResult(ExecutionState.PERMANENT_FAILURE, Optional.of(e));
     }
 
     public static ExecutionResult onFailure(boolean permanent, Exception exeption) {

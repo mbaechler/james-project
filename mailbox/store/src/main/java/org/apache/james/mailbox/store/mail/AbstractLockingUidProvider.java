@@ -49,14 +49,15 @@ public abstract class AbstractLockingUidProvider implements UidProvider {
             () -> lockedNextUid(session, mailbox),
             writeLock);
     }
-    
-    /**
-     * Generate the next uid to use while the {@link Mailbox} is locked
-     */
-    protected abstract MessageUid lockedNextUid(MailboxSession session, Mailbox mailbox) throws MailboxException;
 
     @Override
     public MessageUid nextUid(MailboxSession session, MailboxId mailboxId) throws MailboxException {
         throw new NotImplementedException("Not implemented");
     }
+
+    /**
+     * Generate the next uid to use while the {@link Mailbox} is locked
+     */
+    protected abstract MessageUid lockedNextUid(MailboxSession session, Mailbox mailbox) throws MailboxException;
+
 }

@@ -144,6 +144,23 @@ public class NotifySender extends GenericMailet implements RedirectNotify {
     }
 
     @Override
+    public void init() throws MessagingException {
+        if (getInitParameters().isDebug()) {
+            LOGGER.debug("Initializing");
+        }
+
+        // check that all init parameters have been declared in
+        // allowedInitParameters
+        checkInitParameters(getAllowedInitParameters());
+
+        if (getInitParameters().isStatic()) {
+            if (getInitParameters().isDebug()) {
+                LOGGER.debug(getInitParameters().asString());
+            }
+        }
+    }
+
+    @Override
     public String getMailetInfo() {
         return "NotifySender Mailet";
     }
@@ -161,23 +178,6 @@ public class NotifySender extends GenericMailet implements RedirectNotify {
     @Override
     public DNSService getDNSService() {
         return dns;
-    }
-
-    @Override
-    public void init() throws MessagingException {
-        if (getInitParameters().isDebug()) {
-            LOGGER.debug("Initializing");
-        }
-
-        // check that all init parameters have been declared in
-        // allowedInitParameters
-        checkInitParameters(getAllowedInitParameters());
-
-        if (getInitParameters().isStatic()) {
-            if (getInitParameters().isDebug()) {
-                LOGGER.debug(getInitParameters().asString());
-            }
-        }
     }
 
     @Override

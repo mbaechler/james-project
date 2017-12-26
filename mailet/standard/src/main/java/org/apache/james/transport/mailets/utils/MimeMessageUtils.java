@@ -44,16 +44,16 @@ public class MimeMessageUtils {
         return prefixSubject(message.getSubject(), subjectPrefix);
     }
 
+    public Optional<String> subjectWithPrefix(String subjectPrefix, Mail originalMail, String subject) throws MessagingException {
+        return buildNewSubject(subjectPrefix, originalMail.getMessage().getSubject(), subject);
+    }
+    
     private Optional<String> prefixSubject(String subject, String subjectPrefix) throws MessagingException {
         if (!Strings.isNullOrEmpty(subject)) {
             return Optional.of(Joiner.on(' ').join(subjectPrefix, subject));
         } else {
             return Optional.of(subjectPrefix);
         }
-    }
-
-    public Optional<String> subjectWithPrefix(String subjectPrefix, Mail originalMail, String subject) throws MessagingException {
-        return buildNewSubject(subjectPrefix, originalMail.getMessage().getSubject(), subject);
     }
 
     @VisibleForTesting Optional<String> buildNewSubject(String subjectPrefix, String originalSubject, String subject) throws MessagingException {

@@ -260,7 +260,17 @@ public class MaildirStore implements UidProvider, ModSeqProvider {
     }
 
     @Override
+    public MessageUid nextUid(MailboxSession session, MailboxId mailboxId) throws MailboxException {
+        throw new NotImplementedException("Not implemented");
+    }
+
+    @Override
     public long nextModSeq(MailboxSession session, Mailbox mailbox) throws MailboxException {
+        return System.currentTimeMillis();
+    }
+
+    @Override
+    public long nextModSeq(MailboxSession session, MailboxId mailboxId) throws MailboxException {
         return System.currentTimeMillis();
     }
 
@@ -271,6 +281,11 @@ public class MaildirStore implements UidProvider, ModSeqProvider {
         } catch (IOException e) {
             throw new MailboxException("Unable to get highest mod-sequence for mailbox", e);
         }
+    }
+
+    @Override
+    public long highestModSeq(MailboxSession session, MailboxId mailboxId) throws MailboxException {
+        throw new NotImplementedException("Not implemented");
     }
 
     @Override
@@ -301,18 +316,4 @@ public class MaildirStore implements UidProvider, ModSeqProvider {
         this.messageNameStrictParse = messageNameStrictParse;
     }
 
-    @Override
-    public long nextModSeq(MailboxSession session, MailboxId mailboxId) throws MailboxException {
-        return System.currentTimeMillis();
-    }
-
-    @Override
-    public MessageUid nextUid(MailboxSession session, MailboxId mailboxId) throws MailboxException {
-        throw new NotImplementedException("Not implemented");
-    }
-
-    @Override
-    public long highestModSeq(MailboxSession session, MailboxId mailboxId) throws MailboxException {
-        throw new NotImplementedException("Not implemented");
-    }
 }

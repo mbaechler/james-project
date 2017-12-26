@@ -80,6 +80,29 @@ public class SetMessagesMethodStepdefs {
         mainStepdefs.awaitMethod.run();
     }
 
+    @Given("^\"([^\"]*)\" moves \"([^\"]*)\" to mailbox \"([^\"]*)\" of user \"([^\"]*)\"$")
+    public void moveMessageToMailbox(String username, String message, String destinationMailbox, String destinationUser) {
+        userStepdefs.execWithUser(username, () -> moveMessageToMailbox(message, destinationMailbox, destinationUser));
+    }
+
+    private void moveMessageToMailbox(String message, String destinationMailbox, String destinationUser) throws Throwable {
+        MessageId messageId = messageIdStepdefs.getMessageId(message);
+        MailboxId destinationMailboxId = mainStepdefs.getMailboxId(destinationUser, destinationMailbox);
+
+        httpClient.post("[" +
+            "  [" +
+            "    \"setMessages\"," +
+            "    {" +
+            "      \"update\": { \"" + messageId.serialize() + "\" : {" +
+            "        \"mailboxIds\": [\"" + destinationMailboxId.serialize() + "\"]" +
+            "      }}" +
+            "    }," +
+            "    \"#0\"" +
+            "  ]" +
+            "]");
+        mainStepdefs.awaitMethod.run();
+    }
+
     @When("^the user moves \"([^\"]*)\" to user mailbox \"([^\"]*)\" and set flags \"([^\"]*)\"$")
     public void moveMessageToMailboxAndChangeFlags(String message, String mailbox, List<String> keywords) throws Throwable {
         MessageId messageId = messageIdStepdefs.getMessageId(message);
@@ -151,32 +174,28 @@ public class SetMessagesMethodStepdefs {
         mainStepdefs.awaitMethod.run();
     }
 
-    @Given("^\"([^\"]*)\" moves \"([^\"]*)\" to mailbox \"([^\"]*)\" of user \"([^\"]*)\"$")
-    public void moveMessageToMailbox(String username, String message, String destinationMailbox, String destinationUser) {
-        userStepdefs.execWithUser(username, () -> moveMessageToMailbox(message, destinationMailbox, destinationUser));
+    @When("^\"([^\"]*)\" sets flags \"([^\"]*)\" on message \"([^\"]*)\"$")
+    public void setFlags(String username, List<String> keywords, String message) {
+        userStepdefs.execWithUser(username, () -> setFlags(keywords, message));
     }
 
-    private void moveMessageToMailbox(String message, String destinationMailbox, String destinationUser) throws Throwable {
+    @When("^the user sets flags \"([^\"]*)\" on message \"([^\"]*)\"$")
+    public void setFlags(List<String> keywords, String message) throws Throwable {
         MessageId messageId = messageIdStepdefs.getMessageId(message);
-        MailboxId destinationMailboxId = mainStepdefs.getMailboxId(destinationUser, destinationMailbox);
+        String keywordString = toKeywordsString(keywords);
 
         httpClient.post("[" +
             "  [" +
             "    \"setMessages\"," +
             "    {" +
             "      \"update\": { \"" + messageId.serialize() + "\" : {" +
-            "        \"mailboxIds\": [\"" + destinationMailboxId.serialize() + "\"]" +
+            "        \"keywords\": {" + keywordString + "}" +
             "      }}" +
             "    }," +
             "    \"#0\"" +
             "  ]" +
             "]");
         mainStepdefs.awaitMethod.run();
-    }
-
-    @When("^\"([^\"]*)\" sets flags \"([^\"]*)\" on message \"([^\"]*)\"$")
-    public void setFlags(String username, List<String> keywords, String message) {
-        userStepdefs.execWithUser(username, () -> setFlags(keywords, message));
     }
 
     @When("^\"([^\"]*)\" marks the message \"([^\"]*)\" as flagged$")
@@ -262,25 +281,6 @@ public class SetMessagesMethodStepdefs {
                 .map(mainStepdefs.messageIdFactory::fromString)
                 .ifPresent(id -> messageIdStepdefs.addMessageId(message, id));
         });
-    }
-
-    @When("^the user sets flags \"([^\"]*)\" on message \"([^\"]*)\"$")
-    public void setFlags(List<String> keywords, String message) throws Throwable {
-        MessageId messageId = messageIdStepdefs.getMessageId(message);
-        String keywordString = toKeywordsString(keywords);
-
-        httpClient.post("[" +
-            "  [" +
-            "    \"setMessages\"," +
-            "    {" +
-            "      \"update\": { \"" + messageId.serialize() + "\" : {" +
-            "        \"keywords\": {" + keywordString + "}" +
-            "      }}" +
-            "    }," +
-            "    \"#0\"" +
-            "  ]" +
-            "]");
-        mainStepdefs.awaitMethod.run();
     }
 
     private String toKeywordsString(List<String> keywords) {

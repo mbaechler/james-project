@@ -263,6 +263,15 @@ public class SMIMEKeyHolder implements KeyHolder {
         return certificate.getSubjectDN().toString();
         
     }
+
+    /**
+     * Getter for property signerDistinguishedName.
+     * @return Value of property signerDistinguishedName.
+     * @see #getSignerDistinguishedName(X509Certificate)
+     */
+    public String getSignerDistinguishedName() {
+        return getSignerDistinguishedName(getCertificate());
+    }
     
     /**
      * Extracts the signer <I>common name</I> (CN=) from an <CODE>X509Certificate</CODE> <I>distinguished name</I>.
@@ -277,6 +286,15 @@ public class SMIMEKeyHolder implements KeyHolder {
     }
     
     /**
+     * Getter for property signerCN.
+     * @return Value of property signerCN.
+     * @see #getSignerCN(X509Certificate)
+     */
+    public String getSignerCN() {
+        return getSignerCN(getCertificate());
+    }
+    
+    /**
      * Extracts the signer <I>email address</I> (EMAILADDRESS=) from an <CODE>X509Certificate</CODE> <I>distinguished name</I>.
      * @param certificate The certificate to extract the information from.
      * @return The requested information.
@@ -286,24 +304,6 @@ public class SMIMEKeyHolder implements KeyHolder {
         
         return extractAttribute(certificate.getSubjectDN().toString(), "EMAILADDRESS=");
         
-    }
-    
-    /**
-     * Getter for property signerDistinguishedName.
-     * @return Value of property signerDistinguishedName.
-     * @see #getSignerDistinguishedName(X509Certificate)
-     */
-    public String getSignerDistinguishedName() {
-        return getSignerDistinguishedName(getCertificate());
-    }
-    
-    /**
-     * Getter for property signerCN.
-     * @return Value of property signerCN.
-     * @see #getSignerCN(X509Certificate)
-     */
-    public String getSignerCN() {
-        return getSignerCN(getCertificate());
     }
     
      /**

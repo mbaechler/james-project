@@ -291,6 +291,16 @@ final class MessageInputStream extends InputStream {
     }
 
     /**
+     * @see java.io.InputStream#read()
+     */
+    public int read() throws IOException {
+        if (caughtException != null || wrapped == null) {
+            throwException();
+        }
+        return wrapped.read();
+    }
+
+    /**
      * @see java.io.InputStream#reset()
      */
     public synchronized void reset() throws IOException {
@@ -308,16 +318,6 @@ final class MessageInputStream extends InputStream {
             throwException();
         }
         return wrapped.skip(n);
-    }
-
-    /**
-     * @see java.io.InputStream#read()
-     */
-    public int read() throws IOException {
-        if (caughtException != null || wrapped == null) {
-            throwException();
-        }
-        return wrapped.read();
     }
 
 }

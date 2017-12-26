@@ -73,10 +73,6 @@ public class ListProcessor extends AbstractMailboxProcessor<ListRequest> {
         doProcess(baseReferenceName, mailboxPatternString, session, tag, command, responder, null);
     }
 
-    protected ImapResponseMessage createResponse(MailboxMetaData.Children children, MailboxMetaData.Selectability selectability, String name, char hierarchyDelimiter, MailboxType type) {
-        return new ListResponse(children, selectability, name, hierarchyDelimiter);
-    }
-
     /**
      * (from rfc3501)<br>
      * The LIST command returns a subset of names from the complete set of all
@@ -190,6 +186,10 @@ public class ListProcessor extends AbstractMailboxProcessor<ListRequest> {
             LOGGER.error("List failed for mailboxName {} and user {}", mailboxName, user, e);
             no(command, tag, responder, HumanReadableText.SEARCH_FAILED);
         }
+    }
+
+    protected ImapResponseMessage createResponse(MailboxMetaData.Children children, MailboxMetaData.Selectability selectability, String name, char hierarchyDelimiter, MailboxType type) {
+        return new ListResponse(children, selectability, name, hierarchyDelimiter);
     }
 
     private void processResult(Responder responder, boolean relative, MailboxMetaData listResult, MailboxType mailboxType) {

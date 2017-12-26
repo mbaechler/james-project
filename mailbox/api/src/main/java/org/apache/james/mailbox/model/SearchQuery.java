@@ -662,6 +662,26 @@ public class SearchQuery implements Serializable {
         return result;
     }
 
+    /**
+     * Creates a filter on the given flag.
+     * 
+     * @param flag
+     *            <code>Flag</code>, not null
+     * @param isSet
+     *            true if the messages with the flag set should be matched,
+     *            false otherwise
+     * @return <code>Criterion</code>, not null
+     */
+    public static Criterion flagSet(String flag, boolean isSet) {
+        final Criterion result;
+        if (isSet) {
+            result = flagIsSet(flag);
+        } else {
+            result = flagIsUnSet(flag);
+        }
+        return result;
+    }
+
     public static Criterion hasAttachment(boolean value) {
         if (value) {
             return new AttachmentCriterion(BooleanOperator.set());
@@ -692,42 +712,6 @@ public class SearchQuery implements Serializable {
 
     /**
      * Creates a filter on the given flag selecting messages where the given
-     * flag is not selected.
-     * 
-     * @param flag
-     *            <code>Flag</code>, not null
-     * @return <code>Criterion</code>, not null
-     */
-    public static Criterion flagIsUnSet(Flag flag) {
-        return new FlagCriterion(flag, BooleanOperator.unset());
-    }
-
-    public static Criterion flag(Flag flag, boolean isSet) {
-        return new FlagCriterion(flag, new BooleanOperator(isSet));
-    }
-
-    /**
-     * Creates a filter on the given flag.
-     * 
-     * @param flag
-     *            <code>Flag</code>, not null
-     * @param isSet
-     *            true if the messages with the flag set should be matched,
-     *            false otherwise
-     * @return <code>Criterion</code>, not null
-     */
-    public static Criterion flagSet(String flag, boolean isSet) {
-        final Criterion result;
-        if (isSet) {
-            result = flagIsSet(flag);
-        } else {
-            result = flagIsUnSet(flag);
-        }
-        return result;
-    }
-
-    /**
-     * Creates a filter on the given flag selecting messages where the given
      * flag is selected.
      * 
      * @param flag
@@ -736,6 +720,18 @@ public class SearchQuery implements Serializable {
      */
     public static Criterion flagIsSet(String flag) {
         return new CustomFlagCriterion(flag, BooleanOperator.set());
+    }
+    
+    /**
+     * Creates a filter on the given flag selecting messages where the given
+     * flag is not selected.
+     * 
+     * @param flag
+     *            <code>Flag</code>, not null
+     * @return <code>Criterion</code>, not null
+     */
+    public static Criterion flagIsUnSet(Flag flag) {
+        return new FlagCriterion(flag, BooleanOperator.unset());
     }
 
     /**
@@ -748,6 +744,10 @@ public class SearchQuery implements Serializable {
      */
     public static Criterion flagIsUnSet(String flag) {
         return new CustomFlagCriterion(flag, BooleanOperator.unset());
+    }
+    
+    public static Criterion flag(Flag flag, boolean isSet) {
+        return new FlagCriterion(flag, new BooleanOperator(isSet));
     }
 
     /**

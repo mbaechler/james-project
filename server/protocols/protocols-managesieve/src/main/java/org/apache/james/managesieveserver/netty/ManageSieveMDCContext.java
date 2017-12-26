@@ -40,6 +40,13 @@ public class ManageSieveMDCContext {
             .build();
     }
 
+    private static MDCBuilder from(Session session) {
+        return Optional.ofNullable(session)
+            .map(s -> MDCBuilder.create()
+                .addContext(MDCBuilder.USER, s.getUser()))
+            .orElse(MDCBuilder.create());
+    }
+
     private static String retrieveIp(ChannelHandlerContext ctx) {
         SocketAddress remoteAddress = ctx.getChannel().getRemoteAddress();
         if (remoteAddress instanceof InetSocketAddress) {
@@ -58,10 +65,4 @@ public class ManageSieveMDCContext {
         return remoteAddress.toString();
     }
 
-    private static MDCBuilder from(Session session) {
-        return Optional.ofNullable(session)
-            .map(s -> MDCBuilder.create()
-                .addContext(MDCBuilder.USER, s.getUser()))
-            .orElse(MDCBuilder.create());
-    }
 }

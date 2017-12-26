@@ -155,6 +155,11 @@ public class DownloadStepdefs {
         downLoad(username, attachmentIdOrMessageId);
     }
 
+    @When("^\"([^\"]*)\" downloads the message by its blobId$")
+    public void downloads(String username) throws Throwable {
+        downLoad(username, getMessagesMethodStepdefs.getBlobId());
+    }
+
     @When("^un-authenticated user downloads \"([^\"]*)\"$")
     public void downloadsUnAuthenticated(String blobId) throws Throwable {
         String attachmentIdOrMessageId = Optional.ofNullable(blobIdByAttachmentId.get(blobId))
@@ -168,11 +173,6 @@ public class DownloadStepdefs {
                 .build())
             .execute()
             .returnResponse();
-    }
-
-    @When("^\"([^\"]*)\" downloads the message by its blobId$")
-    public void downloads(String username) throws Throwable {
-        downLoad(username, getMessagesMethodStepdefs.getBlobId());
     }
 
     private void downLoad(String username, String blobId) throws IOException, URISyntaxException {

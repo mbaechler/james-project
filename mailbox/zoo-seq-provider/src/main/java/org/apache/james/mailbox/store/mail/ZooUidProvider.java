@@ -74,6 +74,11 @@ public class ZooUidProvider implements UidProvider {
     }
 
     @Override
+    public MessageUid nextUid(MailboxSession session, MailboxId mailboxId) throws MailboxException {
+        throw new NotImplementedException("Not implemented");
+    }
+
+    @Override
     public Optional<MessageUid> lastUid(MailboxSession session, Mailbox mailbox) throws MailboxException {
         if (client.getState() == CuratorFrameworkState.STARTED) {
             DistributedAtomicLong uid = new DistributedAtomicLong(client, pathForMailbox(mailbox), retryPolicy);
@@ -91,11 +96,6 @@ public class ZooUidProvider implements UidProvider {
             }
         }
         throw new MailboxException("Curator client is closed.");
-    }
-
-    @Override
-    public MessageUid nextUid(MailboxSession session, MailboxId mailboxId) throws MailboxException {
-        throw new NotImplementedException("Not implemented");
     }
 
     public static <E extends MailboxId> String pathForMailbox(Mailbox mailbox) {

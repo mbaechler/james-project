@@ -80,6 +80,10 @@ public abstract class JamesImapHostSystem implements ImapHostSystem, GrantRights
         this.processor = processor;
     }
 
+    public void configure(ImapConfiguration imapConfiguration) {
+        processor.configure(imapConfiguration);
+    }
+
     @Override
     public boolean addUser(String user, String password) throws Exception {
         memoryUsersRepository.addUser(user, password);
@@ -168,7 +172,4 @@ public abstract class JamesImapHostSystem implements ImapHostSystem, GrantRights
         return configuration;
     }
 
-    public void configure(ImapConfiguration imapConfiguration) {
-        processor.configure(imapConfiguration);
-    }
 }

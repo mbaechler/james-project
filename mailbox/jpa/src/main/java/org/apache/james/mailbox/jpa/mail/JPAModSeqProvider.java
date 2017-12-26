@@ -66,6 +66,11 @@ public class JPAModSeqProvider extends AbstractLockingModSeqProvider {
     }
 
     @Override
+    public long highestModSeq(MailboxSession session, MailboxId mailboxId) throws MailboxException {
+        throw new NotImplementedException();
+    }
+
+    @Override
     protected long lockedNextModSeq(MailboxSession session, Mailbox mailbox) throws MailboxException {
         EntityManager manager = null;
         try {
@@ -89,8 +94,4 @@ public class JPAModSeqProvider extends AbstractLockingModSeqProvider {
         }
     }
 
-    @Override
-    public long highestModSeq(MailboxSession session, MailboxId mailboxId) throws MailboxException {
-        throw new NotImplementedException();
-    }
 }

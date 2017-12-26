@@ -171,17 +171,17 @@ public class Rights {
             .build();
     }
 
-    private static Builder toRightsBuilder(Map.Entry<EntryKey, MailboxACL.Rfc4314Rights> entry) {
-        return builder().delegateTo(
-            new Username(entry.getKey().getName()),
-            fromACL(entry.getValue()));
-    }
-
     private static List<Right> fromACL(MailboxACL.Rfc4314Rights rights) {
         return rights.list()
             .stream()
             .flatMap(right -> OptionalUtils.toStream(Right.forRight(right)))
             .collect(Guavate.toImmutableList());
+    }
+
+    private static Builder toRightsBuilder(Map.Entry<EntryKey, MailboxACL.Rfc4314Rights> entry) {
+        return builder().delegateTo(
+            new Username(entry.getKey().getName()),
+            fromACL(entry.getValue()));
     }
 
     private static boolean isSupported(EntryKey key) {

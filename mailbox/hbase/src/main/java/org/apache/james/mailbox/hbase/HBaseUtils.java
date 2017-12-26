@@ -142,6 +142,16 @@ public class HBaseUtils {
     }
 
     /**
+     * Creates a Put object from this subscription object
+     * @return Put object suitable for HBase persistence
+     */
+    public static Put toPut(Subscription subscription) {
+        Put put = new Put(Bytes.toBytes(subscription.getUser()));
+        put.add(SUBSCRIPTION_CF, Bytes.toBytes(subscription.getMailbox()), MARKER_PRESENT);
+        return put;
+    }
+    
+    /**
      * Transforms only the metadata into a Put object. The rest of the message will
      * be transfered using multiple Puts if size requires it. 
      * @param message
@@ -330,16 +340,6 @@ public class HBaseUtils {
         message.setModSeq(modSeq);
         message.setTextualLineCount(textualLineCount);
         return message;
-    }
-
-    /**
-     * Creates a Put object from this subscription object
-     * @return Put object suitable for HBase persistence
-     */
-    public static Put toPut(Subscription subscription) {
-        Put put = new Put(Bytes.toBytes(subscription.getUser()));
-        put.add(SUBSCRIPTION_CF, Bytes.toBytes(subscription.getMailbox()), MARKER_PRESENT);
-        return put;
     }
 
     /**

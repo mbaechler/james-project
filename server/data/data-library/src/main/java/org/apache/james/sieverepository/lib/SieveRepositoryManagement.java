@@ -47,23 +47,23 @@ public class SieveRepositoryManagement extends StandardMBean implements SieveRep
     }
 
     @Override
-    public void setQuota(long quota) throws SieveRepositoryException {
-        sieveRepository.setQuota(quota);
-    }
-
-    @Override
-    public void removeQuota() throws SieveRepositoryException {
-        sieveRepository.removeQuota();
-    }
-
-    @Override
     public long getQuota(String user) throws SieveRepositoryException {
         return sieveRepository.getQuota(user);
     }
 
     @Override
+    public void setQuota(long quota) throws SieveRepositoryException {
+        sieveRepository.setQuota(quota);
+    }
+
+    @Override
     public void setQuota(String user, long quota) throws SieveRepositoryException {
         sieveRepository.setQuota(user, quota);
+    }
+    
+    @Override
+    public void removeQuota() throws SieveRepositoryException {
+        sieveRepository.removeQuota();
     }
 
     @Override

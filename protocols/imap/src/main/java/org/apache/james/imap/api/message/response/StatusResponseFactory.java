@@ -44,91 +44,6 @@ public interface StatusResponseFactory {
     StatusResponse taggedOk(String tag, ImapCommand command, HumanReadableText displayTextKey, StatusResponse.ResponseCode code);
 
     /**
-     * Creates a tagged NO status response.
-     * 
-     * @param tag
-     *            <code>CharSequence</code>, not null
-     * @param command
-     *            <code>ImapCommand</code>, not null
-     * @param displayTextKey
-     *            key to the human readable code to be displayed
-     * @param code
-     *            <code>ResponseCode</code>, not null
-     * @return <code>StatusResponse</code>, not null
-     */
-    StatusResponse taggedNo(String tag, ImapCommand command, HumanReadableText displayTextKey, StatusResponse.ResponseCode code);
-
-    /**
-     * Creates a tagged BAD status response.
-     * 
-     * @param tag
-     *            <code>CharSequence</code>, not null
-     * @param command
-     *            <code>ImapCommand</code>, not null
-     * @param displayTextKey
-     *            key to the human readable code to be displayed
-     * @param code
-     *            <code>ResponseCode</code>, not null
-     * @return <code>StatusResponse</code>, not null
-     */
-    StatusResponse taggedBad(String tag, ImapCommand command, HumanReadableText displayTextKey, StatusResponse.ResponseCode code);
-
-    /**
-     * Creates a untagged OK status response.
-     * 
-     * @param displayTextKey
-     *            key to the human readable code to be displayed
-     * @param code
-     *            <code>ResponseCode</code>, not null
-     * @return <code>StatusResponse</code>, not null
-     */
-    StatusResponse untaggedOk(HumanReadableText displayTextKey, StatusResponse.ResponseCode code);
-
-    /**
-     * Creates a untagged NO status response.
-     * 
-     * @param displayTextKey
-     *            key to the human readable code to be displayed
-     * @param code
-     *            <code>ResponseCode</code>, not null
-     * @return <code>StatusResponse</code>, not null
-     */
-    StatusResponse untaggedNo(HumanReadableText displayTextKey, StatusResponse.ResponseCode code);
-
-    /**
-     * Creates a untagged BAD status response.
-     * 
-     * @param displayTextKey
-     *            key to the human readable code to be displayed
-     * @param code
-     *            <code>ResponseCode</code>, not null
-     * @return <code>StatusResponse</code>, not null
-     */
-    StatusResponse untaggedBad(HumanReadableText displayTextKey, StatusResponse.ResponseCode code);
-
-    /**
-     * Creates a PREAUTH status response. These are always untagged.
-     * 
-     * @param displayTextKey
-     *            key to the human readable code to be displayed
-     * @param code
-     *            <code>ResponseCode</code>, not null
-     * @return <code>StatusResponse</code>, not null
-     */
-    StatusResponse preauth(HumanReadableText displayTextKey, StatusResponse.ResponseCode code);
-
-    /**
-     * Creates a BYE status response. These are always untagged.
-     * 
-     * @param displayTextKey
-     *            key to the human readable code to be displayed
-     * @param code
-     *            <code>ResponseCode</code>, not null
-     * @return <code>StatusResponse</code>, not null
-     */
-    StatusResponse bye(HumanReadableText displayTextKey, StatusResponse.ResponseCode code);
-
-    /**
      * Creates a tagged OK status response.
      * 
      * @param tag
@@ -150,9 +65,39 @@ public interface StatusResponseFactory {
      *            <code>ImapCommand</code>, not null
      * @param displayTextKey
      *            key to the human readable code to be displayed
+     * @param code
+     *            <code>ResponseCode</code>, not null
+     * @return <code>StatusResponse</code>, not null
+     */
+    StatusResponse taggedNo(String tag, ImapCommand command, HumanReadableText displayTextKey, StatusResponse.ResponseCode code);
+
+    /**
+     * Creates a tagged NO status response.
+     * 
+     * @param tag
+     *            <code>CharSequence</code>, not null
+     * @param command
+     *            <code>ImapCommand</code>, not null
+     * @param displayTextKey
+     *            key to the human readable code to be displayed
      * @return <code>StatusResponse</code>, not null
      */
     StatusResponse taggedNo(String tag, ImapCommand command, HumanReadableText displayTextKey);
+    
+    /**
+     * Creates a tagged BAD status response.
+     * 
+     * @param tag
+     *            <code>CharSequence</code>, not null
+     * @param command
+     *            <code>ImapCommand</code>, not null
+     * @param displayTextKey
+     *            key to the human readable code to be displayed
+     * @param code
+     *            <code>ResponseCode</code>, not null
+     * @return <code>StatusResponse</code>, not null
+     */
+    StatusResponse taggedBad(String tag, ImapCommand command, HumanReadableText displayTextKey, StatusResponse.ResponseCode code);
 
     /**
      * Creates a tagged BAD status response.
@@ -166,6 +111,17 @@ public interface StatusResponseFactory {
      * @return <code>StatusResponse</code>, not null
      */
     StatusResponse taggedBad(String tag, ImapCommand command, HumanReadableText displayTextKey);
+    
+    /**
+     * Creates a untagged OK status response.
+     * 
+     * @param displayTextKey
+     *            key to the human readable code to be displayed
+     * @param code
+     *            <code>ResponseCode</code>, not null
+     * @return <code>StatusResponse</code>, not null
+     */
+    StatusResponse untaggedOk(HumanReadableText displayTextKey, StatusResponse.ResponseCode code);
 
     /**
      * Creates a untagged OK status response.
@@ -181,9 +137,31 @@ public interface StatusResponseFactory {
      * 
      * @param displayTextKey
      *            key to the human readable code to be displayed
+     * @param code
+     *            <code>ResponseCode</code>, not null
+     * @return <code>StatusResponse</code>, not null
+     */
+    StatusResponse untaggedNo(HumanReadableText displayTextKey, StatusResponse.ResponseCode code);
+
+    /**
+     * Creates a untagged NO status response.
+     * 
+     * @param displayTextKey
+     *            key to the human readable code to be displayed
      * @return <code>StatusResponse</code>, not null
      */
     StatusResponse untaggedNo(HumanReadableText displayTextKey);
+    
+    /**
+     * Creates a untagged BAD status response.
+     * 
+     * @param displayTextKey
+     *            key to the human readable code to be displayed
+     * @param code
+     *            <code>ResponseCode</code>, not null
+     * @return <code>StatusResponse</code>, not null
+     */
+    StatusResponse untaggedBad(HumanReadableText displayTextKey, StatusResponse.ResponseCode code);
 
     /**
      * Creates a untagged BAD status response.
@@ -199,9 +177,31 @@ public interface StatusResponseFactory {
      * 
      * @param displayTextKey
      *            key to the human readable code to be displayed
+     * @param code
+     *            <code>ResponseCode</code>, not null
+     * @return <code>StatusResponse</code>, not null
+     */
+    StatusResponse preauth(HumanReadableText displayTextKey, StatusResponse.ResponseCode code);
+
+    /**
+     * Creates a PREAUTH status response. These are always untagged.
+     * 
+     * @param displayTextKey
+     *            key to the human readable code to be displayed
      * @return <code>StatusResponse</code>, not null
      */
     StatusResponse preauth(HumanReadableText displayTextKey);
+
+    /**
+     * Creates a BYE status response. These are always untagged.
+     * 
+     * @param displayTextKey
+     *            key to the human readable code to be displayed
+     * @param code
+     *            <code>ResponseCode</code>, not null
+     * @return <code>StatusResponse</code>, not null
+     */
+    StatusResponse bye(HumanReadableText displayTextKey, StatusResponse.ResponseCode code);
 
     /**
      * Creates a BYE status response. These are always untagged.

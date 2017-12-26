@@ -126,6 +126,10 @@ public class ElasticSearchConfiguration {
         }
     }
 
+    public ImmutableList<Host> getHosts() {
+        return hosts;
+    }
+    
     @VisibleForTesting
     static void validateHostsConfigurationOptions(Optional<String> masterHost,
                                                   Optional<Integer> masterPort,
@@ -163,10 +167,6 @@ public class ElasticSearchConfiguration {
         this.minDelay = minDelay;
         this.maxRetries = maxRetries;
         this.indexAttachment = indexAttachment;
-    }
-
-    public ImmutableList<Host> getHosts() {
-        return hosts;
     }
 
     public IndexName getIndexName() {

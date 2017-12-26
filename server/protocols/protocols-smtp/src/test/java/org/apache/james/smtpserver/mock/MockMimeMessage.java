@@ -345,6 +345,11 @@ public class MockMimeMessage extends MimeMessage {
     }
 
     @Override
+    public void setContent(Multipart multipart) throws MessagingException {
+        content = multipart;
+    }
+
+    @Override
     public void setText(String string) throws MessagingException {
         setContent(string, "text/plain");
     }
@@ -356,11 +361,6 @@ public class MockMimeMessage extends MimeMessage {
         } catch (UnsupportedEncodingException e) {
             throw new MessagingException("setting text content failed", e);
         }
-    }
-
-    @Override
-    public void setContent(Multipart multipart) throws MessagingException {
-        content = multipart;
     }
 
     @Override

@@ -109,6 +109,43 @@ public class MimeDescriptorImpl implements MimeDescriptor {
         return mimeDescriptorImpl;
     }
 
+    private static MimeDescriptorImpl createDescriptor(long bodyOctets,
+            long lines, MaximalBodyDescriptor descriptor,
+            MimeDescriptor embeddedMessage, Collection<MessageResult.Header> headers) {
+        final String contentDescription = descriptor.getContentDescription();
+        final String contentId = descriptor.getContentId();
+
+        final String subType = descriptor.getSubType();
+        final String type = descriptor.getMediaType();
+        final String transferEncoding = descriptor.getTransferEncoding();
+        final Map<String, String> contentTypeParameters = new TreeMap<>(descriptor.getContentTypeParameters());
+        final String codeset = descriptor.getCharset();
+        if (codeset == null) {
+            if ("TEXT".equals(type)) {
+                contentTypeParameters.put("charset", "us-ascii");
+            }
+        } else {
+            contentTypeParameters.put("charset", codeset);
+        }
+        final String boundary = descriptor.getBoundary();
+        if (boundary != null) {
+            contentTypeParameters.put("boundary", boundary);
+        }
+        
+        final List<String> languages = descriptor.getContentLanguage();
+        final String disposition = descriptor.getContentDispositionType();
+        final Map<String, String> dispositionParams = descriptor
+                .getContentDispositionParameters();
+        final Collection<MimeDescriptor> parts = new ArrayList<>();
+        final String location = descriptor.getContentLocation();
+        final String md5 = descriptor.getContentMD5Raw();
+        return new MimeDescriptorImpl(
+                bodyOctets, contentDescription, contentId, lines, subType,
+                type, transferEncoding, headers, contentTypeParameters,
+                languages, disposition, dispositionParams, embeddedMessage,
+                parts, location, md5);
+    }
+
     private static MimeDescriptorImpl compositePartDescriptor(
             final MimeTokenStream parser, Collection<MessageResult.Header> headers)
             throws IOException, MimeException {
@@ -158,43 +195,6 @@ public class MimeDescriptorImpl implements MimeDescriptor {
                     descriptor, null, headers);
         }
         return mimeDescriptorImpl;
-    }
-
-    private static MimeDescriptorImpl createDescriptor(long bodyOctets,
-            long lines, MaximalBodyDescriptor descriptor,
-            MimeDescriptor embeddedMessage, Collection<MessageResult.Header> headers) {
-        final String contentDescription = descriptor.getContentDescription();
-        final String contentId = descriptor.getContentId();
-
-        final String subType = descriptor.getSubType();
-        final String type = descriptor.getMediaType();
-        final String transferEncoding = descriptor.getTransferEncoding();
-        final Map<String, String> contentTypeParameters = new TreeMap<>(descriptor.getContentTypeParameters());
-        final String codeset = descriptor.getCharset();
-        if (codeset == null) {
-            if ("TEXT".equals(type)) {
-                contentTypeParameters.put("charset", "us-ascii");
-            }
-        } else {
-            contentTypeParameters.put("charset", codeset);
-        }
-        final String boundary = descriptor.getBoundary();
-        if (boundary != null) {
-            contentTypeParameters.put("boundary", boundary);
-        }
-        
-        final List<String> languages = descriptor.getContentLanguage();
-        final String disposition = descriptor.getContentDispositionType();
-        final Map<String, String> dispositionParams = descriptor
-                .getContentDispositionParameters();
-        final Collection<MimeDescriptor> parts = new ArrayList<>();
-        final String location = descriptor.getContentLocation();
-        final String md5 = descriptor.getContentMD5Raw();
-        return new MimeDescriptorImpl(
-                bodyOctets, contentDescription, contentId, lines, subType,
-                type, transferEncoding, headers, contentTypeParameters,
-                languages, disposition, dispositionParams, embeddedMessage,
-                parts, location, md5);
     }
 
     private final long bodyOctets;

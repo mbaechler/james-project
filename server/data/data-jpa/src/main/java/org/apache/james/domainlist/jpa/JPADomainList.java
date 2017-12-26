@@ -114,6 +114,17 @@ public class JPADomainList extends AbstractDomainList {
         }
     }
 
+    private boolean containsDomainInternal(String domain, EntityManager entityManager) {
+        try {
+            return entityManager.createNamedQuery("findDomainByName")
+                .setParameter("name", domain)
+                .getSingleResult() != null;
+        } catch (NoResultException e) {
+            LOGGER.debug("No domain found", e);
+            return false;
+        }
+    }
+
     @Override
     public void addDomain(String domain) throws DomainListException {
         String lowerCasedDomain = domain.toLowerCase(Locale.US);
@@ -162,17 +173,6 @@ public class JPADomainList extends AbstractDomainList {
     private void rollback(EntityTransaction transaction) {
         if (transaction.isActive()) {
             transaction.rollback();
-        }
-    }
-
-    private boolean containsDomainInternal(String domain, EntityManager entityManager) {
-        try {
-            return entityManager.createNamedQuery("findDomainByName")
-                .setParameter("name", domain)
-                .getSingleResult() != null;
-        } catch (NoResultException e) {
-            LOGGER.debug("No domain found", e);
-            return false;
         }
     }
 

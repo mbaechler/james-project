@@ -62,26 +62,7 @@ public class CRLFTerminatedInputStream extends FilterInputStream {
             return fillArray(b, off, len);
         }
     }
-
-    private int fillArray(byte[] b, int off, int len) {
-        int a = -1;
-        int i = 0;
-        if (complete) {
-            return -1;
-        }
-        while (i < len) {
-            a = readNext();
-            if (a == -1) {
-                complete = true;
-                break;
-            } else {
-                b[off + i++] = (byte) a;
-
-            }
-        }
-        return i;
-    }
-
+    
     @Override
     public int read(byte[] b) throws IOException {
         return read(b, 0, b.length);
@@ -103,6 +84,25 @@ public class CRLFTerminatedInputStream extends FilterInputStream {
         } else {
             return readNext();
         }
+    }
+
+    private int fillArray(byte[] b, int off, int len) {
+        int a = -1;
+        int i = 0;
+        if (complete) {
+            return -1;
+        }
+        while (i < len) {
+            a = readNext();
+            if (a == -1) {
+                complete = true;
+                break;
+            } else {
+                b[off + i++] = (byte) a;
+
+            }
+        }
+        return i;
     }
 
     private void calculateExtraData() {

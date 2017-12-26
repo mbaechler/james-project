@@ -129,6 +129,12 @@ public class CassandraMailboxMapper implements MailboxMapper {
             this::addAcl);
     }
 
+    private CompletableFuture<Optional<SimpleMailbox>> retrieveMailbox(CassandraMailboxPathDAO.CassandraIdAndPath idAndPath) {
+        return retrieveMailbox(idAndPath.getCassandraId())
+            .thenApply(optional -> OptionalUtils.executeIfEmpty(optional,
+                () -> LOGGER.warn("Could not retrieve mailbox {} with path {} in mailbox table.", idAndPath.getCassandraId(), idAndPath.getMailboxPath())));
+    }
+    
     private Optional<SimpleMailbox> addAcl(MailboxACL acl, Optional<SimpleMailbox> mailboxOptional) {
         mailboxOptional.ifPresent(mailbox -> mailbox.setACL(acl));
         return mailboxOptional;
@@ -143,12 +149,6 @@ public class CassandraMailboxMapper implements MailboxMapper {
             .thenFlatComposeOnOptional(this::retrieveMailbox)
             .join()
             .collect(Guavate.toImmutableList());
-    }
-
-    private CompletableFuture<Optional<SimpleMailbox>> retrieveMailbox(CassandraMailboxPathDAO.CassandraIdAndPath idAndPath) {
-        return retrieveMailbox(idAndPath.getCassandraId())
-            .thenApply(optional -> OptionalUtils.executeIfEmpty(optional,
-                () -> LOGGER.warn("Could not retrieve mailbox {} with path {} in mailbox table.", idAndPath.getCassandraId(), idAndPath.getMailboxPath())));
     }
 
     @Override

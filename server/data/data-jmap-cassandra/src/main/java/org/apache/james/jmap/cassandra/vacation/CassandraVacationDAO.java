@@ -118,15 +118,15 @@ public class CassandraVacationDAO {
                 .orElse(insert);
     }
 
+    private <T> Insert applyPatchForField(String field, Optional<T> value, Insert insert) {
+        return insert.value(field, value.orElse(null));
+    }
+
     public BiFunction<VacationPatch, Insert, Insert> applyPatchForFieldZonedDateTime(String field, Function<VacationPatch, ValuePatch<ZonedDateTime>> getter) {
         return (vacation, insert) -> 
             getter.apply(vacation)
                 .mapNotKeptToOptional(optionalValue -> applyPatchForField(field, convertToUDTOptional(optionalValue), insert))
                 .orElse(insert);
-    }
-
-    private <T> Insert applyPatchForField(String field, Optional<T> value, Insert insert) {
-        return insert.value(field, value.orElse(null));
     }
 
     private Optional<UDTValue> convertToUDTOptional(Optional<ZonedDateTime> zonedDateTimeOptional) {

@@ -85,14 +85,6 @@ public abstract class AbstractJamesUsersRepository extends AbstractUsersReposito
     protected abstract void doAddUser(User user) throws UsersRepositoryException;
 
     /**
-     * Updates a user record to match the supplied User.
-     * 
-     * @param user
-     *            the user to update
-     */
-    protected abstract void doUpdateUser(User user) throws UsersRepositoryException;
-
-    /**
      * @see
      * org.apache.james.user.lib.AbstractUsersRepository#doAddUser(java.lang.String, java.lang.String)
      */
@@ -101,6 +93,14 @@ public abstract class AbstractJamesUsersRepository extends AbstractUsersReposito
         newbie.setPassword(password);
         doAddUser(newbie);
     }
+
+    /**
+     * Updates a user record to match the supplied User.
+     * 
+     * @param user
+     *            the user to update
+     */
+    protected abstract void doUpdateUser(User user) throws UsersRepositoryException;
 
     /**
      * Update the repository with the specified user object. A user object with

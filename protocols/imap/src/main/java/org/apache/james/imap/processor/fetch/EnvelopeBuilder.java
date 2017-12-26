@@ -173,6 +173,10 @@ public final class EnvelopeBuilder {
         return buildMailboxAddress(name, atDomainList, localPart, domain);
     }
 
+    private FetchResponse.Envelope.Address buildMailboxAddress(String name, String atDomainList, String mailbox, String domain) {
+        return new AddressImpl(atDomainList, domain, mailbox, name);
+    }
+
     private void addAddresses(Group group, List<FetchResponse.Envelope.Address> addresses) {
         final String groupName = group.getName();
         final FetchResponse.Envelope.Address start = startGroup(groupName);
@@ -192,9 +196,5 @@ public final class EnvelopeBuilder {
 
     private FetchResponse.Envelope.Address endGroup() {
         return new AddressImpl(null, null, null, null);
-    }
-
-    private FetchResponse.Envelope.Address buildMailboxAddress(String name, String atDomainList, String mailbox, String domain) {
-        return new AddressImpl(atDomainList, domain, mailbox, name);
     }
 }

@@ -40,11 +40,11 @@ public interface UidProvider {
      * one
      */
     MessageUid nextUid(MailboxSession session, Mailbox mailbox) throws MailboxException;
-    
+
+    MessageUid nextUid(MailboxSession session, MailboxId mailboxId) throws MailboxException;
+
     /**
      * Return the last uid which were used for storing a MailboxMessage in the {@link Mailbox}
      */
     Optional<MessageUid> lastUid(MailboxSession session, Mailbox mailbox) throws MailboxException;
-    
-    MessageUid nextUid(MailboxSession session, MailboxId mailboxId) throws MailboxException;
 }

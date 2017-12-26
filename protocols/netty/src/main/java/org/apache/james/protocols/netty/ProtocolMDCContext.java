@@ -30,6 +30,7 @@ import org.apache.james.util.MDCBuilder;
 import org.jboss.netty.channel.ChannelHandlerContext;
 
 public class ProtocolMDCContext {
+    
     public static Closeable from(Protocol protocol, ChannelHandlerContext ctx) {
         return MDCBuilder.create()
             .addContext(from(ctx.getAttachment()))
@@ -37,6 +38,17 @@ public class ProtocolMDCContext {
             .addContext(MDCBuilder.IP, retrieveIp(ctx))
             .addContext(MDCBuilder.HOST, retrieveHost(ctx))
             .build();
+    }
+
+    private static MDCBuilder from(Object o) {
+        return Optional.ofNullable(o)
+            .filter(object -> object instanceof ProtocolSession)
+            .map(object -> (ProtocolSession) object)
+            .map(protocolSession -> MDCBuilder.create()
+                .addContext(MDCBuilder.SESSION_ID, protocolSession.getSessionID())
+                .addContext(MDCBuilder.CHARSET, protocolSession.getCharset().displayName())
+                .addContext(MDCBuilder.USER, protocolSession.getUser()))
+            .orElse(MDCBuilder.create());
     }
 
     private static String retrieveIp(ChannelHandlerContext ctx) {
@@ -55,17 +67,6 @@ public class ProtocolMDCContext {
             return address.getHostName();
         }
         return remoteAddress.toString();
-    }
-
-    private static MDCBuilder from(Object o) {
-        return Optional.ofNullable(o)
-            .filter(object -> object instanceof ProtocolSession)
-            .map(object -> (ProtocolSession) object)
-            .map(protocolSession -> MDCBuilder.create()
-                .addContext(MDCBuilder.SESSION_ID, protocolSession.getSessionID())
-                .addContext(MDCBuilder.CHARSET, protocolSession.getCharset().displayName())
-                .addContext(MDCBuilder.USER, protocolSession.getUser()))
-            .orElse(MDCBuilder.create());
     }
 
 }

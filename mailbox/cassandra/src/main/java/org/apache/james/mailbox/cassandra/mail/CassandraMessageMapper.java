@@ -287,6 +287,20 @@ public class CassandraMessageMapper implements MessageMapper {
         return finalResult.getSucceeded().iterator();
     }
 
+    private CompletableFuture<Boolean> updateFlags(ComposedMessageIdWithMetaData oldMetadata, Flags newFlags, long newModSeq) {
+        ComposedMessageIdWithMetaData newMetadata = ComposedMessageIdWithMetaData.builder()
+                .composedMessageId(oldMetadata.getComposedMessageId())
+                .modSeq(newModSeq)
+                .flags(newFlags)
+                .build();
+        return imapUidDAO.updateMetadata(newMetadata, oldMetadata.getModSeq())
+            .thenCompose(success -> Optional.of(success)
+                .filter(b -> b)
+                .map((Boolean any) -> messageIdDAO.updateMetadata(newMetadata)
+                    .thenApply(v -> success))
+                .orElse(CompletableFuture.completedFuture(success)));
+    }
+    
     private FlagsUpdateStageResult handleUpdatesStagedRetry(CassandraId mailboxId, FlagsUpdateCalculator flagUpdateCalculator, FlagsUpdateStageResult firstResult) {
         FlagsUpdateStageResult globalResult = firstResult;
         int retryCount = 0;
@@ -420,17 +434,4 @@ public class CassandraMessageMapper implements MessageMapper {
         return oldFlags.equals(newFlags);
     }
 
-    private CompletableFuture<Boolean> updateFlags(ComposedMessageIdWithMetaData oldMetadata, Flags newFlags, long newModSeq) {
-        ComposedMessageIdWithMetaData newMetadata = ComposedMessageIdWithMetaData.builder()
-                .composedMessageId(oldMetadata.getComposedMessageId())
-                .modSeq(newModSeq)
-                .flags(newFlags)
-                .build();
-        return imapUidDAO.updateMetadata(newMetadata, oldMetadata.getModSeq())
-            .thenCompose(success -> Optional.of(success)
-                .filter(b -> b)
-                .map((Boolean any) -> messageIdDAO.updateMetadata(newMetadata)
-                    .thenApply(v -> success))
-                .orElse(CompletableFuture.completedFuture(success)));
-    }
 }

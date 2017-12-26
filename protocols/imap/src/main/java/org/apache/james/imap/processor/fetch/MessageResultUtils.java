@@ -97,6 +97,33 @@ public class MessageResultUtils {
         return matching(names, iterator, false);
     }
 
+    /**
+     * Gets a header matching the given name. The matching is case-insensitive.
+     * 
+     * @param name
+     *            name to be matched, not null
+     * @param iterator
+     *            <code>Iterator</code> of <code>MessageResult.Header</code>'s,
+     *            not null
+     * @return <code>MessageResult.Header</code>, or null if the header does not
+     *         exist
+     * @throws MessagingException
+     */
+    public static MessageResult.Header getMatching(String name, Iterator<MessageResult.Header> iterator) throws MailboxException {
+        MessageResult.Header result = null;
+        if (name != null) {
+            while (iterator.hasNext()) {
+                MessageResult.Header header = iterator.next();
+                final String headerName = header.getName();
+                if (name.equalsIgnoreCase(headerName)) {
+                    result = header;
+                    break;
+                }
+            }
+        }
+        return result;
+    }
+    
     private static List<MessageResult.Header> matching(Collection<String> names, Iterator<MessageResult.Header> iterator, boolean not) throws MailboxException {
         final List<MessageResult.Header> results = new ArrayList<>(names.size());
         if (iterator != null) {
@@ -134,33 +161,6 @@ public class MessageResultUtils {
      */
     public static List<MessageResult.Header> getNotMatching(Collection<String> names, Iterator<MessageResult.Header> iterator) throws MailboxException {
         return matching(names, iterator, true);
-    }
-
-    /**
-     * Gets a header matching the given name. The matching is case-insensitive.
-     * 
-     * @param name
-     *            name to be matched, not null
-     * @param iterator
-     *            <code>Iterator</code> of <code>MessageResult.Header</code>'s,
-     *            not null
-     * @return <code>MessageResult.Header</code>, or null if the header does not
-     *         exist
-     * @throws MessagingException
-     */
-    public static MessageResult.Header getMatching(String name, Iterator<MessageResult.Header> iterator) throws MailboxException {
-        MessageResult.Header result = null;
-        if (name != null) {
-            while (iterator.hasNext()) {
-                MessageResult.Header header = iterator.next();
-                final String headerName = header.getName();
-                if (name.equalsIgnoreCase(headerName)) {
-                    result = header;
-                    break;
-                }
-            }
-        }
-        return result;
     }
 
     /**

@@ -138,6 +138,34 @@ public class SetMailboxesMethodStepdefs {
         renamingMailbox(mailboxId, newMailboxName);
     }
 
+    @When("^\"([^\"]*)\" renames (?:her|his) mailbox \"([^\"]*)\" to \"([^\"]*)\"$")
+    public void renamingMailbox(String user, String actualMailboxName, String newMailboxName) throws Throwable {
+        MailboxId mailboxId = mainStepdefs.getMailboxId(user, actualMailboxName);
+        renamingMailbox(mailboxId, newMailboxName);
+    }
+
+    private void renamingMailbox(MailboxId mailboxId, String newMailboxName) throws Exception {
+        String requestBody =
+                "[" +
+                    "  [ \"setMailboxes\"," +
+                    "    {" +
+                    "      \"update\": {" +
+                    "        \"" + mailboxId.serialize() + "\" : {" +
+                    "          \"name\" : \"" + newMailboxName + "\"" +
+                    "        }" +
+                    "      }" +
+                    "    }," +
+                    "    \"#0\"" +
+                    "  ]" +
+                    "]";
+        httpClient.post(requestBody);
+    }
+
+    @When("^renaming mailbox \"([^\"]*)\" to \"([^\"]*)\"")
+    public void renamingMailbox(String actualMailboxName, String newMailboxName) throws Throwable {
+        renamingMailbox(userStepdefs.getConnectedUser(), actualMailboxName, newMailboxName);
+    }
+
     @When("^\"([^\"]*)\" moves the mailbox \"([^\"]*)\" owned by \"([^\"]*)\", into mailbox \"([^\"]*)\" owned by \"([^\"]*)\"$")
     public void movingMailbox(String user, String mailboxName, String mailboxOwner, String newParentName, String newParentOwner) throws Throwable {
         String mailbox = mainStepdefs.getMailboxId(mailboxOwner, mailboxName).serialize();
@@ -158,6 +186,28 @@ public class SetMailboxesMethodStepdefs {
                 "]";
 
         userStepdefs.execWithUser(user, () -> httpClient.post(requestBody));
+    }
+
+    @When("^moving mailbox \"([^\"]*)\" to \"([^\"]*)\"$")
+    public void movingMailbox(String actualMailboxPath, String newParentMailboxPath) throws Throwable {
+        String username = userStepdefs.getConnectedUser();
+        String mailboxId = mainStepdefs.getMailboxId(username, actualMailboxPath).serialize();
+        String parentId = mainStepdefs.getMailboxId(username, newParentMailboxPath).serialize();
+
+        String requestBody =
+                "[" +
+                    "  [ \"setMailboxes\"," +
+                    "    {" +
+                    "      \"update\": {" +
+                    "        \"" + mailboxId + "\" : {" +
+                    "          \"parentId\" : \"" + parentId + "\"" +
+                    "        }" +
+                    "      }" +
+                    "    }," +
+                    "    \"#0\"" +
+                    "  ]" +
+                    "]";
+        httpClient.post(requestBody);
     }
 
     @When("^\"([^\"]*)\" moves the mailbox \"([^\"]*)\" owned by \"([^\"]*)\" as top level mailbox$")
@@ -201,34 +251,6 @@ public class SetMailboxesMethodStepdefs {
         });
     }
 
-    @When("^\"([^\"]*)\" renames (?:her|his) mailbox \"([^\"]*)\" to \"([^\"]*)\"$")
-    public void renamingMailbox(String user, String actualMailboxName, String newMailboxName) throws Throwable {
-        MailboxId mailboxId = mainStepdefs.getMailboxId(user, actualMailboxName);
-        renamingMailbox(mailboxId, newMailboxName);
-    }
-
-    private void renamingMailbox(MailboxId mailboxId, String newMailboxName) throws Exception {
-        String requestBody =
-                "[" +
-                    "  [ \"setMailboxes\"," +
-                    "    {" +
-                    "      \"update\": {" +
-                    "        \"" + mailboxId.serialize() + "\" : {" +
-                    "          \"name\" : \"" + newMailboxName + "\"" +
-                    "        }" +
-                    "      }" +
-                    "    }," +
-                    "    \"#0\"" +
-                    "  ]" +
-                    "]";
-        httpClient.post(requestBody);
-    }
-
-    @When("^renaming mailbox \"([^\"]*)\" to \"([^\"]*)\"")
-    public void renamingMailbox(String actualMailboxName, String newMailboxName) throws Throwable {
-        renamingMailbox(userStepdefs.getConnectedUser(), actualMailboxName, newMailboxName);
-    }
-
     @When("^\"([^\"]*)\" deletes the mailbox \"([^\"]*)\" owned by \"([^\"]*)\"$")
     public void deletesMailbox(String user, String mailboxName, String owner) throws Throwable {
         String mailboxId = mainStepdefs.getMailboxId(owner, mailboxName).serialize();
@@ -238,28 +260,6 @@ public class SetMailboxesMethodStepdefs {
                     "  [ \"setMailboxes\"," +
                     "    {" +
                     "      \"destroy\": [ \"" + mailboxId + "\" ]" +
-                    "    }," +
-                    "    \"#0\"" +
-                    "  ]" +
-                    "]";
-        httpClient.post(requestBody);
-    }
-
-    @When("^moving mailbox \"([^\"]*)\" to \"([^\"]*)\"$")
-    public void movingMailbox(String actualMailboxPath, String newParentMailboxPath) throws Throwable {
-        String username = userStepdefs.getConnectedUser();
-        String mailboxId = mainStepdefs.getMailboxId(username, actualMailboxPath).serialize();
-        String parentId = mainStepdefs.getMailboxId(username, newParentMailboxPath).serialize();
-
-        String requestBody =
-                "[" +
-                    "  [ \"setMailboxes\"," +
-                    "    {" +
-                    "      \"update\": {" +
-                    "        \"" + mailboxId + "\" : {" +
-                    "          \"parentId\" : \"" + parentId + "\"" +
-                    "        }" +
-                    "      }" +
                     "    }," +
                     "    \"#0\"" +
                     "  ]" +

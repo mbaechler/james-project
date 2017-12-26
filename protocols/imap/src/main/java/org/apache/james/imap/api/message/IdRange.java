@@ -39,6 +39,15 @@ public final class IdRange implements Iterable<Long>, Comparable<IdRange> {
             .toString();
     }
 
+    /**
+     * Renders text suitable for logging.
+     * 
+     * @return a <code>String</code> representation of this object.
+     */
+    public String toString() {
+        return "IdRange ( " + this.lowVal + "->" + this.highVal + " )";
+    }
+
     private long lowVal;
 
     private long highVal;
@@ -120,15 +129,6 @@ public final class IdRange implements Iterable<Long>, Comparable<IdRange> {
             return false;
         }
         return true;
-    }
-
-    /**
-     * Renders text suitable for logging.
-     * 
-     * @return a <code>String</code> representation of this object.
-     */
-    public String toString() {
-        return "IdRange ( " + this.lowVal + "->" + this.highVal + " )";
     }
 
     public String getFormattedString() {

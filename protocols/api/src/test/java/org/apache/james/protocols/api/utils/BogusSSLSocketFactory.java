@@ -36,16 +36,6 @@ public class BogusSSLSocketFactory extends SSLSocketFactory {
     }
 
     @Override
-    public String[] getDefaultCipherSuites() {
-        return FACTORY.getDefaultCipherSuites();
-    }
-
-    @Override
-    public String[] getSupportedCipherSuites() {
-        return FACTORY.getSupportedCipherSuites();
-    }
-
-    @Override
     public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
         return FACTORY.createSocket(host, port);
     }
@@ -64,6 +54,16 @@ public class BogusSSLSocketFactory extends SSLSocketFactory {
     @Override
     public Socket createSocket(InetAddress address, int port, InetAddress localaddress, int localport) throws IOException {
         return FACTORY.createSocket(address, port, localaddress, localport);
+    }
+
+    @Override
+    public String[] getDefaultCipherSuites() {
+        return FACTORY.getDefaultCipherSuites();
+    }
+
+    @Override
+    public String[] getSupportedCipherSuites() {
+        return FACTORY.getSupportedCipherSuites();
     }
 
 }

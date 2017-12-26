@@ -26,13 +26,13 @@ public interface SieveRepositoryManagementMBean {
 
     long getQuota() throws SieveRepositoryException;
 
-    void setQuota(long quota) throws SieveRepositoryException;
-
-    void removeQuota() throws SieveRepositoryException;
-
     long getQuota(String user) throws SieveRepositoryException;
 
+    void setQuota(long quota) throws SieveRepositoryException;
+
     void setQuota(String user, long quota) throws SieveRepositoryException;
+
+    void removeQuota() throws SieveRepositoryException;
 
     void removeQuota(String user) throws SieveRepositoryException;
 

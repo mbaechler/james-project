@@ -284,6 +284,21 @@ public class JPAMessageMapper extends JPATransactionalMapper implements MessageM
         return copy(mailbox, messageMetadataMapper.nextUid(mailbox), messageMetadataMapper.nextModSeq(mailbox), original);  
     }
 
+    private MessageMetaData copy(Mailbox mailbox, MessageUid uid, long modSeq, MailboxMessage original)
+            throws MailboxException {
+        MailboxMessage copy;
+        JPAMailbox currentMailbox = JPAMailbox.from(mailbox);
+
+        if (original instanceof JPAStreamingMailboxMessage) {
+            copy = new JPAStreamingMailboxMessage(currentMailbox, uid, modSeq, original);
+        } else if (original instanceof JPAEncryptedMailboxMessage) {
+            copy = new JPAEncryptedMailboxMessage(currentMailbox, uid, modSeq, original);
+        } else {
+            copy = new JPAMailboxMessage(currentMailbox, uid, modSeq, original);
+        }
+        return save(mailbox, copy);
+    }
+    
     @Override
     public Optional<MessageUid> getLastUid(Mailbox mailbox) throws MailboxException {
         return messageMetadataMapper.getLastUid(mailbox);
@@ -299,21 +314,6 @@ public class JPAMessageMapper extends JPATransactionalMapper implements MessageM
         int maxBatchSize = -1;
         return new ApplicableFlagCalculator(findMessagesInMailbox((JPAId) mailbox.getMailboxId(), maxBatchSize))
             .computeApplicableFlags();
-    }
-
-    private MessageMetaData copy(Mailbox mailbox, MessageUid uid, long modSeq, MailboxMessage original)
-            throws MailboxException {
-        MailboxMessage copy;
-        JPAMailbox currentMailbox = JPAMailbox.from(mailbox);
-
-        if (original instanceof JPAStreamingMailboxMessage) {
-            copy = new JPAStreamingMailboxMessage(currentMailbox, uid, modSeq, original);
-        } else if (original instanceof JPAEncryptedMailboxMessage) {
-            copy = new JPAEncryptedMailboxMessage(currentMailbox, uid, modSeq, original);
-        } else {
-            copy = new JPAMailboxMessage(currentMailbox, uid, modSeq, original);
-        }
-        return save(mailbox, copy);
     }
 
     /**

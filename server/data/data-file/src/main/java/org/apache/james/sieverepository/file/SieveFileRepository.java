@@ -382,11 +382,43 @@ public class SieveFileRepository implements SieveRepository {
         return new File(getSieveRootDirectory(), FILE_NAME_QUOTA);
     }
 
+    protected File getQuotaFile(String user) throws StorageException {
+        return new File(getUserDirectory(user), FILE_NAME_QUOTA);
+    }
+
     @Override
     public boolean hasQuota() throws StorageException {
         return getQuotaFile().exists();
     }
 
+    @Override
+    public boolean hasQuota(String user) throws StorageException {
+        return getQuotaFile(user).exists();
+    }
+
+    @Override
+    public long getQuota(String user) throws QuotaNotFoundException, StorageException {
+        Long quota = null;
+        File file = getQuotaFile(user);
+        if (file.exists()) {
+            Scanner scanner = null;
+            try {
+                scanner = new Scanner(file, UTF_8);
+                quota = scanner.nextLong();
+            } catch (FileNotFoundException | NoSuchElementException ex) {
+                // no op
+            } finally {
+                if (null != scanner) {
+                    scanner.close();
+                }
+            }
+        }
+        if (null == quota) {
+            throw new QuotaNotFoundException("No quota for user: " + user);
+        }
+        return quota;
+    }
+    
     @Override
     public long getQuota() throws QuotaNotFoundException, StorageException {
         Long quota = null;
@@ -424,45 +456,6 @@ public class SieveFileRepository implements SieveRepository {
     }
 
     @Override
-    public synchronized void setQuota(long quota) throws StorageException {
-        File file = getQuotaFile();
-        String content = Long.toString(quota);
-        toFile(file, content);
-    }
-
-    protected File getQuotaFile(String user) throws StorageException {
-        return new File(getUserDirectory(user), FILE_NAME_QUOTA);
-    }
-
-    @Override
-    public boolean hasQuota(String user) throws StorageException {
-        return getQuotaFile(user).exists();
-    }
-
-    @Override
-    public long getQuota(String user) throws QuotaNotFoundException, StorageException {
-        Long quota = null;
-        File file = getQuotaFile(user);
-        if (file.exists()) {
-            Scanner scanner = null;
-            try {
-                scanner = new Scanner(file, UTF_8);
-                quota = scanner.nextLong();
-            } catch (FileNotFoundException | NoSuchElementException ex) {
-                // no op
-            } finally {
-                if (null != scanner) {
-                    scanner.close();
-                }
-            }
-        }
-        if (null == quota) {
-            throw new QuotaNotFoundException("No quota for user: " + user);
-        }
-        return quota;
-    }
-
-    @Override
     public void removeQuota(String user) throws QuotaNotFoundException, StorageException {
         synchronized (lock) {
             File file = getQuotaFile(user);
@@ -475,6 +468,13 @@ public class SieveFileRepository implements SieveRepository {
                 throw new StorageException(ex);
             }
         }
+    }
+    
+    @Override
+    public synchronized void setQuota(long quota) throws StorageException {
+        File file = getQuotaFile();
+        String content = Long.toString(quota);
+        toFile(file, content);
     }
 
     @Override

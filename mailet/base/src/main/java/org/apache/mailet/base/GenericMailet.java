@@ -87,32 +87,6 @@ public abstract class GenericMailet implements Mailet, MailetConfig {
         return MailetUtil.getInitParameter(config, name).orElse(defaultValue);
     }
 
-    public Optional<String> getInitParameterAsOptional(String name) {
-        String value = getInitParameter(name);
-        if (Strings.isNullOrEmpty(value)) {
-            return Optional.empty();
-        }
-        return Optional.of(value);
-    }
-
-    /**
-     * Gets a boolean valued init parameter that matches 'false', 'no', 'true' or 'yes' string values.
-     */
-    public boolean getBooleanParameter(String value, boolean defaultValue) {
-        if (defaultValue) {
-            return !isFalseOrNo(value);
-        }
-        return isTrueOrYes(value);
-    }
-
-    private static boolean isFalseOrNo(String value) {
-        return StringUtils.containsIgnoreCase(value, FALSE) || StringUtils.containsIgnoreCase(value, NO);
-    }
-
-    private static boolean isTrueOrYes(String value) {
-        return StringUtils.containsIgnoreCase(value, TRUE) || StringUtils.containsIgnoreCase(value, YES);
-    }
-
     /**
      * Returns a String containing the value of the named initialization
      * parameter, or null if the parameter does not exist.
@@ -146,6 +120,32 @@ public abstract class GenericMailet implements Mailet, MailetConfig {
         } else {
             return res;
         }
+    }
+
+    public Optional<String> getInitParameterAsOptional(String name) {
+        String value = getInitParameter(name);
+        if (Strings.isNullOrEmpty(value)) {
+            return Optional.empty();
+        }
+        return Optional.of(value);
+    }
+
+    /**
+     * Gets a boolean valued init parameter that matches 'false', 'no', 'true' or 'yes' string values.
+     */
+    public boolean getBooleanParameter(String value, boolean defaultValue) {
+        if (defaultValue) {
+            return !isFalseOrNo(value);
+        }
+        return isTrueOrYes(value);
+    }
+
+    private static boolean isFalseOrNo(String value) {
+        return StringUtils.containsIgnoreCase(value, FALSE) || StringUtils.containsIgnoreCase(value, NO);
+    }
+
+    private static boolean isTrueOrYes(String value) {
+        return StringUtils.containsIgnoreCase(value, TRUE) || StringUtils.containsIgnoreCase(value, YES);
     }
 
     /**

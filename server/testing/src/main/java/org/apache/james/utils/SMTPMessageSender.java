@@ -79,6 +79,20 @@ public class SMTPMessageSender implements Closeable {
         }
     }
 
+    public void sendMessage(Mail mail) throws MessagingException {
+        try {
+            String from = mail.getSender().asString();
+            smtpClient.helo(senderDomain);
+            smtpClient.setSender(from);
+            mail.getRecipients().stream()
+                .map(MailAddress::asString)
+                .forEach(Throwing.consumer(smtpClient::addRecipient));
+            smtpClient.sendShortMessageData(asString(mail.getMessage()));
+        } catch (IOException e) {
+            throw Throwables.propagate(e);
+        }
+    }
+
     public void sendMessageNoBracket(String from, String recipient) {
         try {
             smtpClient.helo(senderDomain);
@@ -100,20 +114,6 @@ public class SMTPMessageSender implements Closeable {
             smtpClient.setSender(from);
             smtpClient.rcpt("<" + recipient + ">");
             smtpClient.sendShortMessageData(message);
-        } catch (IOException e) {
-            throw Throwables.propagate(e);
-        }
-    }
-
-    public void sendMessage(Mail mail) throws MessagingException {
-        try {
-            String from = mail.getSender().asString();
-            smtpClient.helo(senderDomain);
-            smtpClient.setSender(from);
-            mail.getRecipients().stream()
-                .map(MailAddress::asString)
-                .forEach(Throwing.consumer(smtpClient::addRecipient));
-            smtpClient.sendShortMessageData(asString(mail.getMessage()));
         } catch (IOException e) {
             throw Throwables.propagate(e);
         }

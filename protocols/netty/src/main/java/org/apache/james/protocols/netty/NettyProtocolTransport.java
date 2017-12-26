@@ -116,13 +116,7 @@ public class NettyProtocolTransport extends AbstractProtocolTransport {
         channel.write(ChannelBuffers.wrappedBuffer(bytes));
         
     }
-
-    @Override
-    protected void close() {
-        channel.write(ChannelBuffers.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
-    }
-
-
+    
     @Override
     protected void writeToClient(InputStream in, ProtocolSession session, boolean startTLS) {
         if (startTLS) {
@@ -162,6 +156,11 @@ public class NettyProtocolTransport extends AbstractProtocolTransport {
             }
         } 
         channel.write(new ChunkedStream(in));
+    }
+    
+    @Override
+    protected void close() {
+        channel.write(ChannelBuffers.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
     }
 
     /*

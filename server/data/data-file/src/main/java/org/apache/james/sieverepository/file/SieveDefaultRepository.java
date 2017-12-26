@@ -123,32 +123,32 @@ public class SieveDefaultRepository implements SieveRepository {
     }
 
     @Override
-    public long getQuota() throws QuotaNotFoundException, StorageException {
+    public boolean hasQuota(String user) throws StorageException {
         throw apologizeForQuotas();
     }
 
+    @Override
+    public long getQuota() throws QuotaNotFoundException, StorageException {
+        throw apologizeForQuotas();
+    }
+    
+    @Override
+    public long getQuota(String user) throws QuotaNotFoundException, StorageException {
+        throw apologizeForQuotas();
+    }
+    
     @Override
     public void setQuota(long quota) throws StorageException {
         throw apologizeForQuotas();
     }
 
     @Override
-    public void removeQuota() throws QuotaNotFoundException, StorageException {
-        throw apologizeForQuotas();
-    }
-
-    @Override
-    public boolean hasQuota(String user) throws StorageException {
-        throw apologizeForQuotas();
-    }
-
-    @Override
-    public long getQuota(String user) throws QuotaNotFoundException, StorageException {
-        throw apologizeForQuotas();
-    }
-
-    @Override
     public void setQuota(String user, long quota) throws StorageException {
+        throw apologizeForQuotas();
+    }
+
+    @Override
+    public void removeQuota() throws QuotaNotFoundException, StorageException {
         throw apologizeForQuotas();
     }
 

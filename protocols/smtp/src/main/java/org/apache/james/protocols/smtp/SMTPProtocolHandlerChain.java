@@ -131,10 +131,17 @@ public class SMTPProtocolHandlerChain extends ProtocolHandlerChainImpl {
         }
         return true;
     }
-    
+
+    @Override
     public boolean add(ProtocolHandler handler) {
         checkForAuth(handler);
         return super.add(handler);
+    }
+
+    @Override
+    public void add(int index, ProtocolHandler element) {
+        checkForAuth(element);
+        super.add(index, element);
     }
 
     @Override
@@ -145,12 +152,6 @@ public class SMTPProtocolHandlerChain extends ProtocolHandlerChainImpl {
     @Override
     public boolean addAll(int index, Collection<? extends ProtocolHandler> c) {
         return c.stream().allMatch(this::checkForAuth) && super.addAll(index, c);
-    }
-
-    @Override
-    public void add(int index, ProtocolHandler element) {
-        checkForAuth(element);
-        super.add(index, element);
     }
   
 }

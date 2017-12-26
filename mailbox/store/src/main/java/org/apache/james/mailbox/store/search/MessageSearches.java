@@ -218,6 +218,172 @@ public class MessageSearches implements Iterable<SimpleMessageSearchIndex.Search
         }
     }
 
+    private boolean matches(SearchQuery.ConjunctionCriterion criterion, MailboxMessage message,
+            final Collection<MessageUid> recentMessageUids) throws MailboxException {
+        final List<SearchQuery.Criterion> criteria = criterion.getCriteria();
+        switch (criterion.getType()) {
+        case NOR:
+            return nor(criteria, message, recentMessageUids);
+        case OR:
+            return or(criteria, message, recentMessageUids);
+        case AND:
+            return and(criteria, message, recentMessageUids);
+        default:
+            return false;
+        }
+    }
+    
+    private boolean matches(SearchQuery.FlagCriterion criterion, MailboxMessage message,
+            Collection<MessageUid> recentMessageUids) {
+        SearchQuery.BooleanOperator operator = criterion.getOperator();
+        boolean isSet = operator.isSet();
+        Flags.Flag flag = criterion.getFlag();
+        if (flag == Flags.Flag.ANSWERED) {
+            return isSet == message.isAnswered();
+        } else if (flag == Flags.Flag.SEEN) {
+            return isSet == message.isSeen();
+        } else if (flag == Flags.Flag.DRAFT) {
+            return isSet == message.isDraft();
+        } else if (flag == Flags.Flag.FLAGGED) {
+            return isSet == message.isFlagged();
+        } else if (flag == Flags.Flag.RECENT) {
+            final MessageUid uid = message.getUid();
+            return isSet == recentMessageUids.contains(uid);
+        } else if (flag == Flags.Flag.DELETED) {
+            return isSet == message.isDeleted();
+        } else {
+            return false;
+        }
+    }
+
+    private boolean matches(SearchQuery.CustomFlagCriterion criterion, MailboxMessage message) {
+        SearchQuery.BooleanOperator operator = criterion.getOperator();
+        boolean isSet = operator.isSet();
+        String flag = criterion.getFlag();
+        return isSet == message.createFlags().contains(flag);
+    }
+
+    private boolean matches(SearchQuery.ContainsOperator operator, String headerName,
+            MailboxMessage message) throws MailboxException, IOException {
+        String text = operator.getValue().toUpperCase(Locale.US);
+        List<Header> headers = ResultUtils.createHeaders(message);
+        for (Header header : headers) {
+            String name = header.getName();
+            if (headerName.equalsIgnoreCase(name)) {
+                String value = MimeUtil.unscrambleHeaderValue(header.getValue());
+                if (value != null) {
+                    if (value.toUpperCase(Locale.US).contains(text)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+    
+    private boolean matches(SearchQuery.UidCriterion criterion, MailboxMessage message) {
+        SearchQuery.UidInOperator operator = criterion.getOperator();
+        UidRange[] ranges = operator.getRange();
+        MessageUid uid = message.getUid();
+        return Arrays.stream(ranges)
+            .anyMatch(numericRange -> numericRange.isIn(uid));
+    }
+
+    private boolean matches(SearchQuery.HeaderCriterion criterion, MailboxMessage message)
+            throws MailboxException, IOException {
+        SearchQuery.HeaderOperator operator = criterion.getOperator();
+        String headerName = criterion.getHeaderName();
+        if (operator instanceof SearchQuery.DateOperator) {
+            return matches((SearchQuery.DateOperator) operator, headerName, message);
+        } else if (operator instanceof SearchQuery.ContainsOperator) {
+            return matches((SearchQuery.ContainsOperator) operator, headerName, message);
+        } else if (operator instanceof SearchQuery.ExistsOperator) {
+            return exists(headerName, message);
+        } else if (operator instanceof SearchQuery.AddressOperator) {
+            return matchesAddress((SearchQuery.AddressOperator) operator, headerName, message);
+        } else {
+            throw new UnsupportedSearchException();
+        }
+    }
+    
+    private boolean matches(SearchQuery.DateOperator operator, String headerName, MailboxMessage message)
+            throws MailboxException {
+
+        Date date = operator.getDate();
+        DateResolution res = operator.getDateResultion();
+        try {
+            final String value = headerValue(headerName, message);
+            if (value == null) {
+                return false;
+            } else {
+                try {
+                    Date isoFieldValue = toISODate(value);
+                    SearchQuery.DateComparator type = operator.getType();
+                    switch (type) {
+                    case AFTER:
+                        return after(isoFieldValue, date, res);
+                    case BEFORE:
+                        return before(isoFieldValue, date, res);
+                    case ON:
+                        return on(isoFieldValue, date, res);
+                    default:
+                        throw new UnsupportedSearchException();
+                    }
+                } catch (ParseException e) {
+                    return false;
+                }
+            }
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    private boolean matches(SearchQuery.AttachmentCriterion criterion, MailboxMessage message) throws UnsupportedSearchException {
+        boolean mailHasAttachments = message.getProperties()
+            .stream()
+            .anyMatch(PropertyBuilder.isHasAttachmentProperty());
+        return mailHasAttachments == criterion.getOperator().isSet();
+    }
+
+    private boolean matches(SearchQuery.SizeCriterion criterion, MailboxMessage message) throws UnsupportedSearchException {
+        SearchQuery.NumericOperator operator = criterion.getOperator();
+        long size = message.getFullContentOctets();
+        long value = operator.getValue();
+        switch (operator.getType()) {
+        case LESS_THAN:
+            return size < value;
+        case GREATER_THAN:
+            return size > value;
+        case EQUALS:
+            return size == value;
+        default:
+            throw new UnsupportedSearchException();
+        }
+    }
+
+    private boolean matches(SearchQuery.ModSeqCriterion criterion, MailboxMessage message)
+            throws UnsupportedSearchException {
+        SearchQuery.NumericOperator operator = criterion.getOperator();
+        long modSeq = message.getModSeq();
+        long value = operator.getValue();
+        switch (operator.getType()) {
+        case LESS_THAN:
+            return modSeq < value;
+        case GREATER_THAN:
+            return modSeq > value;
+        case EQUALS:
+            return modSeq == value;
+        default:
+            throw new UnsupportedSearchException();
+        }
+    }
+
+    private boolean matches(SearchQuery.InternalDateCriterion criterion, MailboxMessage message)
+            throws UnsupportedSearchException {
+        SearchQuery.DateOperator operator = criterion.getOperator();
+        return matchesInternalDate(operator, message);
+    }
+
     private boolean bodyContains(String value, MailboxMessage message) throws IOException, MimeException {
         final InputStream input = message.getFullContent();
         return isInMessage(value, input, false);
@@ -301,21 +467,6 @@ public class MessageSearches implements Iterable<SimpleMessageSearchIndex.Search
             headerImpl.addField(Fields.to(Lists.newArrayList(addressList.iterator())));
         }
     }
-    
-    private boolean matches(SearchQuery.ConjunctionCriterion criterion, MailboxMessage message,
-            final Collection<MessageUid> recentMessageUids) throws MailboxException {
-        final List<SearchQuery.Criterion> criteria = criterion.getCriteria();
-        switch (criterion.getType()) {
-        case NOR:
-            return nor(criteria, message, recentMessageUids);
-        case OR:
-            return or(criteria, message, recentMessageUids);
-        case AND:
-            return and(criteria, message, recentMessageUids);
-        default:
-            return false;
-        }
-    }
 
     private boolean and(List<SearchQuery.Criterion> criteria, MailboxMessage message,
                         Collection<MessageUid> recentMessageUids) throws MailboxException {
@@ -348,61 +499,6 @@ public class MessageSearches implements Iterable<SimpleMessageSearchIndex.Search
             }
         }
         return true;
-    }
-
-    private boolean matches(SearchQuery.FlagCriterion criterion, MailboxMessage message,
-                            Collection<MessageUid> recentMessageUids) {
-        SearchQuery.BooleanOperator operator = criterion.getOperator();
-        boolean isSet = operator.isSet();
-        Flags.Flag flag = criterion.getFlag();
-        if (flag == Flags.Flag.ANSWERED) {
-            return isSet == message.isAnswered();
-        } else if (flag == Flags.Flag.SEEN) {
-            return isSet == message.isSeen();
-        } else if (flag == Flags.Flag.DRAFT) {
-            return isSet == message.isDraft();
-        } else if (flag == Flags.Flag.FLAGGED) {
-            return isSet == message.isFlagged();
-        } else if (flag == Flags.Flag.RECENT) {
-            final MessageUid uid = message.getUid();
-            return isSet == recentMessageUids.contains(uid);
-        } else if (flag == Flags.Flag.DELETED) {
-            return isSet == message.isDeleted();
-        } else {
-            return false;
-        }
-    }
-
-    private boolean matches(SearchQuery.CustomFlagCriterion criterion, MailboxMessage message) {
-        SearchQuery.BooleanOperator operator = criterion.getOperator();
-        boolean isSet = operator.isSet();
-        String flag = criterion.getFlag();
-        return isSet == message.createFlags().contains(flag);
-    }
-
-    private boolean matches(SearchQuery.UidCriterion criterion, MailboxMessage message) {
-        SearchQuery.UidInOperator operator = criterion.getOperator();
-        UidRange[] ranges = operator.getRange();
-        MessageUid uid = message.getUid();
-        return Arrays.stream(ranges)
-            .anyMatch(numericRange -> numericRange.isIn(uid));
-    }
-
-    private boolean matches(SearchQuery.HeaderCriterion criterion, MailboxMessage message)
-            throws MailboxException, IOException {
-        SearchQuery.HeaderOperator operator = criterion.getOperator();
-        String headerName = criterion.getHeaderName();
-        if (operator instanceof SearchQuery.DateOperator) {
-            return matches((SearchQuery.DateOperator) operator, headerName, message);
-        } else if (operator instanceof SearchQuery.ContainsOperator) {
-            return matches((SearchQuery.ContainsOperator) operator, headerName, message);
-        } else if (operator instanceof SearchQuery.ExistsOperator) {
-            return exists(headerName, message);
-        } else if (operator instanceof SearchQuery.AddressOperator) {
-            return matchesAddress((SearchQuery.AddressOperator) operator, headerName, message);
-        } else {
-            throw new UnsupportedSearchException();
-        }
     }
 
     /**
@@ -456,56 +552,6 @@ public class MessageSearches implements Iterable<SimpleMessageSearchIndex.Search
             .anyMatch(headerName::equalsIgnoreCase);
     }
 
-    private boolean matches(SearchQuery.ContainsOperator operator, String headerName,
-            MailboxMessage message) throws MailboxException, IOException {
-        String text = operator.getValue().toUpperCase(Locale.US);
-        List<Header> headers = ResultUtils.createHeaders(message);
-        for (Header header : headers) {
-            String name = header.getName();
-            if (headerName.equalsIgnoreCase(name)) {
-                String value = MimeUtil.unscrambleHeaderValue(header.getValue());
-                if (value != null) {
-                    if (value.toUpperCase(Locale.US).contains(text)) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-    private boolean matches(SearchQuery.DateOperator operator, String headerName, MailboxMessage message)
-            throws MailboxException {
-
-        Date date = operator.getDate();
-        DateResolution res = operator.getDateResultion();
-        try {
-            final String value = headerValue(headerName, message);
-            if (value == null) {
-                return false;
-            } else {
-                try {
-                    Date isoFieldValue = toISODate(value);
-                    SearchQuery.DateComparator type = operator.getType();
-                    switch (type) {
-                    case AFTER:
-                        return after(isoFieldValue, date, res);
-                    case BEFORE:
-                        return before(isoFieldValue, date, res);
-                    case ON:
-                        return on(isoFieldValue, date, res);
-                    default:
-                        throw new UnsupportedSearchException();
-                    }
-                } catch (ParseException e) {
-                    return false;
-                }
-            }
-        } catch (IOException e) {
-            return false;
-        }
-    }
-
     private String headerValue(String headerName, MailboxMessage message) throws MailboxException, IOException {
         List<Header> headers = ResultUtils.createHeaders(message);
         for (Header header : headers) {
@@ -524,53 +570,6 @@ public class MessageSearches implements Iterable<SimpleMessageSearchIndex.Search
         cal.set(dateTime.getYear(), dateTime.getMonth() - 1, dateTime.getDay(), dateTime.getHour(),
                 dateTime.getMinute(), dateTime.getSecond());
         return cal.getTime();
-    }
-
-
-    private boolean matches(SearchQuery.AttachmentCriterion criterion, MailboxMessage message) throws UnsupportedSearchException {
-        boolean mailHasAttachments = message.getProperties()
-            .stream()
-            .anyMatch(PropertyBuilder.isHasAttachmentProperty());
-        return mailHasAttachments == criterion.getOperator().isSet();
-    }
-
-    private boolean matches(SearchQuery.SizeCriterion criterion, MailboxMessage message) throws UnsupportedSearchException {
-        SearchQuery.NumericOperator operator = criterion.getOperator();
-        long size = message.getFullContentOctets();
-        long value = operator.getValue();
-        switch (operator.getType()) {
-        case LESS_THAN:
-            return size < value;
-        case GREATER_THAN:
-            return size > value;
-        case EQUALS:
-            return size == value;
-        default:
-            throw new UnsupportedSearchException();
-        }
-    }
-
-    private boolean matches(SearchQuery.ModSeqCriterion criterion, MailboxMessage message)
-            throws UnsupportedSearchException {
-        SearchQuery.NumericOperator operator = criterion.getOperator();
-        long modSeq = message.getModSeq();
-        long value = operator.getValue();
-        switch (operator.getType()) {
-        case LESS_THAN:
-            return modSeq < value;
-        case GREATER_THAN:
-            return modSeq > value;
-        case EQUALS:
-            return modSeq == value;
-        default:
-            throw new UnsupportedSearchException();
-        }
-    }
-
-    private boolean matches(SearchQuery.InternalDateCriterion criterion, MailboxMessage message)
-            throws UnsupportedSearchException {
-        SearchQuery.DateOperator operator = criterion.getOperator();
-        return matchesInternalDate(operator, message);
     }
 
     private boolean matchesInternalDate(SearchQuery.DateOperator operator, MailboxMessage message)

@@ -223,29 +223,19 @@ public class CassandraSieveRepository implements SieveRepository {
     }
 
     @Override
-    public long getQuota() throws QuotaNotFoundException {
-        return cassandraSieveQuotaDAO.getQuota()
-            .join()
-            .orElseThrow(QuotaNotFoundException::new);
-    }
-
-    @Override
-    public void setQuota(long quota) {
-        cassandraSieveQuotaDAO.setQuota(quota).join();
-    }
-
-    @Override
-    public void removeQuota() throws QuotaNotFoundException {
-        cassandraSieveQuotaDAO.removeQuota().join();
-    }
-
-    @Override
     public boolean hasQuota(String user) {
         return CompletableFutureUtil.combine(
             cassandraSieveQuotaDAO.getQuota(user).thenApply(Optional::isPresent),
             cassandraSieveQuotaDAO.getQuota().thenApply(Optional::isPresent),
             (b1, b2) -> b1 || b2)
             .join();
+    }
+
+    @Override
+    public long getQuota() throws QuotaNotFoundException {
+        return cassandraSieveQuotaDAO.getQuota()
+            .join()
+            .orElseThrow(QuotaNotFoundException::new);
     }
 
     @Override
@@ -256,6 +246,11 @@ public class CassandraSieveRepository implements SieveRepository {
     }
 
     @Override
+    public void setQuota(long quota) {
+        cassandraSieveQuotaDAO.setQuota(quota).join();
+    }
+
+    @Override
     public void setQuota(String user, long quota) {
         cassandraSieveQuotaDAO.setQuota(user, quota).join();
     }
@@ -263,6 +258,11 @@ public class CassandraSieveRepository implements SieveRepository {
     @Override
     public void removeQuota(String user) throws QuotaNotFoundException {
         cassandraSieveQuotaDAO.removeQuota(user).join();
+    }
+
+    @Override
+    public void removeQuota() throws QuotaNotFoundException {
+        cassandraSieveQuotaDAO.removeQuota().join();
     }
 
 }

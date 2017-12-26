@@ -171,6 +171,11 @@ public class DefaultMailboxesProvisioningFilterThreadTest {
         }
 
         @Override
+        public List<MessageId> search(MultimailboxesSearchQuery expression, MailboxSession session, long limit) throws MailboxException {
+            return null;
+        }
+
+        @Override
         public boolean mailboxExists(MailboxPath mailboxPath, MailboxSession session) throws MailboxException {
             return false;
         }
@@ -267,11 +272,6 @@ public class DefaultMailboxesProvisioningFilterThreadTest {
         @Override
         public boolean hasCapability(MailboxCapabilities capability) {
             return false;
-        }
-
-        @Override
-        public List<MessageId> search(MultimailboxesSearchQuery expression, MailboxSession session, long limit) throws MailboxException {
-            return null;
         }
 
         @Override

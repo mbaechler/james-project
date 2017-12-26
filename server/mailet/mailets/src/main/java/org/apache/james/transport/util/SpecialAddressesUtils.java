@@ -111,6 +111,51 @@ public class SpecialAddressesUtils {
         return ImmutableList.of();
     }
 
+    private Collection<MailAddress> getCorrespondingAddress(InternetAddress internetAddress, Mail mail) throws AddressException {
+        MailAddress mailAddress = new MailAddress(internetAddress);
+        if (!SpecialAddress.isSpecialAddress(mailAddress)) {
+            return ImmutableSet.of(new MailAddress(internetAddress));
+        }
+
+        SpecialAddressKind specialAddressKind = SpecialAddressKind.forValue(mailAddress.getLocalPart());
+        if (specialAddressKind == null) {
+            return ImmutableSet.of(new MailAddress(internetAddress));
+        }
+
+        switch (specialAddressKind) {
+            case SENDER:
+            case REVERSE_PATH:
+                return Optional.ofNullable(mail.getSender())
+                    .map(ImmutableSet::of)
+                    .orElse(ImmutableSet.of());
+            case FROM:
+                try {
+                    InternetAddress[] fromArray = (InternetAddress[]) mail.getMessage().getFrom();
+                    return allOrSender(mail, fromArray);
+                } catch (MessagingException me) {
+                    LOGGER.warn("Unable to parse the \"FROM\" header in the original message; ignoring.");
+                    return ImmutableSet.of();
+                }
+            case REPLY_TO:
+                try {
+                    InternetAddress[] replyToArray = (InternetAddress[]) mail.getMessage().getReplyTo();
+                    return allOrSender(mail, replyToArray);
+                } catch (MessagingException me) {
+                    LOGGER.warn("Unable to parse the \"REPLY_TO\" header in the original message; ignoring.");
+                    return ImmutableSet.of();
+                }
+            case TO:
+            case RECIPIENTS:
+                return toHeaders(mail);
+            case NULL:
+            case UNALTERED:
+                return ImmutableList.of();
+            case DELETE:
+                return ImmutableSet.of(new MailAddress(internetAddress));
+        }
+        return ImmutableList.of();
+    }
+
     private Set<MailAddress> getReplyTosFromMail(Mail mail) {
         try {
             InternetAddress[] replyToArray = (InternetAddress[]) mail.getMessage().getReplyTo();
@@ -169,51 +214,6 @@ public class SpecialAddressesUtils {
             builder.addAll(getCorrespondingAddress(internetAddress, mailWithReplacementAddresses));
         }
         return builder.build();
-    }
-
-    private Collection<MailAddress> getCorrespondingAddress(InternetAddress internetAddress, Mail mail) throws AddressException {
-        MailAddress mailAddress = new MailAddress(internetAddress);
-        if (!SpecialAddress.isSpecialAddress(mailAddress)) {
-            return ImmutableSet.of(new MailAddress(internetAddress));
-        }
-
-        SpecialAddressKind specialAddressKind = SpecialAddressKind.forValue(mailAddress.getLocalPart());
-        if (specialAddressKind == null) {
-            return ImmutableSet.of(new MailAddress(internetAddress));
-        }
-
-        switch (specialAddressKind) {
-            case SENDER:
-            case REVERSE_PATH:
-                return Optional.ofNullable(mail.getSender())
-                    .map(ImmutableSet::of)
-                    .orElse(ImmutableSet.of());
-            case FROM:
-                try {
-                    InternetAddress[] fromArray = (InternetAddress[]) mail.getMessage().getFrom();
-                    return allOrSender(mail, fromArray);
-                } catch (MessagingException me) {
-                    LOGGER.warn("Unable to parse the \"FROM\" header in the original message; ignoring.");
-                    return ImmutableSet.of();
-                }
-            case REPLY_TO:
-                try {
-                    InternetAddress[] replyToArray = (InternetAddress[]) mail.getMessage().getReplyTo();
-                    return allOrSender(mail, replyToArray);
-                } catch (MessagingException me) {
-                    LOGGER.warn("Unable to parse the \"REPLY_TO\" header in the original message; ignoring.");
-                    return ImmutableSet.of();
-                }
-            case TO:
-            case RECIPIENTS:
-                return toHeaders(mail);
-            case NULL:
-            case UNALTERED:
-                return ImmutableList.of();
-            case DELETE:
-                return ImmutableSet.of(new MailAddress(internetAddress));
-        }
-        return ImmutableList.of();
     }
 
     private List<MailAddress> allOrSender(Mail mail, InternetAddress[] addresses) throws AddressException {

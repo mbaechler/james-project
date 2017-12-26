@@ -484,6 +484,10 @@ public class ScriptBuilder {
         client.write(in);
     }
 
+    private void write(String phrase) throws Exception {
+        client.write(phrase);
+    }
+
     private void response() throws Exception {
         client.readResponse();
     }
@@ -495,10 +499,6 @@ public class ScriptBuilder {
 
     private void lineEnd() throws Exception {
         client.lineEnd();
-    }
-
-    private void write(String phrase) throws Exception {
-        client.write(phrase);
     }
 
     public void close() throws Exception {
@@ -1153,6 +1153,12 @@ public class ScriptBuilder {
             writeOutBuffer();
         }
 
+        public void write(String phrase) throws Exception {
+            out.print(phrase);
+            final ByteBuffer buffer = ASCII.encode(phrase);
+            writeRemaining(buffer);
+        }
+        
         public void outBufferNext(byte next) throws Exception {
             outBuffer.put(next);
         }
@@ -1214,12 +1220,6 @@ public class ScriptBuilder {
 
         public void lineStart() throws Exception {
             out.client();
-        }
-
-        public void write(String phrase) throws Exception {
-            out.print(phrase);
-            final ByteBuffer buffer = ASCII.encode(phrase);
-            writeRemaining(buffer);
         }
 
         public void writeLine(String line) throws Exception {
@@ -1357,19 +1357,6 @@ public class ScriptBuilder {
             lineBuffer.put(next);
         }
 
-        private void escape(char next) {
-            if (next == '\\' || next == '*' || next == '.' || next == '['
-                    || next == ']' || next == '+' || next == '(' || next == ')'
-                    || next == '{' || next == '}' || next == '?') {
-                lineBuffer.put('\\');
-            }
-        }
-
-        public void server() {
-            lineBuffer.put("S: ");
-            isClient = false;
-        }
-
         public void print(String phrase) {
             if (!isClient) {
                 phrase = StringUtils.replace(phrase, "\\", "\\\\");
@@ -1385,6 +1372,19 @@ public class ScriptBuilder {
                 phrase = StringUtils.replace(phrase, "?", "\\?");
             }
             lineBuffer.put(phrase);
+        }
+
+        private void escape(char next) {
+            if (next == '\\' || next == '*' || next == '.' || next == '['
+                    || next == ']' || next == '+' || next == '(' || next == ')'
+                    || next == '{' || next == '}' || next == '?') {
+                lineBuffer.put('\\');
+            }
+        }
+
+        public void server() {
+            lineBuffer.put("S: ");
+            isClient = false;
         }
 
         public void lineEnd() {

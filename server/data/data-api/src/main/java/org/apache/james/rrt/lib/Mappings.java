@@ -28,6 +28,8 @@ public interface Mappings extends Iterable<Mapping> {
 
     boolean contains(Mapping mapping);
 
+    boolean contains(Type type);
+    
     int size();
 
     Mappings remove(Mapping mapping);
@@ -38,8 +40,6 @@ public interface Mappings extends Iterable<Mapping> {
     
     String serialize();
 
-    boolean contains(Type type);
-    
     Mappings select(Type type);
 
     Mappings exclude(Type type);

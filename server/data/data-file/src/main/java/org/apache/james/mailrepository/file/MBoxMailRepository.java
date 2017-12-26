@@ -547,50 +547,6 @@ public class MBoxMailRepository implements MailRepository, Configurable {
     }
 
     /**
-     * Attempt to get a lock on the mbox by creating the file mboxname.lock
-     * 
-     * @throws Exception
-     */
-    private void lockMBox() throws Exception {
-        // Create the lock file (if possible)
-        String lockFileName = mboxFile + LOCKEXT;
-        int sleepCount = 0;
-        File mBoxLock = new File(lockFileName);
-        if (!mBoxLock.createNewFile()) {
-            // This is not good, somebody got the lock before me
-            // So wait for a file
-            while (!mBoxLock.createNewFile() && sleepCount < MAXSLEEPTIMES) {
-                try {
-                    LOGGER.debug("Waiting for lock on file {}", mboxFile);
-
-                    Thread.sleep(LOCKSLEEPDELAY);
-                    sleepCount++;
-                } catch (InterruptedException e) {
-                    LOGGER.error("File lock wait for {} interrupted!", mboxFile, e);
-
-                }
-            }
-            if (sleepCount >= MAXSLEEPTIMES) {
-                throw new Exception("Unable to get lock on file " + mboxFile);
-            }
-        }
-    }
-
-    /**
-     * Unlock a previously locked mbox file
-     */
-    private void unlockMBox() {
-        // Just delete the MBOX file
-        String lockFileName = mboxFile + LOCKEXT;
-        File mBoxLock = new File(lockFileName);
-        try {
-            FileUtils.forceDelete(mBoxLock);
-        } catch (IOException e) {
-            LOGGER.error("{} Failed to delete lock file {}", getClass().getName(), lockFileName);
-        }
-    }
-
-    /**
      * @see org.apache.james.mailrepository.api.MailRepository#remove(Collection)
      */
     public void remove(final Collection<Mail> mails) {
@@ -682,6 +638,50 @@ public class MBoxMailRepository implements MailRepository, Configurable {
 
         this.remove(keys);
         unlockMBox();
+    }
+    
+    /**
+     * Attempt to get a lock on the mbox by creating the file mboxname.lock
+     * 
+     * @throws Exception
+     */
+    private void lockMBox() throws Exception {
+        // Create the lock file (if possible)
+        String lockFileName = mboxFile + LOCKEXT;
+        int sleepCount = 0;
+        File mBoxLock = new File(lockFileName);
+        if (!mBoxLock.createNewFile()) {
+            // This is not good, somebody got the lock before me
+            // So wait for a file
+            while (!mBoxLock.createNewFile() && sleepCount < MAXSLEEPTIMES) {
+                try {
+                    LOGGER.debug("Waiting for lock on file {}", mboxFile);
+
+                    Thread.sleep(LOCKSLEEPDELAY);
+                    sleepCount++;
+                } catch (InterruptedException e) {
+                    LOGGER.error("File lock wait for {} interrupted!", mboxFile, e);
+
+                }
+            }
+            if (sleepCount >= MAXSLEEPTIMES) {
+                throw new Exception("Unable to get lock on file " + mboxFile);
+            }
+        }
+    }
+
+    /**
+     * Unlock a previously locked mbox file
+     */
+    private void unlockMBox() {
+        // Just delete the MBOX file
+        String lockFileName = mboxFile + LOCKEXT;
+        File mBoxLock = new File(lockFileName);
+        try {
+            FileUtils.forceDelete(mBoxLock);
+        } catch (IOException e) {
+            LOGGER.error("{} Failed to delete lock file {}", getClass().getName(), lockFileName);
+        }
     }
 
     /**

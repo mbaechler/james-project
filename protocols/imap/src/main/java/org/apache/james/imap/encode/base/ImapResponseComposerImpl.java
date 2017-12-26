@@ -153,6 +153,13 @@ public class ImapResponseComposerImpl implements ImapConstants, ImapResponseComp
         return this;
     }
 
+    @Override
+    public ImapResponseComposer message(long number) throws IOException {
+        space();
+        writeASCII(Long.toString(number));
+        return this;
+    }
+
     private void responseCode(String responseCode) throws IOException {
         if (responseCode != null && !"".equals(responseCode)) {
             writeASCII(" [");
@@ -253,6 +260,25 @@ public class ImapResponseComposerImpl implements ImapConstants, ImapResponseComp
         return this;
     }
 
+    private void upperCaseAscii(String message, boolean quote) throws IOException {
+        space();
+        final int length = message.length();
+        if (quote) {
+            buffer.write(BYTE_DQUOTE);
+        }
+        for (int i = 0; i < length; i++) {
+            final char next = message.charAt(i);
+            if (next >= 'a' && next <= 'z') {
+                buffer.write((byte) (next - LOWER_CASE_OFFSET));
+            } else {
+                buffer.write((byte) (next));
+            }
+        }
+        if (quote) {
+            buffer.write(BYTE_DQUOTE);
+        }
+    }
+    
     /**
      * @see
      * org.apache.james.imap.encode.ImapResponseComposer#quoteUpperCaseAscii
@@ -270,15 +296,6 @@ public class ImapResponseComposerImpl implements ImapConstants, ImapResponseComp
 
     private void writeASCII(String string) throws IOException {
         buffer.write(string.getBytes(usAscii));
-    }
-
-    /**
-     * @see org.apache.james.imap.encode.ImapResponseComposer#message(long)
-     */
-    public ImapResponseComposer message(long number) throws IOException {
-        space();
-        writeASCII(Long.toString(number));
-        return this;
     }
     
     /**
@@ -381,25 +398,6 @@ public class ImapResponseComposerImpl implements ImapConstants, ImapResponseComp
     public ImapResponseComposer openSquareBracket() throws IOException {
         openBracket(BYTE_OPEN_SQUARE_BRACKET);
         return this;
-    }
-
-    private void upperCaseAscii(String message, boolean quote) throws IOException {
-        space();
-        final int length = message.length();
-        if (quote) {
-            buffer.write(BYTE_DQUOTE);
-        }
-        for (int i = 0; i < length; i++) {
-            final char next = message.charAt(i);
-            if (next >= 'a' && next <= 'z') {
-                buffer.write((byte) (next - LOWER_CASE_OFFSET));
-            } else {
-                buffer.write((byte) (next));
-            }
-        }
-        if (quote) {
-            buffer.write(BYTE_DQUOTE);
-        }
     }
 
     public ImapResponseComposer sequenceSet(UidRange[] ranges) throws IOException {

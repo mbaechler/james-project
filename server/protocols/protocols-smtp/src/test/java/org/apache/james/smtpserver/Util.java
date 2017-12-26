@@ -50,10 +50,6 @@ public class Util {
         return createMimeMessage(null, null);
     }
 
-    public static MockMimeMessage createMimeMessageWithSubject(String subject) throws MessagingException {
-        return createMimeMessage(null, null, subject, 0);
-    }
-
     public static MockMimeMessage createMimeMessage(String subject, int number) throws MessagingException {
         return createMimeMessage(null, null, subject, number);
     }
@@ -79,5 +75,9 @@ public class Util {
         mockedMimeMessage.setText("testtext");
         mockedMimeMessage.saveChanges();
         return mockedMimeMessage;
+    }
+
+    public static MockMimeMessage createMimeMessageWithSubject(String subject) throws MessagingException {
+        return createMimeMessage(null, null, subject, 0);
     }
 }

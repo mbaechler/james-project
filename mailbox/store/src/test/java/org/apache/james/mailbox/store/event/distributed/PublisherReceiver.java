@@ -56,13 +56,13 @@ public class PublisherReceiver implements Publisher, MessageConsumer {
     }
 
     @Override
-    public void setMessageReceiver(MessageReceiver messageReceiver) {
-        this.messageReceiver = messageReceiver;
+    public void init(Topic topic) throws Exception {
+        messageReceiverMultimap.put(topic, messageReceiver);
     }
 
     @Override
-    public void init(Topic topic) throws Exception {
-        messageReceiverMultimap.put(topic, messageReceiver);
+    public void setMessageReceiver(MessageReceiver messageReceiver) {
+        this.messageReceiver = messageReceiver;
     }
 
     @Override

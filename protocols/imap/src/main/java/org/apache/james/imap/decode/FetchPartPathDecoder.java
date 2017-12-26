@@ -68,17 +68,6 @@ public class FetchPartPathDecoder {
         return sectionType;
     }
 
-    private void prunePath() {
-        if (path != null) {
-            int length = path.length;
-            if (used < length) {
-                int[] newPath = new int[used];
-                System.arraycopy(path, 0, newPath, 0, used);
-                path = newPath;
-            }
-        }
-    }
-
     private int decode(int at, CharSequence sectionSpecification) throws DecodingException {
         int result;
         int length = sectionSpecification.length();
@@ -153,6 +142,17 @@ public class FetchPartPathDecoder {
             result = CONTENT;
         }
         return result;
+    }
+    
+    private void prunePath() {
+        if (path != null) {
+            int length = path.length;
+            if (used < length) {
+                int[] newPath = new int[used];
+                System.arraycopy(path, 0, newPath, 0, used);
+                path = newPath;
+            }
+        }
     }
 
     private int mime(int at, CharSequence sectionSpecification) throws DecodingException {
@@ -402,6 +402,10 @@ public class FetchPartPathDecoder {
         return result;
     }
 
+    private void digit(int digit) {
+        partial = (partial * 10) + digit;
+    }
+
     private void init() {
         sectionType = CONTENT;
         resetPartial();
@@ -437,10 +441,6 @@ public class FetchPartPathDecoder {
                 path = newPath;
             }
         }
-    }
-
-    private void digit(int digit) {
-        partial = (partial * 10) + digit;
     }
 
     /**

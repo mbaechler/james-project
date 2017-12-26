@@ -239,6 +239,18 @@ public class MimeMessageBuilder {
         return this;
     }
 
+    public MimeMessageBuilder addToRecipient(String... tos) throws AddressException {
+        this.to.addAll(Arrays.asList(tos).stream()
+            .map(TO_INTERNET_ADDRESS)
+            .collect(Guavate.toImmutableList()));
+        return this;
+    }
+
+    public MimeMessageBuilder addToRecipient(InternetAddress... tos) throws AddressException {
+        this.to.addAll(Arrays.asList(tos));
+        return this;
+    }
+
     public MimeMessageBuilder setSubject(String subject) {
         this.subject = Optional.ofNullable(subject);
         return this;
@@ -264,22 +276,20 @@ public class MimeMessageBuilder {
         return this;
     }
 
-    public MimeMessageBuilder addBccRecipient(String text) throws AddressException {
-        this.bcc.add(new InternetAddress(text));
-        return this;
-    }
-
-    public MimeMessageBuilder addToRecipient(String... tos) throws AddressException {
-        this.to.addAll(Arrays.asList(tos).stream()
-            .map(TO_INTERNET_ADDRESS)
-            .collect(Guavate.toImmutableList()));
-        return this;
-    }
-
     public MimeMessageBuilder addCcRecipient(String... ccs) throws AddressException {
         this.cc.addAll(Arrays.asList(ccs).stream()
             .map(TO_INTERNET_ADDRESS)
             .collect(Guavate.toImmutableList()));
+        return this;
+    }
+
+    public MimeMessageBuilder addCcRecipient(InternetAddress... ccs) throws AddressException {
+        this.cc.addAll(Arrays.asList(ccs));
+        return this;
+    }
+    
+    public MimeMessageBuilder addBccRecipient(String text) throws AddressException {
+        this.bcc.add(new InternetAddress(text));
         return this;
     }
 
@@ -288,16 +298,6 @@ public class MimeMessageBuilder {
             .stream()
             .map(TO_INTERNET_ADDRESS)
             .collect(Guavate.toImmutableList()));
-        return this;
-    }
-
-    public MimeMessageBuilder addToRecipient(InternetAddress... tos) throws AddressException {
-        this.to.addAll(Arrays.asList(tos));
-        return this;
-    }
-
-    public MimeMessageBuilder addCcRecipient(InternetAddress... ccs) throws AddressException {
-        this.cc.addAll(Arrays.asList(ccs));
         return this;
     }
 

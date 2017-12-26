@@ -41,6 +41,10 @@ public final class UidRange implements Iterable<MessageUid> {
             .toString();
     }
 
+    public String toString() {
+        return "IdRange : " + range.toString();
+    }
+
     public static List<UidRange> mergeRanges(List<UidRange> ranges) {
         if (ranges.isEmpty()) {
             return ranges;
@@ -49,6 +53,10 @@ public final class UidRange implements Iterable<MessageUid> {
         RangeSet<MessageUid> rangeSet = createSortedRangeSet(ranges);
         List<Range<MessageUid>> mergedRanges = mergeContiguousRanges(rangeSet);
         return toUidRanges(mergedRanges);
+    }
+
+    private static Range<MessageUid> mergeRanges(Range<MessageUid> range, Range<MessageUid> previous) {
+        return Range.closed(previous.lowerEndpoint(), range.upperEndpoint());
     }
 
     private static RangeSet<MessageUid> createSortedRangeSet(List<UidRange> ranges) {
@@ -81,11 +89,6 @@ public final class UidRange implements Iterable<MessageUid> {
         mergedRanges.removeLast();
         mergedRanges.add(newRange);
     }
-
-    private static Range<MessageUid> mergeRanges(Range<MessageUid> range, Range<MessageUid> previous) {
-        return Range.closed(previous.lowerEndpoint(), range.upperEndpoint());
-    }
-
 
     private static LinkedList<UidRange> toUidRanges(List<Range<MessageUid>> mergedRanges) {
         return mergedRanges.stream()
@@ -128,10 +131,6 @@ public final class UidRange implements Iterable<MessageUid> {
             return Objects.equal(this.range, other.range);
         }
         return false;
-    }
-
-    public String toString() {
-        return "IdRange : " + range.toString();
     }
 
     public String getFormattedString() {

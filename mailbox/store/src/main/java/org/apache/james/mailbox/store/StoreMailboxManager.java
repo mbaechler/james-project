@@ -630,6 +630,16 @@ public class StoreMailboxManager implements MailboxManager {
         return searchMailboxes(mailboxExpression, session, Right.Lookup);
     }
 
+    @Override
+    public List<MessageId> search(MultimailboxesSearchQuery expression, MailboxSession session, long limit) throws MailboxException {
+        ImmutableSet<MailboxId> wantedMailboxesId =
+            getInMailboxes(expression.getInMailboxes(), session)
+                .filter(id -> !expression.getNotInMailboxes().contains(id))
+                .collect(Guavate.toImmutableSet());
+
+        return index.search(session, wantedMailboxesId, expression.getSearchQuery(), limit);
+    }
+    
     private List<MailboxMetaData> searchMailboxes(MailboxQuery mailboxExpression, MailboxSession session, Right right) throws MailboxException {
         MailboxMapper mailboxMapper = mailboxSessionMapperFactory.getMailboxMapper(session);
         Stream<Mailbox> baseMailboxes = mailboxMapper
@@ -692,16 +702,6 @@ public class StoreMailboxManager implements MailboxManager {
     private boolean hasChildIn(Mailbox parentMailbox, List<Mailbox> mailboxesWithPathLike, MailboxSession mailboxSession) {
         return mailboxesWithPathLike.stream()
             .anyMatch(mailbox -> mailbox.isChildOf(parentMailbox, mailboxSession));
-    }
-
-    @Override
-    public List<MessageId> search(MultimailboxesSearchQuery expression, MailboxSession session, long limit) throws MailboxException {
-        ImmutableSet<MailboxId> wantedMailboxesId =
-            getInMailboxes(expression.getInMailboxes(), session)
-                .filter(id -> !expression.getNotInMailboxes().contains(id))
-                .collect(Guavate.toImmutableSet());
-
-        return index.search(session, wantedMailboxesId, expression.getSearchQuery(), limit);
     }
 
     private Stream<MailboxId> getInMailboxes(ImmutableSet<MailboxId> inMailboxes, MailboxSession session) throws MailboxException {

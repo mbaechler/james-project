@@ -40,6 +40,24 @@ public class IMAPMDCContext {
             .build();
     }
 
+    private static MDCBuilder from(Object o) {
+        return Optional.ofNullable(o)
+            .filter(object -> object instanceof IMAPSession)
+            .map(object -> (IMAPSession) object)
+            .map(imapSession -> MDCBuilder.create()
+                .addContext(MDCBuilder.SESSION_ID, imapSession.getSessionID())
+                .addContext(MDCBuilder.USER, imapSession.getUser())
+                .addContext(from(Optional.ofNullable(imapSession.getSelected()))))
+            .orElse(MDCBuilder.create());
+    }
+
+    private static MDCBuilder from(Optional<SelectedMailbox> selectedMailbox) {
+        return selectedMailbox
+            .map(value -> MDCBuilder.create()
+                .addContext("selectedMailbox", value.getPath().asString()))
+            .orElse(MDCBuilder.create());
+    }
+
     private static String retrieveIp(ChannelHandlerContext ctx) {
         SocketAddress remoteAddress = ctx.getChannel().getRemoteAddress();
         if (remoteAddress instanceof InetSocketAddress) {
@@ -58,21 +76,4 @@ public class IMAPMDCContext {
         return remoteAddress.toString();
     }
 
-    private static MDCBuilder from(Object o) {
-        return Optional.ofNullable(o)
-            .filter(object -> object instanceof IMAPSession)
-            .map(object -> (IMAPSession) object)
-            .map(imapSession -> MDCBuilder.create()
-                .addContext(MDCBuilder.SESSION_ID, imapSession.getSessionID())
-                .addContext(MDCBuilder.USER, imapSession.getUser())
-                .addContext(from(Optional.ofNullable(imapSession.getSelected()))))
-            .orElse(MDCBuilder.create());
-    }
-
-    private static MDCBuilder from(Optional<SelectedMailbox> selectedMailbox) {
-        return selectedMailbox
-            .map(value -> MDCBuilder.create()
-                .addContext("selectedMailbox", value.getPath().asString()))
-            .orElse(MDCBuilder.create());
-    }
 }
