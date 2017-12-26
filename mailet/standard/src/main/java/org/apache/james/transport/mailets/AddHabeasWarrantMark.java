@@ -106,13 +106,12 @@ public class AddHabeasWarrantMark extends GenericMailet {
         try {
             javax.mail.internet.MimeMessage message = mail.getMessage();
 
-            for(int i = 0; i < HasHabeasWarrantMark.warrantMark.length; i++) {
+            for (int i = 0; i < HasHabeasWarrantMark.warrantMark.length; i++) {
                 message.setHeader(HasHabeasWarrantMark.warrantMark[i][0], HasHabeasWarrantMark.warrantMark[i][1]);
             }
 
             message.saveChanges();
-        }
-        catch (MessagingException me) {
+        } catch (MessagingException me) {
             LOGGER.error("Error while adding habeas", me);
         }
     }

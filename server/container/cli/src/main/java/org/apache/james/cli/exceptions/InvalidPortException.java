@@ -22,7 +22,7 @@ package org.apache.james.cli.exceptions;
 public class InvalidPortException extends JamesCliException {
 
     public InvalidPortException(int invalidPortNumber) {
-        super( invalidPortNumber + " is not a valid port number. Please provide one between 1 and 65535");
+        super(invalidPortNumber + " is not a valid port number. Please provide one between 1 and 65535");
     }
 
 }

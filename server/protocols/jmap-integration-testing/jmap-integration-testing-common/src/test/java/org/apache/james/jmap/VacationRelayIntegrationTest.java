@@ -154,7 +154,7 @@ public abstract class VacationRelayIntegrationTest {
                         .body("[0].text", equalTo(REASON));
 
                     return true;
-                } catch(AssertionError e) {
+                } catch (AssertionError e) {
                     return false;
                 }
             });

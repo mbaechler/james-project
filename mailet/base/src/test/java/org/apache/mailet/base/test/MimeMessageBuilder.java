@@ -78,7 +78,7 @@ public class MimeMessageBuilder {
         public MimeMultipart build() throws MessagingException {
             MimeMultipart multipart = new MimeMultipart();
             List<BodyPart> bodyParts = this.bodyParts.build();
-            for(BodyPart bodyPart : bodyParts) {
+            for (BodyPart bodyPart : bodyParts) {
                 multipart.addBodyPart(bodyPart);
             }
             return multipart;
@@ -169,7 +169,7 @@ public class MimeMessageBuilder {
                 bodyPart.setDisposition(disposition.get());
             }
             List<Header> headerList = headers.build();
-            for(Header header: headerList) {
+            for (Header header: headerList) {
                 bodyPart.addHeader(header.name, header.value);
             }
             return bodyPart;
@@ -371,7 +371,7 @@ public class MimeMessageBuilder {
             mimeMessage.setRecipients(Message.RecipientType.BCC, bccAddresses.toArray(new InternetAddress[bccAddresses.size()]));
         }
         List<Header> headerList = headers.build();
-        for(Header header: headerList) {
+        for (Header header: headerList) {
             mimeMessage.addHeader(header.name, header.value);
         }
         mimeMessage.saveChanges();

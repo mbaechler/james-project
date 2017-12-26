@@ -531,7 +531,7 @@ public class GroupMappingTest {
                             .body("[0].text", equalTo(MESSAGE_CONTENT));
 
                         return true;
-                    } catch(AssertionError e) {
+                    } catch (AssertionError e) {
                         return false;
                     }
                 });

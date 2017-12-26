@@ -44,7 +44,7 @@ public class IMAPMessageReader implements Closeable {
         imapClient.connect(host, port);
     }
 
-    public void connectAndSelect(String user, String password, String mailbox) throws IOException{
+    public void connectAndSelect(String user, String password, String mailbox) throws IOException {
         imapClient.login(user, password);
         imapClient.select(mailbox);
     }
@@ -80,17 +80,17 @@ public class IMAPMessageReader implements Closeable {
 
     @VisibleForTesting
     boolean isCompletedWithFlags(String flags, String replyString) {
-        return replyString.contains("OK FETCH completed") &&
-            Splitter.on(" ")
-            .splitToList(flags)
-            .stream()
-            .allMatch(s -> replyString.contains(s));
+        return replyString.contains("OK FETCH completed") 
+            && Splitter.on(" ")
+                .splitToList(flags)
+                .stream()
+                .allMatch(s -> replyString.contains(s));
     }
 
     public boolean userGetNotifiedForNewMessagesWhenSelectingMailbox(String user, String password, int numOfNewMessage, String mailboxName) throws IOException {
         connectAndSelect(user, password, mailboxName);
 
-        return imapClient.getReplyString().contains("OK [UNSEEN " + numOfNewMessage +"]");
+        return imapClient.getReplyString().contains("OK [UNSEEN " + numOfNewMessage + "]");
     }
 
     public boolean userDoesNotReceiveMessage(String user, String password) throws IOException {
