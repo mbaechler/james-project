@@ -153,7 +153,7 @@ public class CamelMailetProcessor extends AbstractStateMailetProcessor implement
             String state = getState();
 
             RouteDefinition processorDef = from(getEndpoint()).routeId(state).setExchangePattern(ExchangePattern.InOnly)
-            // store the logger in properties
+                    // store the logger in properties
                     .setProperty(MatcherSplitter.LOGGER_PROPERTY, constant(LOGGER))
                     .setProperty(MatcherSplitter.METRIC_FACTORY, constant(metricFactory));
 
@@ -185,7 +185,7 @@ public class CamelMailetProcessor extends AbstractStateMailetProcessor implement
             Processor terminatingMailetProcessor = new CamelProcessor(metricFactory, new TerminatingMailet(), CamelMailetProcessor.this);
 
             processorDef
-            // start choice
+                    // start choice
                     .choice()
 
                     // when the mail state did not change till yet ( the end of

@@ -306,7 +306,7 @@ public class SMIMEKeyHolder implements KeyHolder {
         
     }
     
-     /**
+    /**
      * Getter for property signerAddress.
      * @return Value of property signerMailAddress.
      * @see #getSignerAddress(X509Certificate)
