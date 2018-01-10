@@ -743,7 +743,7 @@ public class StoreMessageManager implements org.apache.james.mailbox.MessageMana
         SortedMap<MessageUid, MessageMetaData> copiedUids = collectMetadata(to.copy(originalRows, session));
 
         ImmutableMap.Builder<MessageUid, MailboxMessage> messagesMap = ImmutableMap.builder();
-        for(MailboxMessage message: originalRows.getEntriesSeen()) {
+        for (MailboxMessage message: originalRows.getEntriesSeen()) {
             messagesMap.put(message.getUid(), immutableMailboxMessageFactory.from(to.getMailboxEntity().getMailboxId(), message));
         }
         dispatcher.added(session, copiedUids, to.getMailboxEntity(), messagesMap.build());

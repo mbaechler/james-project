@@ -88,7 +88,7 @@ public class ValueWithUnit {
     }
 
     private static String removeLastCharIfNeeded(String providedLongWithUnitString, Unit unit) {
-        if(unit != Unit.NoUnit) {
+        if (unit != Unit.NoUnit) {
             return providedLongWithUnitString.substring(0, providedLongWithUnitString.length() - 1);
         } else {
             return providedLongWithUnitString;
