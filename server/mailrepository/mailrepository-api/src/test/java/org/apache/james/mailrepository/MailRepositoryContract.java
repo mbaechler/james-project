@@ -25,22 +25,35 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.function.Function;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
 import org.apache.james.core.MailAddress;
 import org.apache.james.core.builder.MimeMessageBuilder;
+import org.apache.james.junit.ExecutorExtension;
 import org.apache.james.mailrepository.api.MailRepository;
 import org.apache.james.server.core.MailImpl;
+import org.apache.james.utils.Partition;
 import org.apache.mailet.Mail;
 import org.apache.mailet.PerRecipientHeaders;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.hash.Hashing;
+import io.vavr.CheckedRunnable;
+import io.vavr.collection.Seq;
+import io.vavr.concurrent.Future;
 
+@ExtendWith(ExecutorExtension.class)
 public interface MailRepositoryContract {
 
     String TEST_ATTRIBUTE = "testAttribute";
@@ -302,6 +315,50 @@ public interface MailRepositoryContract {
 
         assertThat(testee.list()).hasSize(1);
         assertThat(testee.retrieve(key)).satisfies(actual -> checkMailEquality(actual, mail));
+    }
+
+
+    @Test
+    default void storingAndRemovingMessagesConcurrentlyShouldLeadToConsistentResult(ExecutorService executorService) throws Exception {
+        MailRepository testee = retrieveRepository();
+
+        ConcurrentHashMap.KeySetView<String, Boolean> expectedResult = ConcurrentHashMap.newKeySet();
+
+        int nbKeys = 200;
+        Function<Integer, CheckedRunnable> add = (Integer i) -> () -> {
+            String key = computeKey(nbKeys, i);
+            testee.store(createMail(key));
+            expectedResult.add(key);
+        };
+
+        Function<Integer, CheckedRunnable> remove = (Integer i) -> () -> {
+            String key = computeKey(nbKeys, i);
+            testee.remove(key);
+            expectedResult.remove(key);
+        };
+
+        int nbIterations = 1000;
+        Future.sequence(
+            Partition
+                .create(ImmutableMultimap.of(2, add, 6, remove))
+                .generateRandomStream()
+                .zipWithIndex()
+                .map(x -> x._1.apply(x._2))
+                .take(nbIterations)
+                .map(runnable -> io.vavr.concurrent.Future.run(executorService, runnable)))
+            .await();
+
+        assertThat(testee.list()).containsOnlyElementsOf(expectedResult);
+    }
+
+    @NotNull
+    default String computeKey(int nbKeys, Integer i) {
+        int keyIndex = computeKeyIndex(nbKeys, i);
+        return "mail" + keyIndex;
+    }
+
+    default int computeKeyIndex(int nbKeys, Integer i) {
+        return i % nbKeys;
     }
 
 }
