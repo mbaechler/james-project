@@ -320,7 +320,7 @@ public interface MailRepositoryContract {
     default void storingAndRemovingMessagesConcurrentlyShouldLeadToConsistentResult(ExecutorService executorService) throws Exception {
         MailRepository testee = retrieveRepository();
         int nbKeys = 2;
-        int nbIterations = 200;
+        int nbIterations = 10;
         int threadCount = 10;
         ConcurrentHashMap.KeySetView<String, Boolean> expectedResult = ConcurrentHashMap.newKeySet();
 
