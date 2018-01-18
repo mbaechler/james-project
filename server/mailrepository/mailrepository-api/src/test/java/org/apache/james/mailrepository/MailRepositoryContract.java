@@ -315,13 +315,12 @@ public interface MailRepositoryContract {
         assertThat(testee.retrieve(key)).satisfies(actual -> checkMailEquality(actual, mail));
     }
 
-
     @Test
     default void storingAndRemovingMessagesConcurrentlyShouldLeadToConsistentResult(ExecutorService executorService) throws Exception {
         MailRepository testee = retrieveRepository();
         int nbKeys = 2;
-        int nbIterations = 1000;
-        int threadCount = 20;
+        int nbIterations = 200;
+        int threadCount = 10;
         ConcurrentHashMap.KeySetView<String, Boolean> expectedResult = ConcurrentHashMap.newKeySet();
 
         Random random = new Random();
