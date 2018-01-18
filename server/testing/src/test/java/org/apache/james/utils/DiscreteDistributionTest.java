@@ -26,72 +26,90 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.apache.james.utils.DiscreteDistribution.DistributionEntry;
 import org.assertj.core.data.Offset;
 import org.junit.jupiter.api.Test;
 
-import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ImmutableList;
 
-class PartitionTest {
+class DiscreteDistributionTest {
 
     @Test
     void createShouldNotSupportNegativeDistribution() {
-        assertThatThrownBy(() -> Partition.create(ImmutableMultimap.of(-1, "a")))
+        assertThatThrownBy(() -> new DistributionEntry<>("a", -1))
             .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void createShouldSupportZeroDistribution() {
-        Partition<String> testee = Partition.create(ImmutableMultimap.of(0, "a", 1, "b"));
+        DiscreteDistribution<String> testee = DiscreteDistribution.create(
+            ImmutableList.of(
+                new DistributionEntry<>("a", 0),
+                new DistributionEntry<>("b", 1)));
 
         assertThat(testee.generateRandomStream().take(10)).containsOnly("b");
     }
 
     @Test
     void createShouldNotSupportEmptyDistribution() {
-        assertThatThrownBy(() -> Partition.create(ImmutableMultimap.of()))
+        assertThatThrownBy(() -> DiscreteDistribution.create(ImmutableList.of()))
             .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void createShouldNotSupportEffectivelyEmptyDistribution() {
-        assertThatThrownBy(() -> Partition.create(ImmutableMultimap.of(0, "a", 0, "b")))
+        assertThatThrownBy(() -> DiscreteDistribution.create(
+            ImmutableList.of(
+                new DistributionEntry<>("a", 0),
+                new DistributionEntry<>("b", 0))))
             .isInstanceOf(IllegalArgumentException.class);
     }
 
 
     @Test
     void streamOfSingleDistributionMapShouldAlwaysReturnSameElement() {
-        Partition<Integer> testee = Partition.create(ImmutableMultimap.of(10, 1));
+        DiscreteDistribution<String> testee = DiscreteDistribution.create(
+            ImmutableList.of(
+                new DistributionEntry<>("a", 1)));
 
-        assertThat(testee.generateRandomStream().take(10)).containsOnly(1);
+        assertThat(testee.generateRandomStream().take(10)).containsOnly("a");
     }
 
     @Test
     void streamOfEvenDistributionMapShouldReturnSameNumberOfEachElement() {
-        Partition<String> testee = Partition.create(ImmutableMultimap.of(10, "a", 10, "b"));
+        DiscreteDistribution<String> testee =DiscreteDistribution.create(
+            ImmutableList.of(
+                new DistributionEntry<>("a", 10),
+                new DistributionEntry<>("b", 10)));
 
-        Map<String, Long> distribution = testee.generateRandomStream().take(1_000_000)
+        Map<String, Long> experimentOutcome = testee.generateRandomStream().take(1_000_000)
             .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
-        assertThat(distribution.get("a")).isCloseTo(distribution.get("b"), Offset.offset(5_000L));
+        assertThat(experimentOutcome.get("a")).isCloseTo(experimentOutcome.get("b"), Offset.offset(5_000L));
     }
 
     @Test
     void streamOfSpecificDistributionMapShouldReturnTwiceMoreA() {
-        Partition<String> testee = Partition.create(ImmutableMultimap.of(20, "a", 10, "b"));
+        DiscreteDistribution<String> testee = DiscreteDistribution.create(
+            ImmutableList.of(
+                new DistributionEntry<>("a", 20),
+                new DistributionEntry<>("b", 10)));
 
-        Map<String, Long> distribution = testee.generateRandomStream().take(1_000_000)
+        Map<String, Long> experimentOutcome = testee.generateRandomStream().take(1_000_000)
             .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
-        assertThat(distribution.get("a")).isCloseTo(distribution.get("b") * 2, Offset.offset(5_000L));
+        assertThat(experimentOutcome.get("a")).isCloseTo(experimentOutcome.get("b") * 2, Offset.offset(5_000L));
     }
 
     @Test
     void partitionShouldSupportDuplicatedDistributionEntry() {
-        Partition<String> testee = Partition.create(ImmutableMultimap.of(10, "a", 10, "b", 10, "a"));
+        DiscreteDistribution<String> testee = DiscreteDistribution.create(
+            ImmutableList.of(
+                new DistributionEntry<>("a", 10),
+                new DistributionEntry<>("b", 10),
+                new DistributionEntry<>("a", 10)));
 
-        Map<String, Long> distribution = testee.generateRandomStream().take(1_000_000)
+        Map<String, Long> experimentOutcome = testee.generateRandomStream().take(1_000_000)
             .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
-        assertThat(distribution.get("a")).isCloseTo(distribution.get("b") * 2, Offset.offset(5_000L));
+        assertThat(experimentOutcome.get("a")).isCloseTo(experimentOutcome.get("b") * 2, Offset.offset(5_000L));
     }
-
 
 }
