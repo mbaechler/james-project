@@ -20,23 +20,23 @@
 package org.apache.james.mailrepository.memory;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.james.mailrepository.api.MailRepository;
 import org.apache.mailet.Mail;
 
 public class MemoryMailRepository implements MailRepository {
 
-    private final HashMap<String, Mail> mails;
+    private final ConcurrentHashMap<String, Mail> mails;
 
     public MemoryMailRepository() {
-        mails = new HashMap<>();
+        mails = new ConcurrentHashMap<>();
     }
 
     @Override
-    public void store(Mail mc) {
-        mails.put(mc.getName(), mc);
+    public void store(Mail mail) {
+        mails.put(mail.getName(), mail);
     }
 
     @Override
