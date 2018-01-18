@@ -43,6 +43,7 @@ import org.apache.james.utils.DiscreteDistribution;
 import org.apache.james.utils.DiscreteDistribution.DistributionEntry;
 import org.apache.mailet.Mail;
 import org.apache.mailet.PerRecipientHeaders;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -315,7 +316,7 @@ public interface MailRepositoryContract {
         assertThat(testee.retrieve(key)).satisfies(actual -> checkMailEquality(actual, mail));
     }
 
-    @Test
+    @RepeatedTest(20)
     default void storingAndRemovingMessagesConcurrentlyShouldLeadToConsistentResult(ExecutorService executorService) throws Exception {
         MailRepository testee = retrieveRepository();
         int nbKeys = 2;
