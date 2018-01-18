@@ -24,18 +24,19 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
 import org.apache.james.core.MailAddress;
 import org.apache.james.core.builder.MimeMessageBuilder;
-import org.apache.james.junit.ExecutorExtension;
 import org.apache.james.mailrepository.api.MailRepository;
 import org.apache.james.server.core.MailImpl;
 import org.apache.james.util.concurrency.ConcurrentTestRunner;
@@ -45,14 +46,13 @@ import org.apache.mailet.Mail;
 import org.apache.mailet.PerRecipientHeaders;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import com.github.fge.lambdas.runnable.ThrowingRunnable;
+import com.github.steveash.guavate.Guavate;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.hash.Hashing;
 
-@ExtendWith(ExecutorExtension.class)
 public interface MailRepositoryContract {
 
     String TEST_ATTRIBUTE = "testAttribute";
@@ -316,25 +316,34 @@ public interface MailRepositoryContract {
         assertThat(testee.retrieve(key)).satisfies(actual -> checkMailEquality(actual, mail));
     }
 
-    @RepeatedTest(20)
-    default void storingAndRemovingMessagesConcurrentlyShouldLeadToConsistentResult(ExecutorService executorService) throws Exception {
+    @RepeatedTest(100)
+    default void storingAndRemovingMessagesConcurrentlyShouldLeadToConsistentResult() throws Exception {
         MailRepository testee = retrieveRepository();
-        int nbKeys = 2;
+        int nbKeys = 20;
         int nbIterations = 10;
         int threadCount = 10;
         ConcurrentHashMap.KeySetView<String, Boolean> expectedResult = ConcurrentHashMap.newKeySet();
+        List<Object> locks = IntStream.range(0, 10)
+            .boxed()
+            .collect(Guavate.toImmutableList());
 
         Random random = new Random();
         ThrowingRunnable add = () -> {
-            String key = computeKey(nbKeys, random.nextInt());
-            testee.store(createMail(key));
-            expectedResult.add(key);
+            int keyIndex = computeKeyIndex(nbKeys, random.nextInt());
+            String key =  computeKey(keyIndex);
+            synchronized (locks.get(keyIndex)) {
+                testee.store(createMail(key));
+                expectedResult.add(key);
+            }
         };
 
         ThrowingRunnable remove = () -> {
-            String key = computeKey(nbKeys, random.nextInt());
-            testee.remove(key);
-            expectedResult.remove(key);
+            int keyIndex = computeKeyIndex(nbKeys, random.nextInt());
+            String key =  computeKey(keyIndex);
+            synchronized (locks.get(keyIndex)) {
+                testee.remove(key);
+                expectedResult.remove(key);
+            }
         };
 
         DiscreteDistribution<ThrowingRunnable> distribution = DiscreteDistribution.create(
@@ -350,8 +359,7 @@ public interface MailRepositoryContract {
         assertThat(testee.list()).containsOnlyElementsOf(expectedResult);
     }
 
-    default String computeKey(int nbKeys, Integer i) {
-        int keyIndex = computeKeyIndex(nbKeys, i);
+    default String computeKey(int keyIndex) {
         return "mail" + keyIndex;
     }
 
