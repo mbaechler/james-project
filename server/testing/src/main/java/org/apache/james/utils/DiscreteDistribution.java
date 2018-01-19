@@ -67,7 +67,7 @@ public class DiscreteDistribution<T> {
     private final EnumeratedDistribution<T> enumeratedDistribution;
 
     private DiscreteDistribution(List<DistributionEntry<T>> distribution) {
-        enumeratedDistribution = new EnumeratedDistribution<T>(distribution.stream()
+        enumeratedDistribution = new EnumeratedDistribution<>(distribution.stream()
             .map(DistributionEntry::toPair)
             .collect(Guavate.toImmutableList()));
     }
