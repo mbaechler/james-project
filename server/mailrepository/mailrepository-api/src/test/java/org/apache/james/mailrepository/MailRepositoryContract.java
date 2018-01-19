@@ -348,8 +348,8 @@ public interface MailRepositoryContract {
 
         DiscreteDistribution<ThrowingRunnable> distribution = DiscreteDistribution.create(
             ImmutableList.of(
-                new DistributionEntry<>(add, 2),
-                new DistributionEntry<>(remove, 6)));
+                new DistributionEntry<>(add, 0.25),
+                new DistributionEntry<>(remove, 0.75)));
 
         new ConcurrentTestRunner(threadCount, nbIterations,
             (a, b) -> distribution.sample().run())
