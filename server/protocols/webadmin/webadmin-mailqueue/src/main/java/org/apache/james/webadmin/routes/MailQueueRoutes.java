@@ -49,7 +49,7 @@ public class MailQueueRoutes implements Routes {
                 mailQueueFactory
                     .listCreatedMailQueues()
                     .stream()
-                    .map(ManageableMailQueue::getMailQueueName)
+                    .map(ManageableMailQueue::getName)
                     .collect(Guavate.toImmutableList()),
             jsonTransformer);
     }
