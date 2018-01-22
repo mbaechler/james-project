@@ -13,6 +13,7 @@ import org.eclipse.jetty.http.HttpStatus;
 
 import com.github.steveash.guavate.Guavate;
 import com.google.common.annotations.VisibleForTesting;
+
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
@@ -25,7 +26,7 @@ public class MailQueueRoutes implements Routes {
     private final JsonTransformer jsonTransformer;
 
     @Inject
-    @VisibleForTesting MailQueueRoutes(MailQueueFactory mailQueueFactory, JsonTransformer jsonTransformer) {
+    @VisibleForTesting MailQueueRoutes(MailQueueFactory<ManageableMailQueue> mailQueueFactory, JsonTransformer jsonTransformer) {
         this.mailQueueFactory = mailQueueFactory;
         this.jsonTransformer = jsonTransformer;
     }
