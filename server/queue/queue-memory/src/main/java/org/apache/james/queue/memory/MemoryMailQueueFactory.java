@@ -46,9 +46,9 @@ import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
-public class MemoryMailQueueFactory implements MailQueueFactory {
+public class MemoryMailQueueFactory implements MailQueueFactory<ManageableMailQueue> {
 
-    private final ConcurrentHashMap<String, MailQueue> mailQueues;
+    private final ConcurrentHashMap<String, MemoryMailQueueFactory.MemoryMailQueue> mailQueues;
     private final MailQueueItemDecoratorFactory mailQueueItemDecoratorFactory;
 
     @Inject
@@ -58,18 +58,18 @@ public class MemoryMailQueueFactory implements MailQueueFactory {
     }
 
     @Override
-    public Set<MailQueue> listCreatedMailQueues() {
+    public Set<ManageableMailQueue> listCreatedMailQueues() {
         return ImmutableSet.copyOf(mailQueues.values());
     }
 
     @Override
-    public MailQueue getQueue(String name) {
-        return Optional.ofNullable(mailQueues.get(name))
-            .orElseGet(() -> tryInsertNewMailQueue(name));
+    public Optional<ManageableMailQueue> getQueue(String name) {
+        return Optional.ofNullable(mailQueues.get(name));
     }
 
-    private MailQueue tryInsertNewMailQueue(String name) {
-        MailQueue newMailQueue = new MemoryMailQueue(name, mailQueueItemDecoratorFactory);
+    @Override
+    public MemoryMailQueueFactory.MemoryMailQueue createQueue(String name) {
+        MemoryMailQueueFactory.MemoryMailQueue newMailQueue = new MemoryMailQueue(name, mailQueueItemDecoratorFactory);
         return Optional.ofNullable(mailQueues.putIfAbsent(name, newMailQueue))
             .orElse(newMailQueue);
     }

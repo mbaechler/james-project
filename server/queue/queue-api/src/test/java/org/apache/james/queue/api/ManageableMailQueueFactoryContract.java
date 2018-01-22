@@ -17,29 +17,41 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.jmap.send;
+package org.apache.james.queue.api;
 
-import javax.inject.Inject;
+import static org.assertj.core.api.Assertions.assertThat;
 
-import org.apache.james.queue.api.MailQueue;
-import org.apache.james.queue.api.MailQueue.MailQueueException;
-import org.apache.james.queue.api.MailQueueFactory;
-import org.apache.mailet.Mail;
+import java.util.Date;
 
-import com.google.common.annotations.VisibleForTesting;
+import javax.mail.MessagingException;
 
-public class MailSpool {
+import org.apache.james.core.builder.MimeMessageBuilder;
+import org.apache.mailet.base.test.FakeMail;
+import org.junit.jupiter.api.Test;
 
-    private final MailQueue queue;
+public interface ManageableMailQueueFactoryContract {
 
-    @Inject
-    @VisibleForTesting MailSpool(MailQueueFactory queueFactory) {
-        queue = queueFactory.createQueue(MailQueueFactory.SPOOL);
+    String NAME_1 = "name1";
+    String NAME_2 = "name2";
+
+    MailQueueFactory<ManageableMailQueue> getMailQueueFactory();
+
+    @Test
+    default void createMailQueueShouldNotConflictIfAlreadyExists() throws MessagingException {
+        MailQueueFactory<ManageableMailQueue> mailQueueFactory = getMailQueueFactory();
+        MailQueue firstCreation = mailQueueFactory.createQueue(NAME_1);
+        FakeMail expectedMail = FakeMail
+            .builder()
+            .mimeMessage(MimeMessageBuilder.mimeMessageBuilder().setText("blabla").setSubject("foo").build())
+            .lastUpdated(new Date())
+            .name("bar")
+            .build();
+        firstCreation.enQueue(expectedMail);
+        ManageableMailQueue secondCreation = mailQueueFactory.createQueue(NAME_1);
+
+        assertThat(secondCreation.getSize()).isEqualTo(1);
     }
 
-    public void send(Mail mail, MailMetadata metadata) throws MailQueueException {
-        mail.setAttribute(MailMetadata.MAIL_METADATA_MESSAGE_ID_ATTRIBUTE, metadata.getMessageId().serialize());
-        mail.setAttribute(MailMetadata.MAIL_METADATA_USERNAME_ATTRIBUTE, metadata.getUsername());
-        queue.enQueue(mail);
-    }
+
+
 }
