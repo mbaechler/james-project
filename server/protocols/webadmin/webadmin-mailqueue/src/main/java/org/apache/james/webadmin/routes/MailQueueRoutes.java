@@ -5,8 +5,8 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 
-import org.apache.james.queue.api.MailQueue;
 import org.apache.james.queue.api.MailQueueFactory;
+import org.apache.james.queue.api.ManageableMailQueue;
 import org.apache.james.webadmin.Routes;
 import org.apache.james.webadmin.utils.JsonTransformer;
 import org.eclipse.jetty.http.HttpStatus;
@@ -21,7 +21,7 @@ import spark.Service;
 public class MailQueueRoutes implements Routes {
 
     @VisibleForTesting  static final String BASE_URL = "/mailQueues";
-    private final MailQueueFactory mailQueueFactory;
+    private final MailQueueFactory<ManageableMailQueue> mailQueueFactory;
     private final JsonTransformer jsonTransformer;
 
     @Inject
@@ -47,9 +47,9 @@ public class MailQueueRoutes implements Routes {
         service.get(BASE_URL,
             (request, response) ->
                 mailQueueFactory
-                    .getUsedMailQueues()
+                    .listCreatedMailQueues()
                     .stream()
-                    .map(MailQueue::getMailQueueName)
+                    .map(ManageableMailQueue::getMailQueueName)
                     .collect(Guavate.toImmutableList()),
             jsonTransformer);
     }
