@@ -21,18 +21,13 @@ package org.apache.james.queue.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.Date;
-
 import javax.mail.MessagingException;
 
-import org.apache.james.core.builder.MimeMessageBuilder;
-import org.apache.mailet.base.test.FakeMail;
 import org.junit.jupiter.api.Test;
 
 public interface ManageableMailQueueFactoryContract {
 
     String NAME_1 = "name1";
-    String NAME_2 = "name2";
 
     MailQueueFactory<ManageableMailQueue> getMailQueueFactory();
 
@@ -40,18 +35,11 @@ public interface ManageableMailQueueFactoryContract {
     default void createMailQueueShouldNotConflictIfAlreadyExists() throws MessagingException {
         MailQueueFactory<ManageableMailQueue> mailQueueFactory = getMailQueueFactory();
         MailQueue firstCreation = mailQueueFactory.createQueue(NAME_1);
-        FakeMail expectedMail = FakeMail
-            .builder()
-            .mimeMessage(MimeMessageBuilder.mimeMessageBuilder().setText("blabla").setSubject("foo").build())
-            .lastUpdated(new Date())
-            .name("bar")
-            .build();
-        firstCreation.enQueue(expectedMail);
-        ManageableMailQueue secondCreation = mailQueueFactory.createQueue(NAME_1);
 
+        firstCreation.enQueue( Mails.defaultMail().build());
+
+        ManageableMailQueue secondCreation = mailQueueFactory.createQueue(NAME_1);
         assertThat(secondCreation.getSize()).isEqualTo(1);
     }
-
-
 
 }
