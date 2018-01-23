@@ -27,6 +27,7 @@ import javax.ws.rs.GET;
 import org.apache.james.queue.api.MailQueueFactory;
 import org.apache.james.queue.api.ManageableMailQueue;
 import org.apache.james.webadmin.Routes;
+import org.apache.james.webadmin.dto.MailQueueDTO;
 import org.apache.james.webadmin.utils.JsonTransformer;
 import org.eclipse.jetty.http.HttpStatus;
 
@@ -70,6 +71,7 @@ public class MailQueueRoutes implements Routes {
                     .listCreatedMailQueues()
                     .stream()
                     .map(ManageableMailQueue::getName)
+                    .map(MailQueueDTO::new)
                     .collect(Guavate.toImmutableList()),
             jsonTransformer);
     }

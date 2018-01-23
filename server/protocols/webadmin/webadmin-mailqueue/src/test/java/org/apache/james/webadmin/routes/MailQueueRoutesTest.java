@@ -111,7 +111,7 @@ public class MailQueueRoutesTest {
         .extract()
             .body()
             .jsonPath()
-            .getList(".");
+            .getList("name");
 
         assertThat(actual).containsOnly(FIRST_QUEUE);
     }
@@ -131,7 +131,7 @@ public class MailQueueRoutesTest {
         .extract()
             .body()
             .jsonPath()
-            .getList(".");
+            .getList("name");
 
         assertThat(actual).containsOnly(FIRST_QUEUE, SECOND_QUEUE, THIRD_QUEUE, FOURTH_QUEUE);
     }
