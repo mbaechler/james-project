@@ -101,7 +101,7 @@ public class MailQueueRoutesTest {
 
     @Test
     public void listAllMailQueuesShouldReturnSingleElementListWhenOnlyOneMailQueue() {
-        mailQueueFactory.getQueue(FIRST_QUEUE);
+        mailQueueFactory.createQueue(FIRST_QUEUE);
 
         List<String> actual = RestAssured.when()
             .get()
@@ -118,10 +118,10 @@ public class MailQueueRoutesTest {
 
     @Test
     public void listAllMailQueuesShouldReturnListWhenSeveralMailQueues() {
-        mailQueueFactory.getQueue(FIRST_QUEUE);
-        mailQueueFactory.getQueue(SECOND_QUEUE);
-        mailQueueFactory.getQueue(THIRD_QUEUE);
-        mailQueueFactory.getQueue(FOURTH_QUEUE);
+        mailQueueFactory.createQueue(FIRST_QUEUE);
+        mailQueueFactory.createQueue(SECOND_QUEUE);
+        mailQueueFactory.createQueue(THIRD_QUEUE);
+        mailQueueFactory.createQueue(FOURTH_QUEUE);
 
         List<String> actual = RestAssured.when()
             .get()
