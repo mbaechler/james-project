@@ -20,13 +20,4 @@
 package org.apache.james.webadmin.dto;
 
 public class MailQueueDTO {
-    private final String name;
-
-    public MailQueueDTO(String name) {
-        this.name = name;
-    }
-
-    public String getName() {
-        return name;
-    }
 }
