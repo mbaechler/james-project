@@ -19,8 +19,8 @@
 
 package org.apache.james.webadmin.dto;
 
+import java.time.ZonedDateTime;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,16 +45,8 @@ public class MailQueueItemDTO {
                 .name(mailQueueItemView.getMail().getName())
                 .sender(mailQueueItemView.getMail().getSender())
                 .recipients(mailQueueItemView.getMail().getRecipients())
-                .nextDelivery(nextDelivery(mailQueueItemView))
+                .nextDelivery(mailQueueItemView.getNextDelivery())
                 .build();
-    }
-
-    private static Optional<Date> nextDelivery(ManageableMailQueue.MailQueueItemView mailQueueItemView) {
-        long nextDelivery = mailQueueItemView.getNextDelivery();
-        if (nextDelivery == NO_NEXT_DELIVERY) {
-            return Optional.empty();
-        }
-        return Optional.of(new Date(nextDelivery));
     }
 
     public static class Builder {
@@ -62,7 +54,7 @@ public class MailQueueItemDTO {
         private String name;
         private String sender;
         private List<String> recipients;
-        private Optional<Date> nextDelivery;
+        private Optional<ZonedDateTime> nextDelivery;
 
         private Builder() {
         }
@@ -84,7 +76,7 @@ public class MailQueueItemDTO {
             return this;
         }
 
-        public Builder nextDelivery(Optional<Date> nextDelivery) {
+        public Builder nextDelivery(Optional<ZonedDateTime> nextDelivery) {
             this.nextDelivery = nextDelivery;
             return this;
         }
@@ -98,9 +90,9 @@ public class MailQueueItemDTO {
     private final String name;
     private final String sender;
     private final List<String> recipients;
-    private final Optional<Date> nextDelivery;
+    private final Optional<ZonedDateTime> nextDelivery;
 
-    public MailQueueItemDTO(String name, String sender, List<String> recipients, Optional<Date> nextDelivery) {
+    public MailQueueItemDTO(String name, String sender, List<String> recipients, Optional<ZonedDateTime> nextDelivery) {
         this.name = name;
         this.sender = sender;
         this.recipients = recipients;
@@ -119,7 +111,7 @@ public class MailQueueItemDTO {
         return recipients;
     }
 
-    public Optional<Date> getNextDelivery() {
+    public Optional<ZonedDateTime> getNextDelivery() {
         return nextDelivery;
     }
 }

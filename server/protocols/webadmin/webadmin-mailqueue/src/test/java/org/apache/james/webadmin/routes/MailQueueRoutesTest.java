@@ -250,7 +250,6 @@ public class MailQueueRoutesTest {
             .body(".", hasSize(1));
     }
 
-    @Ignore("MemoryMailQueueFactory doesn't support delay")
     @Test
     public void listMailsShouldReturnDelayedMailsWhenAskFor() throws Exception {
         MemoryMailQueue queue = mailQueueFactory.createQueue(FIRST_QUEUE);
