@@ -21,7 +21,6 @@ package org.apache.james.webadmin.dto;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.ZonedDateTime;
-import java.util.Date;
 import java.util.List;
 
 import org.apache.james.core.MailAddress;

@@ -34,8 +34,6 @@ import com.google.common.base.Strings;
 
 public class MailQueueItemDTO {
 
-    private static final long NO_NEXT_DELIVERY = -1;
-
     public static Builder builder() {
         return new Builder();
     }
