@@ -34,29 +34,33 @@ import org.jboss.netty.util.HashedWheelTimer;
  * 
  *
  */
-public abstract class AbstractChannelPipelineFactory implements ChannelPipelineFactory, ExternalResourceReleasable {
+public abstract class AbstractChannelPipelineFactory implements ChannelPipelineFactory {
     public static final int MAX_LINE_LENGTH = 8192;
 
     protected final ConnectionLimitUpstreamHandler connectionLimitHandler;
     protected final ConnectionPerIpLimitUpstreamHandler connectionPerIpLimitHandler;
-    private final HashedWheelTimer timer = new HashedWheelTimer();
+    private final HashedWheelTimer timer;
     private final ChannelGroupHandler groupHandler;
     private final int timeout;
     private final ExecutionHandler eHandler;
     private final ChannelHandlerFactory frameHandlerFactory;
-    
-    public AbstractChannelPipelineFactory(int timeout, int maxConnections, int maxConnectsPerIp, ChannelGroup channels) {
-        this(timeout, maxConnections, maxConnectsPerIp, channels, null, new LineDelimiterBasedChannelHandlerFactory(MAX_LINE_LENGTH));
+
+    public AbstractChannelPipelineFactory(int timeout, int maxConnections, int maxConnectsPerIp, ChannelGroup channels,
+                                          HashedWheelTimer hashedWheelTimer) {
+        this(timeout, maxConnections, maxConnectsPerIp, channels, null,
+            new LineDelimiterBasedChannelHandlerFactory(MAX_LINE_LENGTH), hashedWheelTimer);
     }
     
-    public AbstractChannelPipelineFactory(int timeout, int maxConnections, int maxConnectsPerIp, ChannelGroup channels, ExecutionHandler eHandler,
-            ChannelHandlerFactory frameHandlerFactory) {
+    public AbstractChannelPipelineFactory(int timeout, int maxConnections, int maxConnectsPerIp, ChannelGroup channels,
+                                          ExecutionHandler eHandler, ChannelHandlerFactory frameHandlerFactory,
+                                          HashedWheelTimer hashedWheelTimer) {
         this.connectionLimitHandler = new ConnectionLimitUpstreamHandler(maxConnections);
         this.connectionPerIpLimitHandler = new ConnectionPerIpLimitUpstreamHandler(maxConnectsPerIp);
         this.groupHandler = new ChannelGroupHandler(channels);
         this.timeout = timeout;
         this.eHandler = eHandler;
         this.frameHandlerFactory = frameHandlerFactory;
+        this.timer = hashedWheelTimer;
     }
     
     
@@ -98,12 +102,4 @@ public abstract class AbstractChannelPipelineFactory implements ChannelPipelineF
      */
     protected abstract ChannelUpstreamHandler createHandler();
 
-    
-    /*
-     * (non-Javadoc)
-     * @see org.jboss.netty.util.ExternalResourceReleasable#releaseExternalResources()
-     */
-    public void releaseExternalResources() {
-        timer.stop();
-    }
 }
