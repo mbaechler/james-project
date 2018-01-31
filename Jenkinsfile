@@ -8,9 +8,18 @@ pipeline {
   }
   stages {
     stage('error') {
-      steps {
-        sh 'mvn -B clean package -DskipTests'
-        stash(name: 'build', includes: '**/target/**')
+      parallel {
+        stage('build') {
+          steps {
+            sh 'mvn -B clean package -DskipTests'
+            stash(name: 'build', includes: '**/target/**')
+          }
+        }
+        stage('checkstyle') {
+          steps {
+            sh 'mvn checkstyle:checkstyle'
+          }
+        }
       }
     }
   }
