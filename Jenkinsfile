@@ -10,7 +10,7 @@ pipeline {
     stage('error') {
       steps {
         sh 'mvn -B clean package -DskipTests'
-        stash(name: 'build', includes: 'target')
+        stash(name: 'build', includes: '**/target/**')
       }
     }
   }
