@@ -17,7 +17,7 @@ pipeline {
       parallel {
         stage('run some tests') {
           steps {
-            sh 'mvn -B -Dtest=MemoryGetMessagesMethodTest -DfailIfNoTests=false '
+            sh 'mvn -B test -Dtest=MemoryGetMessagesMethodTest -DfailIfNoTests=false '
           }
         }
         stage('run some other tests') {
