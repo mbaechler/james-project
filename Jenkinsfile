@@ -18,6 +18,7 @@ pipeline {
         stage('run some tests') {
           steps {
             sh 'mvn -B test -Dtest=MemoryGetMessagesMethodTest -DfailIfNoTests=false '
+            stash(name: 'testResults', allowEmpty: true, includes: '**/surefire-reports/*.xml')
           }
         }
         stage('run some other tests') {
@@ -29,6 +30,7 @@ pipeline {
     }
     stage('junit') {
       steps {
+        unstash 'testResults'
         junit(testResults: '**/target/surefire-reports/*.xml', allowEmptyResults: true)
       }
     }
