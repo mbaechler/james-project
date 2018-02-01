@@ -27,5 +27,10 @@ pipeline {
         }
       }
     }
+    stage('junit') {
+      steps {
+        junit(testResults: '**/target/surefire-reports/*.xml', allowEmptyResults: true)
+      }
+    }
   }
 }
