@@ -7,17 +7,22 @@ pipeline {
     
   }
   stages {
-    stage('error') {
+    stage('build') {
+      steps {
+        sh 'mvn -B clean package -DskipTests'
+        stash(name: 'build', includes: '**/target/**')
+      }
+    }
+    stage('run some tests') {
       parallel {
-        stage('build') {
+        stage('run some tests') {
           steps {
-            sh 'mvn -B clean package -DskipTests'
-            stash(name: 'build', includes: '**/target/**')
+            sh 'mvn -B -Dtest=MemoryGetMessagesMethodTest -DfailIfNoTests=false '
           }
         }
-        stage('checkstyle') {
+        stage('run some other tests') {
           steps {
-            sh 'mvn checkstyle:checkstyle'
+            sh 'mvn -B test -Dtest=MemorySetMessagesMethodCucumberTest -DfailIfNoTests=false'
           }
         }
       }
