@@ -16,18 +16,16 @@ pipeline {
     stage('run some tests') {
       parallel {
         stage('run some tests') {
-          ws {
-            steps {
-              sh 'mvn -B test -Dtest=MailAddressTest -DfailIfNoTests=false '
-              stash(name: 'testResults', allowEmpty: true, includes: '**/surefire-reports/*.xml')
-            }
+          steps {
+            ws
+            sh 'mvn -B test -Dtest=MailAddressTest -DfailIfNoTests=false '
+            stash(name: 'testResults', allowEmpty: true, includes: '**/surefire-reports/*.xml')
           }
         }
         stage('run some other tests') {
-          ws {
-            steps {
-              sh 'mvn -B test -Dtest=UserTest -DfailIfNoTests=false'
-            }
+          steps {
+            ws
+            sh 'mvn -B test -Dtest=UserTest -DfailIfNoTests=false'
           }
         }
       }
