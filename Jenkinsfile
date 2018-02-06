@@ -15,20 +15,16 @@ pipeline {
     }
     stage('run some tests') {
       parallel {
-        ws {
-          stage('run some tests') {
-            steps {
-              sh 'mvn -B test -Dtest=MemoryGetMessagesMethodTest -DfailIfNoTests=false '
-              stash(name: 'testResults', allowEmpty: true, includes: '**/surefire-reports/*.xml')
-            }
+        stage('run some tests') {
+          steps {
+            sh 'mvn -B test -Dtest=MemoryGetMessagesMethodTest -DfailIfNoTests=false '
+            stash(name: 'testResults', allowEmpty: true, includes: '**/surefire-reports/*.xml')
           }
-	}
-        ws {
-          stage('run some other tests') {
-            steps {
-              sh 'mvn -B test -Dtest=MemorySetMessagesMethodCucumberTest -DfailIfNoTests=false'
-            }
-	  }
+        }
+        stage('run some other tests') {
+          steps {
+            sh 'mvn -B test -Dtest=MemorySetMessagesMethodCucumberTest -DfailIfNoTests=false'
+          }
         }
       }
     }
