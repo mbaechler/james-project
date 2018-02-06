@@ -9,21 +9,25 @@ pipeline {
   stages {
     stage('build') {
       steps {
-        sh 'mvn -B clean package -DskipTests'
+        sh 'mvn -B clean package -DskipTests -am -pl core'
         stash(name: 'build', includes: '**/target/**')
       }
     }
     stage('run some tests') {
       parallel {
         stage('run some tests') {
-          steps {
-            sh 'mvn -B test -Dtest=MemoryGetMessagesMethodTest -DfailIfNoTests=false '
-            stash(name: 'testResults', allowEmpty: true, includes: '**/surefire-reports/*.xml')
+          ws {
+            steps {
+              sh 'mvn -B test -Dtest=MailAddressTest -DfailIfNoTests=false '
+              stash(name: 'testResults', allowEmpty: true, includes: '**/surefire-reports/*.xml')
+            }
           }
         }
         stage('run some other tests') {
-          steps {
-            sh 'mvn -B test -Dtest=MemorySetMessagesMethodCucumberTest -DfailIfNoTests=false'
+          ws {
+            steps {
+              sh 'mvn -B test -Dtest=UserTest -DfailIfNoTests=false'
+            }
           }
         }
       }
