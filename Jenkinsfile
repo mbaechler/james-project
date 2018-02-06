@@ -20,6 +20,7 @@ pipeline {
             ws('foo') {
               sh 'mvn -B test -Dtest=MailAddressTest -DfailIfNoTests=false '
               stash(name: 'testResults', allowEmpty: true, includes: '**/surefire-reports/*.xml')
+            }
           }
         }
         stage('run some other tests') {
