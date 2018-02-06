@@ -17,7 +17,7 @@ pipeline {
       parallel {
         stage('run some tests') {
           steps {
-            node(label: 'node1') {
+            node() {
               sh 'mvn -B test -Dtest=MailAddressTest -DfailIfNoTests=false '
               stash(name: 'testResults', includes: '**/surefire-reports/*.xml')
             }
@@ -26,7 +26,7 @@ pipeline {
         }
         stage('run some other tests') {
           steps {
-            node(label: 'node2') {
+            node() {
               sh 'mvn -B test -Dtest=UserTest -DfailIfNoTests=false'
             }
             
