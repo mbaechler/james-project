@@ -9,27 +9,38 @@ pipeline {
   stages {
     stage('build') {
       steps {
-        sh 'mvn -B clean package -DskipTests -am -pl core'
+        sh 'mvn -B clean package -DskipTests -am -pl backends-common/cassandra'
         stash(name: 'build', includes: '**/target/**')
       }
     }
-    stage('run some tests') {
+    stage('run tests') {
       parallel {
-        stage('run some tests') {
+        stage('run unit tests') {
           steps {
             node(label: '') {
-              sh 'mvn -B test -Dtest=MailAddressTest -DfailIfNoTests=false '
+              checkout scm
+              sh 'mvn -B -am -pl backends-common/cassandra -Dtest=CassandraSchemaVersionDAOTest -DfailIfNoTests=false test'
               stash(name: 'testResults', includes: '**/surefire-reports/*.xml')
             }
             
           }
         }
-        stage('run some other tests') {
+        stage('build jpa-guice docker image') {
           steps {
             node(label: '') {
-              sh 'mvn -B test -Dtest=UserTest -DfailIfNoTests=false'
+              checkout scm
+              sh 'mvn -B package -DskipTests -am -pl server/container/guice/jpa-guice'
+              archiveArtifacts(artifacts: 'server/container/guice/jpa-guice/target/james-server-jpa-guice.lib/**', fingerprint: true)
+              archiveArtifacts(artifacts: 'server/container/guice/jpa-guice/target/james-server-jpa-guice.jar', fingerprint: true)
             }
-            
+            node(label: '') {
+              
+              unarchive(mapping: [
+                'server/container/guice/jpa-guice/target/james-server-jpa-guice.jar': 'dockerfiles/run/guice/jpa/destination/james-server-jpa-guice.jar',
+                'server/container/guice/jpa-guice/target/james-server-jpa-guice.dir/': 'dockerfiles/run/guice/jpa/destination/'
+              ])
+              input(message: 'unarchive')
+            }
           }
         }
       }
