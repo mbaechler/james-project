@@ -19,8 +19,10 @@
 
 package org.apache.james.webadmin.utils;
 
-import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.Module;
 
-public abstract class JsonTransformerModule extends SimpleModule {
+public interface JsonTransformerModule {
+
+    Module asJacksonModule();
 
 }

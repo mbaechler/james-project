@@ -24,15 +24,23 @@ import org.apache.james.webadmin.dto.QuotaValueDeserializer;
 import org.apache.james.webadmin.dto.QuotaValueSerializer;
 import org.apache.james.webadmin.utils.JsonTransformerModule;
 
+import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
-public class QuotaModule extends JsonTransformerModule {
+public class QuotaModule implements JsonTransformerModule {
+
+    private final SimpleModule simpleModule;
 
     public QuotaModule() {
-        addSerializer(QuotaSize.class, new QuotaValueSerializer<>());
-        addSerializer(QuotaCount.class, new QuotaValueSerializer<>());
-        addDeserializer(QuotaSize.class, new QuotaValueDeserializer<>(QuotaSize.unlimited(), QuotaSize::size));
-        addDeserializer(QuotaCount.class, new QuotaValueDeserializer<>(QuotaCount.unlimited(), QuotaCount::count));
+        simpleModule = new SimpleModule()
+            .addSerializer(QuotaSize.class, new QuotaValueSerializer<>())
+            .addSerializer(QuotaCount.class, new QuotaValueSerializer<>())
+            .addDeserializer(QuotaSize.class, new QuotaValueDeserializer<>(QuotaSize.unlimited(), QuotaSize::size))
+            .addDeserializer(QuotaCount.class, new QuotaValueDeserializer<>(QuotaCount.unlimited(), QuotaCount::count));
     }
 
+    @Override
+    public Module asJacksonModule() {
+        return simpleModule;
+    }
 }

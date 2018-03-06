@@ -19,7 +19,9 @@
 
 package org.apache.james.webadmin.utils;
 
+import java.util.Collection;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -42,12 +44,19 @@ public class JsonTransformer implements ResponseTransformer {
 
     @Inject
     public JsonTransformer(Set<JsonTransformerModule> jsonTransformerModules) {
+        this(jsonTransformerModules
+            .stream()
+            .map(JsonTransformerModule::asJacksonModule)
+            .collect(Collectors.toList()));
+    }
+
+    private JsonTransformer(Collection<Module> modules) {
         objectMapper = new ObjectMapper()
             .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
             .registerModule(new Jdk8Module())
             .registerModule(new JavaTimeModule())
-            .registerModules(ImmutableSet.copyOf(jsonTransformerModules));
+            .registerModules(modules);
     }
 
     @Override

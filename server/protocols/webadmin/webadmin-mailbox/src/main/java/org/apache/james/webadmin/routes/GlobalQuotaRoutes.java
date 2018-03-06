@@ -71,7 +71,7 @@ public class GlobalQuotaRoutes implements Routes {
     public GlobalQuotaRoutes(GlobalQuotaService globalQuotaService, JsonTransformer jsonTransformer) {
         this.globalQuotaService = globalQuotaService;
         this.jsonTransformer = jsonTransformer;
-        this.jsonExtractor = new JsonExtractor<>(QuotaDTO.class, new QuotaModule());
+        this.jsonExtractor = new JsonExtractor<>(QuotaDTO.class, new QuotaModule().asJacksonModule());
     }
 
     @Override
