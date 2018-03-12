@@ -421,6 +421,28 @@ public class UserQuotaRoutesTest {
     }
 
     @Test
+    public void getQuotaShouldReturnGlobalValuesWhenNoUserValuesDefined() throws Exception {
+        maxQuotaManager.setDefaultMaxStorage(QuotaSize.size(1111));
+        maxQuotaManager.setDefaultMaxMessage(QuotaCount.count(12));
+
+        JsonPath jsonPath =
+            given()
+                .get(QUOTA_USERS + "/" + BOB.asString())
+                .then()
+                .statusCode(HttpStatus.OK_200)
+                .contentType(ContentType.JSON)
+                .extract()
+                .jsonPath();
+
+        SoftAssertions softly = new SoftAssertions();
+        softly.assertThat(jsonPath.getLong("computed." + SIZE)).isEqualTo(1111);
+        softly.assertThat(jsonPath.getLong("computed." + COUNT)).isEqualTo(12);
+        softly.assertThat(jsonPath.getObject("user", Object.class)).isNull();
+        softly.assertThat(jsonPath.getLong("global." + SIZE)).isEqualTo(1111);
+        softly.assertThat(jsonPath.getLong("global." + COUNT)).isEqualTo(12);
+    }
+
+    @Test
     public void getQuotaShouldReturnBothEmptyWhenDefaultValues() throws Exception {
         JsonPath jsonPath =
             given()
