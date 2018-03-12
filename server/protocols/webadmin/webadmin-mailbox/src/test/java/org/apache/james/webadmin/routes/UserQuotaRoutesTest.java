@@ -405,7 +405,7 @@ public class UserQuotaRoutesTest {
         JsonPath jsonPath =
             given()
                 .get(QUOTA_USERS + "/" + BOB.asString())
-                .then()
+            .then()
                 .statusCode(HttpStatus.OK_200)
                 .contentType(ContentType.JSON)
                 .extract()
