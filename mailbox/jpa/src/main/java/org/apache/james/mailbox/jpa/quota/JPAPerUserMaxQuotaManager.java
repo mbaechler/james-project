@@ -21,7 +21,6 @@ package org.apache.james.mailbox.jpa.quota;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
@@ -32,6 +31,8 @@ import org.apache.james.mailbox.model.QuotaRoot;
 import org.apache.james.mailbox.quota.MaxQuotaManager;
 import org.apache.james.mailbox.quota.QuotaCount;
 import org.apache.james.mailbox.quota.QuotaSize;
+
+import com.github.steveash.guavate.Guavate;
 
 public class JPAPerUserMaxQuotaManager implements MaxQuotaManager {
 
@@ -102,8 +103,7 @@ public class JPAPerUserMaxQuotaManager implements MaxQuotaManager {
             Pair.of(Quota.Scope.User, dao.getMaxMessage(quotaRoot)),
             Pair.of(Quota.Scope.Global, dao.getDefaultMaxMessage()))
         .filter(pair -> pair.getValue().isPresent())
-        .collect(Collectors.toMap(Pair::getKey, value -> value.getValue().get()));
-
+        .collect(Guavate.toImmutableMap(Pair::getKey, value -> value.getValue().get()));
     }
 
     @Override
@@ -112,7 +112,7 @@ public class JPAPerUserMaxQuotaManager implements MaxQuotaManager {
             Pair.of(Quota.Scope.User, dao.getMaxStorage(quotaRoot)),
             Pair.of(Quota.Scope.Global, dao.getDefaultMaxStorage()))
         .filter(pair -> pair.getValue().isPresent())
-        .collect(Collectors.toMap(Pair::getKey, value -> value.getValue().get()));
+        .collect(Guavate.toImmutableMap(Pair::getKey, value -> value.getValue().get()));
     }
 
     @Override

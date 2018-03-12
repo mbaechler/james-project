@@ -21,7 +21,6 @@ package org.apache.james.mailbox.cassandra.quota;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
@@ -34,6 +33,7 @@ import org.apache.james.mailbox.quota.QuotaCount;
 import org.apache.james.mailbox.quota.QuotaSize;
 
 import com.github.fge.lambdas.Throwing;
+import com.github.steveash.guavate.Guavate;
 
 public class CassandraPerUserMaxQuotaManager implements MaxQuotaManager {
 
@@ -116,7 +116,7 @@ public class CassandraPerUserMaxQuotaManager implements MaxQuotaManager {
                 Pair.of(Quota.Scope.User, perUserQuota.getMaxMessage(quotaRoot)),
                 Pair.of(Quota.Scope.Global, defaultQuota.getDefaultMaxMessage()))
             .filter(pair -> pair.getValue().isPresent())
-            .collect(Collectors.toMap(Pair::getKey, value -> value.getValue().get()));
+            .collect(Guavate.toImmutableMap(Pair::getKey, value -> value.getValue().get()));
     }
 
     @Override
@@ -125,6 +125,6 @@ public class CassandraPerUserMaxQuotaManager implements MaxQuotaManager {
                 Pair.of(Quota.Scope.User, perUserQuota.getMaxStorage(quotaRoot)),
                 Pair.of(Quota.Scope.Global, defaultQuota.getDefaultMaxStorage()))
             .filter(pair -> pair.getValue().isPresent())
-            .collect(Collectors.toMap(Pair::getKey, value -> value.getValue().get()));
+            .collect(Guavate.toImmutableMap(Pair::getKey, value -> value.getValue().get()));
     }
 }
