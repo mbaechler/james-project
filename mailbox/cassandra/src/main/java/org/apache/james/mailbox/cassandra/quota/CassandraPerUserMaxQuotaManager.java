@@ -113,8 +113,8 @@ public class CassandraPerUserMaxQuotaManager implements MaxQuotaManager {
     @Override
     public Map<Quota.Scope, QuotaCount> listMaxMessagesDetails(QuotaRoot quotaRoot) {
         return Stream.of(
-                Pair.of(Quota.Scope.User, dao.getMaxMessage(quotaRoot)),
-                Pair.of(Quota.Scope.Global, dao.getDefaultMaxMessage()))
+                Pair.of(Quota.Scope.User, perUserQuota.getMaxMessage(quotaRoot)),
+                Pair.of(Quota.Scope.Global, defaultQuota.getDefaultMaxMessage()))
             .filter(pair -> pair.getValue().isPresent())
             .collect(Collectors.toMap(Pair::getKey, value -> value.getValue().get()));
     }
@@ -122,8 +122,8 @@ public class CassandraPerUserMaxQuotaManager implements MaxQuotaManager {
     @Override
     public Map<Quota.Scope, QuotaSize> listMaxStorageDetails(QuotaRoot quotaRoot) {
         return Stream.of(
-                Pair.of(Quota.Scope.User, dao.getMaxStorage(quotaRoot)),
-                Pair.of(Quota.Scope.Global, dao.getDefaultMaxStorage()))
+                Pair.of(Quota.Scope.User, perUserQuota.getMaxStorage(quotaRoot)),
+                Pair.of(Quota.Scope.Global, defaultQuota.getDefaultMaxStorage()))
             .filter(pair -> pair.getValue().isPresent())
             .collect(Collectors.toMap(Pair::getKey, value -> value.getValue().get()));
     }
