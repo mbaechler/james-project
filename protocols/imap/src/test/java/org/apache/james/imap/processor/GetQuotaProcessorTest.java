@@ -26,6 +26,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.Optional;
+
 import org.apache.james.imap.api.ImapCommand;
 import org.apache.james.imap.api.ImapSessionState;
 import org.apache.james.imap.api.ImapSessionUtils;
@@ -56,7 +58,7 @@ import com.google.common.collect.ImmutableList;
 
 public class GetQuotaProcessorTest {
 
-    private static final QuotaRoot QUOTA_ROOT = QuotaRoot.quotaRoot("plop");
+    private static final QuotaRoot QUOTA_ROOT = QuotaRoot.quotaRoot("plop", Optional.empty());
     public static final MailboxPath MAILBOX_PATH = new MailboxPath("namespace", "plop", "INBOX");
     public static final Quota<QuotaCount> MESSAGE_QUOTA =
         Quota.<QuotaCount>builder().used(QuotaCount.count(24)).computedLimit(QuotaCount.count(1589)).build();
