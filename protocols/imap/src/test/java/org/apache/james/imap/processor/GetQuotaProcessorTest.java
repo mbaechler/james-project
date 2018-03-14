@@ -20,6 +20,7 @@
 package org.apache.james.imap.processor;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -74,12 +75,13 @@ public class GetQuotaProcessorTest {
     private MailboxSession mailboxSession;
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         mailboxSession = new MockMailboxSession("plop");
         UnpooledStatusResponseFactory statusResponseFactory = new UnpooledStatusResponseFactory();
         mockedImapSession = mock(ImapSession.class);
         mockedQuotaManager = mock(QuotaManager.class);
         mockedQuotaRootResolver = mock(QuotaRootResolver.class);
+        when(mockedQuotaRootResolver.fromString(eq(QUOTA_ROOT.getValue()))).thenReturn(QUOTA_ROOT);
         mockedResponder = mock(ImapProcessor.Responder.class);
         mockedMailboxManager = mock(MailboxManager.class);
         testee = new GetQuotaProcessor(mock(ImapProcessor.class), mockedMailboxManager,
