@@ -72,6 +72,7 @@ public abstract class ExceptionRetryHandler implements RetryHandler {
 
         /**
          */
+        @Override
         public Object perform() throws Exception {
             boolean success = false;
             Object result = null;
@@ -117,12 +118,14 @@ public abstract class ExceptionRetryHandler implements RetryHandler {
         
         /**
          */
+        @Override
         public void postFailure(Exception ex, int retryCount) {
             // no-op
         }        
 
         /**
          */
+        @Override
         public abstract Object operation() throws Exception;
         
         /**
