@@ -273,7 +273,7 @@ public class DomainQuotaRoutes implements Routes {
             throw ErrorResponder.builder()
                 .statusCode(HttpStatus.METHOD_NOT_ALLOWED_405)
                 .type(ErrorType.WRONG_STATE)
-                .message("Domain Quota configuration not supported")
+                .message("Domain Quota configuration not supported when virtual hosting is desactivated. Please use global quota configuration instead")
                 .haltError();
         }
         String domain = request.params(DOMAIN);
