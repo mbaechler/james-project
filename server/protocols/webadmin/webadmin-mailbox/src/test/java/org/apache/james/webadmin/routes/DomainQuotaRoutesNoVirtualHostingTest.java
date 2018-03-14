@@ -22,7 +22,6 @@ package org.apache.james.webadmin.routes;
 import static com.jayway.restassured.RestAssured.given;
 import static org.apache.james.webadmin.WebAdminServer.NO_CONFIGURATION;
 
-import java.util.Arrays;
 import java.util.Collection;
 
 import org.apache.james.dnsservice.api.InMemoryDNSService;
@@ -59,8 +58,7 @@ public class DomainQuotaRoutesNoVirtualHostingTest {
     public static Collection<Object[]> data() {
         return ImmutableList.of(
             new String[] {QUOTA_DOMAINS + "/" + FOUND_COM + "/" + COUNT},
-            new String[] {QUOTA_DOMAINS + "/" + FOUND_COM + "/" + SIZE}
-            );
+            new String[] {QUOTA_DOMAINS + "/" + FOUND_COM + "/" + SIZE});
     }
 
     private String endpoint;
