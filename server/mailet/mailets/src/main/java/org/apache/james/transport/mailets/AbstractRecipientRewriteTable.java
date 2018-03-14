@@ -126,7 +126,8 @@ public abstract class AbstractRecipientRewriteTable extends GenericMailet {
                         }
 
                         try {
-                            MailAddress target = (targetAddress.indexOf('@') < 0) ? new MailAddress(targetAddress, domainList.getDefaultDomain()) : new MailAddress(targetAddress);
+                            MailAddress target = (targetAddress.indexOf('@') < 0) ?
+                                new MailAddress(targetAddress, domainList.getDefaultDomain().name()) : new MailAddress(targetAddress);
 
                             // Mark this source address as an address to remove
                             // from the recipient list
