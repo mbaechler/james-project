@@ -69,8 +69,8 @@ public interface JPAMailboxFixture {
         "JAMES_SUBSCRIPTION");
 
     List<String> QUOTA_TABLES_NAMES = ImmutableList.<String>of(
-        "JAMES_MAX_DEFAULT_MESSAGE_COUNT",
-        "JAMES_MAX_DEFAULT_STORAGE",
+        "JAMES_MAX_GLOBAL_MESSAGE_COUNT",
+        "JAMES_MAX_GLOBAL_STORAGE",
         "JAMES_MAX_USER_MESSAGE_COUNT",
         "JAMES_MAX_USER_STORAGE",
         "JAMES_MAX_DOMAIN_MESSAGE_COUNT",
