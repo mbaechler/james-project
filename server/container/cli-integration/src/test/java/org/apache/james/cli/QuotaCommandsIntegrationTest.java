@@ -82,7 +82,7 @@ public class QuotaCommandsIntegrationTest {
     public void setDefaultMaxMessageCountShouldWork() throws Exception {
         ServerCmd.doMain(new String[] {"-h", "127.0.0.1", "-p", "9999", "setdefaultmaxmessagecountquota", "36"});
 
-        assertThat(quotaProbe.getDefaultMaxMessageCount().encodeAsLong()).isEqualTo(36);
+        assertThat(quotaProbe.getGlobalMaxMessageCount().encodeAsLong()).isEqualTo(36);
     }
 
     @Test
