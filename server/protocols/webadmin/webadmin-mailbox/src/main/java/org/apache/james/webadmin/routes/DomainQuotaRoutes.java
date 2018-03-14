@@ -116,7 +116,7 @@ public class DomainQuotaRoutes implements Routes {
     @ApiResponses(value = {
             @ApiResponse(code = HttpStatus.NO_CONTENT_204, message = "OK. The value has been updated."),
             @ApiResponse(code = HttpStatus.BAD_REQUEST_400, message = "The body is not a positive integer or not unlimited value (-1)."),
-            @ApiResponse(code = HttpStatus.NOT_FOUND_404, message = "The requested rdomain can not be found."),
+            @ApiResponse(code = HttpStatus.NOT_FOUND_404, message = "The requested domain can not be found."),
             @ApiResponse(code = HttpStatus.METHOD_NOT_ALLOWED_405, message = "Domain Quota configuration not supported when virtual hosting is desactivated."),
             @ApiResponse(code = HttpStatus.CONFLICT_409, message = "The requested restriction can't be enforced right now."),
             @ApiResponse(code = HttpStatus.INTERNAL_SERVER_ERROR_500, message = "Internal server error - Something went bad on the server side.")
@@ -138,7 +138,7 @@ public class DomainQuotaRoutes implements Routes {
     )
     @ApiResponses(value = {
             @ApiResponse(code = HttpStatus.OK_200, message = "OK", response = QuotaDTO.class),
-            @ApiResponse(code = HttpStatus.NOT_FOUND_404, message = "The requested rdomain can not be found."),
+            @ApiResponse(code = HttpStatus.NOT_FOUND_404, message = "The requested domain can not be found."),
             @ApiResponse(code = HttpStatus.METHOD_NOT_ALLOWED_405, message = "Domain Quota configuration not supported when virtual hosting is desactivated."),
             @ApiResponse(code = HttpStatus.INTERNAL_SERVER_ERROR_500, message = "Internal server error - Something went bad on the server side.")
     })
@@ -154,7 +154,7 @@ public class DomainQuotaRoutes implements Routes {
     @ApiOperation(value = "Removing per domain mail size limitation by updating to unlimited value")
     @ApiResponses(value = {
             @ApiResponse(code = HttpStatus.NO_CONTENT_204, message = "The value is updated to unlimited value."),
-            @ApiResponse(code = HttpStatus.NOT_FOUND_404, message = "The requested rdomain can not be found."),
+            @ApiResponse(code = HttpStatus.NOT_FOUND_404, message = "The requested domain can not be found."),
             @ApiResponse(code = HttpStatus.METHOD_NOT_ALLOWED_405, message = "Domain Quota configuration not supported when virtual hosting is desactivated."),
             @ApiResponse(code = HttpStatus.INTERNAL_SERVER_ERROR_500, message = "Internal server error - Something went bad on the server side.")
     })
@@ -176,7 +176,7 @@ public class DomainQuotaRoutes implements Routes {
     @ApiResponses(value = {
             @ApiResponse(code = HttpStatus.NO_CONTENT_204, message = "OK. The value has been updated."),
             @ApiResponse(code = HttpStatus.BAD_REQUEST_400, message = "The body is not a positive integer."),
-            @ApiResponse(code = HttpStatus.NOT_FOUND_404, message = "The requested rdomain can not be found."),
+            @ApiResponse(code = HttpStatus.NOT_FOUND_404, message = "The requested domain can not be found."),
             @ApiResponse(code = HttpStatus.METHOD_NOT_ALLOWED_405, message = "Domain Quota configuration not supported when virtual hosting is desactivated."),
             @ApiResponse(code = HttpStatus.CONFLICT_409, message = "The requested restriction can't be enforced right now."),
             @ApiResponse(code = HttpStatus.INTERNAL_SERVER_ERROR_500, message = "Internal server error - Something went bad on the server side.")
@@ -197,7 +197,7 @@ public class DomainQuotaRoutes implements Routes {
     @ApiResponses(value = {
             @ApiResponse(code = HttpStatus.OK_200, message = "OK", response = Long.class),
             @ApiResponse(code = HttpStatus.NO_CONTENT_204, message = "No value defined"),
-            @ApiResponse(code = HttpStatus.NOT_FOUND_404, message = "The requested rdomain can not be found."),
+            @ApiResponse(code = HttpStatus.NOT_FOUND_404, message = "The requested domain can not be found."),
             @ApiResponse(code = HttpStatus.METHOD_NOT_ALLOWED_405, message = "Domain Quota configuration not supported when virtual hosting is desactivated."),
             @ApiResponse(code = HttpStatus.INTERNAL_SERVER_ERROR_500, message = "Internal server error - Something went bad on the server side.")
     })
@@ -218,7 +218,7 @@ public class DomainQuotaRoutes implements Routes {
     @ApiOperation(value = "Removing per domain mail count limitation by updating to unlimited value")
     @ApiResponses(value = {
             @ApiResponse(code = HttpStatus.NO_CONTENT_204, message = "The value is updated to unlimited value."),
-            @ApiResponse(code = HttpStatus.NOT_FOUND_404, message = "The requested rdomain can not be found."),
+            @ApiResponse(code = HttpStatus.NOT_FOUND_404, message = "The requested domain can not be found."),
             @ApiResponse(code = HttpStatus.METHOD_NOT_ALLOWED_405, message = "Domain Quota configuration not supported when virtual hosting is desactivated."),
             @ApiResponse(code = HttpStatus.INTERNAL_SERVER_ERROR_500, message = "Internal server error - Something went bad on the server side.")
     })
@@ -240,7 +240,7 @@ public class DomainQuotaRoutes implements Routes {
     @ApiResponses(value = {
             @ApiResponse(code = HttpStatus.NO_CONTENT_204, message = "OK. The value has been updated."),
             @ApiResponse(code = HttpStatus.BAD_REQUEST_400, message = "The body is not a positive integer."),
-            @ApiResponse(code = HttpStatus.NOT_FOUND_404, message = "The requested rdomain can not be found."),
+            @ApiResponse(code = HttpStatus.NOT_FOUND_404, message = "The requested domain can not be found."),
             @ApiResponse(code = HttpStatus.METHOD_NOT_ALLOWED_405, message = "Domain Quota configuration not supported when virtual hosting is desactivated."),
             @ApiResponse(code = HttpStatus.CONFLICT_409, message = "The requested restriction can't be enforced right now."),
             @ApiResponse(code = HttpStatus.INTERNAL_SERVER_ERROR_500, message = "Internal server error - Something went bad on the server side.")
@@ -260,7 +260,7 @@ public class DomainQuotaRoutes implements Routes {
     @ApiOperation(value = "Reading per domain mail count limitation")
     @ApiResponses(value = {
             @ApiResponse(code = HttpStatus.OK_200, message = "OK", response = Long.class),
-            @ApiResponse(code = HttpStatus.NOT_FOUND_404, message = "The requested rdomain can not be found."),
+            @ApiResponse(code = HttpStatus.NOT_FOUND_404, message = "The requested domain can not be found."),
             @ApiResponse(code = HttpStatus.METHOD_NOT_ALLOWED_405, message = "Domain Quota configuration not supported when virtual hosting is desactivated."),
             @ApiResponse(code = HttpStatus.INTERNAL_SERVER_ERROR_500, message = "Internal server error - Something went bad on the server side.")
     })
