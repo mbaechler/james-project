@@ -62,6 +62,7 @@ public class DomainQuotaRoutesTest {
         maxQuotaManager = new InMemoryPerUserMaxQuotaManager();
         MemoryDomainList memoryDomainList = new MemoryDomainList(new InMemoryDNSService());
         memoryDomainList.setAutoDetect(false);
+        memoryDomainList.setAutoDetectIP(false);
         memoryDomainList.addDomain(TROUVÉ_COM);
         MemoryDomainList domainList = new MemoryDomainList(new InMemoryDNSService());
         domainList.addDomain(TROUVÉ_COM);

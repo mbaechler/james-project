@@ -72,6 +72,7 @@ public class DomainQuotaRoutesNoVirtualHostingTest {
         InMemoryPerUserMaxQuotaManager maxQuotaManager = new InMemoryPerUserMaxQuotaManager();
         MemoryDomainList memoryDomainList = new MemoryDomainList(new InMemoryDNSService());
         memoryDomainList.setAutoDetect(false);
+        memoryDomainList.setAutoDetectIP(false);
         memoryDomainList.addDomain(FOUND_COM);
         MemoryDomainList domainList = new MemoryDomainList(new InMemoryDNSService());
         domainList.addDomain(FOUND_COM);
