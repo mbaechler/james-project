@@ -45,7 +45,6 @@ public class SimpleMailboxMetaData implements MailboxMetaData, Comparable<Mailbo
     }
 
     public SimpleMailboxMetaData(MailboxPath path, MailboxId mailboxId, char delimiter, Children inferiors, Selectability selectability) {
-        super();
         this.path = path;
         this.mailboxId = mailboxId;
         this.delimiter = delimiter;
@@ -86,16 +85,12 @@ public class SimpleMailboxMetaData implements MailboxMetaData, Comparable<Mailbo
         return mailboxId;
     }
 
-    /**
-     * @see java.lang.Object#toString()
-     */
+    @Override
     public String toString() {
         return "ListResult: " + path;
     }
 
-    /**
-     * @see java.lang.Object#hashCode()
-     */
+    @Override
     public int hashCode() {
         final int PRIME = 31;
         int result = 1;
@@ -103,9 +98,7 @@ public class SimpleMailboxMetaData implements MailboxMetaData, Comparable<Mailbo
         return result;
     }
 
-    /**
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
+    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;

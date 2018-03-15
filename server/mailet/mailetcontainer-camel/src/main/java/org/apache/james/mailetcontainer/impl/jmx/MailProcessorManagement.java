@@ -78,9 +78,6 @@ public class MailProcessorManagement extends StandardMBean implements MailProces
     /*
      * TODO
      * Is deprecated or dead code? Can't find an interface defining this method
-     * 
-     * @see
-     * org.apache.james.mailetcontainer.api.jmx.MailProcessorDetailMBean#getName()
      */
     public String getName() {
         return processorName;
