@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
 import javax.mail.Flags;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceException;
@@ -299,10 +300,6 @@ public class JPAMessageMapper extends JPATransactionalMapper implements MessageM
         return save(mailbox, copy);
     }
 
-    /**
-     * @see org.apache.james.mailbox.store.mail.AbstractMessageMapper#save(Mailbox,
-     *      MailboxMessage)
-     */
     protected MessageMetaData save(Mailbox mailbox, MailboxMessage message) throws MailboxException {
         try {
             // We need to reload a "JPA attached" mailbox, because the provide
