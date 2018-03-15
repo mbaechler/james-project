@@ -70,8 +70,6 @@ public abstract class ExceptionRetryHandler implements RetryHandler {
             this.maxRetries = maxRetries;
         }
 
-        /**
-         */
         @Override
         public Object perform() throws Exception {
             boolean success = false;
@@ -115,16 +113,12 @@ public abstract class ExceptionRetryHandler implements RetryHandler {
             }
             return isRetryable;
         }
-        
-        /**
-         */
+
         @Override
         public void postFailure(Exception ex, int retryCount) {
             // no-op
         }        
 
-        /**
-         */
         @Override
         public abstract Object operation() throws Exception;
         
