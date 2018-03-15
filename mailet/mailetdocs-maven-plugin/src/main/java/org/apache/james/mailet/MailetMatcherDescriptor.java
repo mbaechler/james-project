@@ -50,6 +50,7 @@ public class MailetMatcherDescriptor {
             return name;
         }
 
+        @Override
         public String toString() {
             return getName();
         }

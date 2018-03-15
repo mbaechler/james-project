@@ -300,6 +300,10 @@ public class JPAMessageMapper extends JPATransactionalMapper implements MessageM
         return save(mailbox, copy);
     }
 
+    /**
+     * @see org.apache.james.mailbox.store.mail.AbstractMessageMapper#save(Mailbox,
+     *      MailboxMessage)
+     */
     protected MessageMetaData save(Mailbox mailbox, MailboxMessage message) throws MailboxException {
         try {
             // We need to reload a "JPA attached" mailbox, because the provide
