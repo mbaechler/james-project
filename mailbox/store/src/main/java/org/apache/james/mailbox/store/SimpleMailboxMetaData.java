@@ -45,6 +45,7 @@ public class SimpleMailboxMetaData implements MailboxMetaData, Comparable<Mailbo
     }
 
     public SimpleMailboxMetaData(MailboxPath path, MailboxId mailboxId, char delimiter, Children inferiors, Selectability selectability) {
+        super();
         this.path = path;
         this.mailboxId = mailboxId;
         this.delimiter = delimiter;
