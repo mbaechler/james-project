@@ -80,7 +80,7 @@ public class User {
     }
 
     public String asString() {
-        return domainPart.map(domain -> localPart + "@" + domain.name())
+        return domainPart.map(domain -> localPart + "@" + domain.asString())
             .orElse(localPart);
     }
 

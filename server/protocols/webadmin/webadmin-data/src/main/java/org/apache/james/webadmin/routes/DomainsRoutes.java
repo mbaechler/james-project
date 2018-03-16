@@ -172,7 +172,7 @@ public class DomainsRoutes implements Routes {
             throw ErrorResponder.builder()
                 .statusCode(HttpStatus.NO_CONTENT_204)
                 .type(ErrorType.INVALID_ARGUMENT)
-                .message(domain + " already exists")
+                .message(domain.name() + " already exists")
                 .cause(e)
                 .haltError();
         } catch (IllegalArgumentException e) {
@@ -180,7 +180,7 @@ public class DomainsRoutes implements Routes {
             throw ErrorResponder.builder()
                 .statusCode(HttpStatus.BAD_REQUEST_400)
                 .type(ErrorType.INVALID_ARGUMENT)
-                .message("Invalid request for domain creation " + domain)
+                .message("Invalid request for domain creation " + domain.name())
                 .cause(e)
                 .haltError();
         }
@@ -212,7 +212,7 @@ public class DomainsRoutes implements Routes {
             throw ErrorResponder.builder()
                 .statusCode(HttpStatus.NOT_FOUND_404)
                 .type(ErrorType.INVALID_ARGUMENT)
-                .message("The domain list does not contain: " + domain)
+                .message("The domain list does not contain: " + domain.name())
                 .haltError();
         } else {
             response.status(HttpStatus.NO_CONTENT_204);
