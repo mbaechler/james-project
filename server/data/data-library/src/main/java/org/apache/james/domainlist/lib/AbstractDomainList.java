@@ -51,7 +51,6 @@ public abstract class AbstractDomainList implements DomainList, Configurable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractDomainList.class);
 
-    protected static final String LOCALHOST = "localhost";
     public static final String CONFIGURE_AUTODETECT = "autodetect";
     public static final String CONFIGURE_AUTODETECT_IP = "autodetectIP";
     public static final String CONFIGURE_DEFAULT_DOMAIN = "defaultDomain";
@@ -110,7 +109,7 @@ public abstract class AbstractDomainList implements DomainList, Configurable {
 
     @VisibleForTesting void configureDefaultDomain(HierarchicalConfiguration config) throws ConfigurationException {
         try {
-            setDefaultDomain(Domain.of(config.getString(CONFIGURE_DEFAULT_DOMAIN, LOCALHOST)));
+            setDefaultDomain(Domain.of(config.getString(CONFIGURE_DEFAULT_DOMAIN, Domain.LOCALHOST.asString())));
 
             String hostName = InetAddress.getLocalHost().getHostName();
             if (mayChangeDefaultDomain()) {
@@ -124,7 +123,7 @@ public abstract class AbstractDomainList implements DomainList, Configurable {
     }
 
     private boolean mayChangeDefaultDomain() {
-        return LOCALHOST.equals(defaultDomain);
+        return Domain.LOCALHOST.equals(defaultDomain);
     }
 
     private void setDefaultDomain(Domain defaultDomain) throws DomainListException {
