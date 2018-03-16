@@ -233,7 +233,7 @@ public class JamesMailetContext implements MailetContext, Configurable {
         try {
             if (!name.contains("@")) {
                 try {
-                    return isLocalEmail(new MailAddress(name.toLowerCase(Locale.US), domains.getDefaultDomain().name()));
+                    return isLocalEmail(new MailAddress(name.toLowerCase(Locale.US), domains.getDefaultDomain().asString()));
                 } catch (DomainListException e) {
                     LOGGER.error("Unable to access DomainList", e);
                     return false;
@@ -250,7 +250,7 @@ public class JamesMailetContext implements MailetContext, Configurable {
     @Override
     public boolean isLocalEmail(MailAddress mailAddress) {
         if (mailAddress != null) {
-            if (!isLocalServer(mailAddress.getDomain().toLowerCase(Locale.US))) {
+            if (!isLocalServer(Domain.of(mailAddress.getDomain()))) {
                 return false;
             }
             try {
@@ -309,9 +309,9 @@ public class JamesMailetContext implements MailetContext, Configurable {
     }
 
     @Override
-    public boolean isLocalServer(String name) {
+    public boolean isLocalServer(Domain domain) {
         try {
-            return domains.containsDomain(Domain.of(name));
+            return domains.containsDomain(domain);
         } catch (DomainListException e) {
             LOGGER.error("Unable to retrieve domains", e);
             return false;

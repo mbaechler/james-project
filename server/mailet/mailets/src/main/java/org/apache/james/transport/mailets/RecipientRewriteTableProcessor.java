@@ -155,7 +155,7 @@ public class RecipientRewriteTableProcessor {
 
     private ImmutableList<MailAddress> getLocalAddresses(ImmutableList<MailAddress> mailAddresses) {
         return mailAddresses.stream()
-            .filter(mailAddress -> mailetContext.isLocalServer(mailAddress.getDomain()))
+            .filter(mailAddress -> mailetContext.isLocalServer(Domain.of(mailAddress.getDomain())))
             .collect(Guavate.toImmutableList());
     }
 
@@ -184,7 +184,7 @@ public class RecipientRewriteTableProcessor {
 
     private void forwardToRemoteAddress(MailAddress sender, MailAddress recipient, MimeMessage message, ImmutableList<MailAddress> mailAddresses) throws MessagingException {
         ImmutableList<MailAddress> remoteAddress = mailAddresses.stream()
-            .filter(mailAddress -> !mailetContext.isLocalServer(mailAddress.getDomain()))
+            .filter(mailAddress -> !mailetContext.isLocalServer(Domain.of(mailAddress.getDomain())))
             .collect(Guavate.toImmutableList());
 
         if (!remoteAddress.isEmpty()) {

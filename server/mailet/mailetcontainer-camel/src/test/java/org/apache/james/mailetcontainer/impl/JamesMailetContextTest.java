@@ -55,7 +55,7 @@ import com.google.common.collect.ImmutableList;
 public class JamesMailetContextTest {
     public static final Domain DOMAIN_COM = Domain.of("domain.com");
     public static final String USERNAME = "user";
-    public static final String USERMAIL = USERNAME + "@" + DOMAIN_COM;
+    public static final String USERMAIL = USERNAME + "@" + DOMAIN_COM.name();
     public static final String PASSWORD = "password";
     public static final DNSService DNS_SERVICE = null;
 
@@ -96,14 +96,14 @@ public class JamesMailetContextTest {
 
     @Test
     public void isLocalServerShouldBeFalseWhenDomainDoNotExist() {
-        assertThat(testee.isLocalServer(DOMAIN_COM.name())).isFalse();
+        assertThat(testee.isLocalServer(DOMAIN_COM)).isFalse();
     }
 
     @Test
     public void isLocalServerShouldBeTrueWhenDomainExist() throws Exception {
         domainList.addDomain(DOMAIN_COM);
 
-        assertThat(testee.isLocalServer(DOMAIN_COM.name())).isTrue();
+        assertThat(testee.isLocalServer(DOMAIN_COM)).isTrue();
     }
 
     @Test

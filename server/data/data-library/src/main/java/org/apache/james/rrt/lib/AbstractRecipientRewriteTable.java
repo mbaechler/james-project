@@ -121,7 +121,7 @@ public abstract class AbstractRecipientRewriteTable implements RecipientRewriteT
                 for (String target : targetMappings.asStrings()) {
                     if (target.startsWith(RecipientRewriteTable.REGEX_PREFIX)) {
                         try {
-                            target = RecipientRewriteTableUtil.regexMap(new MailAddress(user, domain.name()), target);
+                            target = RecipientRewriteTableUtil.regexMap(new MailAddress(user, domain.asString()), target);
                         } catch (PatternSyntaxException | ParseException e) {
                             LOGGER.error("Exception during regexMap processing: ", e);
                         }
