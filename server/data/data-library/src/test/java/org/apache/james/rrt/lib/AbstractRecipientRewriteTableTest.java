@@ -242,7 +242,8 @@ public abstract class AbstractRecipientRewriteTableTest {
     @Test
     public void sortMappingsShouldReturnSameStringWhenSingleDomainAlias() {
         String singleDomainAlias = RecipientRewriteTable.ALIASDOMAIN_PREFIX + "first";
-        assertThat(AbstractRecipientRewriteTable.sortMappings(MappingsImpl.fromRawString(singleDomainAlias))).containsExactly(MappingImpl.domain(Domain.of("first")));
+        assertThat(AbstractRecipientRewriteTable.sortMappings(MappingsImpl.fromRawString(singleDomainAlias)))
+            .containsExactly(MappingImpl.domain(Domain.of("first")));
     }
      
     @Test

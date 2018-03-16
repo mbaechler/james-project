@@ -74,9 +74,9 @@ public class SenderAuthIdentifyVerificationRcptHook extends AbstractSenderAuthId
     }
 
     @Override
-    protected boolean isLocalDomain(String domain) {
+    protected boolean isLocalDomain(Domain domain) {
         try {
-            return domains.containsDomain(Domain.of(domain));
+            return domains.containsDomain(domain);
         } catch (DomainListException e) {
             return false;
         }
