@@ -21,20 +21,18 @@ package org.apache.james.transport.mailets;
 
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-import javax.mail.Address;
 import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeMessage;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.james.core.MailAddress;
 import org.apache.james.transport.mailets.model.ICAL;
+import org.apache.james.util.StreamUtils;
 import org.apache.mailet.Mail;
 import org.apache.mailet.base.GenericMailet;
 import org.slf4j.Logger;
@@ -43,7 +41,6 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.github.fge.lambdas.Throwing;
 import com.github.steveash.guavate.Guavate;
 import com.google.common.base.Strings;
 
@@ -209,10 +206,7 @@ public class ICALToJsonAttribute extends GenericMailet {
     }
 
     private Optional<String> retrieveSender(Mail mail) throws MessagingException {
-        Optional<String> from = Optional.ofNullable(mail.getMessage())
-            .map(Throwing.function(MimeMessage::getFrom).orReturn(new Address[]{}))
-            .map(Arrays::stream)
-            .orElse(Stream.of())
+        Optional<String> from = StreamUtils.ofNullable(mail.getMessage().getFrom())
             .map(address -> (InternetAddress) address)
             .map(InternetAddress::getAddress)
             .findFirst();

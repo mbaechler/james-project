@@ -21,10 +21,17 @@ package org.apache.james.util;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 public class StreamUtils {
+
+    public static <T> Stream<T> ofNullable(T[] array) {
+        return Optional.ofNullable(array)
+            .map(Arrays::stream)
+            .orElse(Stream.empty());
+    }
 
     public static <T> Stream<T> flatten(Collection<Stream<T>> streams) {
         return flatten(streams.stream());

@@ -19,9 +19,7 @@
 package org.apache.james.transport.mailets;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import javax.mail.Address;
@@ -130,14 +128,10 @@ public class ContactExtractor extends GenericMailet implements Mailet {
 
     private Stream<String> getRecipients(MimeMessage mimeMessage, RecipientType recipientType) throws MessagingException {
         boolean notStrict = false;
-        Function<String, InternetAddress[]> parseRecipient =
-            Throwing
-                .function((String header) -> InternetAddress.parseHeader(header, notStrict))
-                .sneakyThrow();
-        return Optional.ofNullable(mimeMessage.getHeader(recipientType.toString(), ","))
-            .map(parseRecipient)
-            .map(Arrays::stream)
-            .orElse(Stream.empty())
+
+        InternetAddress[] addresses = InternetAddress.parseHeader(mimeMessage.getHeader(recipientType.toString(), ","), notStrict);
+        return StreamUtils.ofNullable(
+            addresses)
             .map(Address::toString)
             .map(MimeUtil::unscrambleHeaderValue);
     }
