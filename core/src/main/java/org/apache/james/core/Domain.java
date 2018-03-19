@@ -27,6 +27,14 @@ import com.google.common.base.Preconditions;
 public class Domain {
 
     public static final Domain LOCALHOST = Domain.of("localhost");
+    public static final Domain NULL = new Domain("");
+
+    public static String removeBrackets(String domainName) {
+        if (!(domainName.startsWith("[") && domainName.endsWith("]"))) {
+            return domainName;
+        }
+        return domainName.substring(1, domainName.length() -1);
+    }
 
     public static Domain of(String domain) {
         Preconditions.checkNotNull(domain);
@@ -39,7 +47,7 @@ public class Domain {
 
     protected Domain(String domainName) {
         this.domainName = domainName;
-        this.normalizedDomainName = domainName.toLowerCase(Locale.US);
+        this.normalizedDomainName = removeBrackets(domainName.toLowerCase(Locale.US));
     }
 
     public String name() {
