@@ -71,7 +71,7 @@ public abstract class AbstractUsersRepository implements UsersRepository, Config
         int i = username.indexOf("@");
         if (supportVirtualHosting()) {
             // need a @ in the username
-            if (i == -1) {
+            if (!user.hasDomainPart()) {
                 throw new UsersRepositoryException("Given Username needs to contain a @domainpart");
             } else {
                 Domain domain = Domain.of(username.substring(i + 1));
