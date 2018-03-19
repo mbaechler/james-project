@@ -121,7 +121,7 @@ public class JPADomainList extends AbstractDomainList {
             transaction.begin();
             if (containsDomainInternal(domain, entityManager)) {
                 transaction.commit();
-                throw new DomainListException(domain + " already exists.");
+                throw new DomainListException(domain.name() + " already exists.");
             }
             JPADomain jpaDomain = new JPADomain(domain);
             entityManager.persist(jpaDomain);
@@ -129,7 +129,7 @@ public class JPADomainList extends AbstractDomainList {
         } catch (PersistenceException e) {
             LOGGER.error("Failed to save domain", e);
             rollback(transaction);
-            throw new DomainListException("Unable to add domain " + domain, e);
+            throw new DomainListException("Unable to add domain " + domain.name(), e);
         } finally {
             entityManager.close();
         }
@@ -143,14 +143,14 @@ public class JPADomainList extends AbstractDomainList {
             transaction.begin();
             if (!containsDomainInternal(domain, entityManager)) {
                 transaction.commit();
-                throw new DomainListException(domain + " was not found.");
+                throw new DomainListException(domain.name() + " was not found.");
             }
             entityManager.createNamedQuery("deleteDomainByName").setParameter("name", domain.asString()).executeUpdate();
             transaction.commit();
         } catch (PersistenceException e) {
             LOGGER.error("Failed to remove domain", e);
             rollback(transaction);
-            throw new DomainListException("Unable to remove domain " + domain, e);
+            throw new DomainListException("Unable to remove domain " + domain.name(), e);
         } finally {
             entityManager.close();
         }
