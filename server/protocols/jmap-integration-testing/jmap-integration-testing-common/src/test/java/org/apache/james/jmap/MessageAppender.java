@@ -21,7 +21,9 @@ package org.apache.james.jmap;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import javax.mail.Flags;
 
@@ -34,14 +36,18 @@ public class MessageAppender {
 
     private MessageAppender() {}
 
-    public static void fillMailbox(MailboxProbe mailboxProbe, String user, String mailbox) {
+    public static List<ComposedMessageId> fillMailbox(MailboxProbe mailboxProbe, String user, String mailbox) {
+        List<ComposedMessageId> insertedMessages = new ArrayList<>();
         try {
             for (int i = 0; i < 1000; ++i) {
-                ComposedMessageId message = mailboxProbe.appendMessage(user, MailboxPath.forUser(user, mailbox),
-                    new ByteArrayInputStream("Subject: test\r\n\r\ntestmail".getBytes(StandardCharsets.UTF_8)), new Date(), false, new Flags());
+                String mailContent = "Subject: test\r\n\r\ntestmail" + String.valueOf(i);
+                ByteArrayInputStream messagePayload = new ByteArrayInputStream(mailContent.getBytes(StandardCharsets.UTF_8));
+                insertedMessages.add(
+                    mailboxProbe.appendMessage(user, MailboxPath.forUser(user, mailbox), messagePayload, new Date(), false, new Flags()));
             }
         } catch (MailboxException ignored) {
             //we expect an exception to be thrown because of quota reached
         }
+        return insertedMessages;
     }
 }

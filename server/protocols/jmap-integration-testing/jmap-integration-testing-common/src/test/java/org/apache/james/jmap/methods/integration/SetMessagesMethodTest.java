@@ -197,6 +197,10 @@ public abstract class SetMessagesMethodTest {
         return getMailboxId(accessToken, Role.OUTBOX);
     }
 
+    private String getInboxId(AccessToken accessToken) {
+        return getMailboxId(accessToken, Role.INBOX);
+    }
+
     private String getDraftId(AccessToken accessToken) {
         return getMailboxId(accessToken, Role.DRAFTS);
     }
@@ -1396,6 +1400,41 @@ public abstract class SetMessagesMethodTest {
             .body(ARGUMENTS + ".notCreated", aMapWithSize(1))
             .body(ARGUMENTS + ".created", aMapWithSize(0))
             .body(ARGUMENTS + ".notCreated[\"" + messageCreationId + "\"].type", equalTo("maxQuotaReached"));
+    }
+
+    @Test
+    public void setMessagesShouldNotAllowCopyWhenOverQuota() throws MailboxException {
+        QuotaProbe quotaProbe = jmapServer.getProbe(QuotaProbesImpl.class);
+        String inboxQuotaRoot = quotaProbe.getQuotaRoot("#private", USERNAME, DefaultMailboxes.INBOX);
+        quotaProbe.setMaxStorage(inboxQuotaRoot, SerializableQuotaValue.valueOf(Optional.of(QuotaSize.size(100))));
+
+        List<ComposedMessageId> composedMessageIds = MessageAppender.fillMailbox(mailboxProbe, USERNAME, MailboxConstants.INBOX);
+
+        String messageId = composedMessageIds.get(0).getMessageId().serialize();
+        String requestBody =  "[" +
+            "  [" +
+            "    \"setMessages\"," +
+            "    {" +
+            "      \"update\": { \"" + messageId + "\" : {" +
+            "        \"mailboxIds\": [\"" + getInboxId(accessToken) + "\",\"" + getDraftId(accessToken) + "\"]" +
+            "      }}" +
+            "    }," +
+            "    \"#0\"" +
+            "  ]" +
+            "]";
+
+        given()
+            .header("Authorization", accessToken.serialize())
+            .body(requestBody)
+        .when()
+            .post("/jmap")
+        .then()
+            .log().ifValidationFails()
+            .statusCode(200)
+            .body(NAME, equalTo("messagesSet"))
+            .body(ARGUMENTS + ".updated", hasSize(0))
+            .body(ARGUMENTS + ".notUpdated", aMapWithSize(1))
+            .body(ARGUMENTS + ".notUpdated." + messageId + ".type", equalTo("maxQuotaReached"));
     }
 
     @Test
