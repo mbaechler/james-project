@@ -61,8 +61,8 @@ public abstract class SendMDNMethodTest {
     private static final String NAME = "[0][0]";
     private static final String ARGUMENTS = "[0][1]";
     private static final String USERS_DOMAIN = "domain.tld";
-    private static final String USERNAME = "username@" + USERS_DOMAIN;
-    private static final String BOB = "bob@" + USERS_DOMAIN;
+    private static final String HOMER = "homer@" + USERS_DOMAIN;
+    private static final String BART = "bart@" + USERS_DOMAIN;
     private static final String PASSWORD = "password";
     private static final String BOB_PASSWORD = "bobPassword";
 
@@ -70,8 +70,8 @@ public abstract class SendMDNMethodTest {
 
     protected abstract MessageId randomMessageId();
 
-    private AccessToken accessToken;
-    private AccessToken bobAccessToken;
+    private AccessToken homerAccessToken;
+    private AccessToken bartAccessToken;
     private GuiceJamesServer jmapServer;
 
     @Before
@@ -90,24 +90,24 @@ public abstract class SendMDNMethodTest {
         RestAssured.defaultParser = Parser.JSON;
 
         dataProbe.addDomain(USERS_DOMAIN);
-        dataProbe.addUser(USERNAME, PASSWORD);
-        dataProbe.addUser(BOB, BOB_PASSWORD);
-        mailboxProbe.createMailbox("#private", USERNAME, DefaultMailboxes.INBOX);
-        accessToken = HttpJmapAuthentication.authenticateJamesUser(baseUri(), USERNAME, PASSWORD);
-        bobAccessToken = HttpJmapAuthentication.authenticateJamesUser(baseUri(), BOB, BOB_PASSWORD);
+        dataProbe.addUser(HOMER, PASSWORD);
+        dataProbe.addUser(BART, BOB_PASSWORD);
+        mailboxProbe.createMailbox("#private", HOMER, DefaultMailboxes.INBOX);
+        homerAccessToken = HttpJmapAuthentication.authenticateJamesUser(baseUri(), HOMER, PASSWORD);
+        bartAccessToken = HttpJmapAuthentication.authenticateJamesUser(baseUri(), BART, BOB_PASSWORD);
     }
 
     private void sendAnInitialMessage() {
         String messageCreationId = "creationId";
-        String outboxId = getOutboxId(bobAccessToken);
+        String outboxId = getOutboxId(bartAccessToken);
         String requestBody = "[" +
             "  [" +
             "    \"setMessages\"," +
             "    {" +
             "      \"create\": { \"" + messageCreationId  + "\" : {" +
-            "        \"headers\":{\"Disposition-Notification-To\":\"" + BOB + "\"}," +
-            "        \"from\": { \"name\": \"Bob\", \"email\": \"" + BOB + "\"}," +
-            "        \"to\": [{ \"name\": \"User\", \"email\": \"" + USERNAME + "\"}]," +
+            "        \"headers\":{\"Disposition-Notification-To\":\"" + BART + "\"}," +
+            "        \"from\": { \"name\": \"Bob\", \"email\": \"" + BART + "\"}," +
+            "        \"to\": [{ \"name\": \"User\", \"email\": \"" + HOMER + "\"}]," +
             "        \"subject\": \"Message with an attachment\"," +
             "        \"textBody\": \"Test body, plain text version\"," +
             "        \"htmlBody\": \"Test <b>body</b>, HTML version\"," +
@@ -119,7 +119,7 @@ public abstract class SendMDNMethodTest {
             "]";
 
         with()
-            .header("Authorization", bobAccessToken.serialize())
+            .header("Authorization", bartAccessToken.serialize())
             .body(requestBody)
             .post("/jmap")
         .then()
@@ -127,19 +127,19 @@ public abstract class SendMDNMethodTest {
             .body()
             .path(ARGUMENTS + ".created." + messageCreationId + ".id");
 
-        calmlyAwait.until(() -> !getMessageIdListForAccount(accessToken.serialize()).isEmpty());
+        calmlyAwait.until(() -> !getMessageIdListForAccount(homerAccessToken.serialize()).isEmpty());
     }
 
     private void sendAWrongInitialMessage() {
         String messageCreationId = "creationId";
-        String outboxId = getOutboxId(bobAccessToken);
+        String outboxId = getOutboxId(bartAccessToken);
         String requestBody = "[" +
             "  [" +
             "    \"setMessages\"," +
             "    {" +
             "      \"create\": { \"" + messageCreationId  + "\" : {" +
-            "        \"from\": { \"name\": \"Bob\", \"email\": \"" + BOB + "\"}," +
-            "        \"to\": [{ \"name\": \"User\", \"email\": \"" + USERNAME + "\"}]," +
+            "        \"from\": { \"name\": \"Bob\", \"email\": \"" + BART + "\"}," +
+            "        \"to\": [{ \"name\": \"User\", \"email\": \"" + HOMER + "\"}]," +
             "        \"subject\": \"Message with an attachment\"," +
             "        \"textBody\": \"Test body, plain text version\"," +
             "        \"htmlBody\": \"Test <b>body</b>, HTML version\"," +
@@ -151,7 +151,7 @@ public abstract class SendMDNMethodTest {
             "]";
 
         with()
-            .header("Authorization", bobAccessToken.serialize())
+            .header("Authorization", bartAccessToken.serialize())
             .body(requestBody)
             .post("/jmap")
         .then()
@@ -159,7 +159,7 @@ public abstract class SendMDNMethodTest {
             .body()
             .path(ARGUMENTS + ".created." + messageCreationId + ".id");
 
-        calmlyAwait.until(() -> !getMessageIdListForAccount(accessToken.serialize()).isEmpty());
+        calmlyAwait.until(() -> !getMessageIdListForAccount(homerAccessToken.serialize()).isEmpty());
     }
 
     private URIBuilder baseUri() {
@@ -180,11 +180,11 @@ public abstract class SendMDNMethodTest {
     public void sendMDNShouldReturnCreatedMessageId() {
         sendAnInitialMessage();
 
-        List<String> messageIds = getMessageIdListForAccount(accessToken.serialize());
+        List<String> messageIds = getMessageIdListForAccount(homerAccessToken.serialize());
 
         String creationId = "creation-1";
         given()
-            .header("Authorization", accessToken.serialize())
+            .header("Authorization", homerAccessToken.serialize())
             .body("[[\"setMessages\", {\"sendMDN\": {" +
                 "\"" + creationId + "\":{" +
                     "    \"messageId\":\"" + messageIds.get(0) + "\"," +
@@ -214,7 +214,7 @@ public abstract class SendMDNMethodTest {
         String creationId = "creation-1";
         String randomMessageId = randomMessageId().serialize();
         given()
-            .header("Authorization", accessToken.serialize())
+            .header("Authorization", homerAccessToken.serialize())
             .body("[[\"setMessages\", {\"sendMDN\": {" +
                 "\"" + creationId + "\":{" +
                     "    \"messageId\":\"" + randomMessageId + "\"," +
@@ -245,12 +245,12 @@ public abstract class SendMDNMethodTest {
     @Test
     public void sendMDNShouldFailOnInvalidMessages() {
         sendAWrongInitialMessage();
-        List<String> messageIds = getMessageIdListForAccount(accessToken.serialize());
+        List<String> messageIds = getMessageIdListForAccount(homerAccessToken.serialize());
 
         String creationId = "creation-1";
 
         given()
-            .header("Authorization", accessToken.serialize())
+            .header("Authorization", homerAccessToken.serialize())
             .body("[[\"setMessages\", {\"sendMDN\": {" +
                 "\"" + creationId + "\":{" +
                     "    \"messageId\":\"" + messageIds.get(0) + "\"," +
@@ -284,12 +284,12 @@ public abstract class SendMDNMethodTest {
     public void sendMDNShouldSendAMDNBackToTheOriginalMessageAuthor() {
         sendAnInitialMessage();
 
-        List<String> messageIds = getMessageIdListForAccount(accessToken.serialize());
+        List<String> messageIds = getMessageIdListForAccount(homerAccessToken.serialize());
 
-        // USER sends a MDN back to BOB
+        // HOMER sends a MDN back to BART
         String creationId = "creation-1";
         with()
-            .header("Authorization", accessToken.serialize())
+            .header("Authorization", homerAccessToken.serialize())
             .body("[[\"setMessages\", {\"sendMDN\": {" +
                 "\"" + creationId + "\":{" +
                 "    \"messageId\":\"" + messageIds.get(0) + "\"," +
@@ -305,19 +305,19 @@ public abstract class SendMDNMethodTest {
                 "}}, \"#0\"]]")
             .post("/jmap");
 
-        // BOB should have received it
-        calmlyAwait.until(() -> !listMessagesInMailbox(bobAccessToken, getInboxId(bobAccessToken)).isEmpty());
-        List<String> bobInboxMessageIds = listMessagesInMailbox(bobAccessToken, getInboxId(bobAccessToken));
+        // BART should have received it
+        calmlyAwait.until(() -> !listMessagesInMailbox(bartAccessToken, getInboxId(bartAccessToken)).isEmpty());
+        List<String> bobInboxMessageIds = listMessagesInMailbox(bartAccessToken, getInboxId(bartAccessToken));
 
         given()
-            .header("Authorization", bobAccessToken.serialize())
+            .header("Authorization", bartAccessToken.serialize())
             .body("[[\"getMessages\", {\"ids\": [\"" + bobInboxMessageIds.get(0) + "\"]}, \"#0\"]]")
         .when()
             .post("/jmap")
         .then()
             .statusCode(200)
-            .body(ARGUMENTS + ".list[0].from.email", is(USERNAME))
-            .body(ARGUMENTS + ".list[0].to.email", contains(BOB))
+            .body(ARGUMENTS + ".list[0].from.email", is(HOMER))
+            .body(ARGUMENTS + ".list[0].to.email", contains(BART))
             .body(ARGUMENTS + ".list[0].hasAttachment", is(true))
             .body(ARGUMENTS + ".list[0].textBody", is("Read confirmation"))
             .body(ARGUMENTS + ".list[0].subject", is("subject"))
@@ -329,12 +329,12 @@ public abstract class SendMDNMethodTest {
     public void sendMDNShouldPositionTheReportAsAnAttachment() {
         sendAnInitialMessage();
 
-        List<String> messageIds = getMessageIdListForAccount(accessToken.serialize());
+        List<String> messageIds = getMessageIdListForAccount(homerAccessToken.serialize());
 
-        // USER sends a MDN back to BOB
+        // USER sends a MDN back to BART
         String creationId = "creation-1";
         with()
-            .header("Authorization", accessToken.serialize())
+            .header("Authorization", homerAccessToken.serialize())
             .body("[[\"setMessages\", {\"sendMDN\": {" +
                 "\"" + creationId + "\":{" +
                 "    \"messageId\":\"" + messageIds.get(0) + "\"," +
@@ -350,12 +350,12 @@ public abstract class SendMDNMethodTest {
                 "}}, \"#0\"]]")
             .post("/jmap");
 
-        // BOB should have received it
-        calmlyAwait.until(() -> !listMessagesInMailbox(bobAccessToken, getInboxId(bobAccessToken)).isEmpty());
-        List<String> bobInboxMessageIds = listMessagesInMailbox(bobAccessToken, getInboxId(bobAccessToken));
+        // BART should have received it
+        calmlyAwait.until(() -> !listMessagesInMailbox(bartAccessToken, getInboxId(bartAccessToken)).isEmpty());
+        List<String> bobInboxMessageIds = listMessagesInMailbox(bartAccessToken, getInboxId(bartAccessToken));
 
         String blobId = with()
-            .header("Authorization", bobAccessToken.serialize())
+            .header("Authorization", bartAccessToken.serialize())
             .body("[[\"getMessages\", {\"ids\": [\"" + bobInboxMessageIds.get(0) + "\"]}, \"#0\"]]")
             .post("/jmap")
         .then()
@@ -364,13 +364,13 @@ public abstract class SendMDNMethodTest {
             .path(ARGUMENTS + ".list[0].attachments[0].blobId");
 
         given()
-            .header("Authorization", bobAccessToken.serialize())
+            .header("Authorization", bartAccessToken.serialize())
         .when()
             .get("/download/" + blobId)
         .then()
             .statusCode(200)
             .body(containsString("Reporting-UA: reportingUA;"))
-            .body(containsString("Final-Recipient: rfc822; username@domain.tld"))
+            .body(containsString("Final-Recipient: rfc822; homer@domain.tld"))
             .body(containsString("Original-Message-ID: "))
             .body(containsString("Disposition: automatic-action/MDN-sent-automatically;processed"));
     }
@@ -380,7 +380,7 @@ public abstract class SendMDNMethodTest {
         String creationId = "creation-1";
         // Missing subject
         given()
-            .header("Authorization", accessToken.serialize())
+            .header("Authorization", homerAccessToken.serialize())
             .body("[[\"setMessages\", {\"sendMDN\": {" +
                 "\"" + creationId + "\":{" +
                     "    \"messageId\":\"" + randomMessageId().serialize() + "\"," +
@@ -408,7 +408,7 @@ public abstract class SendMDNMethodTest {
         String creationId = "creation-1";
         // Missing actionMode
         given()
-            .header("Authorization", accessToken.serialize())
+            .header("Authorization", homerAccessToken.serialize())
             .body("[[\"setMessages\", {\"sendMDN\": {" +
                 "\"" + creationId + "\":{" +
                 "    \"messageId\":\"" + randomMessageId().serialize() + "\"," +
@@ -435,7 +435,7 @@ public abstract class SendMDNMethodTest {
     public void invalidEnumValuesInMDNShouldBeReported() {
         String creationId = "creation-1";
         given()
-            .header("Authorization", accessToken.serialize())
+            .header("Authorization", homerAccessToken.serialize())
             .body("[[\"setMessages\", {\"sendMDN\": {" +
                 "\"" + creationId + "\":{" +
                 "    \"messageId\":\"" + randomMessageId().serialize() + "\"," +
