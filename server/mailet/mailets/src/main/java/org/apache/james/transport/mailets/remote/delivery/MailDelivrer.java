@@ -101,7 +101,7 @@ public class MailDelivrer {
         try {
             // Figure out which servers to try to send to. This collection
             // will hold all the possible target servers
-            Iterator<HostAddress> targetServers = dnsHelper.retrieveHostAddressIterator(host.name());
+            Iterator<HostAddress> targetServers = dnsHelper.retrieveHostAddressIterator(host.asString());
             if (!targetServers.hasNext()) {
                 return handleNoTargetServer(mail, host);
             }
