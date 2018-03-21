@@ -145,7 +145,6 @@ public abstract class SetMessagesMethodTest {
     private DataProbe dataProbe;
     private MessageIdProbe messageProbe;
     private ACLProbe aclProbe;
-    private MailboxId inboxId;
 
     @Before
     public void setup() throws Throwable {
@@ -168,7 +167,6 @@ public abstract class SetMessagesMethodTest {
         dataProbe.addDomain(USERS_DOMAIN);
         dataProbe.addUser(USERNAME, PASSWORD);
         dataProbe.addUser(BOB, BOB_PASSWORD);
-        inboxId = mailboxProbe.createMailbox("#private", USERNAME, DefaultMailboxes.INBOX);
         accessToken = HttpJmapAuthentication.authenticateJamesUser(baseUri(), USERNAME, PASSWORD);
         bobAccessToken = HttpJmapAuthentication.authenticateJamesUser(baseUri(), BOB, BOB_PASSWORD);
 
