@@ -21,8 +21,8 @@
 package org.apache.james.transport.matchers;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
@@ -37,7 +37,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 
 
 /**
@@ -45,37 +44,51 @@ import com.google.common.collect.ImmutableSet;
  *
  * use: <pre>
  *     <code>
- *         <mailet match="HasMimeType=text/plain,text/html" class="..." />
+ *         <mailet match="HasMimeTypeParameter=report-type=disposition-notification" class="..." />
  *     </code>
  * </pre>
  */
-public class HasMimeType extends GenericMatcher {
+public class HasMimeTypeParameter extends GenericMatcher {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(HasMimeType.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(HasMimeTypeParameter.class);
 
-    private Set<String> acceptedContentTypes;
+    private Map<String, String> filteredMimeTypeParameters;
 
     @Override
-    public void init() throws javax.mail.MessagingException {
-        acceptedContentTypes = ImmutableSet.copyOf(Splitter.on(",").trimResults().split(getCondition()));
+    public void init() throws MessagingException {
+        filteredMimeTypeParameters = Splitter.on(",")
+            .trimResults()
+            .withKeyValueSeparator('=')
+            .split(getCondition());
     }
 
     @Override
-    public Collection<MailAddress> match(Mail mail) throws javax.mail.MessagingException {
-        Optional<String> mimeTypes = getMimeTypeFromMessage(mail.getMessage());
-
-        return mimeTypes.filter(acceptedContentTypes::contains)
-                .map(any -> mail.getRecipients())
-                .orElse(ImmutableList.of());
+    public Collection<MailAddress> match(Mail mail) throws MessagingException {
+        Optional<MimeType> maybeMimeType = getMimeTypeFromMessage(mail.getMessage());
+        if (maybeMimeType.map(this::mimeTypeMatchParameter).orElse(false)) {
+            return mail.getRecipients();
+        }
+        return ImmutableList.of();
     }
 
-    private static Optional<String> getMimeTypeFromMessage(MimeMessage message) throws MessagingException {
+    private Optional<MimeType> getMimeTypeFromMessage(MimeMessage message) throws MessagingException {
         try {
-            return Optional.of(new MimeType(message.getContentType()).getBaseType());
+            return Optional.of(new MimeType(message.getContentType()));
         } catch (MimeTypeParseException e) {
             LOGGER.warn("Error while parsing message's mimeType {}", message.getContentType(), e);
             return Optional.empty();
         }
+    }
+
+    private boolean mimeTypeMatchParameter(MimeType mimeType) {
+        return filteredMimeTypeParameters
+            .entrySet()
+            .stream()
+            .anyMatch(entry -> mimeTypeContainsParameter(mimeType, entry.getKey(), entry.getValue()));
+    }
+
+    private boolean mimeTypeContainsParameter(MimeType mimeType, String name, String value) {
+        return mimeType.getParameter(name).equalsIgnoreCase(value);
     }
 
 }
