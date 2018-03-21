@@ -1178,7 +1178,7 @@ public abstract class SetMessagesMethodTest {
             .body(NAME, equalTo("messagesSet"))
             .body(ARGUMENTS + ".created", aMapWithSize(0))
             .body(ARGUMENTS + ".notCreated", aMapWithSize(1))
-            .body(ARGUMENTS + ".notCreated." + messageCreationId + ".type", equalTo("error"))
+            .body(ARGUMENTS + ".notCreated." + messageCreationId + ".type", equalTo("anErrorOccurred"))
             .body(ARGUMENTS + ".notCreated." + messageCreationId + ".description", endsWith("can not be found"));
     }
 
@@ -1252,7 +1252,7 @@ public abstract class SetMessagesMethodTest {
             .body(NAME, equalTo("messagesSet"))
             .body(NAME, equalTo("messagesSet"))
             .body(ARGUMENTS + ".notCreated", hasKey(messageCreationId))
-            .body(ARGUMENTS + ".notCreated[\"" + messageCreationId + "\"].type", equalTo("error"))
+            .body(ARGUMENTS + ".notCreated[\"" + messageCreationId + "\"].type", equalTo("anErrorOccurred"))
             .body(ARGUMENTS + ".notCreated[\"" + messageCreationId + "\"].properties", contains("mailboxIds"))
             .body(ARGUMENTS + ".notCreated[\"" + messageCreationId + "\"].description", endsWith("MailboxId invalid"));
     }
@@ -2027,7 +2027,7 @@ public abstract class SetMessagesMethodTest {
             .body(ARGUMENTS + ".created", aMapWithSize(0))
             .body(ARGUMENTS + ".notCreated", aMapWithSize(1))
             .body(ARGUMENTS + ".notCreated", hasKey(messageCreationId))
-            .body(ARGUMENTS + ".notCreated[\"" + messageCreationId + "\"].type", equalTo("error"))
+            .body(ARGUMENTS + ".notCreated[\"" + messageCreationId + "\"].type", equalTo("anErrorOccurred"))
             .body(ARGUMENTS + ".notCreated[\"" + messageCreationId + "\"].description", endsWith("can not be found"));
     }
 
@@ -2072,7 +2072,7 @@ public abstract class SetMessagesMethodTest {
             .body(ARGUMENTS + ".created", aMapWithSize(0))
             .body(ARGUMENTS + ".notCreated", aMapWithSize(1))
             .body(ARGUMENTS + ".notCreated", hasKey(messageCreationId))
-            .body(ARGUMENTS + ".notCreated[\"" + messageCreationId + "\"].type", equalTo("error"))
+            .body(ARGUMENTS + ".notCreated[\"" + messageCreationId + "\"].type", equalTo("anErrorOccurred"))
             .body(ARGUMENTS + ".notCreated[\"" + messageCreationId + "\"].properties", contains("mailboxIds"))
             .body(ARGUMENTS + ".notCreated[\"" + messageCreationId + "\"].description", endsWith("MailboxId invalid"));
     }
