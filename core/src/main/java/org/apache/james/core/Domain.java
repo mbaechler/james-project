@@ -29,7 +29,7 @@ public class Domain implements Serializable {
 
     public static final Domain LOCALHOST = Domain.of("localhost");
 
-    public static String removeBrackets(String domainName) {
+    private static String removeBrackets(String domainName) {
         if (!(domainName.startsWith("[") && domainName.endsWith("]"))) {
             return domainName;
         }
