@@ -105,7 +105,7 @@ public class JPAPerUserMaxQuotaDAO {
     }
 
     private MaxDomainMessageCount getMaxDomainMessageEntity(EntityManager entityManager, Domain domain, Optional<QuotaCount> maxMessageQuota) {
-        MaxDomainMessageCount storedValue = entityManager.find(MaxDomainMessageCount.class, domain);
+        MaxDomainMessageCount storedValue = entityManager.find(MaxDomainMessageCount.class, domain.asString());
         Long value = quotaValueToLong(maxMessageQuota);
         if (storedValue == null) {
             return new MaxDomainMessageCount(domain, value);
@@ -114,9 +114,8 @@ public class JPAPerUserMaxQuotaDAO {
         return storedValue;
     }
 
-
     private MaxDomainStorage getMaxDomainStorageEntity(EntityManager entityManager, Domain domain, Optional<QuotaSize> maxStorageQuota) {
-        MaxDomainStorage storedValue = entityManager.find(MaxDomainStorage.class, domain);
+        MaxDomainStorage storedValue = entityManager.find(MaxDomainStorage.class, domain.asString());
         Long value = quotaValueToLong(maxStorageQuota);
         if (storedValue == null) {
             return new MaxDomainStorage(domain, value);
@@ -199,8 +198,8 @@ public class JPAPerUserMaxQuotaDAO {
     }
 
     public Optional<QuotaCount> getDomainMaxMessage(Domain domain) {
-            EntityManager entityManager = entityManagerFactory.createEntityManager();
-        MaxDomainMessageCount storedValue = entityManager.find(MaxDomainMessageCount.class, domain);
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        MaxDomainMessageCount storedValue = entityManager.find(MaxDomainMessageCount.class, domain.asString());
         if (storedValue == null) {
             return Optional.empty();
         }
@@ -208,8 +207,8 @@ public class JPAPerUserMaxQuotaDAO {
     }
 
     public Optional<QuotaSize> getDomainMaxStorage(Domain domain) {
-            EntityManager entityManager = entityManagerFactory.createEntityManager();
-        MaxDomainStorage storedValue = entityManager.find(MaxDomainStorage.class, domain);
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        MaxDomainStorage storedValue = entityManager.find(MaxDomainStorage.class, domain.asString());
         if (storedValue == null) {
             return Optional.empty();
         }
