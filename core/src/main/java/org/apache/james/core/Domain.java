@@ -19,12 +19,13 @@
 
 package org.apache.james.core;
 
+import java.io.Serializable;
 import java.util.Locale;
 import java.util.Objects;
 
 import com.google.common.base.Preconditions;
 
-public class Domain {
+public class Domain implements Serializable {
 
     public static final Domain LOCALHOST = Domain.of("localhost");
 
