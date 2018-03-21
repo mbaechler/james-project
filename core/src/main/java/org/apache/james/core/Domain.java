@@ -33,7 +33,7 @@ public class Domain implements Serializable {
         if (!(domainName.startsWith("[") && domainName.endsWith("]"))) {
             return domainName;
         }
-        return domainName.substring(1, domainName.length() -1);
+        return domainName.substring(1, domainName.length() - 1);
     }
 
     public static Domain of(String domain) {
