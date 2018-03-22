@@ -53,7 +53,7 @@ public class XMLDomainListTest {
         for (String name : names) {
             configuration.addProperty("domainnames.domainname", name);
         }
-        configuration.addProperty("defaultDomain", DEFAULT_DOMAIN);
+        configuration.addProperty("defaultDomain", DEFAULT_DOMAIN.asString());
         return configuration;
     }
 
