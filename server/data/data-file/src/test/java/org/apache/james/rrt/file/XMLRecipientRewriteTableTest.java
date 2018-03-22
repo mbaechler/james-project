@@ -94,7 +94,7 @@ public class XMLRecipientRewriteTableTest extends AbstractRecipientRewriteTableT
         Mappings updatedMappings = builder.build();
         
         if (!updatedMappings.isEmpty()) {
-            defaultConfiguration.addProperty("mapping", user + "@" + domain + "=" + updatedMappings.serialize());
+            defaultConfiguration.addProperty("mapping", user + "@" + domain.asString() + "=" + updatedMappings.serialize());
         }
 
         try {
@@ -130,7 +130,7 @@ public class XMLRecipientRewriteTableTest extends AbstractRecipientRewriteTableT
         }
 
         if (mappings.size() > 0) {
-            defaultConfiguration.addProperty("mapping", user + "@" + domain + "=" + mappings.serialize());
+            defaultConfiguration.addProperty("mapping", user + "@" + domain.asString() + "=" + mappings.serialize());
         }
 
         try {
