@@ -27,6 +27,7 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.james.core.Domain;
 import org.apache.james.core.MailAddress;
+import org.apache.james.core.User;
 import org.apache.james.domainlist.api.DomainList;
 import org.apache.james.domainlist.api.DomainListException;
 import org.apache.james.lifecycle.api.Configurable;
@@ -71,7 +72,7 @@ public abstract class AbstractUsersRepository implements UsersRepository, Config
         int i = username.indexOf("@");
         if (supportVirtualHosting()) {
             // need a @ in the username
-            if (!user.hasDomainPart()) {
+            if (i == -1) {
                 throw new UsersRepositoryException("Given Username needs to contain a @domainpart");
             } else {
                 Domain domain = Domain.of(username.substring(i + 1));
