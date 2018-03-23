@@ -413,7 +413,7 @@ public abstract class SendMDNMethodTest {
 
     @Test
     public void sendMDNShouldReturnMaxQuotaReachedWhenUserReachedHisQuota() throws MailboxException {
-        sendAnInitialMessage();
+        bartSendMessageToHomer();
 
         List<String> messageIds = getMessageIdListForAccount(homerAccessToken.serialize());
 
