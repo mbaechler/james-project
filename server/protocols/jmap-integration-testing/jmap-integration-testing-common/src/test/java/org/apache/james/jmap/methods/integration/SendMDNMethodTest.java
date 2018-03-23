@@ -415,7 +415,7 @@ public abstract class SendMDNMethodTest {
     public void sendMDNShouldReturnMaxQuotaReachedWhenUserReachedHisQuota() throws MailboxException {
         bartSendMessageToHomer();
 
-        List<String> messageIds = getMessageIdListForAccount(homerAccessToken);
+        List<String> messageIds = listMessageIdsForAccount(homerAccessToken);
 
         QuotaProbe quotaProbe = jmapServer.getProbe(QuotaProbesImpl.class);
         String inboxQuotaRoot = quotaProbe.getQuotaRoot("#private", HOMER, DefaultMailboxes.INBOX);
