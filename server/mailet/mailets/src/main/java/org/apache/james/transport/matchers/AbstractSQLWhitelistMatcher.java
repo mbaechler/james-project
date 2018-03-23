@@ -145,7 +145,6 @@ public abstract class AbstractSQLWhitelistMatcher extends GenericMatcher {
         }
 
         String senderUser = senderMailAddress.getLocalPart();
-        Domain senderHost = senderMailAddress.getDomain();
 
         senderUser = senderUser.toLowerCase(Locale.US);
 
