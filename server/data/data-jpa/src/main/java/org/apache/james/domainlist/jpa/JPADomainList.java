@@ -38,6 +38,7 @@ import org.apache.james.domainlist.lib.AbstractDomainList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.steveash.guavate.Guavate;
 import com.google.common.collect.ImmutableList;
 
 /**
@@ -83,7 +84,13 @@ public class JPADomainList extends AbstractDomainList {
         final EntityTransaction transaction = entityManager.getTransaction();
         try {
             transaction.begin();
-            domains = entityManager.createNamedQuery("listDomainNames").getResultList();
+            List<String> resultList = entityManager
+                    .createNamedQuery("listDomainNames")
+                    .getResultList();
+            domains = resultList
+                    .stream()
+                    .map(domainAsString -> Domain.of(domainAsString))
+                    .collect(Guavate.toImmutableList());
             transaction.commit();
         } catch (PersistenceException e) {
             LOGGER.error("Failed to list domains", e);
