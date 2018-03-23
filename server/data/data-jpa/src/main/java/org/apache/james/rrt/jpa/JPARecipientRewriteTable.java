@@ -118,7 +118,10 @@ public class JPARecipientRewriteTable extends AbstractRecipientRewriteTable {
         try {
             transaction.begin();
             @SuppressWarnings("unchecked")
-            List<JPARecipientRewrite> virtualUsers = entityManager.createNamedQuery("selectUserDomainMapping").setParameter("user", user).setParameter("domain", domain).getResultList();
+            List<JPARecipientRewrite> virtualUsers = entityManager.createNamedQuery("selectUserDomainMapping")
+                .setParameter("user", user)
+                .setParameter("domain", domain.asString())
+                .getResultList();
             transaction.commit();
             if (virtualUsers.size() > 0) {
                 return MappingsImpl.fromRawString(virtualUsers.get(0).getTargetAddress());
