@@ -415,17 +415,17 @@ public abstract class SendMDNMethodTest {
     public void sendMDNShouldReturnMaxQuotaReachedWhenUserReachedHisQuota() throws MailboxException {
         sendAnInitialMessage();
 
-        List<String> messageIds = getMessageIdListForAccount(accessToken.serialize());
+        List<String> messageIds = getMessageIdListForAccount(homerAccessToken.serialize());
 
         QuotaProbe quotaProbe = jmapServer.getProbe(QuotaProbesImpl.class);
-        String inboxQuotaRoot = quotaProbe.getQuotaRoot("#private", USERNAME, DefaultMailboxes.INBOX);
+        String inboxQuotaRoot = quotaProbe.getQuotaRoot("#private", HOMER, DefaultMailboxes.INBOX);
         quotaProbe.setMaxStorage(inboxQuotaRoot, SerializableQuotaValue.valueOf(Optional.of(QuotaSize.size(100))));
 
-        MessageAppender.fillMailbox(jmapServer.getProbe(MailboxProbeImpl.class), USERNAME, MailboxConstants.INBOX);
+        MessageAppender.fillMailbox(jmapServer.getProbe(MailboxProbeImpl.class), HOMER, MailboxConstants.INBOX);
 
         String creationId = "creation-1";
         given()
-            .header("Authorization", accessToken.serialize())
+            .header("Authorization", homerAccessToken.serialize())
             .body("[[\"setMessages\", {\"sendMDN\": {" +
                 "\"" + creationId + "\":{" +
                 "    \"messageId\":\"" + messageIds.get(0) + "\"," +
