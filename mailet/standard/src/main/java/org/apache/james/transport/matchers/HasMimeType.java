@@ -43,7 +43,11 @@ import com.google.common.collect.ImmutableSet;
 /**
  * <p>This matcher checks if the content type matches.</p>
  *
- * use: <pre><code><mailet match="HasMimeType=text/plain,text/html" class="..." /></code></pre>
+ * use: <pre>
+ *     <code>
+ *         <mailet match="HasMimeType=text/plain,text/html" class="..." />
+ *     </code>
+ * </pre>
  */
 public class HasMimeType extends GenericMatcher {
 

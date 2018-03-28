@@ -60,6 +60,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.google.common.collect.Iterables;
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.builder.RequestSpecBuilder;
 import com.jayway.restassured.http.ContentType;
@@ -292,7 +293,7 @@ public abstract class SendMDNMethodTest {
     public void sendMDNShouldSendAMDNBackToTheOriginalMessageAuthor() {
         bartSendMessageToHomer();
 
-        List<String> messageIds = listMessageIdsForAccount(homerAccessToken);
+        String homerReceivedMessageId = Iterables.getOnlyElement(listMessageIdsForAccount(homerAccessToken));
 
         // HOMER sends a MDN back to BART
         String creationId = "creation-1";
@@ -300,7 +301,7 @@ public abstract class SendMDNMethodTest {
             .header("Authorization", homerAccessToken.serialize())
             .body("[[\"setMessages\", {\"sendMDN\": {" +
                 "\"" + creationId + "\":{" +
-                "    \"messageId\":\"" + messageIds.get(0) + "\"," +
+                "    \"messageId\":\"" + homerReceivedMessageId + "\"," +
                 "    \"subject\":\"subject\"," +
                 "    \"textBody\":\"Read confirmation\"," +
                 "    \"reportingUA\":\"reportingUA\"," +
@@ -313,24 +314,29 @@ public abstract class SendMDNMethodTest {
                 "}}, \"#0\"]]")
             .post("/jmap");
 
+        String originalRFC822MessageId = getRFC822MessageId(homerAccessToken, homerReceivedMessageId);
+
         // BART should have received it
         calmlyAwait.until(() -> !listMessageIdsInMailbox(bartAccessToken, getInboxId(bartAccessToken)).isEmpty());
         List<String> bobInboxMessageIds = listMessageIdsInMailbox(bartAccessToken, getInboxId(bartAccessToken));
 
+        String firstMessage = ARGUMENTS + ".list[0]";
         given()
             .header("Authorization", bartAccessToken.serialize())
             .body("[[\"getMessages\", {\"ids\": [\"" + bobInboxMessageIds.get(0) + "\"]}, \"#0\"]]")
         .when()
             .post("/jmap")
         .then()
+            .log().all(true)
             .statusCode(200)
-            .body(ARGUMENTS + ".list[0].from.email", is(HOMER))
-            .body(ARGUMENTS + ".list[0].to.email", contains(BART))
-            .body(ARGUMENTS + ".list[0].hasAttachment", is(true))
-            .body(ARGUMENTS + ".list[0].textBody", is("Read confirmation"))
-            .body(ARGUMENTS + ".list[0].subject", is("subject"))
-            .body(ARGUMENTS + ".list[0].headers.Content-Type", startsWith("multipart/report;"))
-            .body(ARGUMENTS + ".list[0].attachments[0].type", startsWith("message/disposition-notification"));
+            .body(firstMessage + ".from.email", is(HOMER))
+            .body(firstMessage + ".to.email", contains(BART))
+            .body(firstMessage + ".hasAttachment", is(true))
+            .body(firstMessage + ".textBody", is("Read confirmation"))
+            .body(firstMessage + ".subject", is("subject"))
+            .body(firstMessage + ".headers.Content-Type", startsWith("multipart/report;"))
+            .body(firstMessage + ".headers.X-JAMES-MDN-JMAP-MESSAGE-ID", equalTo(originalRFC822MessageId))
+            .body(firstMessage + ".attachments[0].type", startsWith("message/disposition-notification"));
     }
 
     @Test
@@ -554,4 +560,14 @@ public abstract class SendMDNMethodTest {
             .path(ARGUMENTS + ".messageIds");
     }
 
+    private String getRFC822MessageId(AccessToken accessToken, String messageId) {
+        return with()
+                    .header("Authorization", accessToken.serialize())
+                    .body("[[\"getMessages\", {\"ids\": [\"" + messageId + "\"]}, \"#0\"]]")
+                    .post("/jmap")
+                .then()
+                    .extract()
+                    .body()
+                    .path(ARGUMENTS + ".list[0].headers.Message-ID");
+    }
 }

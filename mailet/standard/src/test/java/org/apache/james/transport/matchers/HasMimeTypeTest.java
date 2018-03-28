@@ -21,14 +21,17 @@ package org.apache.james.transport.matchers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import javax.mail.MessagingException;
+
 import org.apache.james.core.builder.MimeMessageBuilder;
+import org.apache.james.util.MimeMessageUtil;
 import org.apache.mailet.Mail;
 import org.apache.mailet.base.test.FakeMail;
 import org.apache.mailet.base.test.FakeMatcherConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class HasMimeTypeTest {
+class HasMimeTypeTest {
 
     private static final String RECIPIENT = "test@james.apache.org";
     private static final String FROM = "test@james.apache.org";
@@ -38,12 +41,29 @@ public class HasMimeTypeTest {
     private HasMimeType matcher;
 
     @BeforeEach
-    public void setUp() throws Exception {
+    void setUp() {
         matcher = new HasMimeType();
     }
 
     @Test
-    public void hasMimeType() throws Exception {
+    void shouldMatchMultipartReport() throws MessagingException {
+        matcher.init(FakeMatcherConfig.builder()
+            .matcherName("HasMimeType")
+            .condition("multipart/report")
+            .build());
+
+        Mail mail = FakeMail.builder()
+            .mimeMessage(MimeMessageUtil.mimeMessageFromStream(
+                             ClassLoader.getSystemResourceAsStream("mime/mdn.mime")))
+            .sender(FROM)
+            .recipient(RECIPIENT)
+            .build();
+
+        assertThat(matcher.match(mail)).containsAll(mail.getRecipients());
+    }
+
+    @Test
+    void hasMimeType() throws Exception {
         matcher.init(FakeMatcherConfig.builder()
                 .matcherName("HasMimeType")
                 .condition(MIME_TYPES)
@@ -73,7 +93,7 @@ public class HasMimeTypeTest {
     }
 
     @Test
-    public void doesNotHaveMimeType() throws Exception {
+    void doesNotHaveMimeType() throws Exception {
         matcher.init(FakeMatcherConfig.builder()
                 .matcherName("HasMimeType")
                 .condition(NON_MATCHING_MIME_TYPES)
@@ -103,7 +123,7 @@ public class HasMimeTypeTest {
     }
 
     @Test
-    public void matchShouldReturnRecipientsWhenAtLeastOneMimeTypeMatch() throws Exception {
+    void matchShouldReturnRecipientsWhenAtLeastOneMimeTypeMatch() throws Exception {
         matcher.init(FakeMatcherConfig.builder()
             .matcherName("HasMimeType")
             .condition("text/md, text/html")

@@ -21,7 +21,9 @@ package org.apache.james.mdn;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Properties;
 
 import javax.mail.BodyPart;
@@ -33,12 +35,21 @@ import javax.mail.internet.MimeMultipart;
 
 import org.apache.james.javax.MimeMultipartReport;
 import org.apache.james.mime4j.Charsets;
+import org.apache.james.mime4j.dom.FieldParser;
+import org.apache.james.mime4j.dom.Header;
 import org.apache.james.mime4j.dom.Message;
+import org.apache.james.mime4j.dom.MessageBuilder;
 import org.apache.james.mime4j.dom.Multipart;
+import org.apache.james.mime4j.dom.field.ContentTypeField;
+import org.apache.james.mime4j.field.ContentTypeFieldImpl;
 import org.apache.james.mime4j.message.BasicBodyFactory;
 import org.apache.james.mime4j.message.BodyPartBuilder;
+import org.apache.james.mime4j.message.DefaultMessageBuilder;
 import org.apache.james.mime4j.message.MultipartBuilder;
+import org.apache.james.mime4j.stream.Field;
 import org.apache.james.mime4j.stream.NameValuePair;
+import org.apache.james.mime4j.stream.RawField;
+import org.apache.james.mime4j.util.ByteSequence;
 
 import com.google.common.base.Preconditions;
 
