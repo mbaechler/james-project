@@ -36,6 +36,8 @@ import org.junit.jupiter.api.Test;
 
 class HasMimeTypeParameterTest {
 
+    private static final String TEST_CONTENT_TYPE = "multipart/report; report-type=\"disposition-notification\"; boundary=\"=-ac61K8KXSRpaQ/eveStc\"";
+
     private HasMimeTypeParameter matcher;
     private FakeMail sampleMail;
 
@@ -45,10 +47,9 @@ class HasMimeTypeParameterTest {
         sampleMail = FakeMail.builder()
             .mimeMessage(MimeMessageBuilder
                 .mimeMessageBuilder()
-                .addHeader("Content-Type",
-                    "multipart/report; report-type=\"disposition-notification\"; boundary=\"=-ac61K8KXSRpaQ/eveStc\"")
                 .setSubject("Mail read")
-                .setText("You email has been read by Bart"))
+                .addHeader("Content-Type", TEST_CONTENT_TYPE)
+                .setText("You email has been read by Bart", TEST_CONTENT_TYPE))
             .sender(SENDER)
             .recipient(RECIPIENT1)
             .build();
