@@ -40,6 +40,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.parboiled.Parboiled;
 import org.parboiled.parserunners.ReportingParseRunner;
+import org.parboiled.parserunners.TracingParseRunner;
 import org.parboiled.support.ParseTreeUtils;
 import org.parboiled.support.ParsingResult;
 
@@ -73,7 +74,7 @@ public class MDNReportParserTest {
                 .finalRecipientField(new FinalRecipient(Text.fromRawText("final_recipient")))
                 .originalRecipientField(new OriginalRecipient(Text.fromRawText("originalRecipient")))
                 .originalMessageIdField(new OriginalMessageId("original_message_id"))
-                .reportingUserAgentField(new ReportingUserAgent("UA_name", "UA_product"))
+                .reportingUserAgentField(ReportingUserAgent.builder().userAgentName("UA_name").userAgentProduct("UA_product").build())
                 .addErrorFields(new Error(Text.fromRawText("Message1")), new Error(Text.fromRawText("Message2")))
                 .withExtensionFields(
                     new ExtensionField("X-OPENPAAS-IP", "177.177.177.77"),
@@ -150,7 +151,7 @@ public class MDNReportParserTest {
                 .finalRecipientField(new FinalRecipient(Text.fromRawText("final_recipient")))
                 .originalRecipientField(new OriginalRecipient(Text.fromRawText("originalRecipient")))
                 .originalMessageIdField(new OriginalMessageId("original_message_id"))
-                .reportingUserAgentField(new ReportingUserAgent("UA_name", "UA_product"))
+                .reportingUserAgentField(ReportingUserAgent.builder().userAgentName("UA_name").userAgentProduct("UA_product").build())
                 .addErrorFields(new Error(Text.fromRawText("Message1")), new Error(Text.fromRawText("Message2")))
                 .withExtensionFields(
                     new ExtensionField("X-OPENPAAS-IP", "177.177.177.77"),
@@ -197,6 +198,28 @@ public class MDNReportParserTest {
                 "Disposition: automatic-action/MDN-sent-automatically;processed\r\n";
         Parser parser = Parboiled.createParser(MDNReportParser.Parser.class);
         ParsingResult<Object> result = new ReportingParseRunner<>(parser.dispositionNotificationContent()).run(minimal);
+        assertThat(result.matched).isTrue();
+        String parseTreePrintOut = ParseTreeUtils.printNodeTree(result);
+        System.out.println(parseTreePrintOut);
+    }
+
+    @Test
+    public void reportingUserAgentShouldParseWithoutProduct() {
+        String minimal = "Reporting-UA: UA_name; UA_product";
+        Parser parser = Parboiled.createParser(MDNReportParser.Parser.class);
+        ParsingResult<Object> result = new TracingParseRunner<>(parser.reportingUaField()).run(minimal);
+        assertThat(result.matched).isTrue();
+        String parseTreePrintOut = ParseTreeUtils.printNodeTree(result);
+        System.out.println(parseTreePrintOut);
+        assertThat(result.resultValue).isInstanceOf(ReportingUserAgent.class);
+        assertThat((ReportingUserAgent)result.resultValue).isEqualTo(ReportingUserAgent.builder().userAgentName("UA_name").userAgentProduct("UA_product").build());
+    }
+
+    @Test
+    public void reportingUserAgentShouldParseWithProduct() {
+        String minimal = "Reporting-UA: UA_name; UA_product";
+        Parser parser = Parboiled.createParser(MDNReportParser.Parser.class);
+        ParsingResult<Object> result = new ReportingParseRunner<>(parser.reportingUaField()).run(minimal);
         assertThat(result.matched).isTrue();
         String parseTreePrintOut = ParseTreeUtils.printNodeTree(result);
         System.out.println(parseTreePrintOut);

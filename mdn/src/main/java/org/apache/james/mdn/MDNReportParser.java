@@ -2,9 +2,13 @@ package org.apache.james.mdn;
 
 import java.util.Optional;
 
+import org.apache.james.mdn.fields.ReportingUserAgent;
 import org.parboiled.BaseParser;
+import org.parboiled.Parboiled;
 import org.parboiled.Rule;
 import org.parboiled.annotations.BuildParseTree;
+import org.parboiled.parserunners.ReportingParseRunner;
+import org.parboiled.support.ParsingResult;
 
 import com.google.common.annotations.VisibleForTesting;
 
@@ -35,12 +39,17 @@ public class MDNReportParser {
         if (this.strict.orElse(DEFAULT_STRICT)) {
             throw new IllegalStateException();
         }
+        Parser parser = Parboiled.createParser(MDNReportParser.Parser.class);
+        ParsingResult<Object> result = new ReportingParseRunner<>(parser.dispositionNotificationContent()).run(mdnReport);
+        if (result.matched) {
+            return Optional.of((MDNReport) result.resultValue);
+        }
         return Optional.empty();
     }
 
     @VisibleForTesting
     @BuildParseTree
-    static class Parser extends BaseParser<MDNReport> {
+    static class Parser extends BaseParser<Object> {
         //   CFWS            =   (1*([FWS] comment) [FWS]) / FWS
         Rule cfws() {
             return FirstOf(
@@ -303,6 +312,7 @@ public class MDNReportParser {
                      *( extension-field CRLF )    */
         Rule dispositionNotificationContent() {
             return Sequence(
+                push(MDNReport.builder()),
                 Optional(Sequence(reportingUaField(), crlf())),
                 Optional(Sequence(mdnGatewayField(), crlf())),
                 Optional(Sequence(originalRecipientField(), crlf())),
@@ -316,8 +326,42 @@ public class MDNReportParser {
         /*    reporting-ua-field = "Reporting-UA" ":" OWS ua-name OWS [
                                    ";" OWS ua-product OWS ]    */
         Rule reportingUaField() {
-            return Sequence("Reporting UA", ":", ows(), uaName(), ows(),
-                Optional(Sequence(";", ows(), uaProduct(), ows())));
+            return Sequence(
+                push(ReportingUserAgent.builder()),
+                "Reporting-UA", ":", ows(), uaName(), ACTION(setUserAgentName()), ows(),
+                Optional(Sequence(";", ows(), uaProduct(), ACTION(setUserAgentProduct()), ows())),
+                ACTION(buildReportingUserAgent())
+                );
+        }
+
+        boolean buildReportingUserAgent() {
+            push(this.<ReportingUserAgent.Builder>popT().build());
+            return true;
+        }
+
+        boolean setUserAgentName() {
+            this.<ReportingUserAgent.Builder>peekT().userAgentName(match());
+            return true;
+        }
+
+        boolean setUserAgentProduct() {
+            this.<ReportingUserAgent.Builder>peekT().userAgentProduct(match());
+            return true;
+        }
+
+        @SuppressWarnings("unchecked")
+        <T> T popT() {
+            return (T) pop();
+        }
+
+        @SuppressWarnings("unchecked")
+        <T> T peekParent() {
+            return (T) peek(1);
+        }
+
+        @SuppressWarnings("unchecked")
+        <T> T peekT() {
+            return (T) peek();
         }
 
         //    ua-name = *text-no-semi
