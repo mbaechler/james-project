@@ -105,7 +105,7 @@ public class MDNReportParser {
             return Sequence(
                 "(",
                 ZeroOrMore(Sequence(
-                    fws(),
+                    Optional(fws()),
                     ccontent()
                     )),
                 Optional(fws()),
@@ -227,9 +227,9 @@ public class MDNReportParser {
                                  [CFWS]   */
         Rule quotedString() {
             return Sequence(
-                cfws(),
-                Sequence(dquote(), ZeroOrMore(Sequence(fws(), qcontent()), Optional(fws()), dquote())),
-                cfws());
+                Optional(cfws()),
+                Sequence(dquote(), ZeroOrMore(Sequence(Optional(fws()), qcontent()), Optional(fws()), dquote())),
+                Optional(cfws()));
         }
 
         //         DQUOTE         =  %x22

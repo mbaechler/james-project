@@ -42,7 +42,6 @@ import org.parboiled.Parboiled;
 import org.parboiled.parserunners.ReportingParseRunner;
 import org.parboiled.support.ParseTreeUtils;
 import org.parboiled.support.ParsingResult;
-import org.slf4j.LoggerFactory;
 
 public class MDNReportParserTest {
 
