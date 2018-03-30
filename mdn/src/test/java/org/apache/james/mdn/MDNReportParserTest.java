@@ -193,16 +193,6 @@ public class MDNReportParserTest {
     }
 
     @Test
-    public void mdnRequestHeaderShouldParse() {
-        String input = "Disposition-Notification-To: user@james.org\r\n";
-        Parser parser = Parboiled.createParser(MDNReportParser.Parser.class);
-        ParsingResult<Object> result = new ReportingParseRunner<>(parser.mdnRequestHeader()).run(input);
-        String parseTreePrintOut = ParseTreeUtils.printNodeTree(result);
-        assertThat(result.matched).isTrue();
-        System.out.println(parseTreePrintOut);
-    }
-
-    @Test
     public void dispositionNotificationContentShouldParseWhenMinimal() {
         String minimal = "Final-Recipient: rfc822; final_recipient\r\n" +
                 "Disposition: automatic-action/MDN-sent-automatically;processed\r\n";

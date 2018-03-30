@@ -173,39 +173,6 @@ public class MDNReportParser {
                     cr()));
         }
 
-        //    mdn-request-header = "Disposition-Notification-To" ":" mailbox-list CRLF
-        Rule mdnRequestHeader() {
-            return Sequence("Disposition-Notification-To", ":", mailboxList(), crlf());
-        }
-
-        //   mailbox-list    =   (mailbox *("," mailbox)) / obs-mbox-list
-        Rule mailboxList() {
-            return FirstOf(
-                Sequence(
-                    mailbox(),
-                    ZeroOrMore(Sequence(",", mailbox()))),
-                obsMboxList());
-        }
-
-        //   mailbox         =   name-addr / addr-spec
-        Rule mailbox() {
-            return FirstOf(nameAddr(), addrSpec());
-        }
-
-        //   name-addr       =   [display-name] angle-addr
-        Rule nameAddr() {
-            return Sequence(Optional(displayName()), angleAddr());
-        }
-
-        Rule displayName() {
-            return phrase();
-        }
-
-        //   phrase          =   1*word / obs-phrase
-        Rule phrase() {
-            return FirstOf(OneOrMore(word()), obsPhrase());
-        }
-
         //   word            =   atom / quoted-string
         Rule word() {
             return FirstOf(atom(), quotedString());
@@ -275,37 +242,6 @@ public class MDNReportParser {
             return FirstOf(qcontent(), quotedPair());
         }
 
-        //   obs-phrase      =   word *(word / "." / CFWS)
-        Rule obsPhrase() {
-            return Sequence(word(), ZeroOrMore(Sequence(word(), ".", cfws())));
-        }
-
-        /*   angle-addr      =   [CFWS] "<" addr-spec ">" [CFWS] /
-                                 obs-angle-addr   */
-        Rule angleAddr() {
-            return FirstOf(
-                Sequence(Optional(cfws()), "<", addrSpec(), ">", Optional(cfws())),
-                obsAngleAddr());
-        }
-
-        //   obs-angle-addr  =   [CFWS] "<" obs-route addr-spec ">" [CFWS]
-        Rule obsAngleAddr() {
-            return Sequence(Optional(cfws()), "<", obsRoute(), addrSpec(), Optional(cfws()));
-        }
-
-        //   obs-route       =   obs-domain-list ":"
-        Rule obsRoute() {
-            return Sequence(obsDomainList(), ":");
-        }
-
-        /*   obs-domain-list =   *(CFWS / ",") "@" domain
-                                 *("," [CFWS] ["@" domain])   */
-        Rule obsDomainList() {
-            return Sequence(
-                ZeroOrMore(FirstOf(cfws(), ",")), "@", domain(),
-                ZeroOrMore(Sequence(",", Optional(cfws()), Optional(Sequence("@", domain())))));
-        }
-
         //   domain          =   dot-atom / domain-literal / obs-domain
         Rule domain() {
             return FirstOf(dotAtom(), domainLiteral(), obsDomain());
@@ -346,11 +282,6 @@ public class MDNReportParser {
             return Sequence(atom(), ZeroOrMore(Sequence(".", atom())));
         }
 
-        //   addr-spec       =   local-part "@" domain
-        Rule addrSpec() {
-            return Sequence(localPart(), "@", domain());
-        }
-
         //   local-part      =   dot-atom / quoted-string / obs-local-part
         Rule localPart() {
             return FirstOf(dotAtom(), quotedString(), obsLocalPart());
@@ -360,40 +291,6 @@ public class MDNReportParser {
         Rule obsLocalPart() {
             return Sequence(word(), ZeroOrMore(Sequence(".", word())));
         }
-
-        //   obs-mbox-list   =   *([CFWS] ",") mailbox *("," [mailbox / CFWS])
-        Rule obsMboxList() {
-            return Sequence(ZeroOrMore(Sequence(Optional(cfws()), ",")), mailbox(), ZeroOrMore(Sequence(",", Optional(FirstOf(mailbox(), cfws())))));
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         
         /*    disposition-notification-content =
                      [ reporting-ua-field CRLF ]
