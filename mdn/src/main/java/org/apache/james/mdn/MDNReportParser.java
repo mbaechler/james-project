@@ -4,6 +4,7 @@ import java.util.Optional;
 
 import org.parboiled.BaseParser;
 import org.parboiled.Rule;
+import org.parboiled.annotations.BuildParseTree;
 
 import com.google.common.annotations.VisibleForTesting;
 
@@ -38,6 +39,7 @@ public class MDNReportParser {
     }
 
     @VisibleForTesting
+    @BuildParseTree
     static class Parser extends BaseParser<MDNReport> {
         //   CFWS            =   (1*([FWS] comment) [FWS]) / FWS
         Rule cfws() {
