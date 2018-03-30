@@ -40,7 +40,7 @@ public class MDNReportParser {
     @VisibleForTesting
     static class Parser extends BaseParser<MDNReport> {
         //   CFWS            =   (1*([FWS] comment) [FWS]) / FWS
-        public Rule cfws() {
+        Rule cfws() {
             return FirstOf(
                 Sequence(
                     OneOrMore(Sequence(fws(), comment())),
@@ -66,12 +66,12 @@ public class MDNReportParser {
 
         //         SP             =  %x20
         Rule sp() {
-            return AnyOf(Character.toChars(0x20));
+            return Ch((char)0x20);
         }
 
         //         HTAB           =  %x09
         Rule htab() {
-            return AnyOf(Character.toChars(0x09));
+            return Ch((char)0x09);
         }
 
         //         CRLF           =  CR LF
@@ -80,13 +80,13 @@ public class MDNReportParser {
         }
 
         //         CR             =  %x0D
-        private Object cr() {
-            return AnyOf(Character.toChars(0x0D));
+        Rule cr() {
+            return Ch((char)0x0D);
         }
 
         //         LF             =  %x0A
         Rule lf() {
-            return AnyOf(Character.toChars(0x0A));
+            return Ch((char)0x0A);
         }
 
         //   obs-FWS         =   1*WSP *(CRLF 1*WSP)
@@ -118,7 +118,7 @@ public class MDNReportParser {
         /*   ctext           =   %d33-39 /          ; Printable US-ASCII
                                  %d42-91 /          ;  characters not including
                                  %d93-126 /         ;  "(", ")", or "\"
-                                 obs-ctext*/
+                                 obs-ctext   */
         Rule ctext() {
             return FirstOf(
                 CharRange((char)33, (char)39),
@@ -136,14 +136,14 @@ public class MDNReportParser {
                                  %d11 /             ;  characters that do not
                                  %d12 /             ;  include the carriage
                                  %d14-31 /          ;  return, line feed, and
-                                 %d127              ;  white space characters*/
+                                 %d127              ;  white space characters   */
         Rule obsNoWsCtl() {
             return FirstOf(
                 CharRange((char)1, (char)8),
-                AnyOf(Character.toChars(11)),
-                AnyOf(Character.toChars(12)),
+                Ch((char)11),
+                Ch((char)12),
                 CharRange((char)14, (char)31),
-                AnyOf(Character.toChars(127)));
+                Ch((char)127));
         }
 
         //   quoted-pair     =   ("\" (VCHAR / WSP)) / obs-qp
@@ -165,14 +165,14 @@ public class MDNReportParser {
             return Sequence(
                 "\\",
                 FirstOf(
-                    AnyOf(Character.toChars(0xd0)),
+                    Ch((char)0xd0),
                     obsCtext(),
                     lf(),
                     cr()));
         }
 
         //    mdn-request-header = "Disposition-Notification-To" ":" mailbox-list CRLF
-        public Rule mdnRequestHeader() {
+        Rule mdnRequestHeader() {
             return Sequence("Disposition-Notification-To", ":", mailboxList(), crlf());
         }
 
@@ -227,7 +227,7 @@ public class MDNReportParser {
                                  "^" / "_" /
                                  "`" / "{" /
                                  "|" / "}" /
-                                 "~"*/
+                                 "~"   */
         Rule atext() {
             return FirstOf(
                 alpha(), digit(),
@@ -255,7 +255,7 @@ public class MDNReportParser {
 
         /*   quoted-string   =   [CFWS]
                                  DQUOTE *([FWS] qcontent) [FWS] DQUOTE
-                                 [CFWS]*/
+                                 [CFWS]   */
         Rule quotedString() {
             return Sequence(
                 cfws(),
@@ -265,7 +265,7 @@ public class MDNReportParser {
 
         //         DQUOTE         =  %x22
         Rule dquote() {
-            return AnyOf(Character.toChars(0x22));
+            return Ch((char)0x22);
         }
 
         //   qcontent        =   qtext / quoted-pair
@@ -279,7 +279,7 @@ public class MDNReportParser {
         }
 
         /*   angle-addr      =   [CFWS] "<" addr-spec ">" [CFWS] /
-                                 obs-angle-addr*/
+                                 obs-angle-addr   */
         Rule angleAddr() {
             return FirstOf(
                 Sequence(Optional(cfws()), "<", addrSpec(), ">", Optional(cfws())),
@@ -297,7 +297,7 @@ public class MDNReportParser {
         }
 
         /*   obs-domain-list =   *(CFWS / ",") "@" domain
-                                 *("," [CFWS] ["@" domain])*/
+                                 *("," [CFWS] ["@" domain])   */
         Rule obsDomainList() {
             return Sequence(
                 ZeroOrMore(FirstOf(cfws(), ",")), "@", domain(),
@@ -326,7 +326,7 @@ public class MDNReportParser {
 
         /*   dtext           =   %d33-90 /          ; Printable US-ASCII
                                  %d94-126 /         ;  characters not including
-                                 obs-dtext          ;  "[", "]", or "\"*/
+                                 obs-dtext          ;  "[", "]", or "\"   */
         Rule dtext() {
             return FirstOf(
                 CharRange((char)33, (char)90),
@@ -364,5 +364,246 @@ public class MDNReportParser {
             return Sequence(ZeroOrMore(Sequence(Optional(cfws()), ",")), mailbox(), ZeroOrMore(Sequence(",", Optional(FirstOf(mailbox(), cfws())))));
         }
 
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        /*    disposition-notification-content =
+                     [ reporting-ua-field CRLF ]
+                     [ mdn-gateway-field CRLF ]
+                     [ original-recipient-field CRLF ]
+                     final-recipient-field CRLF
+                     [ original-message-id-field CRLF ]
+                     disposition-field CRLF
+                     *( error-field CRLF )
+                     *( extension-field CRLF )    */
+        Rule dispositionNotificationContent() {
+            return Sequence(
+                Optional(Sequence(reportingUaField(), crlf())),
+                Optional(Sequence(mdnGatewayField(), crlf())),
+                Optional(Sequence(originalRecipientField(), crlf())),
+                Sequence(finalRecipientField(), crlf()),
+                Optional(Sequence(originalMessageId(), crlf())),
+                Sequence(dispositionField(), crlf()),
+                ZeroOrMore(Sequence(errorField(), crlf())),
+                ZeroOrMore(Sequence(extentionField(), crlf())));
+        }
+
+        /*    reporting-ua-field = "Reporting-UA" ":" OWS ua-name OWS [
+                                   ";" OWS ua-product OWS ]    */
+        Rule reportingUaField() {
+            return Sequence("Reporting UA", ":", ows(), uaName(), ows(),
+                Optional(Sequence(";", ows(), uaProduct(), ows())));
+        }
+
+        //    ua-name = *text-no-semi
+        Rule uaName() {
+            return ZeroOrMore(textNoSemi());
+        }
+
+        /*    text-no-semi = %d1-9 /        ; "text" characters excluding NUL, CR,
+                             %d11 / %d12 / %d14-58 / %d60-127      ; LF, or semi-colon    */
+        Rule textNoSemi() {
+            return FirstOf(
+                CharRange((char)1, (char)9),
+                Character.toChars(11),
+                Character.toChars(12),
+                CharRange((char)14, (char)58),
+                CharRange((char)60, (char)127));
+        }
+
+        //    ua-product = *([FWS] text)
+        Rule uaProduct() {
+            return ZeroOrMore(Sequence(Optional(fws()), text()));
+        }
+
+        /*   text            =   %d1-9 /            ; Characters excluding CR
+                                 %d11 /             ;  and LF
+                                 %d12 /
+                                 %d14-127   */
+        Rule text() {
+            return FirstOf(
+                    CharRange((char)1, (char)9),
+                    Character.toChars(11),
+                    Character.toChars(12),
+                    CharRange((char)14, (char)127));
+        }
+
+        /*    OWS = [CFWS]
+                    ; Optional whitespace.
+                    ; MDN generators SHOULD use "*WSP"
+                    ; (Typically a single space or nothing.
+                    ; It SHOULD be nothing at the end of a field.),
+                    ; unless an RFC 5322 "comment" is required.
+                    ;
+                    ; MDN parsers MUST parse it as "[CFWS]".    */
+        Rule ows() {
+            return Optional(cfws());
+        }
+
+        /*    mdn-gateway-field = "MDN-Gateway" ":" OWS mta-name-type OWS
+                                  ";" OWS mta-name    */
+        Rule mdnGatewayField() {
+            return Sequence("MDN-Gateway", ":", mtaNameType(), ows(), ";", ows(), mtaName());
+        }
+
+        //    mta-name-type = Atom
+        Rule mtaNameType() {
+            return atom();
+        }
+
+        //    mta-name = *text
+        Rule mtaName() {
+            return ZeroOrMore(text());
+        }
+
+        /*    original-recipient-field =
+                     "Original-Recipient" ":" OWS address-type OWS
+                     ";" OWS generic-address OWS    */
+        Rule originalRecipientField() {
+            return Sequence("Original-Recipient", ":", ows(), addressType(), ows(),
+                ";", ows(), genericAddress(), ows());
+        }
+
+        //    address-type = Atom
+        Rule addressType() {
+            return atom();
+        }
+
+        //    generic-address = *text
+        Rule genericAddress() {
+            return ZeroOrMore(text());
+        }
+
+        /*    final-recipient-field =
+                     "Final-Recipient" ":" OWS address-type OWS
+                     ";" OWS generic-address OWS    */
+        Rule finalRecipientField() {
+            return Sequence("Final-Recipient", ":", ows(), addressType(), ows(),
+                ";", ows(), genericAddress(), ows());
+        }
+
+        //    original-message-id-field = "Original-Message-ID" ":" msg-id
+        Rule originalMessageId() {
+            return Sequence("Original-Message-ID", msgId());
+        }
+
+        //    msg-id          =   [CFWS] "<" id-left "@" id-right ">" [CFWS]
+        Rule msgId() {
+            return Sequence(Optional(cfws()), "<", idLeft(), "@", idRight(), ">", Optional(cfws()));
+        }
+
+        //   id-left         =   dot-atom-text / obs-id-left
+        Rule idLeft() {
+            return FirstOf(dotAtomText(), obsIdLeft());
+        }
+
+        //   obs-id-left     =   local-part
+        Rule obsIdLeft() {
+            return localPart();
+        }
+
+        //   obs-id-right    =   domain
+        Rule idRight() {
+            return domain();
+        }
+
+        /*    disposition-field =
+                     "Disposition" ":" OWS disposition-mode OWS ";"
+                     OWS disposition-type
+                     [ OWS "/" OWS disposition-modifier
+                     *( OWS "," OWS disposition-modifier ) ] OWS    */
+        Rule dispositionField() {
+            return Sequence(
+                "Disposition", ":", ows(), dispositionMode(), ows(), ";",
+                ows(), dispositionType(),
+                Optional(Sequence(ows(), "/", ows(), dispositionModifier(),
+                    ZeroOrMore(Sequence(ows(), ",", dispositionModifier())))), ows());
+        }
+
+        //    disposition-mode = action-mode OWS "/" OWS sending-mode
+        Rule dispositionMode() {
+            return Sequence(actionMode(), ows(), "/", ows(), sendingMode());
+        }
+
+        //    action-mode = "manual-action" / "automatic-action"
+        Rule actionMode() {
+            return FirstOf("manual-action", "automatic-action");
+        }
+
+        //    sending-mode = "MDN-sent-manually" / "MDN-sent-automatically"
+        Rule sendingMode() {
+            return FirstOf("MDN-sent-manually", "MDN-sent-automatically");
+        }
+
+        /*    disposition-type = "displayed" / "deleted" / "dispatched" /
+                      "processed"    */
+        Rule dispositionType() {
+            return FirstOf("displayed", "deleted", "dispatched", "processed");
+        }
+
+        //    disposition-modifier = "error" / disposition-modifier-extension
+        Rule dispositionModifier() {
+            return FirstOf("error", dispositionModifierExtension());
+        }
+
+        //    disposition-modifier-extension = Atom
+        Rule dispositionModifierExtension() {
+            return atom();
+        }
+
+        //    error-field = "Error" ":" *([FWS] text)
+        Rule errorField() {
+            return Sequence("Error", ":", ZeroOrMore(Sequence(Optional(fws()), text())));
+        }
+
+        //    extension-field = extension-field-name ":" *([FWS] text)
+        Rule extentionField() {
+            return Sequence(extensionFieldName(), ":", ZeroOrMore(Sequence(Optional(fws()), text())));
+        }
+
+        //    extension-field-name = field-name
+        Rule extensionFieldName() {
+            return fieldName();
+        }
+
+        //   field-name      =   1*ftext
+        Rule fieldName() {
+            return OneOrMore(ftext());
+        }
+
+        /*   ftext           =   %d33-57 /          ; Printable US-ASCII
+                                 %d59-126           ;  characters not including
+                                                    ;  ":".   */
+        Rule ftext() {
+            return FirstOf(
+                    CharRange((char)33, (char)57),
+                    CharRange((char)59, (char)126));
+        }
     }
 }
