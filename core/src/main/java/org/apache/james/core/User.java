@@ -99,11 +99,7 @@ public class User {
     }
 
     public User withDefaultDomainFromUser(User other) {
-        Preconditions.checkArgument(other.hasDomainPart());
-        if (hasDomainPart()) {
-            return this;
-        }
-        return new User(localPart, Optional.of(other.domainPart.get()));
+        return withDefaultDomain(other.domainPart.get());
     }
 
     public String asString() {
