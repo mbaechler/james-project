@@ -55,8 +55,7 @@ public class User {
     public static User fromLocalPartWithDomain(String localPart, Domain domain) {
         Preconditions.checkNotNull(domain);
 
-        return new User(localPart,
-            Optional.of(domain));
+        return new User(localPart, Optional.of(domain));
     }
 
     public static User fromLocalPartWithoutDomain(String localPart) {
