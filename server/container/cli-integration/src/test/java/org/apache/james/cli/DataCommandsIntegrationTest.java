@@ -22,18 +22,12 @@ package org.apache.james.cli;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-import java.util.AbstractMap;
-
 import org.apache.james.GuiceJamesServer;
 import org.apache.james.MemoryJmapTestRule;
 import org.apache.james.cli.util.OutputCapture;
-import org.apache.james.core.Domain;
-import org.apache.james.core.User;
 import org.apache.james.mailbox.store.search.ListeningMessageSearchIndex;
 import org.apache.james.modules.server.JMXServerModule;
 import org.apache.james.rrt.lib.Mapping;
-import org.apache.james.rrt.lib.MappingSource;
-import org.apache.james.rrt.lib.Mappings;
 import org.apache.james.rrt.lib.MappingsImpl;
 import org.apache.james.utils.DataProbeImpl;
 import org.junit.After;
@@ -46,8 +40,6 @@ public class DataCommandsIntegrationTest {
     public static final String DOMAIN = "domain.com";
     public static final String USER = "chibenwa";
     public static final String MAIL_ADDRESS = USER + "@" + DOMAIN;
-    public static final MappingSource MAIL_ADDRESS_MAPPING_SOURCE = MappingSource.fromUser(
-        User.fromLocalPartWithDomain(USER, Domain.of(DOMAIN)));
     public static final String PASSWORD = "12345";
     private OutputCapture outputCapture;
 
@@ -142,12 +134,12 @@ public class DataCommandsIntegrationTest {
         ServerCmd.doMain(new String[] {"-h", "127.0.0.1", "-p", "9999", "addaddressmapping", USER, DOMAIN, redirectionAddress});
 
         assertThat(dataProbe.listMappings())
-            .containsOnly(
-                new AbstractMap.SimpleEntry<MappingSource, Mappings>(
-                    MAIL_ADDRESS_MAPPING_SOURCE,
-                    MappingsImpl.builder()
-                        .add(Mapping.address(redirectionAddress))
-                        .build()));
+            .hasSize(1)
+            .containsEntry(
+                MAIL_ADDRESS,
+                MappingsImpl.builder()
+                    .add(Mapping.address(redirectionAddress))
+                    .build());
     }
 
     @Test
@@ -191,12 +183,12 @@ public class DataCommandsIntegrationTest {
         ServerCmd.doMain(new String[] {"-h", "127.0.0.1", "-p", "9999", "addregexmapping", USER, DOMAIN, regex});
 
         assertThat(dataProbe.listMappings())
-            .containsOnly(
-                new AbstractMap.SimpleEntry<MappingSource, Mappings>(
-                    MAIL_ADDRESS_MAPPING_SOURCE,
-                    MappingsImpl.builder()
-                        .add(Mapping.regex(regex))
-                        .build()));
+            .hasSize(1)
+            .containsEntry(
+                MAIL_ADDRESS,
+                MappingsImpl.builder()
+                    .add(Mapping.regex(regex))
+                    .build());
     }
 
     @Test

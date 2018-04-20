@@ -55,7 +55,6 @@ import org.apache.james.mailbox.store.probe.MailboxProbe;
 import org.apache.james.mailbox.store.probe.QuotaProbe;
 import org.apache.james.mailbox.store.probe.SieveProbe;
 import org.apache.james.probe.DataProbe;
-import org.apache.james.rrt.lib.MappingSource;
 import org.apache.james.rrt.lib.Mappings;
 import org.apache.james.util.Port;
 import org.slf4j.Logger;
@@ -429,10 +428,10 @@ public class ServerCmd {
         }).orElse(ValueWithUnit.UNKNOWN);
     }
 
-    private void print(Map<MappingSource, Mappings> map, PrintStream out) {
+    private void print(Map<String, Mappings> map, PrintStream out) {
         if (map != null) {
-            for (Entry<MappingSource, Mappings> entry : map.entrySet()) {
-                out.println(entry.getKey().asString() + '=' + entry.getValue().serialize());
+            for (Entry<String, Mappings> entry : map.entrySet()) {
+                out.println(entry.getKey() + '=' + entry.getValue().serialize());
             }
             out.println();
         }

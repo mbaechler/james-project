@@ -29,7 +29,6 @@ import javax.management.MalformedObjectNameException;
 import org.apache.james.domainlist.api.DomainListManagementMBean;
 import org.apache.james.probe.DataProbe;
 import org.apache.james.rrt.api.RecipientRewriteTableManagementMBean;
-import org.apache.james.rrt.lib.MappingSource;
 import org.apache.james.rrt.lib.Mappings;
 import org.apache.james.user.api.UsersRepositoryManagementMBean;
 import org.apache.james.util.MDCBuilder;
@@ -163,7 +162,7 @@ public class JmxDataProbe implements DataProbe, JmxProbe {
     }
 
     @Override
-    public Map<MappingSource, Mappings> listMappings() throws Exception {
+    public Map<String, Mappings> listMappings() throws Exception {
         try (Closeable closeable =
                  MDCBuilder.create()
                      .addContext(MDCBuilder.PROTOCOL, JMX)

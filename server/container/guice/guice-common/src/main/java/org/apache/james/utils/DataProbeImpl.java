@@ -100,8 +100,15 @@ public class DataProbeImpl implements GuiceProbe, DataProbe {
     }
 
     @Override
-    public Map<MappingSource, Mappings> listMappings() throws Exception {
-        return recipientRewriteTable.getAllMappings();
+    public Map<String, Mappings> listMappings() throws Exception {
+        return recipientRewriteTable.getAllMappings()
+            .entrySet()
+            .stream()
+            .collect(
+                Guavate.toImmutableMap(
+                    entry -> entry.getKey().asString(),
+                    entry -> entry.getValue()));
+
     }
 
     @Override
