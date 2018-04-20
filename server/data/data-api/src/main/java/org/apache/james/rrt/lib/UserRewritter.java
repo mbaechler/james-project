@@ -101,7 +101,7 @@ public interface UserRewritter {
          * (.*)@(.*):${1}@tld
          */
         public Optional<String> regexMap(MailAddress address, String mapping) {
-            List<String> parts = Splitter.on(':').splitToList(mapping);
+            List<String> parts = ImmutableList.copyOf(Splitter.on(':').split(mapping));
             if (parts.size() != 2) {
                 throw new PatternSyntaxException("Regex should be formatted as <regular-expression>:<parameterized-string>", mapping, 0);
             }
