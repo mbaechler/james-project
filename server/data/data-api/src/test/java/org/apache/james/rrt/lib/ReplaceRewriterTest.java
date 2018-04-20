@@ -36,7 +36,7 @@ public class ReplaceRewriterTest {
     }
     
     @Test
-    public void rewriteShouldSubstituteAddressWhenNoLocalPart() throws Exception {
+    public void rewriteShouldSubstituteAddressWhenNoDomainPart() throws Exception {
         String newAddress = "newaddress@newdomain";
         assertThat(
             new UserRewritter.ReplaceRewriter()
