@@ -115,7 +115,7 @@ public abstract class AbstractRecipientRewriteTableTest {
         String regex2 = "(.+)@test";
 
         MappingSource source1 = MappingSource.fromUser(user, Domain.LOCALHOST);
-        MappingSource source2 = MappingSource.fromUser(user, Domain.LOCALHOST);
+        MappingSource source2 = MappingSource.fromUser(user2, Domain.LOCALHOST);
 
         virtualUserTable.addMapping(source1, Mapping.regex(regex));
         virtualUserTable.addMapping(source1, Mapping.regex(regex2));
