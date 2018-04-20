@@ -147,7 +147,7 @@ public class MappingTest {
 
     @Test
     public void beanShouldRespectBeanContract() {
-        EqualsVerifier.forClass(Mapping.class)
+        EqualsVerifier.forClass(Mapping.Impl.class)
             .verify();
     }
 
