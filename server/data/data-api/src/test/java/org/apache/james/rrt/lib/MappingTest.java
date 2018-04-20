@@ -144,7 +144,6 @@ public class MappingTest {
             .isInstanceOf(IllegalArgumentException.class);
     }
 
-
     @Test
     public void beanShouldRespectBeanContract() {
         EqualsVerifier.forClass(Mapping.Impl.class)
