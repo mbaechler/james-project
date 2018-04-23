@@ -99,7 +99,7 @@ public class MappingSource implements Serializable {
             try {
                 return Optional.of(user.asMailAddress());
             } catch (AddressException e) {
-                LOGGER.warn("ignoring failing User to MailAddress convertion");
+                LOGGER.warn("ignoring failing User to MailAddress conversion");
                 return Optional.empty();
             }
         });
