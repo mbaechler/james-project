@@ -48,8 +48,8 @@ public class RecipientRewriteTableUtil {
      */
     public static String getTargetString(String user, Domain domain, Map<MappingSource, String> mappings) {
         return OptionalUtils.or(
-            Optional.ofNullable(mappings.get(MappingSource.fromUser(user, domain))),
-            Optional.ofNullable(mappings.get(MappingSource.fromDomain(domain))))
+                Optional.ofNullable(mappings.get(MappingSource.fromUser(user, domain))),
+                Optional.ofNullable(mappings.get(MappingSource.fromDomain(domain))))
             .orElse(null);
     }
 
