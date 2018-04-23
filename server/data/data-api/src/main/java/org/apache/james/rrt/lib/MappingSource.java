@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
 public class MappingSource implements Serializable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MappingSource.class);
-    public static final String WILDCARD = "*";
+    private static final String WILDCARD = "*";
 
     private enum WildCard {
         WildCard
