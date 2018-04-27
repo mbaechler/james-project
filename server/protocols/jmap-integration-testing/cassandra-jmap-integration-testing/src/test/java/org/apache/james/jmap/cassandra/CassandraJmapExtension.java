@@ -18,10 +18,13 @@
  ****************************************************************/
 package org.apache.james.jmap.cassandra;
 
+import java.io.IOException;
+
 import org.apache.james.CassandraJamesServerMain;
 import org.apache.james.DockerCassandraRule;
 import org.apache.james.GuiceJamesServer;
 import org.apache.james.backends.es.EmbeddedElasticSearch;
+import org.apache.james.filesystem.api.FileSystem;
 import org.apache.james.jmap.methods.integration.JamesWithSpamAssassin;
 import org.apache.james.jmap.methods.integration.SpamAssassinModule;
 import org.apache.james.mailbox.elasticsearch.MailboxElasticSearchConstants;
@@ -29,8 +32,8 @@ import org.apache.james.mailbox.extractor.TextExtractor;
 import org.apache.james.mailbox.store.search.PDFTextExtractor;
 import org.apache.james.modules.TestESMetricReporterModule;
 import org.apache.james.modules.TestElasticSearchModule;
-import org.apache.james.modules.TestFilesystemModule;
 import org.apache.james.modules.TestJMAPServerModule;
+import org.apache.james.server.core.configuration.Configuration;
 import org.apache.james.util.scanner.SpamAssassinExtension;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
@@ -60,14 +63,18 @@ public class CassandraJmapExtension implements BeforeAllCallback, AfterAllCallba
         this.spamAssassinExtension = new SpamAssassinExtension();
     }
 
-    private JamesWithSpamAssassin james() {
+    private JamesWithSpamAssassin james() throws IOException {
+        String workingDir = temporaryFolder.newFolder().getAbsolutePath();
+        Configuration configuration = Configuration.builder()
+            .workingDirectory(workingDir)
+            .configurationPath(FileSystem.CLASSPATH_PROTOCOL)
+            .build();
         return new JamesWithSpamAssassin(
-                new GuiceJamesServer()
+                new GuiceJamesServer(configuration)
                     .combineWith(CassandraJamesServerMain.CASSANDRA_SERVER_MODULE, CassandraJamesServerMain.PROTOCOLS)
                     .overrideWith(binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class))
                     .overrideWith(new TestJMAPServerModule(LIMIT_TO_20_MESSAGES))
                     .overrideWith(new TestESMetricReporterModule())
-                    .overrideWith(new TestFilesystemModule(temporaryFolder::getRoot))
                     .overrideWith(cassandra.getModule())
                     .overrideWith(new TestElasticSearchModule(elasticSearch))
                     .overrideWith(new SpamAssassinModule(spamAssassinExtension)),

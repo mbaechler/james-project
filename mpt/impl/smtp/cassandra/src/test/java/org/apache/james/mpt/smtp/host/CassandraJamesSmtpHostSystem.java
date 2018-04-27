@@ -19,6 +19,7 @@
 
 package org.apache.james.mpt.smtp.host;
 
+import java.io.IOException;
 import java.util.Iterator;
 
 import org.apache.james.CassandraJamesServerMain;
@@ -26,12 +27,14 @@ import org.apache.james.GuiceJamesServer;
 import org.apache.james.backends.es.EmbeddedElasticSearch;
 import org.apache.james.dnsservice.api.DNSService;
 import org.apache.james.dnsservice.api.InMemoryDNSService;
+import org.apache.james.filesystem.api.FileSystem;
 import org.apache.james.mailbox.elasticsearch.MailboxElasticSearchConstants;
 import org.apache.james.modules.CassandraJmapServerModule;
 import org.apache.james.modules.protocols.ProtocolHandlerModule;
 import org.apache.james.mpt.monitor.SystemLoggingMonitor;
 import org.apache.james.mpt.session.ExternalSessionFactory;
 import org.apache.james.mpt.smtp.SmtpHostSystem;
+import org.apache.james.server.core.configuration.Configuration;
 import org.apache.james.utils.DataProbeImpl;
 import org.junit.rules.TemporaryFolder;
 
@@ -101,10 +104,16 @@ public class CassandraJamesSmtpHostSystem extends ExternalSessionFactory impleme
         return inMemoryDNSService;
     }
 
-    protected GuiceJamesServer createJamesServer() {
-        return new GuiceJamesServer()
+    protected GuiceJamesServer createJamesServer() throws IOException {
+        String workingDir = folder.newFolder().getAbsolutePath();
+        Configuration configuration = Configuration.builder()
+            .workingDirectory(workingDir)
+            .configurationPath(FileSystem.CLASSPATH_PROTOCOL)
+            .build();
+
+        return new GuiceJamesServer(configuration)
             .combineWith(CassandraJamesServerMain.CASSANDRA_SERVER_MODULE, CassandraJamesServerMain.PROTOCOLS, new ProtocolHandlerModule())
-            .overrideWith(new CassandraJmapServerModule(folder::getRoot, embeddedElasticSearch, cassandraHost, cassandraPort),
+            .overrideWith(new CassandraJmapServerModule(embeddedElasticSearch, cassandraHost, cassandraPort),
                 (binder) -> binder.bind(DNSService.class).toInstance(inMemoryDNSService));
     }
 }

@@ -22,17 +22,19 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
 import java.util.EnumSet;
 
 import org.apache.activemq.store.PersistenceAdapter;
 import org.apache.activemq.store.memory.MemoryPersistenceAdapter;
 import org.apache.james.backends.es.EmbeddedElasticSearch;
+import org.apache.james.filesystem.api.FileSystem;
 import org.apache.james.jmap.methods.GetMessageListMethod;
 import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.elasticsearch.MailboxElasticSearchConstants;
 import org.apache.james.modules.TestElasticSearchModule;
-import org.apache.james.modules.TestFilesystemModule;
 import org.apache.james.modules.TestJMAPServerModule;
+import org.apache.james.server.core.configuration.Configuration;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -57,14 +59,18 @@ public class JamesCapabilitiesServerTest {
         
     }
     
-    private GuiceJamesServer createCassandraJamesServer(final MailboxManager mailboxManager) {
+    private GuiceJamesServer createCassandraJamesServer(final MailboxManager mailboxManager) throws IOException {
         Module mockMailboxManager = (binder) -> binder.bind(MailboxManager.class).toInstance(mailboxManager);
-        
-        return new GuiceJamesServer()
+        String workingDir = temporaryFolder.newFolder().getAbsolutePath();
+        Configuration configuration = Configuration.builder()
+            .workingDirectory(workingDir)
+            .configurationPath(FileSystem.CLASSPATH_PROTOCOL)
+            .build();
+
+        return new GuiceJamesServer(configuration)
             .combineWith(CassandraJamesServerMain.CASSANDRA_SERVER_MODULE, CassandraJamesServerMain.PROTOCOLS)
             .overrideWith((binder) -> binder.bind(PersistenceAdapter.class).to(MemoryPersistenceAdapter.class))
             .overrideWith(new TestElasticSearchModule(embeddedElasticSearch),
-                new TestFilesystemModule(temporaryFolder),
                 cassandraServer.getModule(),
                 new TestJMAPServerModule(GetMessageListMethod.DEFAULT_MAXIMUM_LIMIT),
                 mockMailboxManager);

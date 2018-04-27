@@ -29,7 +29,8 @@ import org.apache.james.mailrepository.api.MailRepository;
 import org.apache.james.mailrepository.api.MailRepositoryStore;
 import org.apache.james.mailrepository.file.FileMailRepository;
 import org.apache.james.modules.server.MailStoreRepositoryModule;
-import org.apache.james.server.core.JamesServerResourceLoader;
+import org.apache.james.server.core.configuration.Configuration;
+import org.apache.james.server.core.configuration.FileConfigurationProvider;
 import org.apache.james.server.core.filesystem.FileSystemImpl;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,14 +41,19 @@ public class InMemoryMailRepositoryStoreTest {
 
     private InMemoryMailRepositoryStore repositoryStore;
     private FileSystemImpl fileSystem;
+    private Configuration configuration;
 
     @Before
     public void setUp() throws Exception {
-        fileSystem = new FileSystemImpl(new JamesServerResourceLoader("../"));
+        configuration = Configuration.builder()
+            .workingDirectory("../")
+            .configurationPath(FileSystem.CLASSPATH_PROTOCOL)
+            .build();
+        fileSystem = new FileSystemImpl(configuration.directories());
         repositoryStore = new InMemoryMailRepositoryStore(Sets.newHashSet(
                 new MailStoreRepositoryModule.FileMailRepositoryProvider(
                         fileSystem)));
-        repositoryStore.configure(new FileConfigurationProvider(fileSystem, FileSystem.CLASSPATH_PROTOCOL)
+        repositoryStore.configure(new FileConfigurationProvider(fileSystem, configuration)
             .getConfiguration("mailrepositorystore"));
         repositoryStore.init();
     }
@@ -77,7 +83,7 @@ public class InMemoryMailRepositoryStoreTest {
         repositoryStore = new InMemoryMailRepositoryStore(Sets.newHashSet(
             new MailStoreRepositoryModule.FileMailRepositoryProvider(
                 fileSystem)));
-        repositoryStore.configure(new FileConfigurationProvider(fileSystem, FileSystem.CLASSPATH_PROTOCOL).getConfiguration("fakemailrepositorystore"));
+        repositoryStore.configure(new FileConfigurationProvider(fileSystem, configuration).getConfiguration("fakemailrepositorystore"));
 
         assertThatThrownBy(() -> repositoryStore.init())
             .isInstanceOf(ConfigurationException.class);

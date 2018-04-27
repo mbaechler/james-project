@@ -21,10 +21,13 @@ package org.apache.james;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.IOException;
+
+import org.apache.james.filesystem.api.FileSystem;
 import org.apache.james.mailbox.quota.QuotaSize;
 import org.apache.james.mailbox.store.mail.model.SerializableQuotaValue;
 import org.apache.james.modules.QuotaProbesImpl;
-import org.apache.james.modules.TestFilesystemModule;
+import org.apache.james.server.core.configuration.Configuration;
 import org.apache.james.utils.DataProbeImpl;
 import org.apache.james.utils.IMAPMessageReader;
 import org.apache.james.utils.SMTPMessageSender;
@@ -58,11 +61,16 @@ public class JPAJamesServerTest extends AbstractJamesServerTest {
     public SMTPMessageSender smtpMessageSender = new SMTPMessageSender(DOMAIN);
 
     @Override
-    protected GuiceJamesServer createJamesServer() {
-        return new GuiceJamesServer()
+    protected GuiceJamesServer createJamesServer() throws IOException {
+        String workingDir = temporaryFolder.newFolder().getAbsolutePath();
+        Configuration configuration = Configuration.builder()
+            .workingDirectory(workingDir)
+            .configurationPath(FileSystem.CLASSPATH_PROTOCOL)
+            .build();
+
+        return new GuiceJamesServer(configuration)
             .combineWith(JPAJamesServerMain.JPA_SERVER_MODULE, JPAJamesServerMain.PROTOCOLS)
-            .overrideWith(new TestFilesystemModule(temporaryFolder),
-                    new TestJPAConfigurationModule());
+            .overrideWith(new TestJPAConfigurationModule());
     }
 
     @Override

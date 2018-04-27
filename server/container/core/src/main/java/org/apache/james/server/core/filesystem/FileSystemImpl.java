@@ -33,7 +33,6 @@ public class FileSystemImpl implements FileSystem {
     private final JamesDirectoriesProvider directoryProvider;
     private final ResourceFactory resourceLoader;
 
-    @Inject
     public FileSystemImpl(JamesDirectoriesProvider directoryProvider) {
         this.directoryProvider = directoryProvider;
         this.resourceLoader = new ResourceFactory(directoryProvider);

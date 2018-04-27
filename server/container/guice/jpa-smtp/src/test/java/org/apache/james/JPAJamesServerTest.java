@@ -31,8 +31,9 @@ import javax.persistence.EntityManagerFactory;
 
 import org.apache.james.backends.jpa.JpaTestCluster;
 import org.apache.james.domainlist.jpa.model.JPADomain;
-import org.apache.james.modules.TestFilesystemModule;
+import org.apache.james.filesystem.api.FileSystem;
 import org.apache.james.rrt.jpa.model.JPARecipientRewrite;
+import org.apache.james.server.core.configuration.Configuration;
 import org.apache.james.user.jpa.model.JPAUser;
 import org.junit.After;
 import org.junit.Before;
@@ -55,11 +56,16 @@ public class JPAJamesServerTest {
         server.stop();
     }
 
-    private org.apache.james.GuiceJamesServer createJamesServer() {
-        return new GuiceJamesServer()
+    private org.apache.james.GuiceJamesServer createJamesServer() throws IOException {
+        String workingDir = temporaryFolder.newFolder().getAbsolutePath();
+        Configuration configuration = Configuration.builder()
+            .workingDirectory(workingDir)
+            .configurationPath(FileSystem.CLASSPATH_PROTOCOL)
+            .build();
+
+        return new GuiceJamesServer(configuration)
                 .combineWith(JPAJamesServerMain.JPA_SERVER_MODULE, JPAJamesServerMain.PROTOCOLS)
                 .overrideWith(
-                        new TestFilesystemModule(temporaryFolder),
                         new TestJPAConfigurationModule(),
                         (binder) -> binder.bind(EntityManagerFactory.class)
                             .toInstance(JpaTestCluster.create(JPAUser.class, JPADomain.class, JPARecipientRewrite.class)

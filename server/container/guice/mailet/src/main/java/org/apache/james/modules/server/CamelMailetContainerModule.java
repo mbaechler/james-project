@@ -44,7 +44,7 @@ import org.apache.james.transport.mailets.RemoveMimeHeader;
 import org.apache.james.transport.matchers.All;
 import org.apache.james.user.api.UsersRepository;
 import org.apache.james.utils.ConfigurationPerformer;
-import org.apache.james.utils.ConfigurationProvider;
+import org.apache.james.server.core.configuration.ConfigurationProvider;
 import org.apache.james.utils.GuiceMailetLoader;
 import org.apache.james.utils.GuiceMatcherLoader;
 import org.apache.mailet.MailetContext;

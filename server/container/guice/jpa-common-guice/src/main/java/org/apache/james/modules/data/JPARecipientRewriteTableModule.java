@@ -25,7 +25,7 @@ import org.apache.james.lifecycle.api.Configurable;
 import org.apache.james.rrt.api.RecipientRewriteTable;
 import org.apache.james.rrt.jpa.JPARecipientRewriteTable;
 import org.apache.james.utils.ConfigurationPerformer;
-import org.apache.james.utils.ConfigurationProvider;
+import org.apache.james.server.core.configuration.ConfigurationProvider;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;

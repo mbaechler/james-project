@@ -19,14 +19,17 @@
 
 package org.apache.james;
 
+import java.io.IOException;
+
 import org.apache.activemq.store.PersistenceAdapter;
 import org.apache.activemq.store.memory.MemoryPersistenceAdapter;
+import org.apache.james.filesystem.api.FileSystem;
 import org.apache.james.mailbox.extractor.TextExtractor;
 import org.apache.james.mailbox.store.search.MessageSearchIndex;
 import org.apache.james.mailbox.store.search.PDFTextExtractor;
 import org.apache.james.mailbox.store.search.SimpleMessageSearchIndex;
-import org.apache.james.modules.TestFilesystemModule;
 import org.apache.james.modules.TestJMAPServerModule;
+import org.apache.james.server.core.configuration.Configuration;
 import org.junit.rules.TemporaryFolder;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
@@ -40,12 +43,16 @@ public class MemoryJmapTestRule implements TestRule {
     
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-    public GuiceJamesServer jmapServer(Module... modules) {
-        return new GuiceJamesServer()
+    public GuiceJamesServer jmapServer(Module... modules) throws IOException {
+        String workingDir = temporaryFolder.newFolder().getAbsolutePath();
+        Configuration configuration = Configuration.builder()
+            .workingDirectory("../")
+            .configurationPath(FileSystem.CLASSPATH_PROTOCOL)
+            .build();
+        return new GuiceJamesServer(configuration)
             .combineWith(MemoryJamesServerMain.IN_MEMORY_SERVER_AGGREGATE_MODULE)
             .overrideWith(modules)
-            .overrideWith(new TestFilesystemModule(temporaryFolder),
-                new TestJMAPServerModule(LIMIT_TO_3_MESSAGES))
+            .overrideWith(new TestJMAPServerModule(LIMIT_TO_3_MESSAGES))
             .overrideWith(binder -> binder.bind(PersistenceAdapter.class).to(MemoryPersistenceAdapter.class))
             .overrideWith(binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class))
             .overrideWith(binder -> binder.bind(MessageSearchIndex.class).to(SimpleMessageSearchIndex.class));

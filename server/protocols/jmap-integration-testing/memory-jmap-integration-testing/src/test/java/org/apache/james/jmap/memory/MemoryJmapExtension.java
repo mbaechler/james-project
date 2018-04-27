@@ -18,18 +18,21 @@
  ****************************************************************/
 package org.apache.james.jmap.memory;
 
+import java.io.IOException;
+
 import org.apache.activemq.store.PersistenceAdapter;
 import org.apache.activemq.store.memory.MemoryPersistenceAdapter;
 import org.apache.james.GuiceJamesServer;
 import org.apache.james.MemoryJamesServerMain;
+import org.apache.james.filesystem.api.FileSystem;
 import org.apache.james.jmap.methods.integration.JamesWithSpamAssassin;
 import org.apache.james.jmap.methods.integration.SpamAssassinModule;
 import org.apache.james.mailbox.extractor.TextExtractor;
 import org.apache.james.mailbox.store.search.MessageSearchIndex;
 import org.apache.james.mailbox.store.search.PDFTextExtractor;
 import org.apache.james.mailbox.store.search.SimpleMessageSearchIndex;
-import org.apache.james.modules.TestFilesystemModule;
 import org.apache.james.modules.TestJMAPServerModule;
+import org.apache.james.server.core.configuration.Configuration;
 import org.apache.james.util.scanner.SpamAssassinExtension;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
@@ -47,18 +50,23 @@ public class MemoryJmapExtension implements BeforeEachCallback, AfterEachCallbac
     private final SpamAssassinExtension spamAssassinExtension;
     private final JamesWithSpamAssassin james;
 
-    public MemoryJmapExtension() {
+    public MemoryJmapExtension() throws IOException {
         this.temporaryFolder = new TemporaryFolder();
         this.spamAssassinExtension = new SpamAssassinExtension();
         this.james = james();
     }
 
-    private JamesWithSpamAssassin james() {
+    private JamesWithSpamAssassin james() throws IOException {
+        String workingDir = temporaryFolder.newFolder().getAbsolutePath();
+        Configuration configuration = Configuration.builder()
+            .workingDirectory(workingDir)
+            .configurationPath(FileSystem.CLASSPATH_PROTOCOL)
+            .build();
+
         return new JamesWithSpamAssassin(
-            new GuiceJamesServer()
+            new GuiceJamesServer(configuration)
                 .combineWith(MemoryJamesServerMain.IN_MEMORY_SERVER_AGGREGATE_MODULE)
-                .overrideWith(new TestFilesystemModule(temporaryFolder),
-                    new TestJMAPServerModule(LIMIT_TO_20_MESSAGES))
+                .overrideWith(new TestJMAPServerModule(LIMIT_TO_20_MESSAGES))
                 .overrideWith(binder -> binder.bind(PersistenceAdapter.class).to(MemoryPersistenceAdapter.class))
                 .overrideWith(binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class))
                 .overrideWith(binder -> binder.bind(MessageSearchIndex.class).to(SimpleMessageSearchIndex.class))
