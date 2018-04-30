@@ -150,7 +150,7 @@ public class TemporaryJamesServer {
         appendMailetConfigurations(temporaryFolder, mailetContainer);
         appendSmtpConfigurations(temporaryFolder, smtpConfiguration);
 
-        String workingDir = temporaryFolder.newFolder().getAbsolutePath();
+        String workingDir = temporaryFolder.getRoot().getAbsolutePath();
         Configuration configuration = Configuration.builder().workingDirectory(workingDir).build();
         copyResources(Paths.get(workingDir, "conf"));
 
