@@ -44,7 +44,7 @@ public class TempFilesystemTestRule implements GuiceModuleTestRule {
 
     @Override
     public Module getModule() {
-        return binder -> {};
+        return binder -> { };
     }
 
     @Override

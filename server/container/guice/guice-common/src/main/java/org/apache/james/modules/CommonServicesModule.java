@@ -38,7 +38,6 @@ import org.apache.james.utils.GuiceProbe;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import com.google.inject.Scopes;
 import com.google.inject.multibindings.Multibinder;
 
 public class CommonServicesModule extends AbstractModule {
