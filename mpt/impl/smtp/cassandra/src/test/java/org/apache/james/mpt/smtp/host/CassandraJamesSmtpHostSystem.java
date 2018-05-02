@@ -104,9 +104,8 @@ public class CassandraJamesSmtpHostSystem extends ExternalSessionFactory impleme
     }
 
     protected GuiceJamesServer createJamesServer() throws Exception {
-        String workingDir = folder.newFolder().getAbsolutePath();
         Configuration configuration = Configuration.builder()
-            .workingDirectory(workingDir)
+            .workingDirectory(folder.newFolder())
             .configurationPath(FileSystem.CLASSPATH_PROTOCOL)
             .build();
 

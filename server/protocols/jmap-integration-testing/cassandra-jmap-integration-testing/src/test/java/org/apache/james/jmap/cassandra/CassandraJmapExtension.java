@@ -64,9 +64,8 @@ public class CassandraJmapExtension implements BeforeAllCallback, AfterAllCallba
     }
 
     private JamesWithSpamAssassin james() throws IOException {
-        String workingDir = temporaryFolder.newFolder().getAbsolutePath();
         Configuration configuration = Configuration.builder()
-            .workingDirectory(workingDir)
+            .workingDirectory(temporaryFolder.newFolder())
             .configurationPath(FileSystem.CLASSPATH_PROTOCOL)
             .build();
         return new JamesWithSpamAssassin(

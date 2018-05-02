@@ -19,6 +19,7 @@
 
 package org.apache.james.server.core.configuration;
 
+import java.io.File;
 import java.util.Optional;
 
 import org.apache.james.filesystem.api.FileSystem;
@@ -46,6 +47,11 @@ public class Configuration {
 
         public Builder workingDirectory(String path) {
             rootDirectory = Optional.of(path);
+            return this;
+        }
+
+        public Builder workingDirectory(File file) {
+            rootDirectory = Optional.of(file.getAbsolutePath());
             return this;
         }
 

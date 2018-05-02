@@ -62,9 +62,8 @@ public class JPAJamesServerTest extends AbstractJamesServerTest {
 
     @Override
     protected GuiceJamesServer createJamesServer() throws IOException {
-        String workingDir = temporaryFolder.newFolder().getAbsolutePath();
         Configuration configuration = Configuration.builder()
-            .workingDirectory(workingDir)
+            .workingDirectory(temporaryFolder.newFolder())
             .configurationPath(FileSystem.CLASSPATH_PROTOCOL)
             .build();
 

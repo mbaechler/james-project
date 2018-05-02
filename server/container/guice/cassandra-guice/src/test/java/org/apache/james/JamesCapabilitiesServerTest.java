@@ -61,9 +61,8 @@ public class JamesCapabilitiesServerTest {
     
     private GuiceJamesServer createCassandraJamesServer(final MailboxManager mailboxManager) throws IOException {
         Module mockMailboxManager = (binder) -> binder.bind(MailboxManager.class).toInstance(mailboxManager);
-        String workingDir = temporaryFolder.newFolder().getAbsolutePath();
         Configuration configuration = Configuration.builder()
-            .workingDirectory(workingDir)
+            .workingDirectory(temporaryFolder.newFolder())
             .configurationPath(FileSystem.CLASSPATH_PROTOCOL)
             .build();
 

@@ -56,9 +56,8 @@ public class MemoryStepdefs {
     @Before
     public void init() throws Exception {
         temporaryFolder.create();
-        String workingDir = temporaryFolder.newFolder().getAbsolutePath();
         Configuration configuration = Configuration.builder()
-            .workingDirectory(workingDir)
+            .workingDirectory(temporaryFolder.newFolder())
             .configurationPath(FileSystem.CLASSPATH_PROTOCOL)
             .build();
 

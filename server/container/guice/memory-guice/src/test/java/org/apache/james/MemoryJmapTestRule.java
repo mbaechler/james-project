@@ -44,9 +44,8 @@ public class MemoryJmapTestRule implements TestRule {
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     public GuiceJamesServer jmapServer(Module... modules) throws IOException {
-        String workingDir = temporaryFolder.newFolder().getAbsolutePath();
         Configuration configuration = Configuration.builder()
-            .workingDirectory("../")
+            .workingDirectory(temporaryFolder.newFolder())
             .configurationPath(FileSystem.CLASSPATH_PROTOCOL)
             .build();
         return new GuiceJamesServer(configuration)

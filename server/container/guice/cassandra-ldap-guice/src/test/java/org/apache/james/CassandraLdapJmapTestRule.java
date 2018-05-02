@@ -60,9 +60,8 @@ public class CassandraLdapJmapTestRule implements TestRule {
     }
 
     public GuiceJamesServer jmapServer(String ldapIp, Module... additionals) throws IOException {
-        String workingDir = temporaryFolder.newFolder().getAbsolutePath();
         Configuration configuration = Configuration.builder()
-            .workingDirectory(workingDir)
+            .workingDirectory(temporaryFolder.newFolder())
             .configurationPath(FileSystem.CLASSPATH_PROTOCOL)
             .build();
 
