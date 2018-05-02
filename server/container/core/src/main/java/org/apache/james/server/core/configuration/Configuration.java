@@ -80,7 +80,7 @@ public class Configuration {
     private final String configurationPath;
     private final JamesDirectoriesProvider directoriesProvider;
 
-    public Configuration(String rootDirectory, String configurationPath) {
+    private Configuration(String rootDirectory, String configurationPath) {
         this.configurationPath = configurationPath;
         this.directoriesProvider = new JamesServerResourceLoader(rootDirectory);
     }
