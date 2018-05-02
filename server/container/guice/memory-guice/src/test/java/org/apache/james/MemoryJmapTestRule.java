@@ -23,7 +23,6 @@ import java.io.IOException;
 
 import org.apache.activemq.store.PersistenceAdapter;
 import org.apache.activemq.store.memory.MemoryPersistenceAdapter;
-import org.apache.james.filesystem.api.FileSystem;
 import org.apache.james.mailbox.extractor.TextExtractor;
 import org.apache.james.mailbox.store.search.MessageSearchIndex;
 import org.apache.james.mailbox.store.search.PDFTextExtractor;
@@ -46,7 +45,7 @@ public class MemoryJmapTestRule implements TestRule {
     public GuiceJamesServer jmapServer(Module... modules) throws IOException {
         Configuration configuration = Configuration.builder()
             .workingDirectory(temporaryFolder.newFolder())
-            .configurationPath(FileSystem.CLASSPATH_PROTOCOL)
+            .configurationFromClasspath()
             .build();
         return new GuiceJamesServer(configuration)
             .combineWith(MemoryJamesServerMain.IN_MEMORY_SERVER_AGGREGATE_MODULE)

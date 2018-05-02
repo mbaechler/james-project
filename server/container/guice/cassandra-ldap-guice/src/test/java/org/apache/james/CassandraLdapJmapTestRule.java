@@ -23,7 +23,6 @@ import java.io.IOException;
 
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.configuration.plist.PropertyListConfiguration;
-import org.apache.james.filesystem.api.FileSystem;
 import org.apache.james.http.jetty.ConfigurationException;
 import org.apache.james.modules.TestJMAPServerModule;
 import org.apache.james.server.core.configuration.Configuration;
@@ -62,7 +61,7 @@ public class CassandraLdapJmapTestRule implements TestRule {
     public GuiceJamesServer jmapServer(String ldapIp, Module... additionals) throws IOException {
         Configuration configuration = Configuration.builder()
             .workingDirectory(temporaryFolder.newFolder())
-            .configurationPath(FileSystem.CLASSPATH_PROTOCOL)
+            .configurationFromClasspath()
             .build();
 
         return new GuiceJamesServer(configuration)

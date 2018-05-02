@@ -26,7 +26,6 @@ import org.apache.james.GuiceJamesServer;
 import org.apache.james.backends.es.EmbeddedElasticSearch;
 import org.apache.james.dnsservice.api.DNSService;
 import org.apache.james.dnsservice.api.InMemoryDNSService;
-import org.apache.james.filesystem.api.FileSystem;
 import org.apache.james.mailbox.elasticsearch.MailboxElasticSearchConstants;
 import org.apache.james.modules.CassandraJmapServerModule;
 import org.apache.james.modules.protocols.ProtocolHandlerModule;
@@ -106,7 +105,7 @@ public class CassandraJamesSmtpHostSystem extends ExternalSessionFactory impleme
     protected GuiceJamesServer createJamesServer() throws Exception {
         Configuration configuration = Configuration.builder()
             .workingDirectory(folder.newFolder())
-            .configurationPath(FileSystem.CLASSPATH_PROTOCOL)
+            .configurationFromClasspath()
             .build();
 
         return new GuiceJamesServer(configuration)

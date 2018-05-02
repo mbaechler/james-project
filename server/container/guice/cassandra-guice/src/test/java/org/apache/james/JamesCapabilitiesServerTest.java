@@ -28,7 +28,6 @@ import java.util.EnumSet;
 import org.apache.activemq.store.PersistenceAdapter;
 import org.apache.activemq.store.memory.MemoryPersistenceAdapter;
 import org.apache.james.backends.es.EmbeddedElasticSearch;
-import org.apache.james.filesystem.api.FileSystem;
 import org.apache.james.jmap.methods.GetMessageListMethod;
 import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.elasticsearch.MailboxElasticSearchConstants;
@@ -63,7 +62,7 @@ public class JamesCapabilitiesServerTest {
         Module mockMailboxManager = (binder) -> binder.bind(MailboxManager.class).toInstance(mailboxManager);
         Configuration configuration = Configuration.builder()
             .workingDirectory(temporaryFolder.newFolder())
-            .configurationPath(FileSystem.CLASSPATH_PROTOCOL)
+            .configurationFromClasspath()
             .build();
 
         return new GuiceJamesServer(configuration)

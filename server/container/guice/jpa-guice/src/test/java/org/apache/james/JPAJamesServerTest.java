@@ -23,7 +23,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 
-import org.apache.james.filesystem.api.FileSystem;
 import org.apache.james.mailbox.quota.QuotaSize;
 import org.apache.james.mailbox.store.mail.model.SerializableQuotaValue;
 import org.apache.james.modules.QuotaProbesImpl;
@@ -64,7 +63,7 @@ public class JPAJamesServerTest extends AbstractJamesServerTest {
     protected GuiceJamesServer createJamesServer() throws IOException {
         Configuration configuration = Configuration.builder()
             .workingDirectory(temporaryFolder.newFolder())
-            .configurationPath(FileSystem.CLASSPATH_PROTOCOL)
+            .configurationFromClasspath()
             .build();
 
         return new GuiceJamesServer(configuration)

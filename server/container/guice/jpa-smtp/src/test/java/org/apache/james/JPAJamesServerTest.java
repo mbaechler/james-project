@@ -31,7 +31,6 @@ import javax.persistence.EntityManagerFactory;
 
 import org.apache.james.backends.jpa.JpaTestCluster;
 import org.apache.james.domainlist.jpa.model.JPADomain;
-import org.apache.james.filesystem.api.FileSystem;
 import org.apache.james.rrt.jpa.model.JPARecipientRewrite;
 import org.apache.james.server.core.configuration.Configuration;
 import org.apache.james.user.jpa.model.JPAUser;
@@ -59,7 +58,7 @@ public class JPAJamesServerTest {
     private org.apache.james.GuiceJamesServer createJamesServer() throws IOException {
         Configuration configuration = Configuration.builder()
             .workingDirectory(temporaryFolder.newFolder())
-            .configurationPath(FileSystem.CLASSPATH_PROTOCOL)
+            .configurationFromClasspath()
             .build();
 
         return new GuiceJamesServer(configuration)

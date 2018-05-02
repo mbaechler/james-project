@@ -18,9 +18,9 @@
  ****************************************************************/
 
 package org.apache.james;
+
 import java.io.IOException;
 
-import org.apache.james.filesystem.api.FileSystem;
 import org.apache.james.mailbox.extractor.TextExtractor;
 import org.apache.james.mailbox.store.search.PDFTextExtractor;
 import org.apache.james.modules.TestESMetricReporterModule;
@@ -57,7 +57,7 @@ public class CassandraJmapTestRule implements TestRule {
     public GuiceJamesServer jmapServer(Module... additionals) throws IOException {
         Configuration configuration = Configuration.builder()
             .workingDirectory(temporaryFolder.newFolder())
-            .configurationPath(FileSystem.CLASSPATH_PROTOCOL)
+            .configurationFromClasspath()
             .build();
 
         return new GuiceJamesServer(configuration)

@@ -69,6 +69,11 @@ public class Configuration {
             return this;
         }
 
+        public Builder configurationFromClasspath() {
+            configurationPath = Optional.of(FileSystem.CLASSPATH_PROTOCOL);
+            return this;
+        }
+
         public Configuration build() {
             return new Configuration(
                 rootDirectory

@@ -24,7 +24,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalConfiguration;
-import org.apache.james.filesystem.api.FileSystem;
 import org.apache.james.mailrepository.api.MailRepository;
 import org.apache.james.mailrepository.api.MailRepositoryStore;
 import org.apache.james.mailrepository.file.FileMailRepository;
@@ -47,7 +46,7 @@ public class InMemoryMailRepositoryStoreTest {
     public void setUp() throws Exception {
         configuration = Configuration.builder()
             .workingDirectory("../")
-            .configurationPath(FileSystem.CLASSPATH_PROTOCOL)
+            .configurationFromClasspath()
             .build();
         fileSystem = new FileSystemImpl(configuration.directories());
         repositoryStore = new InMemoryMailRepositoryStore(Sets.newHashSet(

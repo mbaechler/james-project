@@ -24,7 +24,6 @@ import org.apache.activemq.store.PersistenceAdapter;
 import org.apache.activemq.store.memory.MemoryPersistenceAdapter;
 import org.apache.james.GuiceJamesServer;
 import org.apache.james.MemoryJamesServerMain;
-import org.apache.james.filesystem.api.FileSystem;
 import org.apache.james.jmap.methods.integration.JamesWithSpamAssassin;
 import org.apache.james.jmap.methods.integration.SpamAssassinModule;
 import org.apache.james.mailbox.extractor.TextExtractor;
@@ -59,7 +58,7 @@ public class MemoryJmapExtension implements BeforeEachCallback, AfterEachCallbac
     private JamesWithSpamAssassin james() throws IOException {
         Configuration configuration = Configuration.builder()
             .workingDirectory(temporaryFolder.newFolder())
-            .configurationPath(FileSystem.CLASSPATH_PROTOCOL)
+            .configurationFromClasspath()
             .build();
 
         return new JamesWithSpamAssassin(

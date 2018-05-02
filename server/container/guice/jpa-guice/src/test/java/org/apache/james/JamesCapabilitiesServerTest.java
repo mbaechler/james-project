@@ -24,7 +24,6 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.util.EnumSet;
 
-import org.apache.james.filesystem.api.FileSystem;
 import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.server.core.configuration.Configuration;
 import org.junit.After;
@@ -52,7 +51,7 @@ public class JamesCapabilitiesServerTest {
         Module mockMailboxManager = (binder) -> binder.bind(MailboxManager.class).toInstance(mailboxManager);
         Configuration configuration = Configuration.builder()
             .workingDirectory(temporaryFolder.newFolder())
-            .configurationPath(FileSystem.CLASSPATH_PROTOCOL)
+            .configurationFromClasspath()
             .build();
 
         return new GuiceJamesServer(configuration)

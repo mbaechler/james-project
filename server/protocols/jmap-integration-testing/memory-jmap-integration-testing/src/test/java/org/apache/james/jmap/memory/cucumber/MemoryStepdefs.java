@@ -25,7 +25,6 @@ import org.apache.activemq.store.PersistenceAdapter;
 import org.apache.activemq.store.memory.MemoryPersistenceAdapter;
 import org.apache.james.GuiceJamesServer;
 import org.apache.james.MemoryJamesServerMain;
-import org.apache.james.filesystem.api.FileSystem;
 import org.apache.james.jmap.methods.integration.cucumber.ImapStepdefs;
 import org.apache.james.jmap.methods.integration.cucumber.MainStepdefs;
 import org.apache.james.mailbox.inmemory.InMemoryMessageId;
@@ -58,7 +57,7 @@ public class MemoryStepdefs {
         temporaryFolder.create();
         Configuration configuration = Configuration.builder()
             .workingDirectory(temporaryFolder.newFolder())
-            .configurationPath(FileSystem.CLASSPATH_PROTOCOL)
+            .configurationFromClasspath()
             .build();
 
         mainStepdefs.messageIdFactory = new InMemoryMessageId.Factory();

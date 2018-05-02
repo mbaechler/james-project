@@ -24,7 +24,6 @@ import org.apache.james.CassandraJamesServerMain;
 import org.apache.james.DockerCassandraRule;
 import org.apache.james.GuiceJamesServer;
 import org.apache.james.backends.es.EmbeddedElasticSearch;
-import org.apache.james.filesystem.api.FileSystem;
 import org.apache.james.jmap.methods.integration.JamesWithSpamAssassin;
 import org.apache.james.jmap.methods.integration.SpamAssassinModule;
 import org.apache.james.mailbox.elasticsearch.MailboxElasticSearchConstants;
@@ -66,7 +65,7 @@ public class CassandraJmapExtension implements BeforeAllCallback, AfterAllCallba
     private JamesWithSpamAssassin james() throws IOException {
         Configuration configuration = Configuration.builder()
             .workingDirectory(temporaryFolder.newFolder())
-            .configurationPath(FileSystem.CLASSPATH_PROTOCOL)
+            .configurationFromClasspath()
             .build();
         return new JamesWithSpamAssassin(
                 new GuiceJamesServer(configuration)

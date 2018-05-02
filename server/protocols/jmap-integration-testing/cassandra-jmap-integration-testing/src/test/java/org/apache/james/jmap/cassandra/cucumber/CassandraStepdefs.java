@@ -29,7 +29,6 @@ import org.apache.james.CassandraJamesServerMain;
 import org.apache.james.GuiceJamesServer;
 import org.apache.james.backends.cassandra.DockerCassandraRule;
 import org.apache.james.backends.es.EmbeddedElasticSearch;
-import org.apache.james.filesystem.api.FileSystem;
 import org.apache.james.jmap.methods.integration.cucumber.ImapStepdefs;
 import org.apache.james.jmap.methods.integration.cucumber.MainStepdefs;
 import org.apache.james.mailbox.cassandra.ids.CassandraMessageId;
@@ -66,7 +65,7 @@ public class CassandraStepdefs {
         mainStepdefs.messageIdFactory = new CassandraMessageId.Factory();
         Configuration configuration = Configuration.builder()
             .workingDirectory(temporaryFolder.newFolder())
-            .configurationPath(FileSystem.CLASSPATH_PROTOCOL)
+            .configurationFromClasspath()
             .build();
 
         mainStepdefs.jmapServer = new GuiceJamesServer(configuration)
