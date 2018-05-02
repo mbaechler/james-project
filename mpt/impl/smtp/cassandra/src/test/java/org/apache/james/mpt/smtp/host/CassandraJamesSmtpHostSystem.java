@@ -19,7 +19,6 @@
 
 package org.apache.james.mpt.smtp.host;
 
-import java.io.IOException;
 import java.util.Iterator;
 
 import org.apache.james.CassandraJamesServerMain;
@@ -104,7 +103,7 @@ public class CassandraJamesSmtpHostSystem extends ExternalSessionFactory impleme
         return inMemoryDNSService;
     }
 
-    protected GuiceJamesServer createJamesServer() throws IOException {
+    protected GuiceJamesServer createJamesServer() throws Exception {
         String workingDir = folder.newFolder().getAbsolutePath();
         Configuration configuration = Configuration.builder()
             .workingDirectory(workingDir)
