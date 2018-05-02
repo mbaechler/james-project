@@ -22,13 +22,11 @@ package org.apache.james.mailbox.quota.mailing.listeners;
 import java.time.Clock;
 
 import org.apache.james.core.User;
+import org.apache.james.eventsourcing.CommandDispatcher;
 import org.apache.james.mailbox.Event;
 import org.apache.james.mailbox.MailboxListener;
-import org.apache.james.mailbox.quota.HistoryEvolution;
-import org.apache.james.mailbox.quota.QuotaThresholdChangedEvent;
-import org.apache.james.mailbox.quota.QuotaThresholdHistoryStore;
 import org.apache.james.mailbox.quota.mailing.QuotaMailingListenerConfiguration;
-import org.apache.james.mailbox.quota.model.QuotaThreshold;
+import org.apache.james.mailbox.quota.mailing.commands.DetectThresholdCrossing;
 import org.apache.james.mailbox.store.event.MailboxEventDispatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,19 +35,19 @@ public class QuotaThresholdCrossingListener implements MailboxListener {
     private static final Logger LOGGER = LoggerFactory.getLogger(QuotaThresholdCrossingListener.class);
 
     private final MailboxEventDispatcher dispatcher;
-    private final QuotaThresholdHistoryStore quotaThresholdHistoryStore;
+    private final CommandDispatcher commandDispatcher;
     private final Clock clock;
     private QuotaMailingListenerConfiguration configuration;
 
-    public QuotaThresholdCrossingListener(MailboxEventDispatcher dispatcher, QuotaThresholdHistoryStore quotaThresholdHistoryStore, Clock clock) {
+    public QuotaThresholdCrossingListener(MailboxEventDispatcher dispatcher, CommandDispatcher commandDispatcher, Clock clock) {
         this.dispatcher = dispatcher;
-        this.quotaThresholdHistoryStore = quotaThresholdHistoryStore;
+        this.commandDispatcher = commandDispatcher;
         this.clock = clock;
         this.configuration = QuotaMailingListenerConfiguration.DEFAULT;
     }
 
-    public QuotaThresholdCrossingListener(MailboxEventDispatcher dispatcher, QuotaThresholdHistoryStore quotaThresholdHistoryStore) {
-        this(dispatcher, quotaThresholdHistoryStore, Clock.systemUTC());
+    public QuotaThresholdCrossingListener(MailboxEventDispatcher dispatcher, CommandDispatcher commandDispatcher) {
+        this(dispatcher, commandDispatcher, Clock.systemUTC());
     }
 
     public void configure(QuotaMailingListenerConfiguration configuration) {
@@ -78,25 +76,8 @@ public class QuotaThresholdCrossingListener implements MailboxListener {
     }
 
     public void handleEvent(User user, QuotaUsageUpdatedEvent event) {
-        QuotaThreshold countThreshold = configuration.getThresholds().highestExceededThreshold(event.getCountQuota());
-        QuotaThreshold sizeThreshold = configuration.getThresholds().highestExceededThreshold(event.getSizeQuota());
-
-        HistoryEvolution countHistoryEvolution = quotaThresholdHistoryStore
-            .retrieveQuotaCountThresholdChanges(user)
-            .compareWithCurrentThreshold(countThreshold, configuration.getGracePeriod(), clock);
-        HistoryEvolution sizeHistoryEvolution = quotaThresholdHistoryStore
-            .retrieveQuotaSizeThresholdChanges(user)
-            .compareWithCurrentThreshold(sizeThreshold, configuration.getGracePeriod(), clock);
-
-        if (countHistoryEvolution.isChange() || sizeHistoryEvolution.isChange()) {
-            dispatcher.event(
-                new QuotaThresholdChangedEvent(
-                    sizeHistoryEvolution,
-                    countHistoryEvolution,
-                    event.getSizeQuota(),
-                    event.getCountQuota(),
-                    event.getSession()));
-        }
+        commandDispatcher.dispatch(
+            new DetectThresholdCrossing(configuration.getThresholds(), user, event.getCountQuota(), event.getSizeQuota(), event.getInstant()));
     }
 
     private User getUser(Event event) {

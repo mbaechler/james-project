@@ -21,43 +21,41 @@ package org.apache.james.mailbox.quota.mailing.listeners;
 
 import java.time.Clock;
 
+import org.apache.james.eventsourcing.EventBus;
+import org.apache.james.eventsourcing.EventStore;
 import org.apache.james.mailbox.Event;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.mock.MockMailboxSession;
-import org.apache.james.mailbox.quota.QuotaThresholdHistoryStore;
 import org.apache.james.mailbox.quota.mailing.QuotaMailingListenerConfiguration;
+import org.apache.james.mailbox.quota.mailing.QuotaThresholdEventSource;
+import org.apache.james.mailbox.quota.mailing.subscribers.QuotaThresholdMailer;
 import org.apache.james.mailbox.store.event.DefaultDelegatingMailboxListener;
 import org.apache.james.mailbox.store.event.MailboxEventDispatcher;
 import org.apache.james.user.memory.MemoryUsersRepository;
 import org.apache.mailet.MailetContext;
 
 public class QuotaThresholdListenersTestSystem {
+
     private final MailboxEventDispatcher dispatcher;
     private final DefaultDelegatingMailboxListener delegatingListener;
-    private final QuotaThresholdCrossingListener thresholdEmitter;
-    private final QuotaThresholdHistoryUpdater historyUpdater;
+    private final QuotaThresholdCrossingListener thresholdCrossingListener;
     private final QuotaThresholdMailer thresholdMailer;
 
-    public QuotaThresholdListenersTestSystem(QuotaThresholdHistoryStore store, MailetContext mailetContext, Clock clock) throws MailboxException {
+    public QuotaThresholdListenersTestSystem(MailetContext mailetContext, EventStore eventStore, QuotaMailingListenerConfiguration configuration, Clock clock) throws MailboxException {
         delegatingListener = new DefaultDelegatingMailboxListener();
         dispatcher = new MailboxEventDispatcher(delegatingListener);
 
-        thresholdEmitter = new QuotaThresholdCrossingListener(dispatcher, store, clock);
-        historyUpdater = new QuotaThresholdHistoryUpdater(store, clock);
         thresholdMailer = new QuotaThresholdMailer(mailetContext, MemoryUsersRepository.withVirtualHosting());
 
+        QuotaThresholdEventSource quotaThresholdEventSource = new QuotaThresholdEventSource(eventStore, new EventBus(eventStore), thresholdMailer, configuration);
+        thresholdCrossingListener = new QuotaThresholdCrossingListener(dispatcher, quotaThresholdEventSource.getCommandDispatcher(), clock);
+
         MockMailboxSession mailboxSession = new MockMailboxSession("system");
-        delegatingListener.addGlobalListener(thresholdEmitter, mailboxSession);
-        delegatingListener.addGlobalListener(historyUpdater, mailboxSession);
-        delegatingListener.addGlobalListener(thresholdMailer, mailboxSession);
+        delegatingListener.addGlobalListener(thresholdCrossingListener, mailboxSession);
     }
 
-    public QuotaThresholdListenersTestSystem(QuotaThresholdHistoryStore store, MailetContext mailetContext) throws MailboxException {
-        this(store, mailetContext, Clock.systemUTC());
-    }
-
-    public void configure(QuotaMailingListenerConfiguration configuration) {
-        thresholdEmitter.configure(configuration);
+    public QuotaThresholdListenersTestSystem(MailetContext mailetContext, EventStore eventStore, QuotaMailingListenerConfiguration configuration) throws MailboxException {
+        this(mailetContext, eventStore, configuration, Clock.systemUTC());
     }
 
     public void event(Event event) {

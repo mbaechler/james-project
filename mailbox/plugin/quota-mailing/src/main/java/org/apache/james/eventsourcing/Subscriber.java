@@ -17,13 +17,8 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.mailbox.quota.memory.listeners;
+package org.apache.james.eventsourcing;
 
-import org.apache.james.mailbox.quota.mailing.listeners.QuotaThresholdMailingIntegrationTest;
-import org.apache.james.mailbox.quota.memory.InMemoryQuotaThresholdHistoryStoreExtension;
-import org.junit.jupiter.api.extension.ExtendWith;
-
-@ExtendWith(InMemoryQuotaThresholdHistoryStoreExtension.class)
-public class InMemoryQuotaMailingListenersIntegrationTest implements QuotaThresholdMailingIntegrationTest{
-
+public interface Subscriber {
+    void handle(Event event);
 }

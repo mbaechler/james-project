@@ -17,30 +17,32 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.mailbox.quota;
+package org.apache.james.mailbox.quota.mailing.events;
 
-import org.apache.james.mailbox.Event;
-import org.apache.james.mailbox.MailboxSession;
+import org.apache.james.eventsourcing.Event;
+import org.apache.james.eventsourcing.EventId;
 import org.apache.james.mailbox.model.Quota;
+import org.apache.james.mailbox.quota.QuotaCount;
+import org.apache.james.mailbox.quota.QuotaSize;
+import org.apache.james.mailbox.quota.mailing.aggregates.UserQuotaThresholds;
+import org.apache.james.mailbox.quota.model.HistoryEvolution;
 
 public class QuotaThresholdChangedEvent implements Event {
+
+    private final EventId eventId;
     private final HistoryEvolution sizeHistoryEvolution;
     private final HistoryEvolution countHistoryEvolution;
     private final Quota<QuotaSize> sizeQuota;
     private final Quota<QuotaCount> countQuota;
-    private final MailboxSession session;
+    private final UserQuotaThresholds.Id aggregateId;
 
-    public QuotaThresholdChangedEvent(HistoryEvolution sizeHistoryEvolution, HistoryEvolution countHistoryEvolution, Quota<QuotaSize> sizeQuota, Quota<QuotaCount> countQuota, MailboxSession session) {
+    public QuotaThresholdChangedEvent(EventId eventId, HistoryEvolution sizeHistoryEvolution, HistoryEvolution countHistoryEvolution, Quota<QuotaSize> sizeQuota, Quota<QuotaCount> countQuota, UserQuotaThresholds.Id aggregateId) {
+        this.eventId = eventId;
         this.sizeHistoryEvolution = sizeHistoryEvolution;
         this.countHistoryEvolution = countHistoryEvolution;
         this.sizeQuota = sizeQuota;
         this.countQuota = countQuota;
-        this.session = session;
-    }
-
-    @Override
-    public MailboxSession getSession() {
-        return session;
+        this.aggregateId = aggregateId;
     }
 
     public HistoryEvolution getSizeHistoryEvolution() {
@@ -58,4 +60,16 @@ public class QuotaThresholdChangedEvent implements Event {
     public Quota<QuotaCount> getCountQuota() {
         return countQuota;
     }
+
+    @Override
+    public EventId eventId() {
+        return eventId;
+    }
+
+    @Override
+    public UserQuotaThresholds.Id getAggregateId() {
+        return aggregateId;
+    }
+
+
 }

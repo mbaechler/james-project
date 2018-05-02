@@ -31,42 +31,33 @@ import org.junit.jupiter.api.Test;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 
-public class QuotaThresholdChangeTest {
+class QuotaThresholdChangeTest {
 
-    public static final Clock CLOCK = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
+    private static final Clock CLOCK = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+    private static final Instant NOW = Instant.now(CLOCK);
+    private static final Instant ONE_HOUR_AGO = NOW.minus(Duration.ofHours(1));
+    private static final Instant TWO_HOURS_AGO = NOW.minus(Duration.ofHours(2));
+    private static final Instant THREE_HOURS_AGO = NOW.minus(Duration.ofHours(3));
 
     @Test
-    public void shouldMatchBeanContract() {
+    void shouldMatchBeanContract() {
         EqualsVerifier.forClass(QuotaThresholdChange.class)
             .allFieldsShouldBeUsed()
             .verify();
     }
 
     @Test
-    public void isNotOlderThanShouldReturnTrueWhenRecent() {
-        QuotaThresholdChange change = new QuotaThresholdChange(_75,
-            Instant.now(CLOCK).minus(Duration.ofHours(2)));
-
-        assertThat(change.isNotOlderThan(Duration.ofHours(3), CLOCK))
-            .isTrue();
+    void isNotOlderThanShouldReturnTrueWhenRecent() {
+        QuotaThresholdChange change = new QuotaThresholdChange(_75, TWO_HOURS_AGO);
+        assertThat(change.isAfter(THREE_HOURS_AGO)).isTrue();
     }
 
     @Test
-    public void isNotOlderThanShouldReturnFalseWhenOld() {
-        QuotaThresholdChange change = new QuotaThresholdChange(_75,
-            Instant.now().minus(Duration.ofHours(2)));
+    void isNotOlderThanShouldReturnFalseWhenOld() {
+        QuotaThresholdChange change = new QuotaThresholdChange(_75, TWO_HOURS_AGO);
 
-        assertThat(change.isNotOlderThan(Duration.ofHours(1), CLOCK))
-            .isFalse();
-    }
-
-    @Test
-    public void isNotOlderThanShouldReturnTrueWhenExactlyOldOfGracePeriod() {
-        QuotaThresholdChange change = new QuotaThresholdChange(_75,
-            Instant.now().minus(Duration.ofHours(2)));
-
-        assertThat(change.isNotOlderThan(Duration.ofHours(2), CLOCK))
-            .isTrue();
+        assertThat(change.isAfter(ONE_HOUR_AGO)).isFalse();
     }
 
 }

@@ -24,11 +24,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
 
 import org.apache.james.core.User;
-import org.apache.james.mailbox.quota.QuotaThresholdHistoryStore;
 import org.apache.james.mailbox.quota.model.QuotaThresholdChange;
 import org.apache.james.mailbox.quota.model.QuotaThresholdHistory;
 
-public class InMemoryQuotaThresholdHistoryStore implements QuotaThresholdHistoryStore {
+public class InMemoryQuotaThresholdHistoryStore {
+    /*implements
+} QuotaThresholdHistoryStore {
     private static final int MAX_RETRY = 50;
 
     private final ConcurrentHashMap<User, QuotaThresholdHistory> countChanges;
@@ -82,5 +83,5 @@ public class InMemoryQuotaThresholdHistoryStore implements QuotaThresholdHistory
         } else {
             return map.putIfAbsent(user, newState) == null;
         }
-    }
+    }*/
 }

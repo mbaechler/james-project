@@ -17,34 +17,33 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.mailbox.quota;
+package org.apache.james.mailbox.quota.model;
 
 import java.util.Objects;
 import java.util.Optional;
 
-import org.apache.james.mailbox.quota.model.QuotaThreshold;
-
 public class HistoryEvolution {
 
-    public static HistoryEvolution noChanges(QuotaThreshold currentThreshold) {
-        return new HistoryEvolution(ThresholdHistoryChange.NoChange,
+    public static HistoryEvolution noChanges() {
+        return new HistoryEvolution(HistoryChangeType.NoChange,
             Optional.empty(),
-            currentThreshold);
+            Optional.empty()
+            );
     }
 
-    public static HistoryEvolution lowerThresholdReached(QuotaThreshold currentThreshold) {
-        return new HistoryEvolution(ThresholdHistoryChange.LowerThresholdReached,
+    public static HistoryEvolution lowerThresholdReached(QuotaThresholdChange currentThreshold) {
+        return new HistoryEvolution(HistoryChangeType.LowerThresholdReached,
             Optional.empty(),
-            currentThreshold);
+            Optional.of(currentThreshold));
     }
 
-    public static HistoryEvolution higherThresholdReached(QuotaThreshold currentThreshold, HighestThresholdRecentness recentness) {
-        return new HistoryEvolution(ThresholdHistoryChange.HigherThresholdReached,
+    public static HistoryEvolution higherThresholdReached(QuotaThresholdChange currentThreshold, HighestThresholdRecentness recentness) {
+        return new HistoryEvolution(HistoryChangeType.HigherThresholdReached,
             Optional.of(recentness),
-            currentThreshold);
+            Optional.of(currentThreshold));
     }
 
-    public enum ThresholdHistoryChange {
+    public enum HistoryChangeType {
         HigherThresholdReached,
         NoChange,
         LowerThresholdReached
@@ -55,18 +54,18 @@ public class HistoryEvolution {
         NotAlreadyReachedDuringGracePeriod
     }
 
-    private final ThresholdHistoryChange thresholdHistoryChange;
+    private final HistoryChangeType thresholdHistoryChange;
     private final Optional<HighestThresholdRecentness> recentness;
-    private final QuotaThreshold currentThreshold;
+    private final Optional<QuotaThresholdChange> thresholdChange;
 
-    private HistoryEvolution(ThresholdHistoryChange thresholdHistoryChange, Optional<HighestThresholdRecentness> recentness, QuotaThreshold currentThreshold) {
+    private HistoryEvolution(HistoryChangeType thresholdHistoryChange, Optional<HighestThresholdRecentness> recentness, Optional<QuotaThresholdChange> thresholdChange) {
         this.thresholdHistoryChange = thresholdHistoryChange;
         this.recentness = recentness;
-        this.currentThreshold = currentThreshold;
+        this.thresholdChange = thresholdChange;
     }
 
     public boolean isChange() {
-        return thresholdHistoryChange != ThresholdHistoryChange.NoChange;
+        return thresholdHistoryChange != HistoryChangeType.NoChange;
     }
 
     public boolean currentThresholdNotRecentlyReached() {
@@ -75,11 +74,11 @@ public class HistoryEvolution {
             .orElse(false);
     }
 
-    public QuotaThreshold getThreshold() {
-        return currentThreshold;
+    public Optional<QuotaThresholdChange> getThresholdChange() {
+        return thresholdChange;
     }
 
-    public ThresholdHistoryChange getThresholdHistoryChange() {
+    public HistoryChangeType getThresholdHistoryChange() {
         return thresholdHistoryChange;
     }
 
@@ -90,14 +89,14 @@ public class HistoryEvolution {
 
             return Objects.equals(this.thresholdHistoryChange, that.thresholdHistoryChange)
                 && Objects.equals(this.recentness, that.recentness)
-                && Objects.equals(this.currentThreshold, that.currentThreshold);
+                && Objects.equals(this.thresholdChange, that.thresholdChange);
         }
         return false;
     }
 
     @Override
     public final int hashCode() {
-        return Objects.hash(thresholdHistoryChange, recentness, currentThreshold);
+        return Objects.hash(thresholdHistoryChange, recentness, thresholdChange);
     }
 
 

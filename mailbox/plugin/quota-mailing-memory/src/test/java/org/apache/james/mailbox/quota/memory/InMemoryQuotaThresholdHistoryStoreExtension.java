@@ -19,7 +19,8 @@
 
 package org.apache.james.mailbox.quota.memory;
 
-import org.apache.james.mailbox.quota.QuotaThresholdHistoryStore;
+import org.apache.james.eventsourcing.EventStore;
+import org.apache.james.eventsourcing.InMemoryEventStore;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
@@ -29,11 +30,11 @@ public class InMemoryQuotaThresholdHistoryStoreExtension implements ParameterRes
 
     @Override
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-        return (parameterContext.getParameter().getType() == QuotaThresholdHistoryStore.class);
+        return (parameterContext.getParameter().getType() == EventStore.class);
     }
 
     @Override
     public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-        return new InMemoryQuotaThresholdHistoryStore();
+        return new InMemoryEventStore();
     }
 }

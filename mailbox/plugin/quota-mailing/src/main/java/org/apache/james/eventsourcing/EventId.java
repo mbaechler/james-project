@@ -17,18 +17,58 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.mailbox.quota;
+package org.apache.james.eventsourcing;
 
-import org.apache.james.core.User;
-import org.apache.james.mailbox.quota.model.QuotaThresholdChange;
-import org.apache.james.mailbox.quota.model.QuotaThresholdHistory;
+import java.util.Objects;
+import java.util.Optional;
 
-public interface QuotaThresholdHistoryStore {
-    QuotaThresholdHistory retrieveQuotaSizeThresholdChanges(User user);
+import com.google.common.base.MoreObjects;
 
-    void persistQuotaSizeThresholdChange(User user, QuotaThresholdChange quotaThresholdChange);
+public class EventId implements Comparable<EventId> {
 
-    QuotaThresholdHistory retrieveQuotaCountThresholdChanges(User user);
+    public static EventId first() {
+        return new EventId(0);
+    }
 
-    void persistQuotaCountThresholdChange(User user, QuotaThresholdChange quotaThresholdChange);
+    private final long value;
+
+    public EventId(long value) {
+        this.value = value;
+    }
+
+    public EventId next() {
+        return new EventId(value + 1);
+    }
+
+    public Optional<EventId> previous() {
+        if (value > 0) {
+            return Optional.of(new EventId(value - 1));
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public int compareTo(EventId o) {
+        return Long.compare(value, o.value);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        EventId eventId = (EventId) o;
+        return value == eventId.value;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(value);
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+            .add("value", value)
+            .toString();
+    }
 }

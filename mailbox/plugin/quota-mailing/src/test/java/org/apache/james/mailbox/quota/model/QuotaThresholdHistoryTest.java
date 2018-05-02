@@ -19,8 +19,9 @@
 
 package org.apache.james.mailbox.quota.model;
 
-import static org.apache.james.mailbox.quota.HistoryEvolution.HighestThresholdRecentness.AlreadyReachedDuringGracePriod;
-import static org.apache.james.mailbox.quota.HistoryEvolution.HighestThresholdRecentness.NotAlreadyReachedDuringGracePeriod;
+import static org.apache.james.mailbox.quota.model.HistoryEvolution.HighestThresholdRecentness.AlreadyReachedDuringGracePriod;
+import static org.apache.james.mailbox.quota.model.HistoryEvolution.HighestThresholdRecentness.NotAlreadyReachedDuringGracePeriod;
+import static org.apache.james.mailbox.quota.model.QuotaThresholdFixture.TestConstants.NOW;
 import static org.apache.james.mailbox.quota.model.QuotaThresholdFixture._50;
 import static org.apache.james.mailbox.quota.model.QuotaThresholdFixture._75;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,7 +31,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 
-import org.apache.james.mailbox.quota.HistoryEvolution;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableList;
@@ -38,6 +38,7 @@ import com.google.common.collect.ImmutableList;
 import nl.jqno.equalsverifier.EqualsVerifier;
 
 public class QuotaThresholdHistoryTest {
+
 
     public static final Clock CLOCK = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
@@ -52,45 +53,42 @@ public class QuotaThresholdHistoryTest {
     public void compareWithCurrentThresholdShouldReturnAboveWhenStrictlyAboveDuringDuration() {
         assertThat(
             new QuotaThresholdHistory(
-                ImmutableList.of(
-                new QuotaThresholdChange(_50, Instant.now().minus(Duration.ofDays(24))),
-                new QuotaThresholdChange(_75, Instant.now().minus(Duration.ofDays(12))),
-                new QuotaThresholdChange(_50, Instant.now().minus(Duration.ofDays(6)))))
-                .compareWithCurrentThreshold(_75, Duration.ofDays(1), CLOCK))
-            .isEqualTo(HistoryEvolution.higherThresholdReached(_75, NotAlreadyReachedDuringGracePeriod));
+                    new QuotaThresholdChange(_50, Instant.now().minus(Duration.ofDays(24))),
+                    new QuotaThresholdChange(_75, Instant.now().minus(Duration.ofDays(12))),
+                    new QuotaThresholdChange(_50, Instant.now().minus(Duration.ofDays(6))))
+                .compareWithCurrentThreshold(new QuotaThresholdChange(_75, NOW), Duration.ofDays(1)))
+            .isEqualTo(HistoryEvolution.higherThresholdReached(new QuotaThresholdChange(_75, NOW), NotAlreadyReachedDuringGracePeriod));
     }
 
     @Test
     public void compareWithCurrentThresholdShouldReturnBelowWhenLowerThanLastChange() {
         assertThat(
             new QuotaThresholdHistory(
-                ImmutableList.of(
                 new QuotaThresholdChange(_50, Instant.now().minus(Duration.ofDays(24))),
-                new QuotaThresholdChange(_75, Instant.now().minus(Duration.ofDays(12)))))
-                .compareWithCurrentThreshold(_50, Duration.ofDays(1), CLOCK))
-            .isEqualTo(HistoryEvolution.lowerThresholdReached(_50));
+                new QuotaThresholdChange(_75, Instant.now().minus(Duration.ofDays(12))))
+                .compareWithCurrentThreshold(new QuotaThresholdChange(_50, NOW), Duration.ofDays(1)))
+            .isEqualTo(HistoryEvolution.lowerThresholdReached(new QuotaThresholdChange(_50, NOW)));
     }
 
     @Test
     public void compareWithCurrentThresholdShouldReturnNoChangeWhenEqualsLastChange() {
         assertThat(
             new QuotaThresholdHistory(
-                ImmutableList.of(
                 new QuotaThresholdChange(_50, Instant.now().minus(Duration.ofDays(24))),
-                new QuotaThresholdChange(_75, Instant.now().minus(Duration.ofDays(12)))))
-                .compareWithCurrentThreshold(_75, Duration.ofDays(1), CLOCK))
-            .isEqualTo(HistoryEvolution.noChanges(_75));
+                new QuotaThresholdChange(_75, Instant.now().minus(Duration.ofDays(12))))
+                .compareWithCurrentThreshold(new QuotaThresholdChange(_75, NOW), Duration.ofDays(1)))
+            .isEqualTo(HistoryEvolution.noChanges());
     }
 
     @Test
     public void compareWithCurrentThresholdShouldReturnAboveWithRecentChangesWhenThresholdExceededDuringDuration() {
         assertThat(
             new QuotaThresholdHistory(
-                ImmutableList.of(
                     new QuotaThresholdChange(_50, Instant.now().minus(Duration.ofDays(24))),
                     new QuotaThresholdChange(_75, Instant.now().minus(Duration.ofHours(12))),
-                    new QuotaThresholdChange(_50, Instant.now().minus(Duration.ofHours(6)))))
-                .compareWithCurrentThreshold(_75, Duration.ofDays(1), CLOCK))
-            .isEqualTo(HistoryEvolution.higherThresholdReached(_75, AlreadyReachedDuringGracePriod));
+                    new QuotaThresholdChange(_50, Instant.now().minus(Duration.ofHours(6))))
+                .compareWithCurrentThreshold(new QuotaThresholdChange(_75, NOW), Duration.ofDays(1)))
+            .isEqualTo(HistoryEvolution.higherThresholdReached(new QuotaThresholdChange(_75, NOW), AlreadyReachedDuringGracePriod));
     }
+
 }

@@ -17,17 +17,18 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.mailbox.quota.mailing;
+package org.apache.james.mailbox.quota.mailing.subscribers;
 
 import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.james.mailbox.model.Quota;
-import org.apache.james.mailbox.quota.HistoryEvolution;
 import org.apache.james.mailbox.quota.QuotaCount;
 import org.apache.james.mailbox.quota.QuotaSize;
+import org.apache.james.mailbox.quota.model.HistoryEvolution;
 import org.apache.james.mailbox.quota.model.QuotaThreshold;
+import org.apache.james.mailbox.quota.model.QuotaThresholdChange;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -58,21 +59,22 @@ public class QuotaThresholdNotice {
         public Builder countThreshold(HistoryEvolution countHistoryEvolution) {
             this.countThreshold = Optional.of(countHistoryEvolution)
                 .filter(this::needsNotification)
-                .map(HistoryEvolution::getThreshold);
+                .flatMap(HistoryEvolution::getThresholdChange)
+                .map(QuotaThresholdChange::getQuotaThreshold);
             return this;
         }
 
         public Builder sizeThreshold(HistoryEvolution sizeHistoryEvolution) {
             this.sizeThreshold = Optional.of(sizeHistoryEvolution)
                 .filter(this::needsNotification)
-                .map(HistoryEvolution::getThreshold);
+                .flatMap(HistoryEvolution::getThresholdChange)
+                .map(QuotaThresholdChange::getQuotaThreshold);
             return this;
         }
 
         boolean needsNotification(HistoryEvolution evolution) {
-            return evolution.getThresholdHistoryChange() == HistoryEvolution.ThresholdHistoryChange.HigherThresholdReached
-                && evolution.currentThresholdNotRecentlyReached()
-                && evolution.getThreshold().nonZero().isPresent();
+            return evolution.getThresholdHistoryChange() == HistoryEvolution.HistoryChangeType.HigherThresholdReached
+                && evolution.currentThresholdNotRecentlyReached();
         }
 
         public Optional<QuotaThresholdNotice> build() {

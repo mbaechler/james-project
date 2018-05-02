@@ -17,7 +17,7 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.mailbox.quota.mailing.listeners;
+package org.apache.james.mailbox.quota.mailing.subscribers;
 
 import java.util.Optional;
 
@@ -26,10 +26,9 @@ import javax.mail.MessagingException;
 import org.apache.james.core.MailAddress;
 import org.apache.james.core.User;
 import org.apache.james.core.builder.MimeMessageBuilder;
-import org.apache.james.mailbox.Event;
-import org.apache.james.mailbox.MailboxListener;
-import org.apache.james.mailbox.quota.QuotaThresholdChangedEvent;
-import org.apache.james.mailbox.quota.mailing.QuotaThresholdNotice;
+import org.apache.james.eventsourcing.Event;
+import org.apache.james.eventsourcing.Subscriber;
+import org.apache.james.mailbox.quota.mailing.events.QuotaThresholdChangedEvent;
 import org.apache.james.user.api.UsersRepository;
 import org.apache.james.user.api.UsersRepositoryException;
 import org.apache.mailet.MailetContext;
@@ -37,9 +36,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.fge.lambdas.Throwing;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
-public class QuotaThresholdMailer implements MailboxListener {
+public class QuotaThresholdMailer implements Subscriber {
     private static final Logger LOGGER = LoggerFactory.getLogger(QuotaThresholdMailer.class);
 
     private final MailetContext mailetContext;
@@ -51,27 +51,12 @@ public class QuotaThresholdMailer implements MailboxListener {
     }
 
     @Override
-    public ListenerType getType() {
-        return ListenerType.ONCE;
+    public void handle(Event event) {
+        Preconditions.checkArgument(event instanceof QuotaThresholdChangedEvent);
+        handleEvent((QuotaThresholdChangedEvent) event);
     }
 
-    @Override
-    public ExecutionMode getExecutionMode() {
-        return ExecutionMode.SYNCHRONOUS;
-    }
-
-    @Override
-    public void event(Event event) {
-        try {
-            if (event instanceof QuotaThresholdChangedEvent) {
-                handleEvent((QuotaThresholdChangedEvent) event);
-            }
-        } catch (Exception e) {
-            LOGGER.error("Can not send a quota mail alert", e);
-        }
-    }
-
-    public void handleEvent(QuotaThresholdChangedEvent event) {
+    private void handleEvent(QuotaThresholdChangedEvent event) {
         Optional<QuotaThresholdNotice> maybeNotice = QuotaThresholdNotice.builder()
             .countQuota(event.getCountQuota())
             .sizeQuota(event.getSizeQuota())
@@ -79,10 +64,10 @@ public class QuotaThresholdMailer implements MailboxListener {
             .sizeThreshold(event.getSizeHistoryEvolution())
             .build();
 
-        maybeNotice.ifPresent(Throwing.consumer(notice -> sendNotice(notice, getUser(event))));
+        maybeNotice.ifPresent(Throwing.consumer(notice -> sendNotice(notice, event.getAggregateId().getUser())));
     }
 
-    public void sendNotice(QuotaThresholdNotice notice, User user) throws UsersRepositoryException, MessagingException {
+    private void sendNotice(QuotaThresholdNotice notice, User user) throws UsersRepositoryException, MessagingException {
         MailAddress sender = mailetContext.getPostmaster();
         MailAddress recipient = usersRepository.getMailAddressFor(user);
 
@@ -95,10 +80,4 @@ public class QuotaThresholdMailer implements MailboxListener {
                 .build());
     }
 
-    private User getUser(Event event) {
-        return User.fromUsername(
-            event.getSession()
-                .getUser()
-                .getUserName());
-    }
 }

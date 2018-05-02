@@ -593,6 +593,10 @@ public class FakeMailContext implements MailetContext {
         return ImmutableList.copyOf(sentMails);
     }
 
+    public void resetSentMails() {
+        sentMails.clear();
+    }
+
     public List<BouncedMail> getBouncedMails() {
         return ImmutableList.copyOf(bouncedMails);
     }

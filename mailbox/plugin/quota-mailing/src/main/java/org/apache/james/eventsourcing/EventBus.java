@@ -17,12 +17,38 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.mailbox.quota.memory;
+package org.apache.james.eventsourcing;
 
-import org.apache.james.mailbox.quota.QuotaThresholdHistoryStoreTest;
-import org.junit.jupiter.api.extension.ExtendWith;
+import java.util.HashSet;
+import java.util.List;
 
-@ExtendWith(InMemoryQuotaThresholdHistoryStoreExtension.class)
-public class InMemoryQuotaThresholdHistoryStoreTest implements QuotaThresholdHistoryStoreTest {
+import org.apache.commons.lang3.tuple.Pair;
 
+import com.google.common.collect.Sets;
+
+public class EventBus {
+
+    public static class EventStoreFailedException extends RuntimeException {
+
+    }
+
+    private final EventStore eventStore;
+    private final HashSet<Subscriber> subscribers;
+
+    public EventBus(EventStore eventStore) {
+        this.eventStore = eventStore;
+        this.subscribers = Sets.newHashSet();
+    }
+
+    public EventBus subscribe(Subscriber subscriber) {
+        subscribers.add(subscriber);
+        return this;
+    }
+
+    public void publish(List<? extends Event> events) throws EventStoreFailedException {
+        eventStore.appendAll(events);
+        events.stream()
+            .flatMap(event -> subscribers.stream().map(subscriber -> Pair.of(event, subscriber)))
+            .forEach(pair -> pair.getRight().handle(pair.getLeft()));
+    }
 }

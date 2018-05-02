@@ -24,6 +24,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 
+import org.apache.james.eventsourcing.Event;
+
 import com.google.common.base.MoreObjects;
 
 public class QuotaThresholdChange {
@@ -35,8 +37,8 @@ public class QuotaThresholdChange {
         this.instant = instant;
     }
 
-    public boolean isNotOlderThan(Duration duration, Clock clock) {
-        return instant.isAfter(Instant.now(clock).minus(duration));
+    public boolean isAfter(Instant instant) {
+        return this.instant.isAfter(instant);
     }
 
     public QuotaThreshold getQuotaThreshold() {

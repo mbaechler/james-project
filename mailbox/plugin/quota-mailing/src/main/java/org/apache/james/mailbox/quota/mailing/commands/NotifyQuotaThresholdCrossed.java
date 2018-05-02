@@ -17,13 +17,27 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.mailbox.quota.memory.listeners;
+package org.apache.james.mailbox.quota.mailing.commands;
 
-import org.apache.james.mailbox.quota.mailing.listeners.QuotaThresholdMailingIntegrationTest;
-import org.apache.james.mailbox.quota.memory.InMemoryQuotaThresholdHistoryStoreExtension;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.apache.james.core.User;
+import org.apache.james.eventsourcing.CommandDispatcher;
+import org.apache.james.mailbox.quota.model.QuotaThreshold;
 
-@ExtendWith(InMemoryQuotaThresholdHistoryStoreExtension.class)
-public class InMemoryQuotaMailingListenersIntegrationTest implements QuotaThresholdMailingIntegrationTest{
+public class NotifyQuotaThresholdCrossed implements CommandDispatcher.Command {
 
+    private final User user;
+    private final QuotaThreshold threshold;
+
+    public NotifyQuotaThresholdCrossed(User user, QuotaThreshold threshold) {
+        this.user = user;
+        this.threshold = threshold;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public QuotaThreshold getThreshold() {
+        return threshold;
+    }
 }

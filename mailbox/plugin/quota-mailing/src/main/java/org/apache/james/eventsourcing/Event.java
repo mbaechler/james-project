@@ -17,13 +17,15 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.mailbox.quota.memory.listeners;
+package org.apache.james.eventsourcing;
 
-import org.apache.james.mailbox.quota.mailing.listeners.QuotaThresholdMailingIntegrationTest;
-import org.apache.james.mailbox.quota.memory.InMemoryQuotaThresholdHistoryStoreExtension;
-import org.junit.jupiter.api.extension.ExtendWith;
+public interface Event extends Comparable<Event> {
 
-@ExtendWith(InMemoryQuotaThresholdHistoryStoreExtension.class)
-public class InMemoryQuotaMailingListenersIntegrationTest implements QuotaThresholdMailingIntegrationTest{
+    EventId eventId();
+    AggregateId getAggregateId();
 
+    @Override
+    default int compareTo(Event o) {
+        return eventId().compareTo(o.eventId());
+    }
 }

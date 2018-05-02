@@ -19,81 +19,87 @@
 
 package org.apache.james.mailbox.quota;
 
+import static org.apache.james.mailbox.quota.model.QuotaThresholdFixture.TestConstants.NOW;
 import static org.apache.james.mailbox.quota.model.QuotaThresholdFixture._75;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.Test;
+import org.apache.james.mailbox.quota.model.HistoryEvolution;
+import org.apache.james.mailbox.quota.model.QuotaThresholdChange;
+import org.junit.jupiter.api.Test;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 
-public class HistoryEvolutionTest {
+class HistoryEvolutionTest {
+
+    private static final QuotaThresholdChange SAMPLE_THRESHOLD = new QuotaThresholdChange(_75, NOW);
+
     @Test
-    public void shouldMatchBeanContract() {
+    void shouldMatchBeanContract() {
         EqualsVerifier.forClass(HistoryEvolution.class)
             .allFieldsShouldBeUsed()
             .verify();
     }
 
     @Test
-    public void isModifiedShouldReturnFalseWhenNoChange() {
+    void isModifiedShouldReturnFalseWhenNoChange() {
         assertThat(
-            HistoryEvolution.noChanges(_75)
+            HistoryEvolution.noChanges()
                 .isChange())
             .isFalse();
     }
 
     @Test
-    public void isModifiedShouldReturnTrueWhenLowerThresholdReached() {
+    void isModifiedShouldReturnTrueWhenLowerThresholdReached() {
         assertThat(
-            HistoryEvolution.lowerThresholdReached(_75)
-                .isChange())
-            .isTrue();
-    }
-
-    @Test
-    public void isModifiedShouldReturnTrueWhenHigherThresholdAlreadyReachedWithinGracePeriod() {
-        assertThat(
-            HistoryEvolution.higherThresholdReached(_75, HistoryEvolution.HighestThresholdRecentness.AlreadyReachedDuringGracePriod)
+            HistoryEvolution.lowerThresholdReached(SAMPLE_THRESHOLD)
                 .isChange())
             .isTrue();
     }
 
     @Test
-    public void isModifiedShouldReturnTrueWhenHigherThresholdReachedNotAlreadyReachedWithinGracePeriod() {
+    void isModifiedShouldReturnTrueWhenHigherThresholdAlreadyReachedWithinGracePeriod() {
         assertThat(
-            HistoryEvolution.higherThresholdReached(_75, HistoryEvolution.HighestThresholdRecentness.NotAlreadyReachedDuringGracePeriod)
+            HistoryEvolution.higherThresholdReached(SAMPLE_THRESHOLD, HistoryEvolution.HighestThresholdRecentness.AlreadyReachedDuringGracePriod)
                 .isChange())
             .isTrue();
     }
 
     @Test
-    public void currentThresholdNotRecentlyReachedShouldReturnFalseWhenNoChange() {
+    void isModifiedShouldReturnTrueWhenHigherThresholdReachedNotAlreadyReachedWithinGracePeriod() {
         assertThat(
-            HistoryEvolution.noChanges(_75)
+            HistoryEvolution.higherThresholdReached(SAMPLE_THRESHOLD, HistoryEvolution.HighestThresholdRecentness.NotAlreadyReachedDuringGracePeriod)
+                .isChange())
+            .isTrue();
+    }
+
+    @Test
+    void currentThresholdNotRecentlyReachedShouldReturnFalseWhenNoChange() {
+        assertThat(
+            HistoryEvolution.noChanges()
                 .currentThresholdNotRecentlyReached())
             .isFalse();
     }
 
     @Test
-    public void currentThresholdNotRecentlyReachedShouldReturnFalseWhenLowerThresholdReached() {
+    void currentThresholdNotRecentlyReachedShouldReturnFalseWhenLowerThresholdReached() {
         assertThat(
-            HistoryEvolution.lowerThresholdReached(_75)
+            HistoryEvolution.lowerThresholdReached(SAMPLE_THRESHOLD)
                 .currentThresholdNotRecentlyReached())
             .isFalse();
     }
 
     @Test
-    public void currentThresholdNotRecentlyReachedShouldReturnFalseWhenHigherThresholdReachedAlreadyReachedWithinGracePeriod() {
+    void currentThresholdNotRecentlyReachedShouldReturnFalseWhenHigherThresholdReachedAlreadyReachedWithinGracePeriod() {
         assertThat(
-            HistoryEvolution.higherThresholdReached(_75, HistoryEvolution.HighestThresholdRecentness.AlreadyReachedDuringGracePriod)
+            HistoryEvolution.higherThresholdReached(SAMPLE_THRESHOLD, HistoryEvolution.HighestThresholdRecentness.AlreadyReachedDuringGracePriod)
                 .currentThresholdNotRecentlyReached())
             .isFalse();
     }
 
     @Test
-    public void currentThresholdNotRecentlyReachedShouldReturnTrueWhenHigherThresholdReachedNotAlreadyReachedWithinGracePeriod() {
+    void currentThresholdNotRecentlyReachedShouldReturnTrueWhenHigherThresholdReachedNotAlreadyReachedWithinGracePeriod() {
         assertThat(
-            HistoryEvolution.higherThresholdReached(_75, HistoryEvolution.HighestThresholdRecentness.NotAlreadyReachedDuringGracePeriod)
+            HistoryEvolution.higherThresholdReached(SAMPLE_THRESHOLD, HistoryEvolution.HighestThresholdRecentness.NotAlreadyReachedDuringGracePeriod)
                 .currentThresholdNotRecentlyReached())
             .isTrue();
     }

@@ -17,35 +17,36 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.mailbox.quota.mailing;
+package org.apache.james.mailbox.quota.mailing.subscribers;
 
-import static org.apache.james.mailbox.quota.HistoryEvolution.HighestThresholdRecentness.NotAlreadyReachedDuringGracePeriod;
-import static org.apache.james.mailbox.quota.HistoryEvolution.HighestThresholdRecentness.AlreadyReachedDuringGracePriod;
+import static org.apache.james.mailbox.quota.model.HistoryEvolution.HighestThresholdRecentness.AlreadyReachedDuringGracePriod;
+import static org.apache.james.mailbox.quota.model.HistoryEvolution.HighestThresholdRecentness.NotAlreadyReachedDuringGracePeriod;
+import static org.apache.james.mailbox.quota.model.QuotaThresholdFixture.TestConstants.NOW;
 import static org.apache.james.mailbox.quota.model.QuotaThresholdFixture._80;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Optional;
 
 import org.apache.james.mailbox.model.Quota;
-import org.apache.james.mailbox.quota.HistoryEvolution;
 import org.apache.james.mailbox.quota.QuotaCount;
 import org.apache.james.mailbox.quota.QuotaSize;
-import org.apache.james.mailbox.quota.model.QuotaThreshold;
+import org.apache.james.mailbox.quota.model.HistoryEvolution;
+import org.apache.james.mailbox.quota.model.QuotaThresholdChange;
 import org.junit.jupiter.api.Test;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 
-public class QuotaThresholdNoticeTest {
+class QuotaThresholdNoticeTest {
 
     @Test
-    public void shouldMatchBeanContract() {
+    void shouldMatchBeanContract() {
         EqualsVerifier.forClass(QuotaThresholdNotice.class)
             .allFieldsShouldBeUsed()
             .verify();
     }
 
     @Test
-    public void buildShouldReturnEmptyWhenNoThresholds() {
+    void buildShouldReturnEmptyWhenNoThresholds() {
         assertThat(QuotaThresholdNotice.builder()
             .sizeQuota(Quota.<QuotaSize>builder()
                 .used(QuotaSize.size(82))
@@ -60,7 +61,7 @@ public class QuotaThresholdNoticeTest {
     }
 
     @Test
-    public void buildShouldReturnEmptyWhenNoChanges() {
+    void buildShouldReturnEmptyWhenNoChanges() {
         assertThat(QuotaThresholdNotice.builder()
             .sizeQuota(Quota.<QuotaSize>builder()
                 .used(QuotaSize.size(82))
@@ -70,13 +71,13 @@ public class QuotaThresholdNoticeTest {
                 .used(QuotaCount.count(82))
                 .computedLimit(QuotaCount.count(100))
                 .build())
-            .sizeThreshold(HistoryEvolution.noChanges(_80))
+            .sizeThreshold(HistoryEvolution.noChanges())
             .build())
             .isEmpty();
     }
 
     @Test
-    public void buildShouldReturnEmptyWhenBelow() {
+    void buildShouldReturnEmptyWhenBelow() {
         assertThat(QuotaThresholdNotice.builder()
             .sizeQuota(Quota.<QuotaSize>builder()
                 .used(QuotaSize.size(82))
@@ -86,13 +87,13 @@ public class QuotaThresholdNoticeTest {
                 .used(QuotaCount.count(82))
                 .computedLimit(QuotaCount.count(100))
                 .build())
-            .sizeThreshold(HistoryEvolution.lowerThresholdReached(_80))
+            .sizeThreshold(HistoryEvolution.lowerThresholdReached(new QuotaThresholdChange(_80, NOW)))
             .build())
             .isEmpty();
     }
 
     @Test
-    public void buildShouldReturnEmptyWhenAboveButRecentChanges() {
+    void buildShouldReturnEmptyWhenAboveButRecentChanges() {
         assertThat(QuotaThresholdNotice.builder()
             .sizeQuota(Quota.<QuotaSize>builder()
                 .used(QuotaSize.size(82))
@@ -102,13 +103,13 @@ public class QuotaThresholdNoticeTest {
                 .used(QuotaCount.count(82))
                 .computedLimit(QuotaCount.count(100))
                 .build())
-            .sizeThreshold(HistoryEvolution.higherThresholdReached(_80, AlreadyReachedDuringGracePriod))
+            .sizeThreshold(HistoryEvolution.higherThresholdReached(new QuotaThresholdChange(_80, NOW), AlreadyReachedDuringGracePriod))
             .build())
             .isEmpty();
     }
 
     @Test
-    public void buildShouldReturnPresentWhenAbove() {
+    void buildShouldReturnPresentWhenAbove() {
         Quota<QuotaSize> sizeQuota = Quota.<QuotaSize>builder()
             .used(QuotaSize.size(82))
             .computedLimit(QuotaSize.size(100))
@@ -117,19 +118,19 @@ public class QuotaThresholdNoticeTest {
             .used(QuotaCount.count(82))
             .computedLimit(QuotaCount.count(100))
             .build();
-        QuotaThreshold sizeThreshold = _80;
+        QuotaThresholdChange sizeThresholdChange = new QuotaThresholdChange(_80, NOW);
 
         assertThat(QuotaThresholdNotice.builder()
             .sizeQuota(sizeQuota)
             .countQuota(countQuota)
-            .sizeThreshold(HistoryEvolution.higherThresholdReached(sizeThreshold, NotAlreadyReachedDuringGracePeriod))
+            .sizeThreshold(HistoryEvolution.higherThresholdReached(sizeThresholdChange, NotAlreadyReachedDuringGracePeriod))
             .build())
             .isNotEmpty()
-            .contains(new QuotaThresholdNotice(Optional.empty(), Optional.of(sizeThreshold), sizeQuota, countQuota));
+            .contains(new QuotaThresholdNotice(Optional.empty(), Optional.of(sizeThresholdChange.getQuotaThreshold()), sizeQuota, countQuota));
     }
 
     @Test
-    public void buildShouldFilterOutNotInterestingFields() {
+    void buildShouldFilterOutNotInterestingFields() {
         Quota<QuotaSize> sizeQuota = Quota.<QuotaSize>builder()
             .used(QuotaSize.size(82))
             .computedLimit(QuotaSize.size(100))
@@ -138,21 +139,21 @@ public class QuotaThresholdNoticeTest {
             .used(QuotaCount.count(82))
             .computedLimit(QuotaCount.count(100))
             .build();
-        QuotaThreshold sizeThreshold = _80;
-        QuotaThreshold countThreshold = _80;
+        QuotaThresholdChange sizeThresholdChange = new QuotaThresholdChange(_80, NOW);
+        QuotaThresholdChange countThresholdChange = new QuotaThresholdChange(_80, NOW);
 
         assertThat(QuotaThresholdNotice.builder()
             .sizeQuota(sizeQuota)
             .countQuota(countQuota)
-            .sizeThreshold(HistoryEvolution.higherThresholdReached(sizeThreshold, NotAlreadyReachedDuringGracePeriod))
-            .countThreshold(HistoryEvolution.lowerThresholdReached(countThreshold))
+            .sizeThreshold(HistoryEvolution.higherThresholdReached(sizeThresholdChange, NotAlreadyReachedDuringGracePeriod))
+            .countThreshold(HistoryEvolution.lowerThresholdReached(countThresholdChange))
             .build())
             .isNotEmpty()
-            .contains(new QuotaThresholdNotice(Optional.empty(), Optional.of(sizeThreshold), sizeQuota, countQuota));
+            .contains(new QuotaThresholdNotice(Optional.empty(), Optional.of(sizeThresholdChange.getQuotaThreshold()), sizeQuota, countQuota));
     }
 
     @Test
-    public void buildShouldKeepAllInterestingFields() {
+    void buildShouldKeepAllInterestingFields() {
         Quota<QuotaSize> sizeQuota = Quota.<QuotaSize>builder()
             .used(QuotaSize.size(82))
             .computedLimit(QuotaSize.size(100))
@@ -161,21 +162,21 @@ public class QuotaThresholdNoticeTest {
             .used(QuotaCount.count(82))
             .computedLimit(QuotaCount.count(100))
             .build();
-        QuotaThreshold sizeThreshold = _80;
-        QuotaThreshold countThreshold = _80;
+        QuotaThresholdChange sizeThresholdChange = new QuotaThresholdChange(_80, NOW);
+        QuotaThresholdChange countThresholdChange = new QuotaThresholdChange(_80, NOW);
 
         assertThat(QuotaThresholdNotice.builder()
             .sizeQuota(sizeQuota)
             .countQuota(countQuota)
-            .sizeThreshold(HistoryEvolution.higherThresholdReached(sizeThreshold, NotAlreadyReachedDuringGracePeriod))
-            .countThreshold(HistoryEvolution.higherThresholdReached(countThreshold, NotAlreadyReachedDuringGracePeriod))
+            .sizeThreshold(HistoryEvolution.higherThresholdReached(sizeThresholdChange, NotAlreadyReachedDuringGracePeriod))
+            .countThreshold(HistoryEvolution.higherThresholdReached(countThresholdChange, NotAlreadyReachedDuringGracePeriod))
             .build())
             .isNotEmpty()
-            .contains(new QuotaThresholdNotice(Optional.of(countThreshold), Optional.of(sizeThreshold), sizeQuota, countQuota));
+            .contains(new QuotaThresholdNotice(Optional.of(countThresholdChange.getQuotaThreshold()), Optional.of(sizeThresholdChange.getQuotaThreshold()), sizeQuota, countQuota));
     }
 
     @Test
-    public void generateReportShouldGenerateAHumanReadableMessage() {
+    void generateReportShouldGenerateAHumanReadableMessage() {
         Quota<QuotaSize> sizeQuota = Quota.<QuotaSize>builder()
             .used(QuotaSize.size(82))
             .computedLimit(QuotaSize.size(100))
@@ -184,14 +185,15 @@ public class QuotaThresholdNoticeTest {
             .used(QuotaCount.count(92))
             .computedLimit(QuotaCount.count(100))
             .build();
-        QuotaThreshold sizeThreshold = _80;
-        QuotaThreshold countThreshold = _80;
+
+        QuotaThresholdChange sizeThresholdChange = new QuotaThresholdChange(_80, NOW);
+        QuotaThresholdChange countThresholdChange = new QuotaThresholdChange(_80, NOW);
 
         assertThat(QuotaThresholdNotice.builder()
             .sizeQuota(sizeQuota)
             .countQuota(countQuota)
-            .sizeThreshold(HistoryEvolution.higherThresholdReached(sizeThreshold, NotAlreadyReachedDuringGracePeriod))
-            .countThreshold(HistoryEvolution.higherThresholdReached(countThreshold, NotAlreadyReachedDuringGracePeriod))
+            .sizeThreshold(HistoryEvolution.higherThresholdReached(sizeThresholdChange, NotAlreadyReachedDuringGracePeriod))
+            .countThreshold(HistoryEvolution.higherThresholdReached(countThresholdChange, NotAlreadyReachedDuringGracePeriod))
             .build()
             .get()
             .generateReport())
@@ -208,7 +210,7 @@ public class QuotaThresholdNoticeTest {
     }
 
     @Test
-    public void generateReportShouldOmitCountPartWhenNone() {
+    void generateReportShouldOmitCountPartWhenNone() {
         Quota<QuotaSize> sizeQuota = Quota.<QuotaSize>builder()
             .used(QuotaSize.size(82))
             .computedLimit(QuotaSize.size(100))
@@ -217,12 +219,13 @@ public class QuotaThresholdNoticeTest {
             .used(QuotaCount.count(72))
             .computedLimit(QuotaCount.count(100))
             .build();
-        QuotaThreshold sizeThreshold = _80;
+
+        QuotaThresholdChange sizeThresholdChange = new QuotaThresholdChange(_80, NOW);
 
         assertThat(QuotaThresholdNotice.builder()
             .sizeQuota(sizeQuota)
             .countQuota(countQuota)
-            .sizeThreshold(HistoryEvolution.higherThresholdReached(sizeThreshold, NotAlreadyReachedDuringGracePeriod))
+            .sizeThreshold(HistoryEvolution.higherThresholdReached(sizeThresholdChange, NotAlreadyReachedDuringGracePeriod))
             .build()
             .get()
             .generateReport())
@@ -236,7 +239,7 @@ public class QuotaThresholdNoticeTest {
     }
 
     @Test
-    public void generateReportShouldOmitSizePartWhenNone() {
+    void generateReportShouldOmitSizePartWhenNone() {
         Quota<QuotaSize> sizeQuota = Quota.<QuotaSize>builder()
             .used(QuotaSize.size(82))
             .computedLimit(QuotaSize.size(100))
@@ -245,12 +248,13 @@ public class QuotaThresholdNoticeTest {
             .used(QuotaCount.count(92))
             .computedLimit(QuotaCount.count(100))
             .build();
-        QuotaThreshold countThreshold = _80;
+
+        QuotaThresholdChange countThresholdChange = new QuotaThresholdChange(_80, NOW);
 
         assertThat(QuotaThresholdNotice.builder()
             .sizeQuota(sizeQuota)
             .countQuota(countQuota)
-            .countThreshold(HistoryEvolution.higherThresholdReached(countThreshold, NotAlreadyReachedDuringGracePeriod))
+            .countThreshold(HistoryEvolution.higherThresholdReached(countThresholdChange, NotAlreadyReachedDuringGracePeriod))
             .build()
             .get()
             .generateReport())
@@ -262,5 +266,4 @@ public class QuotaThresholdNoticeTest {
                 "You need to be aware that actions leading to exceeded quotas will be denied. This will result in a degraded service.\n" +
                 "To mitigate this issue you might reach your administrator in order to increase your configured quota. You might also delete some non important emails.");
     }
-
 }
