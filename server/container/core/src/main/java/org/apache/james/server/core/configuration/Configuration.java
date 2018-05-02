@@ -28,6 +28,7 @@ import org.apache.james.server.core.MissingArgumentException;
 
 public class Configuration {
 
+    public static final String WORKING_DIRECTORY = "working.directory";
 
     public static Builder builder() {
         return new Builder();
@@ -50,7 +51,7 @@ public class Configuration {
 
         public Builder useWorkingDirectoryEnvProperty() {
             rootDirectory = Optional
-                .ofNullable(System.getProperty("working.directory"));
+                .ofNullable(System.getProperty(WORKING_DIRECTORY));
             if (!rootDirectory.isPresent()) {
                 throw new MissingArgumentException("Server needs a working.directory env entry");
             }
