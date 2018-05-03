@@ -56,6 +56,7 @@ public class MemoryJmapExtension implements BeforeEachCallback, AfterEachCallbac
     }
 
     private JamesWithSpamAssassin james() throws IOException {
+        temporaryFolder.create();
         Configuration configuration = Configuration.builder()
             .workingDirectory(temporaryFolder.newFolder())
             .configurationFromClasspath()
