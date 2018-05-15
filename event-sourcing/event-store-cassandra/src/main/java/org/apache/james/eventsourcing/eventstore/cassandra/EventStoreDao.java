@@ -46,7 +46,6 @@ import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.steveash.guavate.Guavate;
 
