@@ -36,11 +36,11 @@
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>event-sourcing-event-store-api</artifactId>
+            <artifactId>event-sourcing-core</artifactId>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>event-sourcing-core</artifactId>
+            <artifactId>event-sourcing-event-store-api</artifactId>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
