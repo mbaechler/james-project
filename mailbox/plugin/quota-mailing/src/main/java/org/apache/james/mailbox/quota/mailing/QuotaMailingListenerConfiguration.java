@@ -124,21 +124,6 @@ public class QuotaMailingListenerConfiguration {
             return this;
         }
 
-        public Builder gracePeriod(Optional<Duration> duration) {
-            duration.ifPresent(this::gracePeriod);
-            return this;
-        }
-
-        public Builder bodyTemplate(Optional<String> bodyTemplate) {
-            bodyTemplate.ifPresent(this::bodyTemplate);
-            return this;
-        }
-
-        public Builder subjectTemplate(Optional<String> subjectTemplate) {
-            subjectTemplate.ifPresent(this::subjectTemplate);
-            return this;
-        }
-
         public Builder subjectTemplate(String subjectTemplate) {
             Preconditions.checkArgument(!Strings.isNullOrEmpty(subjectTemplate), "Pass a non null/empty subjectTemplate");
             this.subjectTemplate = Optional.of(subjectTemplate);

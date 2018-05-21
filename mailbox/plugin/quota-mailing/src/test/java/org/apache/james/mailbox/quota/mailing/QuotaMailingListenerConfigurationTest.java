@@ -151,7 +151,7 @@ public class QuotaMailingListenerConfigurationTest {
             "<configuration><gracePeriod>12</gracePeriod></configuration>"));
 
         assertThat(QuotaMailingListenerConfiguration.from(xmlConfiguration).getGracePeriod())
-            .isEqualTo(Duration.ofMillis(12));
+            .isEqualTo(Duration.ofDays(12));
     }
 
     @Test
