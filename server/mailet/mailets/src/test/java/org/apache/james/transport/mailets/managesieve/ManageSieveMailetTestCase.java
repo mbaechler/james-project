@@ -49,8 +49,8 @@ import org.apache.mailet.Mail;
 import org.apache.mailet.base.test.FakeMail;
 import org.apache.mailet.base.test.FakeMailContext;
 import org.apache.mailet.base.test.FakeMailetConfig;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Lists;
 
@@ -70,7 +70,7 @@ public class ManageSieveMailetTestCase {
     private UsersRepository usersRepository;
     private FakeMailContext fakeMailContext;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         sieveRepository = mock(SieveRepository.class);
         sieveParser = mock(SieveParser.class);

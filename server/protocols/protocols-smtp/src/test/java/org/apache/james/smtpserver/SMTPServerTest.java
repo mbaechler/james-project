@@ -67,10 +67,11 @@ import org.apache.james.user.api.UsersRepository;
 import org.apache.james.user.memory.MemoryUsersRepository;
 import org.apache.mailet.Mail;
 import org.jboss.netty.util.HashedWheelTimer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -176,7 +177,7 @@ public class SMTPServerTest {
 
     private SMTPServer smtpServer;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         setUpFakeLoader();
         // slf4j can't set programmatically any log level. It's just a facade
@@ -282,7 +283,7 @@ public class SMTPServerTest {
         try {
             smtpProtocol3.connect(bindedAddress.getAddress().getHostAddress(), bindedAddress.getPort());
             Thread.sleep(3000);
-            fail("Shold disconnect connection 3");
+            Assertions.fail("Shold disconnect connection 3");
         } catch (Exception e) {
             LOGGER.info("Ignored error", e);
         }
@@ -309,7 +310,7 @@ public class SMTPServerTest {
         }
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         smtpServer.destroy();
         hashedWheelTimer.stop();
@@ -322,7 +323,7 @@ public class SMTPServerTest {
             .isNotNull();
 
         if (sender == null && recipient == null && msg == null) {
-            fail("no verification can be done with all arguments null");
+            Assertions.fail("no verification can be done with all arguments null");
         }
 
         if (sender != null) {
@@ -584,7 +585,7 @@ public class SMTPServerTest {
     }
 
     // FIXME
-    @Ignore
+    @Disabled
     @Test
     public void testEmptyMessageReceivedHeader() throws Exception {
         init(smtpConfiguration);
@@ -769,7 +770,7 @@ public class SMTPServerTest {
         smtpProtocol.addRecipient(rcpt);
 
         if (smtpProtocol.getReplyCode() == 501) {
-            fail(existingDomain + " domain currently cannot be resolved (check your DNS/internet connection/proxy settings to make test pass)");
+            Assertions.fail(existingDomain + " domain currently cannot be resolved (check your DNS/internet connection/proxy settings to make test pass)");
         }
         // helo/ehlo is resolvable. so this should give a 250 code
         assertThat(smtpProtocol.getReplyCode())
@@ -804,7 +805,7 @@ public class SMTPServerTest {
         try {
             dnsServer.setLocalhostByName(InetAddress.getByName("james.apache.org"));
         } catch (UnknownHostException e) {
-            fail("james.apache.org currently cannot be resolved (check your DNS/internet connection/proxy settings to make test pass)");
+            Assertions.fail("james.apache.org currently cannot be resolved (check your DNS/internet connection/proxy settings to make test pass)");
         }
         try {
             init(smtpConfiguration);
@@ -1082,7 +1083,7 @@ public class SMTPServerTest {
         try {
             jamesDomain = dnsServer.getByName("james.apache.org");
         } catch (UnknownHostException e) {
-            fail("james.apache.org currently cannot be resolved (check your DNS/internet connection/proxy settings to make test pass)");
+            Assertions.fail("james.apache.org currently cannot be resolved (check your DNS/internet connection/proxy settings to make test pass)");
         }
         dnsServer.setLocalhostByName(jamesDomain);
         try {

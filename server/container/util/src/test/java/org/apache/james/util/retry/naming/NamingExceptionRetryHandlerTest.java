@@ -28,8 +28,9 @@ import javax.naming.NamingException;
 import org.apache.james.util.retry.api.ExceptionRetryingProxy;
 import org.apache.james.util.retry.api.RetryHandler;
 import org.apache.james.util.retry.api.RetrySchedule;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class NamingExceptionRetryHandlerTest {
 
@@ -53,7 +54,7 @@ public class NamingExceptionRetryHandlerTest {
     private ExceptionRetryingProxy proxy;
     private RetrySchedule schedule;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         exceptionClasses = new Class<?>[]{NamingException.class};
         proxy = new TestRetryingProxy();
@@ -62,7 +63,7 @@ public class NamingExceptionRetryHandlerTest {
 
     @Test
     public void testExceptionRetryHandler() {
-        assertTrue(RetryHandler.class.isAssignableFrom(new NamingExceptionRetryHandler(
+        Assertions.assertTrue(RetryHandler.class.isAssignableFrom(new NamingExceptionRetryHandler(
             exceptionClasses, proxy, schedule, 0) {
 
             @Override
@@ -82,7 +83,7 @@ public class NamingExceptionRetryHandlerTest {
                 return "Hi!";
             }
         }.perform();
-        assertEquals("Hi!", result);
+        Assertions.assertEquals("Hi!", result);
 
         try {
             new NamingExceptionRetryHandler(
@@ -96,6 +97,6 @@ public class NamingExceptionRetryHandlerTest {
         } catch (NamingException ex) {
             // no-op
         }
-        assertEquals("Hi!", result);
+        Assertions.assertEquals("Hi!", result);
     }
 }

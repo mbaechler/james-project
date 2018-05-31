@@ -33,8 +33,9 @@ import org.apache.james.mailbox.model.MailboxACL.EntryKey;
 import org.apache.james.mailbox.model.MailboxACL.NameType;
 import org.apache.james.mailbox.model.MailboxACL.Rfc4314Rights;
 import org.assertj.core.data.MapEntry;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -57,7 +58,7 @@ public class MailboxACLTest {
 
     private MailboxACL u1u2g1g2ACL;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
 
         u1u2g1g2Properties = new Properties();
@@ -82,7 +83,7 @@ public class MailboxACLTest {
 
         Map<EntryKey, Rfc4314Rights> foundEntries = result.getEntries();
 
-        assertEquals(foundEntries, expectedEntries);
+        Assertions.assertEquals(foundEntries, expectedEntries);
     }
 
     @Test
@@ -109,7 +110,7 @@ public class MailboxACLTest {
 
         Map<EntryKey, Rfc4314Rights> foundEntries = result.getEntries();
 
-        assertEquals(foundEntries, expectedEntries);
+        Assertions.assertEquals(foundEntries, expectedEntries);
     }
 
     @Test
@@ -122,7 +123,7 @@ public class MailboxACLTest {
 
         Map<EntryKey, Rfc4314Rights> foundEntries = result.getEntries();
 
-        assertEquals(foundEntries, expectedEntries);
+        Assertions.assertEquals(foundEntries, expectedEntries);
     }
 
     @Test
@@ -146,7 +147,7 @@ public class MailboxACLTest {
 
         Map<EntryKey, Rfc4314Rights> foundEntries = result.getEntries();
 
-        assertEquals(foundEntries, expectedEntries);
+        Assertions.assertEquals(foundEntries, expectedEntries);
     }
 
     @Test
@@ -159,7 +160,7 @@ public class MailboxACLTest {
 
         Map<EntryKey, Rfc4314Rights> foundEntries = result.getEntries();
 
-        assertEquals(foundEntries, expectedEntries);
+        Assertions.assertEquals(foundEntries, expectedEntries);
     }
 
     @Test

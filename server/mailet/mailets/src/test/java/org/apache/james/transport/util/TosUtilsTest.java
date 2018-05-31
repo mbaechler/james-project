@@ -31,8 +31,8 @@ import org.apache.james.core.builder.MimeMessageBuilder;
 import org.apache.james.transport.mailets.redirect.RedirectNotify;
 import org.apache.james.transport.mailets.redirect.SpecialAddress;
 import org.apache.mailet.base.test.FakeMail;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableList;
 
@@ -41,7 +41,7 @@ public class TosUtilsTest {
     private RedirectNotify mailet;
     private TosUtils testee;
 
-    @Before
+    @BeforeEach
     public void setup() {
         mailet = mock(RedirectNotify.class);
         testee = TosUtils.from(mailet);

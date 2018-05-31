@@ -44,8 +44,8 @@ import org.apache.mailet.Mail;
 import org.apache.mailet.base.MailAddressFixture;
 import org.apache.mailet.base.test.FakeMail;
 import org.apache.mailet.base.test.FakeMailetConfig;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.github.steveash.guavate.Guavate;
 import com.google.common.collect.ImmutableList;
@@ -98,7 +98,7 @@ public class RemoteDeliveryTest {
     private RemoteDelivery remoteDelivery;
     private ManageableMailQueue mailQueue;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         MailQueueFactory<ManageableMailQueue> queueFactory = new MemoryMailQueueFactory(new RawMailQueueItemDecoratorFactory());
         mailQueue = queueFactory.createQueue(RemoteDeliveryConfiguration.OUTGOING);

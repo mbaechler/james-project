@@ -25,14 +25,14 @@ import java.util.Collection;
 import org.apache.james.core.MailAddress;
 import org.apache.mailet.PerRecipientHeaders;
 import org.apache.mailet.base.test.FakeMail;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class IsMarkedAsSpamTest {
 
     private IsMarkedAsSpam matcher;
 
-    @Before
+    @BeforeEach
     public void setup() {
         matcher = new IsMarkedAsSpam();
     }

@@ -22,7 +22,7 @@ package org.apache.james.transport.mailets.delivery;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.apache.mailet.base.MailAddressFixture;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class DeliveryUtilsTest {
 

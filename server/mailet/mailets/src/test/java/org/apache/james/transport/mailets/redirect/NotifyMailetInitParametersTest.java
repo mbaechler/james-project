@@ -28,14 +28,14 @@ import javax.mail.MessagingException;
 import org.apache.mailet.Mail;
 import org.apache.mailet.base.GenericMailet;
 import org.apache.mailet.base.test.FakeMailetConfig;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class NotifyMailetInitParametersTest {
 
     private GenericMailet mailet;
 
-    @Before
+    @BeforeEach
     public void setup() {
         mailet = new GenericMailet() {
             

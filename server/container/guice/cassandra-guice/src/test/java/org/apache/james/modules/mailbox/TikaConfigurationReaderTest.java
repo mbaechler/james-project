@@ -26,7 +26,7 @@ import java.time.Duration;
 
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.james.mailbox.tika.TikaConfiguration;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class TikaConfigurationReaderTest {
 

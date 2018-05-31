@@ -30,8 +30,9 @@ import javax.naming.Context;
 import org.apache.james.util.retry.api.ExceptionRetryingProxy;
 import org.apache.james.util.retry.api.RetryHandler;
 import org.apache.james.util.retry.api.RetrySchedule;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ExceptionRetryHandlerTest {
     private static class TestRetryingProxy implements ExceptionRetryingProxy {
@@ -55,7 +56,7 @@ public class ExceptionRetryHandlerTest {
     private ExceptionRetryingProxy proxy = null;
     private RetrySchedule schedule = null;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         exceptionClasses = new Class<?>[]{Exception.class};
         proxy = new TestRetryingProxy();
@@ -64,7 +65,7 @@ public class ExceptionRetryHandlerTest {
 
     @Test
     public final void testExceptionRetryHandler() {
-        assertTrue(RetryHandler.class.isAssignableFrom(new ExceptionRetryHandler(
+        Assertions.assertTrue(RetryHandler.class.isAssignableFrom(new ExceptionRetryHandler(
             exceptionClasses, proxy, schedule, 0) {
 
             @Override
@@ -84,7 +85,7 @@ public class ExceptionRetryHandlerTest {
                 return "Hi!";
             }
         }.perform();
-        assertEquals("Hi!", result);
+        Assertions.assertEquals("Hi!", result);
 
         try {
             new ExceptionRetryHandler(
@@ -98,7 +99,7 @@ public class ExceptionRetryHandlerTest {
         } catch (Exception ex) {
             // no-op
         }
-        assertEquals("Hi!", result);
+        Assertions.assertEquals("Hi!", result);
     }
 
     @Test
@@ -123,7 +124,7 @@ public class ExceptionRetryHandlerTest {
         } catch (Exception ex) {
             // no-op
         }
-        assertEquals(7, results.size());
+        Assertions.assertEquals(7, results.size());
     }
 
     @Test
@@ -136,7 +137,7 @@ public class ExceptionRetryHandlerTest {
                 return "Hi!";
             }
         };
-        assertEquals("Hi!", handler.operation());
+        Assertions.assertEquals("Hi!", handler.operation());
     }
 
     @Test
@@ -149,6 +150,6 @@ public class ExceptionRetryHandlerTest {
                 return null;
             }
         };
-        assertEquals(8, handler.getRetryInterval(8));
+        Assertions.assertEquals(8, handler.getRetryInterval(8));
     }
 }

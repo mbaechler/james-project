@@ -41,7 +41,8 @@ import org.apache.james.protocols.smtp.utils.BaseFakeSMTPSession;
 import org.apache.james.smtpserver.fastfail.URIRBLHandler;
 import org.apache.mailet.Mail;
 import org.apache.mailet.base.test.FakeMail;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class URIRBLHandlerTest {
 
@@ -170,7 +171,7 @@ public class URIRBLHandlerTest {
         handler.setUriRblServer(servers);
         HookResult response = handler.onMessage(session, mockedMail);
 
-        assertEquals("Email was not rejected", response.getResult(), HookReturnCode.declined());
+        Assertions.assertEquals(response.getResult(), HookReturnCode.declined(), "Email was not rejected");
     }
 
     @Test
@@ -188,7 +189,7 @@ public class URIRBLHandlerTest {
         handler.setUriRblServer(servers);
         HookResult response = handler.onMessage(session, mockedMail);
 
-        assertEquals("Email was rejected", response.getResult(), HookReturnCode.deny());
+        Assertions.assertEquals(response.getResult(), HookReturnCode.deny(), "Email was rejected");
     }
 
     @Test
@@ -206,7 +207,7 @@ public class URIRBLHandlerTest {
         handler.setUriRblServer(servers);
         HookResult response = handler.onMessage(session, mockedMail);
 
-        assertEquals("Email was rejected", response.getResult(), HookReturnCode.deny());
+        Assertions.assertEquals(response.getResult(), HookReturnCode.deny(), "Email was rejected");
     }
 
     /*

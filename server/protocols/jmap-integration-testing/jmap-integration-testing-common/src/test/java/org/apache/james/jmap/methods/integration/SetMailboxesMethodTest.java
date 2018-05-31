@@ -62,9 +62,9 @@ import org.apache.james.probe.DataProbe;
 import org.apache.james.utils.DataProbeImpl;
 import org.apache.james.utils.JmapGuiceProbe;
 import org.hamcrest.Matchers;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -88,7 +88,7 @@ public abstract class SetMailboxesMethodTest {
     private MailboxProbe mailboxProbe;
     private MailboxId inboxId;
 
-    @Before
+    @BeforeEach
     public void setup() throws Throwable {
         jmapServer = createJmapServer();
         jmapServer.start();
@@ -110,7 +110,7 @@ public abstract class SetMailboxesMethodTest {
         await();
     }
 
-    @After
+    @AfterEach
     public void teardown() {
         jmapServer.stop();
     }

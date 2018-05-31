@@ -41,9 +41,9 @@ import org.apache.james.jmap.api.vacation.VacationPatch;
 import org.apache.james.util.ValuePatch;
 import org.apache.james.utils.DataProbeImpl;
 import org.apache.james.utils.JmapGuiceProbe;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.http.ContentType;
@@ -62,7 +62,7 @@ public abstract class SetVacationResponseTest {
     private AccessToken accessToken;
     private GuiceJamesServer jmapServer;
 
-    @Before
+    @BeforeEach
     public void setup() throws Throwable {
         jmapServer = createJmapServer();
         jmapServer.start();
@@ -78,7 +78,7 @@ public abstract class SetVacationResponseTest {
         await();
     }
 
-    @After
+    @AfterEach
     public void teardown() {
         jmapServer.stop();
     }

@@ -31,15 +31,15 @@ import org.apache.james.rrt.api.RecipientRewriteTable;
 import org.apache.james.rrt.lib.MappingSource;
 import org.apache.james.rrt.memory.MemoryRecipientRewriteTable;
 import org.apache.mailet.base.test.FakeMail;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class IsSenderInRRTLoopTest {
 
     private RecipientRewriteTable recipientRewriteTable;
     private IsSenderInRRTLoop testee;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         recipientRewriteTable = new MemoryRecipientRewriteTable();
         testee = new IsSenderInRRTLoop(recipientRewriteTable);

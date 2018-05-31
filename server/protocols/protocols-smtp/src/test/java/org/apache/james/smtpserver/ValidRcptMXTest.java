@@ -29,7 +29,8 @@ import org.apache.james.protocols.smtp.SMTPSession;
 import org.apache.james.protocols.smtp.hook.HookReturnCode;
 import org.apache.james.protocols.smtp.utils.BaseFakeSMTPSession;
 import org.apache.james.smtpserver.fastfail.ValidRcptMX;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 
 public class ValidRcptMXTest {
@@ -84,6 +85,6 @@ public class ValidRcptMXTest {
         handler.setBannedNetworks(ImmutableList.of(bannedAddress), dns);
         HookReturnCode rCode = handler.doRcpt(session, null, mailAddress).getResult();
 
-        assertEquals("Reject", rCode, HookReturnCode.deny());
+        Assertions.assertEquals(rCode, HookReturnCode.deny(), "Reject");
     }
 }

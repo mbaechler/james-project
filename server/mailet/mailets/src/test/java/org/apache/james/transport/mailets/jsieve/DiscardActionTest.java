@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
 
 import org.apache.mailet.base.MailAddressFixture;
 import org.apache.mailet.base.test.FakeMail;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class DiscardActionTest {
 

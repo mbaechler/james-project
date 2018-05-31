@@ -32,15 +32,13 @@ import javax.mail.MessagingException;
 import javax.mail.SendFailedException;
 
 import org.apache.james.domainlist.api.DomainList;
-import org.apache.james.transport.mailets.remote.delivery.Bouncer;
-import org.apache.james.transport.mailets.remote.delivery.RemoteDeliveryConfiguration;
 import org.apache.mailet.Mail;
 import org.apache.mailet.base.MailAddressFixture;
 import org.apache.mailet.base.test.FakeMail;
 import org.apache.mailet.base.test.FakeMailContext;
 import org.apache.mailet.base.test.FakeMailetConfig;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class BouncerTest {
     public static final String HELLO_NAME = "hello_name";
@@ -48,7 +46,7 @@ public class BouncerTest {
 
     private FakeMailContext mailetContext;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         mailetContext = FakeMailContext.defaultContext();
     }

@@ -12,8 +12,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.james.filesystem.api.FileSystem;
 import org.apache.james.sieverepository.api.SieveRepository;
 import org.apache.james.sieverepository.lib.AbstractSieveRepositoryTest;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 public class SieveFileRepositoryTest extends AbstractSieveRepositoryTest {
 
@@ -22,7 +22,7 @@ public class SieveFileRepositoryTest extends AbstractSieveRepositoryTest {
     private FileSystem fileSystem;
 
     @Override
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         this.fileSystem = new FileSystem() {
             @Override
@@ -48,7 +48,7 @@ public class SieveFileRepositoryTest extends AbstractSieveRepositoryTest {
         return new SieveFileRepository(fileSystem);
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         File root = fileSystem.getFile(SIEVE_ROOT);
         // Remove files from the previous test, if any

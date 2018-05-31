@@ -45,8 +45,8 @@ import org.apache.mailet.Mail;
 import org.apache.mailet.base.test.FakeMail;
 import org.apache.mailet.base.test.FakeMailContext;
 import org.apache.mailet.base.test.FakeMailetConfig;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
 public class LocalDeliveryTest {
@@ -58,7 +58,7 @@ public class LocalDeliveryTest {
     private FakeMailetConfig config;
     private LocalDelivery testee;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         usersRepository = mock(UsersRepository.class);
         mailboxManager = mock(MailboxManager.class);

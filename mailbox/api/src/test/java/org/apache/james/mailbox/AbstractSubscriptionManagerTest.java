@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.apache.james.mailbox.exception.SubscriptionException;
 import org.apache.james.mailbox.mock.MockMailboxSession;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Abstract base class to test {@link SubscriptionManager} implementations

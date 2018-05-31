@@ -21,9 +21,8 @@ package org.apache.james.transport.mailets.remote.delivery;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.apache.james.transport.mailets.remote.delivery.DeliveryRetriesHelper;
 import org.apache.mailet.base.test.FakeMail;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class DeliveryRetryHelperTest {
 

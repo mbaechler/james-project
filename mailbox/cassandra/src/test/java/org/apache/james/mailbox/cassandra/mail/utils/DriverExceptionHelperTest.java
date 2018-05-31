@@ -27,7 +27,7 @@ import java.util.concurrent.CompletionException;
 
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.exception.TooLongMailboxNameException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.datastax.driver.core.exceptions.InvalidQueryException;
 

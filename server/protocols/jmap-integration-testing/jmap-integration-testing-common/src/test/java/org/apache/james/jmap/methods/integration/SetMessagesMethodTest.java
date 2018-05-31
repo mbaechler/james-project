@@ -114,10 +114,10 @@ import org.apache.mailet.Mail;
 import org.apache.mailet.base.test.FakeMail;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -150,7 +150,7 @@ public abstract class SetMessagesMethodTest {
     private MessageIdProbe messageProbe;
     private ACLProbe aclProbe;
 
-    @Before
+    @BeforeEach
     public void setup() throws Throwable {
         jmapServer = createJmapServer();
         jmapServer.start();
@@ -182,7 +182,7 @@ public abstract class SetMessagesMethodTest {
         await();
     }
 
-    @After
+    @AfterEach
     public void teardown() {
         jmapServer.stop();
     }
@@ -838,7 +838,7 @@ public abstract class SetMessagesMethodTest {
     }
 
     @Test
-    @Ignore("Jackson json deserializer stops after first error found")
+    @Disabled("Jackson json deserializer stops after first error found")
     public void setMessagesShouldRejectUpdateWhenPropertiesHaveWrongTypes() throws MailboxException {
         mailboxProbe.createMailbox(MailboxConstants.USER_NAMESPACE, USERNAME, "mailbox");
         mailboxProbe.appendMessage(USERNAME, USER_MAILBOX,

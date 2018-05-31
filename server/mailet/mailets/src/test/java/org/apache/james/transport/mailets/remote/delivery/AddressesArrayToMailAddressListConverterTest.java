@@ -24,9 +24,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import javax.mail.Address;
 import javax.mail.internet.InternetAddress;
 
-import org.apache.james.transport.mailets.remote.delivery.AddressesArrayToMailAddressListConverter;
 import org.apache.mailet.base.MailAddressFixture;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class AddressesArrayToMailAddressListConverterTest {
 

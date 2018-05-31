@@ -35,21 +35,21 @@ import org.apache.james.util.MimeMessageUtil;
 import org.apache.mailet.Mail;
 import org.apache.mailet.base.test.FakeMail;
 import org.joda.time.DateTime;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class NotifyMailetsMessageTest {
 
     private TimeZone timeZone;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         timeZone = TimeZone.getDefault();
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         TimeZone.setDefault(timeZone);
     }

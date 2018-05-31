@@ -25,7 +25,7 @@ import java.util.Optional;
 import org.apache.james.core.MailAddress;
 import org.apache.james.transport.mailets.redirect.SpecialAddress;
 import org.apache.mailet.base.test.FakeMail;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ReplyToUtilsTest {
 

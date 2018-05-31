@@ -37,8 +37,8 @@ import org.apache.james.rrt.memory.MemoryRecipientRewriteTable;
 import org.apache.james.smtpserver.fastfail.ValidRcptHandler;
 import org.apache.james.user.api.UsersRepository;
 import org.apache.james.user.memory.MemoryUsersRepository;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ValidRcptHandlerTest {
     private static final String VALID_USER = "postmaster";
@@ -54,7 +54,7 @@ public class ValidRcptHandlerTest {
     private MailAddress user1mail;
     private MailAddress invalidUserEmail;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         UsersRepository users = MemoryUsersRepository.withoutVirtualHosting();
         users.addUser(VALID_USER, PASSWORD);

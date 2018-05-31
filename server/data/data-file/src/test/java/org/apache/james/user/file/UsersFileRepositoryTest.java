@@ -33,10 +33,10 @@ import org.apache.james.lifecycle.api.LifecycleUtil;
 import org.apache.james.user.api.UsersRepositoryException;
 import org.apache.james.user.lib.AbstractUsersRepository;
 import org.apache.james.user.lib.AbstractUsersRepositoryTest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test basic behaviors of UsersFileRepository
@@ -46,7 +46,7 @@ public class UsersFileRepositoryTest extends AbstractUsersRepositoryTest {
     private static final String TARGET_REPOSITORY_FOLDER = "target/var/users";
     private File targetRepositoryFolder;
 
-    @Before
+    @BeforeEach
     @Override
     public void setUp() throws Exception {
         super.setUp();
@@ -55,7 +55,7 @@ public class UsersFileRepositoryTest extends AbstractUsersRepositoryTest {
     }
 
     @Override
-    @After
+    @AfterEach
     public void tearDown() throws IOException {
         FileUtils.forceDelete(targetRepositoryFolder);
     }
@@ -96,7 +96,7 @@ public class UsersFileRepositoryTest extends AbstractUsersRepositoryTest {
     }
     
     @Override
-    @Ignore
+    @Disabled
     @Test
     public void addUserShouldThrowWhenSameUsernameWithDifferentCase() throws UsersRepositoryException {
     }
@@ -112,7 +112,7 @@ public class UsersFileRepositoryTest extends AbstractUsersRepositoryTest {
         }
     }
 
-    @Ignore
+    @Disabled
     @Override
     public void testShouldReturnTrueWhenAUserHasACorrectPasswordAndOtherCaseInDomain() throws Exception {
     }

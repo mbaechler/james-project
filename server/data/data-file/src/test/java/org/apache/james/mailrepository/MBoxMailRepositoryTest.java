@@ -28,7 +28,8 @@ import org.apache.commons.configuration.DefaultConfigurationBuilder;
 import org.apache.james.filesystem.api.mock.MockFileSystem;
 import org.apache.james.mailrepository.api.MailRepository;
 import org.apache.james.mailrepository.file.MBoxMailRepository;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * NOTE this test *WAS* disabled because MBoxMailRepository does not currently
@@ -69,13 +70,13 @@ public class MBoxMailRepositoryTest {
 
         Iterator<String> keys = mr.list();
 
-        assertTrue("Two messages in list", keys.hasNext());
+        Assertions.assertTrue(keys.hasNext(), "Two messages in list");
         keys.next();
 
-        assertTrue("One messages in list", keys.hasNext());
+        Assertions.assertTrue(keys.hasNext(), "One messages in list");
         keys.next();
 
-        assertFalse("No messages", keys.hasNext());
+        Assertions.assertFalse(keys.hasNext(), "No messages");
     }
 
     /*

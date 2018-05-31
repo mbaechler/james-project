@@ -22,7 +22,7 @@ package org.apache.james.utils;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.apache.commons.net.imap.IMAPClient;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class IMAPMessageReaderTest {
     private static final IMAPClient NULL_IMAP_CLIENT = null;

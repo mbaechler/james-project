@@ -34,7 +34,8 @@ import org.apache.james.dnsservice.api.mock.MockDNSService;
 import org.apache.mailet.Mail;
 import org.apache.mailet.base.test.FakeMail;
 import org.apache.mailet.base.test.FakeMatcherConfig;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class InSpammerBlacklistTest {
 
@@ -82,8 +83,8 @@ public class InSpammerBlacklistTest {
 
         Collection<MailAddress> matchedRecipients = matcher.match(mail);
 
-        assertNotNull(matchedRecipients);
-        assertEquals(matchedRecipients.size(), mail.getRecipients().size());
+        Assertions.assertNotNull(matchedRecipients);
+        Assertions.assertEquals(matchedRecipients.size(), mail.getRecipients().size());
     }
 
     @Test
@@ -93,6 +94,6 @@ public class InSpammerBlacklistTest {
 
         Collection<MailAddress> matchedRecipients = matcher.match(mail);
 
-        assertNull(matchedRecipients);
+        Assertions.assertNull(matchedRecipients);
     }
 }

@@ -72,9 +72,9 @@ import org.apache.james.util.ClassLoaderUtils;
 import org.apache.james.util.date.ImapDateTimeFormatter;
 import org.apache.james.utils.DataProbeImpl;
 import org.apache.james.utils.JmapGuiceProbe;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.jayway.restassured.RestAssured;
 
@@ -94,7 +94,7 @@ public abstract class GetMessageListMethodTest {
     private MailboxProbeImpl mailboxProbe;
     private DataProbe dataProbe;
     
-    @Before
+    @BeforeEach
     public void setup() throws Throwable {
         jmapServer = createJmapServer();
         jmapServer.start();
@@ -113,7 +113,7 @@ public abstract class GetMessageListMethodTest {
         this.bobAccessToken = authenticateJamesUser(baseUri(jmapServer), BOB, BOB_PASSWORD);
     }
 
-    @After
+    @AfterEach
     public void teardown() {
         jmapServer.stop();
     }

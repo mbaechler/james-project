@@ -44,9 +44,9 @@ import org.apache.james.probe.DataProbe;
 import org.apache.james.util.date.ZonedDateTimeProvider;
 import org.apache.james.utils.DataProbeImpl;
 import org.apache.james.utils.JmapGuiceProbe;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.http.ContentType;
@@ -66,7 +66,7 @@ public abstract class GetVacationResponseTest {
     private GuiceJamesServer jmapServer;
     private FixedDateZonedDateTimeProvider fixedDateZonedDateTimeProvider;
 
-    @Before
+    @BeforeEach
     public void setup() throws Throwable {
         fixedDateZonedDateTimeProvider = new FixedDateZonedDateTimeProvider();
         fixedDateZonedDateTimeProvider.setFixedDateTime(DATE_2015);
@@ -87,7 +87,7 @@ public abstract class GetVacationResponseTest {
         await();
     }
 
-    @After
+    @AfterEach
     public void teardown() {
         jmapServer.stop();
     }

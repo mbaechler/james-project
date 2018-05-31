@@ -26,7 +26,7 @@ import org.apache.james.mailbox.exception.UnsupportedRightException;
 import org.apache.james.mailbox.model.MailboxACL.EntryKey;
 import org.apache.james.mailbox.model.MailboxACL.NameType;
 import org.apache.james.mailbox.model.MailboxACL.SpecialName;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Peter Palaga

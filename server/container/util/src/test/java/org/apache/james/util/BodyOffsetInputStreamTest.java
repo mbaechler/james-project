@@ -23,7 +23,8 @@ import static org.junit.Assert.assertEquals;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class BodyOffsetInputStreamTest {
     private String mail = "Subject: test\r\n\r\nbody";
@@ -37,8 +38,8 @@ public class BodyOffsetInputStreamTest {
         while (in.read() != -1) {
             // consume stream
         }
-        assertEquals(expectedOffset, in.getBodyStartOffset());
-        assertEquals(bytes, in.getReadBytes());
+        Assertions.assertEquals(expectedOffset, in.getBodyStartOffset());
+        Assertions.assertEquals(bytes, in.getReadBytes());
         in.close();
     }
     
@@ -51,8 +52,8 @@ public class BodyOffsetInputStreamTest {
         while (in.read(b) != -1) {
             // consume stream
         }
-        assertEquals(expectedOffset, in.getBodyStartOffset());
-        assertEquals(bytes, in.getReadBytes());
+        Assertions.assertEquals(expectedOffset, in.getBodyStartOffset());
+        Assertions.assertEquals(bytes, in.getReadBytes());
         in.close();
     }
     
@@ -65,8 +66,8 @@ public class BodyOffsetInputStreamTest {
         while (in.read(b) != -1) {
             // consume stream
         }
-        assertEquals(expectedOffset, in.getBodyStartOffset());
-        assertEquals(bytes, in.getReadBytes());
+        Assertions.assertEquals(expectedOffset, in.getBodyStartOffset());
+        Assertions.assertEquals(bytes, in.getReadBytes());
         in.close();
     }
 }

@@ -49,9 +49,9 @@ import org.apache.james.modules.QuotaProbesImpl;
 import org.apache.james.probe.DataProbe;
 import org.apache.james.utils.DataProbeImpl;
 import org.apache.james.utils.JmapGuiceProbe;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.base.Strings;
 import com.jayway.restassured.RestAssured;
@@ -69,7 +69,7 @@ public abstract class QuotaMailingTest {
     private AccessToken bartAccessToken;
     private GuiceJamesServer jmapServer;
 
-    @Before
+    @BeforeEach
     public void setup() throws Throwable {
         jmapServer = createJmapServer();
         jmapServer.start();
@@ -89,7 +89,7 @@ public abstract class QuotaMailingTest {
         bartAccessToken = authenticateJamesUser(baseUri(jmapServer), BART, BOB_PASSWORD);
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         jmapServer.stop();
     }

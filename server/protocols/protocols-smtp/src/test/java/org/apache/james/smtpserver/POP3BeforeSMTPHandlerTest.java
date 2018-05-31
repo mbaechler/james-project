@@ -26,7 +26,8 @@ import java.net.InetSocketAddress;
 import org.apache.james.protocols.lib.POP3BeforeSMTPHelper;
 import org.apache.james.protocols.smtp.SMTPSession;
 import org.apache.james.protocols.smtp.utils.BaseFakeSMTPSession;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class POP3BeforeSMTPHandlerTest {
 
@@ -66,9 +67,9 @@ public class POP3BeforeSMTPHandlerTest {
         setupMockedSMTPSession();
         POP3BeforeSMTPHelper.addIPAddress("192.168.200.1");
 
-        assertFalse(mockedSession.isRelayingAllowed());
+        Assertions.assertFalse(mockedSession.isRelayingAllowed());
         handler.onConnect(mockedSession);
-        assertTrue(mockedSession.isRelayingAllowed());
+        Assertions.assertTrue(mockedSession.isRelayingAllowed());
     }
 
     @Test
@@ -78,13 +79,13 @@ public class POP3BeforeSMTPHandlerTest {
 
         setupMockedSMTPSession();
         POP3BeforeSMTPHelper.addIPAddress("192.168.200.1");
-        assertFalse(mockedSession.isRelayingAllowed());
+        Assertions.assertFalse(mockedSession.isRelayingAllowed());
 
         try {
             Thread.sleep(sleepTime);
             POP3BeforeSMTPHelper.removeExpiredIP(10);
             handler.onConnect(mockedSession);
-            assertFalse(mockedSession.isRelayingAllowed());
+            Assertions.assertFalse(mockedSession.isRelayingAllowed());
 
         } catch (InterruptedException e) {
             // ignore
@@ -103,7 +104,7 @@ public class POP3BeforeSMTPHandlerTest {
         } catch (NumberFormatException e) {
             exception = true;
         }
-        assertTrue(exception);
+        Assertions.assertTrue(exception);
     }
 
     @Test
@@ -118,6 +119,6 @@ public class POP3BeforeSMTPHandlerTest {
         } catch (NumberFormatException e) {
             exception = true;
         }
-        assertFalse(exception);
+        Assertions.assertFalse(exception);
     }
 }

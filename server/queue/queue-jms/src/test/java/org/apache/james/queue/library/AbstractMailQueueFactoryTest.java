@@ -31,8 +31,8 @@ import javax.management.ObjectName;
 
 import org.apache.james.queue.api.MailQueue;
 import org.apache.james.queue.api.ManageableMailQueue;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class AbstractMailQueueFactoryTest {
     private static final String QUEUE_1 = "queue1";
@@ -42,7 +42,7 @@ public class AbstractMailQueueFactoryTest {
     private AbstractMailQueueFactory<?> abstractMailQueueFactory;
     private MBeanServer mBeanServer;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         mBeanServer = mock(MBeanServer.class);
         abstractMailQueueFactory = new AbstractMailQueueFactory<ManageableMailQueue>() {

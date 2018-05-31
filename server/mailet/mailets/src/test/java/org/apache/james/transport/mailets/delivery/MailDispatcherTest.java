@@ -42,8 +42,8 @@ import org.apache.mailet.base.MailAddressFixture;
 import org.apache.mailet.base.RFC2822Headers;
 import org.apache.mailet.base.test.FakeMail;
 import org.apache.mailet.base.test.FakeMailContext;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import com.google.common.collect.ArrayListMultimap;
@@ -58,7 +58,7 @@ public class MailDispatcherTest {
     private FakeMailContext fakeMailContext;
     private MailStore mailStore;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         fakeMailContext = FakeMailContext.defaultContext();
         mailStore = mock(MailStore.class);

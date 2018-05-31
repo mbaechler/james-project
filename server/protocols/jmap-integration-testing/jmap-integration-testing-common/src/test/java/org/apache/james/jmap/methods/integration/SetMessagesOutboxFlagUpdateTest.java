@@ -51,9 +51,9 @@ import org.apache.james.queue.api.MailQueueFactory;
 import org.apache.james.utils.DataProbeImpl;
 import org.apache.james.utils.JmapGuiceProbe;
 import org.apache.mailet.Mail;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.builder.RequestSpecBuilder;
@@ -112,7 +112,7 @@ public abstract class SetMessagesOutboxFlagUpdateTest {
         }
     };
 
-    @Before
+    @BeforeEach
     public void setup() throws Throwable {
         jmapServer = createJmapServer();
         jmapServer.start();
@@ -135,7 +135,7 @@ public abstract class SetMessagesOutboxFlagUpdateTest {
         accessToken = HttpJmapAuthentication.authenticateJamesUser(baseUri(jmapServer), USERNAME, PASSWORD);
     }
 
-    @After
+    @AfterEach
     public void teardown() {
         jmapServer.stop();
     }

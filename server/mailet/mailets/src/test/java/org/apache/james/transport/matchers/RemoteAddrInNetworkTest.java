@@ -29,15 +29,15 @@ import org.apache.james.dnsservice.api.DNSService;
 import org.apache.james.dnsservice.api.InMemoryDNSService;
 import org.apache.mailet.base.test.FakeMail;
 import org.apache.mailet.base.test.FakeMatcherConfig;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class RemoteAddrInNetworkTest {
     private RemoteAddrInNetwork matcher;
     private FakeMail fakeMail;
     private MailAddress testRecipient;
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         DNSService dnsServer = new InMemoryDNSService()
             .registerMxRecord("192.168.0.1", "192.168.0.1")

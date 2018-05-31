@@ -33,9 +33,9 @@ import org.apache.james.queue.api.MailQueue;
 import org.apache.james.queue.api.MailQueueFactory;
 import org.apache.james.transport.mailets.RemoteDelivery;
 import org.apache.mailet.base.test.FakeMailetConfig;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class RemoteDeliveryRunningTest {
 
@@ -44,7 +44,7 @@ public class RemoteDeliveryRunningTest {
     private MailQueue mailQueue;
     private CountDownLatch countDownLatch;
 
-    @Before
+    @BeforeEach
     @SuppressWarnings("unchecked")
     public void setUp() throws Exception {
         countDownLatch = new CountDownLatch(1);
@@ -73,7 +73,7 @@ public class RemoteDeliveryRunningTest {
         verify(mailQueue).deQueue();
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws InterruptedException {
         remoteDelivery.destroy();
     }

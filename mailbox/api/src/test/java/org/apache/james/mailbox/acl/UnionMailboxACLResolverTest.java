@@ -28,9 +28,9 @@ import org.apache.james.mailbox.model.MailboxACL.Entry;
 import org.apache.james.mailbox.model.MailboxACL.EntryKey;
 import org.apache.james.mailbox.model.MailboxACL.NameType;
 import org.apache.james.mailbox.model.MailboxACL.Rfc4314Rights;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Peter Palaga
@@ -64,7 +64,7 @@ public class UnionMailboxACLResolverTest {
     private EntryKey group1Key;
     private EntryKey group2Key;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         user1Key = EntryKey.createUserEntryKey(USER_1);
         user2Key = EntryKey.createUserEntryKey(USER_2);
@@ -105,61 +105,61 @@ public class UnionMailboxACLResolverTest {
     @Test
     public void testAppliesNullUser() throws UnsupportedRightException {
 
-        Assert.assertFalse(UnionMailboxACLResolver.applies(user1Key, null, groupMembershipResolver, USER_1, false));
-        Assert.assertFalse(UnionMailboxACLResolver.applies(user2Key, null, groupMembershipResolver, USER_1, false));
-        Assert.assertFalse(UnionMailboxACLResolver.applies(group1Key, null, groupMembershipResolver, USER_1, false));
-        Assert.assertFalse(UnionMailboxACLResolver.applies(group2Key, null, groupMembershipResolver, USER_1, false));
-        Assert.assertTrue(UnionMailboxACLResolver.applies(MailboxACL.ANYBODY_KEY, null, groupMembershipResolver, USER_1, false));
-        Assert.assertFalse(UnionMailboxACLResolver.applies(MailboxACL.AUTHENTICATED_KEY, null, groupMembershipResolver, USER_1, false));
-        Assert.assertFalse(UnionMailboxACLResolver.applies(MailboxACL.OWNER_KEY, null, groupMembershipResolver, USER_1, false));
+        Assertions.assertFalse(UnionMailboxACLResolver.applies(user1Key, null, groupMembershipResolver, USER_1, false));
+        Assertions.assertFalse(UnionMailboxACLResolver.applies(user2Key, null, groupMembershipResolver, USER_1, false));
+        Assertions.assertFalse(UnionMailboxACLResolver.applies(group1Key, null, groupMembershipResolver, USER_1, false));
+        Assertions.assertFalse(UnionMailboxACLResolver.applies(group2Key, null, groupMembershipResolver, USER_1, false));
+        Assertions.assertTrue(UnionMailboxACLResolver.applies(MailboxACL.ANYBODY_KEY, null, groupMembershipResolver, USER_1, false));
+        Assertions.assertFalse(UnionMailboxACLResolver.applies(MailboxACL.AUTHENTICATED_KEY, null, groupMembershipResolver, USER_1, false));
+        Assertions.assertFalse(UnionMailboxACLResolver.applies(MailboxACL.OWNER_KEY, null, groupMembershipResolver, USER_1, false));
     }
 
     @Test
     public void testAppliesUser() throws UnsupportedRightException {
         /* requester is the resource owner */
-        Assert.assertTrue(UnionMailboxACLResolver.applies(user1Key, user1Key, groupMembershipResolver, USER_1, false));
-        Assert.assertFalse(UnionMailboxACLResolver.applies(user2Key, user1Key, groupMembershipResolver, USER_1, false));
-        Assert.assertTrue(UnionMailboxACLResolver.applies(group1Key, user1Key, groupMembershipResolver, USER_1, false));
-        Assert.assertFalse(UnionMailboxACLResolver.applies(group2Key, user1Key, groupMembershipResolver, USER_1, false));
-        Assert.assertTrue(UnionMailboxACLResolver.applies(MailboxACL.ANYBODY_KEY, user1Key, groupMembershipResolver, USER_1, false));
-        Assert.assertTrue(UnionMailboxACLResolver.applies(MailboxACL.AUTHENTICATED_KEY, user1Key, groupMembershipResolver, USER_1, false));
-        Assert.assertTrue(UnionMailboxACLResolver.applies(MailboxACL.OWNER_KEY, user1Key, groupMembershipResolver, USER_1, false));
+        Assertions.assertTrue(UnionMailboxACLResolver.applies(user1Key, user1Key, groupMembershipResolver, USER_1, false));
+        Assertions.assertFalse(UnionMailboxACLResolver.applies(user2Key, user1Key, groupMembershipResolver, USER_1, false));
+        Assertions.assertTrue(UnionMailboxACLResolver.applies(group1Key, user1Key, groupMembershipResolver, USER_1, false));
+        Assertions.assertFalse(UnionMailboxACLResolver.applies(group2Key, user1Key, groupMembershipResolver, USER_1, false));
+        Assertions.assertTrue(UnionMailboxACLResolver.applies(MailboxACL.ANYBODY_KEY, user1Key, groupMembershipResolver, USER_1, false));
+        Assertions.assertTrue(UnionMailboxACLResolver.applies(MailboxACL.AUTHENTICATED_KEY, user1Key, groupMembershipResolver, USER_1, false));
+        Assertions.assertTrue(UnionMailboxACLResolver.applies(MailboxACL.OWNER_KEY, user1Key, groupMembershipResolver, USER_1, false));
 
         /* requester is not the resource user */
-        Assert.assertTrue(UnionMailboxACLResolver.applies(user1Key, user1Key, groupMembershipResolver, USER_2, false));
-        Assert.assertFalse(UnionMailboxACLResolver.applies(user2Key, user1Key, groupMembershipResolver, USER_2, false));
-        Assert.assertTrue(UnionMailboxACLResolver.applies(group1Key, user1Key, groupMembershipResolver, USER_2, false));
-        Assert.assertFalse(UnionMailboxACLResolver.applies(group2Key, user1Key, groupMembershipResolver, USER_2, false));
-        Assert.assertTrue(UnionMailboxACLResolver.applies(MailboxACL.ANYBODY_KEY, user1Key, groupMembershipResolver, USER_2, false));
-        Assert.assertTrue(UnionMailboxACLResolver.applies(MailboxACL.AUTHENTICATED_KEY, user1Key, groupMembershipResolver, USER_2, false));
-        Assert.assertFalse(UnionMailboxACLResolver.applies(MailboxACL.OWNER_KEY, user1Key, groupMembershipResolver, USER_2, false));
+        Assertions.assertTrue(UnionMailboxACLResolver.applies(user1Key, user1Key, groupMembershipResolver, USER_2, false));
+        Assertions.assertFalse(UnionMailboxACLResolver.applies(user2Key, user1Key, groupMembershipResolver, USER_2, false));
+        Assertions.assertTrue(UnionMailboxACLResolver.applies(group1Key, user1Key, groupMembershipResolver, USER_2, false));
+        Assertions.assertFalse(UnionMailboxACLResolver.applies(group2Key, user1Key, groupMembershipResolver, USER_2, false));
+        Assertions.assertTrue(UnionMailboxACLResolver.applies(MailboxACL.ANYBODY_KEY, user1Key, groupMembershipResolver, USER_2, false));
+        Assertions.assertTrue(UnionMailboxACLResolver.applies(MailboxACL.AUTHENTICATED_KEY, user1Key, groupMembershipResolver, USER_2, false));
+        Assertions.assertFalse(UnionMailboxACLResolver.applies(MailboxACL.OWNER_KEY, user1Key, groupMembershipResolver, USER_2, false));
 
         /* requester member of owner group */
-        Assert.assertTrue(UnionMailboxACLResolver.applies(user1Key, user1Key, groupMembershipResolver, GROUP_1, true));
-        Assert.assertFalse(UnionMailboxACLResolver.applies(user2Key, user1Key, groupMembershipResolver, GROUP_1, true));
-        Assert.assertTrue(UnionMailboxACLResolver.applies(group1Key, user1Key, groupMembershipResolver, GROUP_1, true));
-        Assert.assertFalse(UnionMailboxACLResolver.applies(group2Key, user1Key, groupMembershipResolver, GROUP_1, true));
-        Assert.assertTrue(UnionMailboxACLResolver.applies(MailboxACL.ANYBODY_KEY, user1Key, groupMembershipResolver, GROUP_1, true));
-        Assert.assertTrue(UnionMailboxACLResolver.applies(MailboxACL.AUTHENTICATED_KEY, user1Key, groupMembershipResolver, GROUP_1, true));
-        Assert.assertTrue(UnionMailboxACLResolver.applies(MailboxACL.OWNER_KEY, user1Key, groupMembershipResolver, GROUP_1, true));
+        Assertions.assertTrue(UnionMailboxACLResolver.applies(user1Key, user1Key, groupMembershipResolver, GROUP_1, true));
+        Assertions.assertFalse(UnionMailboxACLResolver.applies(user2Key, user1Key, groupMembershipResolver, GROUP_1, true));
+        Assertions.assertTrue(UnionMailboxACLResolver.applies(group1Key, user1Key, groupMembershipResolver, GROUP_1, true));
+        Assertions.assertFalse(UnionMailboxACLResolver.applies(group2Key, user1Key, groupMembershipResolver, GROUP_1, true));
+        Assertions.assertTrue(UnionMailboxACLResolver.applies(MailboxACL.ANYBODY_KEY, user1Key, groupMembershipResolver, GROUP_1, true));
+        Assertions.assertTrue(UnionMailboxACLResolver.applies(MailboxACL.AUTHENTICATED_KEY, user1Key, groupMembershipResolver, GROUP_1, true));
+        Assertions.assertTrue(UnionMailboxACLResolver.applies(MailboxACL.OWNER_KEY, user1Key, groupMembershipResolver, GROUP_1, true));
 
         /* requester not member of owner group */
-        Assert.assertTrue(UnionMailboxACLResolver.applies(user1Key, user1Key, groupMembershipResolver, GROUP_2, true));
-        Assert.assertFalse(UnionMailboxACLResolver.applies(user2Key, user1Key, groupMembershipResolver, GROUP_2, true));
-        Assert.assertTrue(UnionMailboxACLResolver.applies(group1Key, user1Key, groupMembershipResolver, GROUP_2, true));
-        Assert.assertFalse(UnionMailboxACLResolver.applies(group2Key, user1Key, groupMembershipResolver, GROUP_2, true));
-        Assert.assertTrue(UnionMailboxACLResolver.applies(MailboxACL.ANYBODY_KEY, user1Key, groupMembershipResolver, GROUP_2, true));
-        Assert.assertTrue(UnionMailboxACLResolver.applies(MailboxACL.AUTHENTICATED_KEY, user1Key, groupMembershipResolver, GROUP_2, true));
-        Assert.assertFalse(UnionMailboxACLResolver.applies(MailboxACL.OWNER_KEY, user1Key, groupMembershipResolver, GROUP_2, true));
+        Assertions.assertTrue(UnionMailboxACLResolver.applies(user1Key, user1Key, groupMembershipResolver, GROUP_2, true));
+        Assertions.assertFalse(UnionMailboxACLResolver.applies(user2Key, user1Key, groupMembershipResolver, GROUP_2, true));
+        Assertions.assertTrue(UnionMailboxACLResolver.applies(group1Key, user1Key, groupMembershipResolver, GROUP_2, true));
+        Assertions.assertFalse(UnionMailboxACLResolver.applies(group2Key, user1Key, groupMembershipResolver, GROUP_2, true));
+        Assertions.assertTrue(UnionMailboxACLResolver.applies(MailboxACL.ANYBODY_KEY, user1Key, groupMembershipResolver, GROUP_2, true));
+        Assertions.assertTrue(UnionMailboxACLResolver.applies(MailboxACL.AUTHENTICATED_KEY, user1Key, groupMembershipResolver, GROUP_2, true));
+        Assertions.assertFalse(UnionMailboxACLResolver.applies(MailboxACL.OWNER_KEY, user1Key, groupMembershipResolver, GROUP_2, true));
 
         /* owner query */
-        Assert.assertFalse(UnionMailboxACLResolver.applies(user1Key, MailboxACL.OWNER_KEY, groupMembershipResolver, USER_1, false));
-        Assert.assertFalse(UnionMailboxACLResolver.applies(user2Key, MailboxACL.OWNER_KEY, groupMembershipResolver, USER_1, false));
-        Assert.assertFalse(UnionMailboxACLResolver.applies(group1Key, MailboxACL.OWNER_KEY, groupMembershipResolver, USER_1, false));
-        Assert.assertFalse(UnionMailboxACLResolver.applies(group2Key, MailboxACL.OWNER_KEY, groupMembershipResolver, USER_1, false));
-        Assert.assertTrue(UnionMailboxACLResolver.applies(MailboxACL.ANYBODY_KEY, MailboxACL.OWNER_KEY, groupMembershipResolver, USER_1, false));
-        Assert.assertTrue(UnionMailboxACLResolver.applies(MailboxACL.AUTHENTICATED_KEY, MailboxACL.OWNER_KEY, groupMembershipResolver, USER_1, false));
-        Assert.assertTrue(UnionMailboxACLResolver.applies(MailboxACL.OWNER_KEY, MailboxACL.OWNER_KEY, groupMembershipResolver, USER_1, false));
+        Assertions.assertFalse(UnionMailboxACLResolver.applies(user1Key, MailboxACL.OWNER_KEY, groupMembershipResolver, USER_1, false));
+        Assertions.assertFalse(UnionMailboxACLResolver.applies(user2Key, MailboxACL.OWNER_KEY, groupMembershipResolver, USER_1, false));
+        Assertions.assertFalse(UnionMailboxACLResolver.applies(group1Key, MailboxACL.OWNER_KEY, groupMembershipResolver, USER_1, false));
+        Assertions.assertFalse(UnionMailboxACLResolver.applies(group2Key, MailboxACL.OWNER_KEY, groupMembershipResolver, USER_1, false));
+        Assertions.assertTrue(UnionMailboxACLResolver.applies(MailboxACL.ANYBODY_KEY, MailboxACL.OWNER_KEY, groupMembershipResolver, USER_1, false));
+        Assertions.assertTrue(UnionMailboxACLResolver.applies(MailboxACL.AUTHENTICATED_KEY, MailboxACL.OWNER_KEY, groupMembershipResolver, USER_1, false));
+        Assertions.assertTrue(UnionMailboxACLResolver.applies(MailboxACL.OWNER_KEY, MailboxACL.OWNER_KEY, groupMembershipResolver, USER_1, false));
 
     }
 

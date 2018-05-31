@@ -27,14 +27,14 @@ import org.apache.james.queue.api.MailQueueFactory;
 import org.apache.james.queue.api.ManageableMailQueue;
 import org.apache.james.task.MemoryTaskManager;
 import org.apache.james.webadmin.utils.JsonTransformer;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class MailQueueRoutesUnitTest {
 
     MailQueueRoutes testee;
 
-    @Before
+    @BeforeEach
     public void setup() {
         MemoryTaskManager taskManager = new MemoryTaskManager();
         MailQueueFactory<ManageableMailQueue> mailQueueFactory = null;

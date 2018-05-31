@@ -22,7 +22,7 @@ package org.apache.james.transport.util;
 import static org.apache.james.transport.util.SizeUtils.humanReadableSize;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SizeUtilsTest {
 

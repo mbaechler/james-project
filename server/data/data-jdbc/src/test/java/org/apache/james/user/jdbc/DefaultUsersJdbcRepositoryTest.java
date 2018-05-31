@@ -30,9 +30,9 @@ import org.apache.james.filesystem.api.mock.MockFileSystem;
 import org.apache.james.lifecycle.api.LifecycleUtil;
 import org.apache.james.user.api.UsersRepositoryException;
 import org.apache.james.user.lib.AbstractUsersRepository;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Test basic behaviors of UsersFileRepository
@@ -40,13 +40,13 @@ import org.junit.Ignore;
 public class DefaultUsersJdbcRepositoryTest extends AbstractUsersJdbcRepositoryTest {
 
     @Override
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
     }
 
     @Override
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         super.tearDown();
     }
@@ -98,7 +98,7 @@ public class DefaultUsersJdbcRepositoryTest extends AbstractUsersJdbcRepositoryT
         LifecycleUtil.dispose(this.usersRepository);
     }
 
-    @Ignore
+    @Disabled
     @Override
     public void testShouldReturnTrueWhenAUserHasACorrectPasswordAndOtherCaseInDomain() throws Exception {
     }

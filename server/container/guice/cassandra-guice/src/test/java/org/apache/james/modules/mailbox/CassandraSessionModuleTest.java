@@ -24,14 +24,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.james.backends.cassandra.init.CassandraConfiguration;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class CassandraSessionModuleTest {
 
     private CassandraSessionModule cassandraSessionModule;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         cassandraSessionModule = new CassandraSessionModule();
     }

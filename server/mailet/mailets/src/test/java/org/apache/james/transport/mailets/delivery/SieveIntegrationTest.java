@@ -44,8 +44,8 @@ import org.apache.mailet.base.test.FakeMailetConfig;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
 public class SieveIntegrationTest {
@@ -67,7 +67,7 @@ public class SieveIntegrationTest {
     private ResourceLocator resourceLocator;
     private FakeMailContext fakeMailContext;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         resourceLocator = mock(ResourceLocator.class);
         usersRepository = mock(UsersRepository.class);

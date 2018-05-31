@@ -47,9 +47,9 @@ import org.apache.mailet.Mail;
 import org.apache.mailet.base.test.FakeMail;
 import org.apache.mailet.base.test.FakeMailContext;
 import org.apache.mailet.base.test.FakeMailetConfig;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
 import com.google.common.base.Throwables;
@@ -71,7 +71,7 @@ public class ToRecipientFolderTest {
     private MailboxSession.User user;
     private FakeMailContext mailetContext;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         mailetContext = FakeMailContext.builder().logger(mock(Logger.class)).build();
         messageManager = mock(MessageManager.class);
@@ -102,7 +102,7 @@ public class ToRecipientFolderTest {
             .setProperty(ToRecipientFolder.FOLDER_PARAMETER, "Junk")
             .build());
 
-        Assert.assertEquals("Junk", testee.getInitParameter(ToRecipientFolder.FOLDER_PARAMETER));
+        Assertions.assertEquals("Junk", testee.getInitParameter(ToRecipientFolder.FOLDER_PARAMETER));
     }
 
     @Test

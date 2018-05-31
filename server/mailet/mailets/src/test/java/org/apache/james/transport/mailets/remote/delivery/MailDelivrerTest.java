@@ -42,8 +42,8 @@ import org.apache.mailet.Mail;
 import org.apache.mailet.base.MailAddressFixture;
 import org.apache.mailet.base.test.FakeMail;
 import org.apache.mailet.base.test.FakeMailetConfig;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.UnmodifiableIterator;
@@ -63,7 +63,7 @@ public class MailDelivrerTest {
     private DnsHelper dnsHelper;
     private MailDelivrerToHost mailDelivrerToHost;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         bouncer = mock(Bouncer.class);
         dnsHelper = mock(DnsHelper.class);

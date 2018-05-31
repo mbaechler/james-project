@@ -27,7 +27,7 @@ import org.apache.james.core.User;
 import org.apache.james.mailbox.model.Quota;
 import org.apache.james.mailbox.quota.QuotaCount;
 import org.apache.james.mailbox.quota.QuotaSize;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class UsersQuotaDetailsDTOTest {
 
