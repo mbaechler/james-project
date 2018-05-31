@@ -21,7 +21,7 @@ package org.apache.james.server.core;
 import static org.apache.mailet.base.RFC2822Headers.RETURN_PATH;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Fail.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
