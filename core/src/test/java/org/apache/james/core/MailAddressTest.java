@@ -20,12 +20,12 @@
 package org.apache.james.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 
 import org.assertj.core.api.Assertions;
-import org.junit.Assert;
 import org.junit.Test;
 
 public class MailAddressTest {
@@ -102,11 +102,7 @@ public class MailAddressTest {
         assertThat(GOOD_ADDRESS.equals(a.toString())).isTrue();
 
         for (String goodAddress : GOOD_ADDRESSES) {
-            try {
-                a = new MailAddress(goodAddress);
-            } catch (AddressException e) {
-                Assert.fail(e.getMessage());
-            }
+            assertThatCode(() -> new MailAddress(goodAddress)).doesNotThrowAnyException();
         }
 
         for (String badAddress : BAD_ADDRESSES) {

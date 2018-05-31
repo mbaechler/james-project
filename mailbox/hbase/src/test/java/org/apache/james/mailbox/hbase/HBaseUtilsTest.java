@@ -43,7 +43,6 @@ import static org.apache.james.mailbox.hbase.HBaseUtils.toPut;
 import static org.apache.james.mailbox.hbase.PropertyConvertor.getProperty;
 import static org.apache.james.mailbox.hbase.PropertyConvertor.getValue;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertArrayEquals;
 
 import java.util.Date;
 import java.util.UUID;
@@ -80,7 +79,7 @@ public class HBaseUtilsTest {
         HBaseId uuid = mailbox.getMailboxId();
         byte[] expResult = uuid.toBytes();
         byte[] result = mailbox.getMailboxId().toBytes();
-        assertArrayEquals(expResult, result);
+        assertThat(result).isEqualTo(expResult);
 
         HBaseId newUUID = hBaseIdFromRowKey(result);
         assertThat(newUUID).isEqualTo(uuid);
@@ -98,7 +97,7 @@ public class HBaseUtilsTest {
         final HBaseMailbox instance = new HBaseMailbox(new MailboxPath("gsoc", "ieugen", "INBOX"), 1234);
 
         Put result = toPut(instance);
-        assertArrayEquals(instance.getMailboxId().toBytes(), result.getRow());
+        assertThat(result.getRow()).isEqualTo(instance.getMailboxId().toBytes());
         assertThat(result.has(MAILBOX_CF, MAILBOX_USER, Bytes.toBytes(instance.getUser()))).isTrue();
         assertThat(result.has(MAILBOX_CF, MAILBOX_NAME, Bytes.toBytes(instance.getName()))).isTrue();
         assertThat(result.has(MAILBOX_CF, MAILBOX_NAMESPACE, Bytes.toBytes(instance.getNamespace()))).isTrue();
@@ -133,7 +132,7 @@ public class HBaseUtilsTest {
         System.out.println("subscription toPut");
         Subscription subscription = new SimpleSubscription("ieugen", "INBOX");
         Put put = toPut(subscription);
-        assertArrayEquals(Bytes.toBytes(subscription.getUser()), put.getRow());
+        assertThat(put.getRow()).isEqualTo(Bytes.toBytes(subscription.getUser()));
         assertThat(put.has(SUBSCRIPTION_CF, Bytes.toBytes(subscription.getMailbox()), MARKER_PRESENT)).isTrue();
     }
 

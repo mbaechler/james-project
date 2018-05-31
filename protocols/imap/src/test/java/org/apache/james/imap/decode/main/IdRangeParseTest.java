@@ -21,6 +21,7 @@ package org.apache.james.imap.decode.main;
 import static org.apache.james.imap.api.ImapConstants.MAX_NZ_NUMBER;
 import static org.apache.james.imap.api.ImapConstants.MIN_NZ_NUMBER;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -30,7 +31,6 @@ import org.apache.james.imap.api.message.IdRange;
 import org.apache.james.imap.decode.ImapRequestLineReader;
 import org.apache.james.imap.decode.ImapRequestStreamLineReader;
 import org.apache.james.protocols.imap.DecodingException;
-import org.junit.Assert;
 import org.junit.Test;
 
 public class IdRangeParseTest  {
@@ -60,20 +60,8 @@ public class IdRangeParseTest  {
     public void testRangeUnsigned() throws DecodingException {
         int val1 = 1;
 
-        try {
-            ranges(rangeAsString(0, val1));
-            Assert.fail();
-        } catch (DecodingException e) {
-            // number smaller then 1 should not work
-        }
-
-
-        try {
-            ranges(rangeAsString(Long.MAX_VALUE, val1));
-            Assert.fail();
-        } catch (DecodingException e) {
-            // number smaller then 1 should not work
-        }
+        assertThatThrownBy(() -> ranges(rangeAsString(0, val1))).isInstanceOf(DecodingException.class);
+        assertThatThrownBy(() -> ranges(rangeAsString(Long.MAX_VALUE, val1))).isInstanceOf(DecodingException.class);
 
         IdRange[] ranges2 = ranges(rangeAsString(ImapConstants.MIN_NZ_NUMBER, ImapConstants.MAX_NZ_NUMBER));
         assertThat(ranges2.length).isEqualTo(1);
