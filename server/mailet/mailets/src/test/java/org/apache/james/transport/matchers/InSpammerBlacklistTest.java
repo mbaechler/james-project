@@ -18,10 +18,6 @@
  ****************************************************************/
 package org.apache.james.transport.matchers;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collection;
