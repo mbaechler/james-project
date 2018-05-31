@@ -21,8 +21,6 @@ package org.apache.james.protocols.imap.utils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.Calendar;
@@ -59,16 +57,16 @@ public class DecoderUtilsTest {
     public void testSetOtherFlag() throws Exception {
         Flags flags = new Flags();
         DecoderUtils.setFlag(A_CUSTOM_FLAG, flags);
-        assertTrue("Unknown flags should be added", flags
-                .contains(A_CUSTOM_FLAG));
+        assertThat(flags
+            .contains(A_CUSTOM_FLAG)).withFailMessage("Unknown flags should be added").isTrue();
     }
 
     @Test
     public void testExtensionFlag() throws Exception {
         Flags flags = new Flags();
         DecoderUtils.setFlag(EXTENSION_FLAG, flags);
-        assertTrue("Extension flags should be added", flags
-                .contains(EXTENSION_FLAG));
+        assertThat(flags
+            .contains(EXTENSION_FLAG)).withFailMessage("Extension flags should be added").isTrue();
     }
 
     @Test

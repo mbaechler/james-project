@@ -3,8 +3,8 @@ package org.apache.james.karaf.features;
 import static org.apache.karaf.tooling.exam.options.KarafDistributionOption.karafDistributionConfiguration;
 import static org.apache.karaf.tooling.exam.options.KarafDistributionOption.keepRuntimeFolder;
 import static org.apache.karaf.tooling.exam.options.KarafDistributionOption.logLevel;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.ops4j.pax.exam.CoreOptions.maven;
 import static org.ops4j.pax.exam.CoreOptions.systemProperty;
@@ -96,7 +96,7 @@ public class KarafLiveTestSupport {
 
     void assertInstalled(String featureName) throws Exception {
         Feature feature = features.getFeature(featureName);
-        assertTrue("Feature " + featureName + " should be installed", features.isInstalled(feature));
+        assertThat(features.isInstalled(feature)).withFailMessage("Feature " + featureName + " should be installed").isTrue();
     }
 
     void assertBundlesAreActive() {

@@ -20,7 +20,6 @@ package org.apache.james.dnsservice.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;

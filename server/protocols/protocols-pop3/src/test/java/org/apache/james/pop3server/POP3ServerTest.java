@@ -20,9 +20,6 @@ package org.apache.james.pop3server;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Reader;
@@ -584,7 +581,7 @@ public class POP3ServerTest {
         pop3Client.getReplyString();
         List<String> replies = Arrays.asList(pop3Client.getReplyStrings());
 
-        assertTrue("contains USER", replies.contains("USER"));
+        assertThat(replies.contains("USER")).withFailMessage("contains USER").isTrue();
 
         pop3Client.login("foo", pass);
         assertEquals(POP3Reply.OK, pop3Client.sendCommand("CAPA"));
@@ -592,9 +589,9 @@ public class POP3ServerTest {
         pop3Client.getAdditionalReply();
         pop3Client.getReplyString();
         replies = Arrays.asList(pop3Client.getReplyStrings());
-        assertTrue("contains USER", replies.contains("USER"));
-        assertTrue("contains UIDL", replies.contains("UIDL"));
-        assertTrue("contains TOP", replies.contains("TOP"));
+        assertThat(replies.contains("USER")).withFailMessage("contains USER").isTrue();
+        assertThat(replies.contains("UIDL")).withFailMessage("contains UIDL").isTrue();
+        assertThat(replies.contains("TOP")).withFailMessage("contains TOP").isTrue();
         
     }
 

@@ -20,7 +20,6 @@ package org.apache.james.protocols.pop3;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;

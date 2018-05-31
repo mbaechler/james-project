@@ -19,15 +19,12 @@
 package org.apache.james.smtpserver;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 import java.net.InetSocketAddress;
 
 import org.apache.james.protocols.lib.POP3BeforeSMTPHelper;
 import org.apache.james.protocols.smtp.SMTPSession;
 import org.apache.james.protocols.smtp.utils.BaseFakeSMTPSession;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class POP3BeforeSMTPHandlerTest {

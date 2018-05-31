@@ -87,7 +87,7 @@ public class MailAddressTest {
 
         MailAddress a = new MailAddress(GOOD_ADDRESS);
         MailAddress b = new MailAddress(GOOD_ADDRESS);
-        Assert.assertTrue(a.hashCode() + " != " + b.hashCode(), a.hashCode() == b.hashCode());
+        assertThat(a.hashCode() == b.hashCode()).withFailMessage(a.hashCode() + " != " + b.hashCode()).isTrue();
     }
 
     /**
@@ -124,11 +124,11 @@ public class MailAddressTest {
         try {
             new MailAddress("local-part", "domain");
         } catch (AddressException e) {
-            Assert.assertTrue(e.getMessage(), false);
+            assertThat(false).withFailMessage(e.getMessage()).isTrue();
         }
         try {
             MailAddress a = new MailAddress("local-part", "-domain");
-            Assert.assertFalse(a.toString(), true);
+            assertThat(true).withFailMessage(a.toString()).isFalse();
         } catch (AddressException e) {
             assertThat(true).isTrue();
         }
@@ -144,7 +144,7 @@ public class MailAddressTest {
             new MailAddress(new InternetAddress(GOOD_QUOTED_LOCAL_PART));
         } catch (AddressException e) {
             System.out.println("AddressException" + e.getMessage());
-            Assert.assertTrue(e.getMessage(), false);
+            assertThat(false).withFailMessage(e.getMessage()).isTrue();
         }
     }
 
@@ -156,10 +156,10 @@ public class MailAddressTest {
 
         try {
             MailAddress a = new MailAddress(new InternetAddress(GOOD_ADDRESS));
-            Assert.assertTrue(a.getDomain() + " != " + GOOD_DOMAIN, a.getDomain().equals(GOOD_DOMAIN));
+            assertThat(a.getDomain().equals(GOOD_DOMAIN)).withFailMessage(a.getDomain() + " != " + GOOD_DOMAIN).isTrue();
         } catch (AddressException e) {
             System.out.println("AddressException" + e.getMessage());
-            Assert.assertTrue(e.getMessage(), false);
+            assertThat(false).withFailMessage(e.getMessage()).isTrue();
         }
     }
 
@@ -171,10 +171,10 @@ public class MailAddressTest {
 
         try {
             MailAddress a = new MailAddress(new InternetAddress(GOOD_QUOTED_LOCAL_PART));
-            Assert.assertTrue(GOOD_LOCAL_PART + " != " + a.getLocalPart(), a.getLocalPart().equals(GOOD_LOCAL_PART));
+            assertThat(a.getLocalPart().equals(GOOD_LOCAL_PART)).withFailMessage(GOOD_LOCAL_PART + " != " + a.getLocalPart()).isTrue();
         } catch (AddressException e) {
             System.out.println("AddressException" + e.getMessage());
-            Assert.assertTrue(e.getMessage(), false);
+            assertThat(false).withFailMessage(e.getMessage()).isTrue();
         }
     }
 
@@ -186,10 +186,10 @@ public class MailAddressTest {
 
         try {
             MailAddress a = new MailAddress(new InternetAddress(GOOD_ADDRESS));
-            Assert.assertTrue(a.toString() + " != " + GOOD_ADDRESS, a.toString().equals(GOOD_ADDRESS));
+            assertThat(a.toString().equals(GOOD_ADDRESS)).withFailMessage(a.toString() + " != " + GOOD_ADDRESS).isTrue();
         } catch (AddressException e) {
             System.out.println("AddressException" + e.getMessage());
-            Assert.assertTrue(e.getMessage(), false);
+            assertThat(false).withFailMessage(e.getMessage()).isTrue();
         }
     }
 
@@ -203,10 +203,10 @@ public class MailAddressTest {
             InternetAddress b = new InternetAddress(GOOD_ADDRESS);
             MailAddress a = new MailAddress(b);
             assertThat(a.toInternetAddress().equals(b)).isTrue();
-            Assert.assertTrue(a.toString() + " != " + GOOD_ADDRESS, a.toString().equals(GOOD_ADDRESS));
+            assertThat(a.toString().equals(GOOD_ADDRESS)).withFailMessage(a.toString() + " != " + GOOD_ADDRESS).isTrue();
         } catch (AddressException e) {
             System.out.println("AddressException" + e.getMessage());
-            Assert.assertTrue(e.getMessage(), false);
+            assertThat(false).withFailMessage(e.getMessage()).isTrue();
         }
     }
 
@@ -221,7 +221,7 @@ public class MailAddressTest {
         MailAddress a = new MailAddress(GOOD_ADDRESS);
         MailAddress b = new MailAddress(GOOD_ADDRESS);
 
-        Assert.assertTrue(a.toString() + " != " + b.toString(), a.equals(b));
-        Assert.assertFalse(a.toString() + " != " + null, a.equals(null));
+        assertThat(a.equals(b)).withFailMessage(a.toString() + " != " + b.toString()).isTrue();
+        assertThat(a.equals(null)).withFailMessage(a.toString() + " != " + null).isFalse();
     }
 }

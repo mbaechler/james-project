@@ -18,9 +18,9 @@
  ****************************************************************/
 package org.apache.james.protocols.lmtp;
 
+import static org.apache.commons.net.smtp.SMTPReply.isPositiveCompletion;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -110,10 +110,10 @@ public abstract class AbstractLMTPServerTest extends AbstractSMTPServerTest {
             assertThat(SMTPReply.isPositiveCompletion(client.getReplyCode())).isTrue();
 
             client.mail(SENDER);
-            assertTrue("Reply=" + client.getReplyString(), SMTPReply.isPositiveCompletion(client.getReplyCode()));
+            assertThat(isPositiveCompletion(client.getReplyCode())).withFailMessage("Reply=" + client.getReplyString()).isTrue();
             
             client.quit();
-            assertTrue("Reply=" + client.getReplyString(), SMTPReply.isPositiveCompletion(client.getReplyCode()));
+            assertThat(isPositiveCompletion(client.getReplyCode())).withFailMessage("Reply=" + client.getReplyString()).isTrue();
             client.disconnect();
 
             Iterator<MailEnvelope> queued = hook.getQueued().iterator();
@@ -145,12 +145,12 @@ public abstract class AbstractLMTPServerTest extends AbstractSMTPServerTest {
             assertThat(SMTPReply.isPositiveCompletion(client.getReplyCode())).isTrue();
 
             client.setSender(SENDER);
-            assertTrue("Reply=" + client.getReplyString(), SMTPReply.isPositiveCompletion(client.getReplyCode()));
+            assertThat(isPositiveCompletion(client.getReplyCode())).withFailMessage("Reply=" + client.getReplyString()).isTrue();
 
             client.rcpt(RCPT1);
-            assertTrue("Reply=" + client.getReplyString(), SMTPReply.isPositiveCompletion(client.getReplyCode()));
+            assertThat(isPositiveCompletion(client.getReplyCode())).withFailMessage("Reply=" + client.getReplyString()).isTrue();
             client.quit();
-            assertTrue("Reply=" + client.getReplyString(), SMTPReply.isPositiveCompletion(client.getReplyCode()));
+            assertThat(isPositiveCompletion(client.getReplyCode())).withFailMessage("Reply=" + client.getReplyString()).isTrue();
             client.disconnect();
 
             Iterator<MailEnvelope> queued = hook.getQueued().iterator();
@@ -181,7 +181,7 @@ public abstract class AbstractLMTPServerTest extends AbstractSMTPServerTest {
             assertThat(SMTPReply.isNegativePermanent(client.getReplyCode())).isTrue();
             
             client.quit();
-            assertTrue("Reply=" + client.getReplyString(), SMTPReply.isPositiveCompletion(client.getReplyCode()));
+            assertThat(isPositiveCompletion(client.getReplyCode())).withFailMessage("Reply=" + client.getReplyString()).isTrue();
             client.disconnect();
 
             Iterator<MailEnvelope> queued = hook.getQueued().iterator();
@@ -212,13 +212,13 @@ public abstract class AbstractLMTPServerTest extends AbstractSMTPServerTest {
             assertThat(SMTPReply.isPositiveCompletion(client.getReplyCode())).isTrue();
 
             client.setSender(SENDER);
-            assertTrue("Reply=" + client.getReplyString(), SMTPReply.isPositiveCompletion(client.getReplyCode()));
+            assertThat(isPositiveCompletion(client.getReplyCode())).withFailMessage("Reply=" + client.getReplyString()).isTrue();
 
             client.addRecipient(RCPT1);
-            assertTrue("Reply=" + client.getReplyString(), SMTPReply.isPositiveCompletion(client.getReplyCode()));
+            assertThat(isPositiveCompletion(client.getReplyCode())).withFailMessage("Reply=" + client.getReplyString()).isTrue();
 
             client.addRecipient(RCPT2);
-            assertTrue("Reply=" + client.getReplyString(), SMTPReply.isPositiveCompletion(client.getReplyCode()));
+            assertThat(isPositiveCompletion(client.getReplyCode())).withFailMessage("Reply=" + client.getReplyString()).isTrue();
 
             assertThat(client.sendShortMessageData(MSG1)).isTrue();
 
@@ -230,7 +230,7 @@ public abstract class AbstractLMTPServerTest extends AbstractSMTPServerTest {
             assertThat(SMTPReply.isPositiveCompletion(replies[1])).isTrue();
 
             client.quit();
-            assertTrue("Reply=" + client.getReplyString(), SMTPReply.isPositiveCompletion(client.getReplyCode()));
+            assertThat(isPositiveCompletion(client.getReplyCode())).withFailMessage("Reply=" + client.getReplyString()).isTrue();
             client.disconnect();
 
             Iterator<MailEnvelope> queued = deliverHook.getDelivered().iterator();

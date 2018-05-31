@@ -20,8 +20,6 @@
 package org.apache.james.util.retry.naming;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import javax.naming.Context;
 import javax.naming.NamingException;
