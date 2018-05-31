@@ -20,7 +20,10 @@
 
 package org.apache.james.protocols.smtp.core.fastfail;
 
-import static org.junit.Assert.assertEquals;
+import static org.apache.james.protocols.smtp.hook.HookReturnCode.Action.DENY;
+import static org.apache.james.protocols.smtp.hook.HookReturnCode.ConnectionStatus.Disconnected;
+import static org.apache.james.protocols.smtp.hook.HookReturnCode.declined;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -71,12 +74,12 @@ public class MaxUnknownCmdHandlerTest {
         MaxUnknownCmdHandler handler = new MaxUnknownCmdHandler();
         handler.setMaxUnknownCmdCount(2);
         HookReturnCode resp = handler.doUnknown(session, "what").getResult();
-        assertEquals(HookReturnCode.declined(), resp);
+        assertThat(resp).isEqualTo(declined());
 
         resp = handler.doUnknown(session, "what").getResult();
-        assertEquals(HookReturnCode.declined(), resp);
+        assertThat(resp).isEqualTo(declined());
         
         resp = handler.doUnknown(session, "what").getResult();
-        assertEquals(new HookReturnCode(HookReturnCode.Action.DENY, HookReturnCode.ConnectionStatus.Disconnected), resp);
+        assertThat(resp).isEqualTo(new HookReturnCode(DENY, Disconnected));
     }
 }

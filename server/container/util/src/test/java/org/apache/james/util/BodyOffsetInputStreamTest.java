@@ -18,8 +18,6 @@
  ****************************************************************/
 package org.apache.james.util;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 

@@ -18,8 +18,6 @@
  ****************************************************************/
 package org.apache.james.smtpserver;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;

@@ -18,7 +18,8 @@
  ****************************************************************/
 package org.apache.james.mailbox.store.mail;
 
-import static org.junit.Assert.assertEquals;
+import static java.util.Optional.empty;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.Serializable;
 import java.util.Optional;
@@ -178,9 +179,9 @@ public class ZooUidProviderTest {
         public void testNextUid() throws Exception {
             System.out.println("Testing nextUid");
             MessageUid result = uuidProvider.nextUid(null, mailboxUUID);
-            assertEquals("Next UID is 1", 1, result.asLong());
+            assertThat(result.asLong()).withFailMessage("Next UID is 1").isEqualTo(1);
             result = longProvider.nextUid(null, mailboxLong);
-            assertEquals("Next UID is 1", 1, result.asLong());
+            assertThat(result.asLong()).withFailMessage("Next UID is 1").isEqualTo(1);
         }
 
         /**
@@ -190,9 +191,9 @@ public class ZooUidProviderTest {
         public void testLastUid() throws Exception {
             System.out.println("Testing lastUid");
             Optional<MessageUid> result = uuidProvider.lastUid(null, mailboxUUID);
-            assertEquals("Next UID is empty", Optional.empty(), result);
+            assertThat(result).withFailMessage("Next UID is empty").isEqualTo(empty());
             MessageUid nextResult = uuidProvider.nextUid(null, mailboxUUID);
-            assertEquals("Next UID is 1", 1, nextResult.asLong());
+            assertThat(nextResult.asLong()).withFailMessage("Next UID is 1").isEqualTo(1);
         }
 
         /**
@@ -202,8 +203,8 @@ public class ZooUidProviderTest {
         public void testLongLastUid() throws Exception {
             System.out.println("Testing long lastUid");
             Optional<MessageUid> result = longProvider.lastUid(null, mailboxLong);
-            assertEquals("Next UID is empty", Optional.empty(), result);
+            assertThat(result).withFailMessage("Next UID is empty").isEqualTo(empty());
             MessageUid nextResult = longProvider.nextUid(null, mailboxLong);
-            assertEquals("Next UID is 1", 1, nextResult.asLong());
+            assertThat(nextResult.asLong()).withFailMessage("Next UID is 1").isEqualTo(1);
         }
     }

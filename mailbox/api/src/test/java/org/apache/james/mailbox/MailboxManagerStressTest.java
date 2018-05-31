@@ -18,8 +18,8 @@
  ****************************************************************/
 package org.apache.james.mailbox;
 
+import static com.google.common.collect.ImmutableSet.copyOf;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
@@ -36,8 +36,6 @@ import org.apache.james.mailbox.model.ComposedMessageId;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mime4j.dom.Message;
 import org.junit.jupiter.api.Test;
-
-import com.google.common.collect.ImmutableSet;
 
 public abstract class MailboxManagerStressTest {
 
@@ -130,7 +128,7 @@ public abstract class MailboxManagerStressTest {
         // For mailboxes without locks, even if the UID is monotic, as re-scheduling can happen between UID generation and event delivery,
         // we can not check the order on the event listener
         // No UID duplicates prevents message loss
-        assertEquals(APPEND_OPERATIONS, ImmutableSet.copyOf(uList).size());
+        assertThat(copyOf(uList).size()).isEqualTo(APPEND_OPERATIONS);
         assertThat(fail.get()).withFailMessage("Unable to append all messages").isFalse();
         pool.shutdown();
     }

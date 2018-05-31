@@ -18,8 +18,6 @@
  ****************************************************************/
 package org.apache.james.smtpserver;
 
-import static org.junit.Assert.assertEquals;
-
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 

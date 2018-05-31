@@ -18,8 +18,6 @@
  ****************************************************************/
 package org.apache.james.smtpserver;
 
-import static org.junit.Assert.assertEquals;
-
 import java.util.HashMap;
 
 import org.apache.james.core.MailAddress;

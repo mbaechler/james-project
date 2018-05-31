@@ -21,8 +21,9 @@ package org.apache.james.protocols.smtp.core.fastfail;
 
 import static org.apache.james.protocols.api.ProtocolSession.State.Transaction;
 import static org.apache.james.protocols.smtp.core.fastfail.ResolvableEhloHeloHandler.BAD_EHLO_HELO;
+import static org.apache.james.protocols.smtp.hook.HookReturnCode.declined;
+import static org.apache.james.protocols.smtp.hook.HookReturnCode.deny;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -128,7 +129,7 @@ public class ResolvableEhloHeloHandlerTest {
         assertThat(session.getAttachment(BAD_EHLO_HELO, Transaction)).withFailMessage("Invalid HELO").isNotNull();
 
         HookReturnCode result = handler.doRcpt(session,null, mailAddress).getResult();
-        assertEquals("Reject", result,HookReturnCode.deny());
+        assertThat(deny()).withFailMessage("Reject").isEqualTo(result);
     }
     
     @Test
@@ -142,7 +143,7 @@ public class ResolvableEhloHeloHandlerTest {
         assertThat(session.getAttachment(BAD_EHLO_HELO, Transaction)).withFailMessage("Valid HELO").isNull();
 
         HookReturnCode result = handler.doRcpt(session,null, mailAddress).getResult();
-        assertEquals("Not reject", result,HookReturnCode.declined());
+        assertThat(declined()).withFailMessage("Not reject").isEqualTo(result);
     }
    
     @Test
@@ -157,7 +158,7 @@ public class ResolvableEhloHeloHandlerTest {
 
 
         HookReturnCode result = handler.doRcpt(session,null, mailAddress).getResult();
-        assertEquals("Reject", result,HookReturnCode.deny());
+        assertThat(deny()).withFailMessage("Reject").isEqualTo(result);
     }
     
    
@@ -173,7 +174,7 @@ public class ResolvableEhloHeloHandlerTest {
 
 
         HookReturnCode result = handler.doRcpt(session,null, mailAddress).getResult();
-        assertEquals("Reject", result,HookReturnCode.deny());
+        assertThat(deny()).withFailMessage("Reject").isEqualTo(result);
     }
 }
     

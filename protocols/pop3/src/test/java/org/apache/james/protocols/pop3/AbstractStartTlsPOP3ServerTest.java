@@ -18,13 +18,12 @@
  ****************************************************************/
 package org.apache.james.protocols.pop3;
 
+import static org.apache.commons.net.pop3.POP3Reply.OK;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 
-import org.apache.commons.net.pop3.POP3Reply;
 import org.apache.commons.net.pop3.POP3SClient;
 import org.apache.james.protocols.api.Encryption;
 import org.apache.james.protocols.api.Protocol;
@@ -75,7 +74,7 @@ public abstract class AbstractStartTlsPOP3ServerTest {
             
             // TODO: Make use of client.capa() once possible
             //       See NET-438
-            assertEquals(POP3Reply.OK, client.sendCommand("CAPA"));
+            assertThat(client.sendCommand("CAPA")).isEqualTo(OK);
             client.getAdditionalReply();
 
             boolean startTlsCapa = Arrays.stream(client.getReplyStrings())

@@ -18,8 +18,8 @@
  ****************************************************************/
 package org.apache.james.mailbox.store.search;
 
+import static org.apache.james.mailbox.store.search.SearchUtil.getBaseSubject;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -32,43 +32,43 @@ public class SearchUtilTest {
     @Test
     public void testSimpleSubject() {
         String subject = "This is my subject";
-        assertEquals(subject, SearchUtil.getBaseSubject(subject));
+        assertThat(getBaseSubject(subject)).isEqualTo(subject);
     }
     
     @Test
     public void testReplaceSpacesAndTabsInSubject() {
         String subject = "This   is my\tsubject";
-        assertEquals("This is my subject", SearchUtil.getBaseSubject(subject));
+        assertThat(getBaseSubject(subject)).isEqualTo("This is my subject");
     }
     
     @Test
     public void testRemoveTrailingSpace() {
         String subject = "This is my subject ";
-        assertEquals("This is my subject", SearchUtil.getBaseSubject(subject));
+        assertThat(getBaseSubject(subject)).isEqualTo("This is my subject");
     }
     
     
     @Test
     public void testRemoveTrailingFwd() {
         String subject = "This is my subject (fwd)";
-        assertEquals("This is my subject", SearchUtil.getBaseSubject(subject));
+        assertThat(getBaseSubject(subject)).isEqualTo("This is my subject");
     }
     
 
     @Test
     public void testSimpleExtraction() {
         String expectedSubject = "Test";
-        assertEquals(expectedSubject, SearchUtil.getBaseSubject("Re: Test"));
-        assertEquals(expectedSubject, SearchUtil.getBaseSubject("re: Test"));
-        assertEquals(expectedSubject, SearchUtil.getBaseSubject("Fwd: Test"));
-        assertEquals(expectedSubject, SearchUtil.getBaseSubject("fwd: Test"));
-        assertEquals(expectedSubject, SearchUtil.getBaseSubject("Fwd: Re: Test"));
-        assertEquals(expectedSubject, SearchUtil.getBaseSubject("Fwd: Re: Test (fwd)"));
+        assertThat(getBaseSubject("Re: Test")).isEqualTo(expectedSubject);
+        assertThat(getBaseSubject("re: Test")).isEqualTo(expectedSubject);
+        assertThat(getBaseSubject("Fwd: Test")).isEqualTo(expectedSubject);
+        assertThat(getBaseSubject("fwd: Test")).isEqualTo(expectedSubject);
+        assertThat(getBaseSubject("Fwd: Re: Test")).isEqualTo(expectedSubject);
+        assertThat(getBaseSubject("Fwd: Re: Test (fwd)")).isEqualTo(expectedSubject);
     }
   
     @Test
     public void testComplexExtraction() {
-        assertEquals("Test", SearchUtil.getBaseSubject("Re: re:re: fwd:[fwd: \t  Test]  (fwd)  (fwd)(fwd) "));
+        assertThat(getBaseSubject("Re: re:re: fwd:[fwd: \t  Test]  (fwd)  (fwd)(fwd) ")).isEqualTo("Test");
     }
     
     @Test
@@ -119,7 +119,7 @@ public class SearchUtilTest {
         String serialiazedMessageId = SearchUtil.getSerializedMessageIdIfSupportedByUnderlyingStorageOrNull(message);
 
         //expect
-        assertEquals(serialiazedMessageId, messageIdString);
+        assertThat(messageIdString).isEqualTo(serialiazedMessageId);
     }
 
 }

@@ -4,10 +4,10 @@ import static org.apache.karaf.tooling.exam.options.KarafDistributionOption.kara
 import static org.apache.karaf.tooling.exam.options.KarafDistributionOption.keepRuntimeFolder;
 import static org.apache.karaf.tooling.exam.options.KarafDistributionOption.logLevel;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
 import static org.assertj.core.api.Fail.fail;
 import static org.ops4j.pax.exam.CoreOptions.maven;
 import static org.ops4j.pax.exam.CoreOptions.systemProperty;
+import static org.osgi.framework.Bundle.ACTIVE;
 
 import java.io.File;
 import java.net.URI;
@@ -102,8 +102,7 @@ public class KarafLiveTestSupport {
     void assertBundlesAreActive() {
         for (Bundle bundle : bundleContext.getBundles()) {
             LOG.info("***** bundle {} is {}", bundle.getSymbolicName(), bundle.getState());
-            assertEquals("Bundle " + bundle.getSymbolicName() + " is not active",
-                    Bundle.ACTIVE, bundle.getState());
+            assertThat(bundle.getState()).withFailMessage("Bundle " + bundle.getSymbolicName() + " is not active").isEqualTo(ACTIVE);
         }
     }
 

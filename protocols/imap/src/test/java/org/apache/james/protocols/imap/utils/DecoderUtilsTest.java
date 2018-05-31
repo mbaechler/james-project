@@ -19,11 +19,27 @@
 
 package org.apache.james.protocols.imap.utils;
 
+import static java.util.Calendar.APRIL;
+import static java.util.Calendar.AUGUST;
+import static java.util.Calendar.DECEMBER;
+import static java.util.Calendar.FEBRUARY;
+import static java.util.Calendar.JANUARY;
+import static java.util.Calendar.JULY;
+import static java.util.Calendar.JUNE;
+import static java.util.Calendar.MARCH;
+import static java.util.Calendar.MAY;
+import static java.util.Calendar.NOVEMBER;
+import static java.util.Calendar.OCTOBER;
+import static java.util.Calendar.SEPTEMBER;
+import static org.apache.james.protocols.imap.utils.DecoderUtils.decodeDateTime;
+import static org.apache.james.protocols.imap.utils.DecoderUtils.decodeDigit;
+import static org.apache.james.protocols.imap.utils.DecoderUtils.decodeMonth;
+import static org.apache.james.protocols.imap.utils.DecoderUtils.decodeNumber;
+import static org.apache.james.protocols.imap.utils.DecoderUtils.decodeYear;
+import static org.apache.james.protocols.imap.utils.DecoderUtils.decodeZone;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Fail.fail;
-import static org.junit.Assert.assertEquals;
 
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -115,74 +131,74 @@ public class DecoderUtilsTest {
     @Test
     @SuppressWarnings("deprecation")
     public void testSimpleDecodeDateTime() throws Exception {
-        assertEquals("21 Oct 1972 20:00:00 GMT", DecoderUtils.decodeDateTime(
-                "21-Oct-1972 20:00:00 +0000").toGMTString());
-        assertEquals("21 Oct 1972 19:00:00 GMT", DecoderUtils.decodeDateTime(
-                "21-Oct-1972 20:00:00 +0100").toGMTString());
-        assertEquals("21 Oct 1972 18:00:00 GMT", DecoderUtils.decodeDateTime(
-                "21-Oct-1972 20:00:00 +0200").toGMTString());
-        assertEquals("21 Oct 1972 17:00:00 GMT", DecoderUtils.decodeDateTime(
-                "21-Oct-1972 20:00:00 +0300").toGMTString());
-        assertEquals("21 Oct 1972 16:00:00 GMT", DecoderUtils.decodeDateTime(
-                "21-Oct-1972 20:00:00 +0400").toGMTString());
-        assertEquals("21 Oct 1972 15:00:00 GMT", DecoderUtils.decodeDateTime(
-                "21-Oct-1972 20:00:00 +0500").toGMTString());
-        assertEquals("21 Oct 1972 14:00:00 GMT", DecoderUtils.decodeDateTime(
-                "21-Oct-1972 20:00:00 +0600").toGMTString());
-        assertEquals("21 Oct 1972 13:00:00 GMT", DecoderUtils.decodeDateTime(
-                "21-Oct-1972 20:00:00 +0700").toGMTString());
-        assertEquals("21 Oct 1972 12:00:00 GMT", DecoderUtils.decodeDateTime(
-                "21-Oct-1972 20:00:00 +0800").toGMTString());
-        assertEquals("21 Oct 1972 11:00:00 GMT", DecoderUtils.decodeDateTime(
-                "21-Oct-1972 20:00:00 +0900").toGMTString());
-        assertEquals("21 Oct 1972 10:00:00 GMT", DecoderUtils.decodeDateTime(
-                "21-Oct-1972 20:00:00 +1000").toGMTString());
-        assertEquals("21 Oct 1972 09:00:00 GMT", DecoderUtils.decodeDateTime(
-                "21-Oct-1972 20:00:00 +1100").toGMTString());
-        assertEquals("21 Oct 1972 08:00:00 GMT", DecoderUtils.decodeDateTime(
-                "21-Oct-1972 20:00:00 +1200").toGMTString());
+        assertThat(decodeDateTime(
+            "21-Oct-1972 20:00:00 +0000").toGMTString()).isEqualTo("21 Oct 1972 20:00:00 GMT");
+        assertThat(decodeDateTime(
+            "21-Oct-1972 20:00:00 +0100").toGMTString()).isEqualTo("21 Oct 1972 19:00:00 GMT");
+        assertThat(decodeDateTime(
+            "21-Oct-1972 20:00:00 +0200").toGMTString()).isEqualTo("21 Oct 1972 18:00:00 GMT");
+        assertThat(decodeDateTime(
+            "21-Oct-1972 20:00:00 +0300").toGMTString()).isEqualTo("21 Oct 1972 17:00:00 GMT");
+        assertThat(decodeDateTime(
+            "21-Oct-1972 20:00:00 +0400").toGMTString()).isEqualTo("21 Oct 1972 16:00:00 GMT");
+        assertThat(decodeDateTime(
+            "21-Oct-1972 20:00:00 +0500").toGMTString()).isEqualTo("21 Oct 1972 15:00:00 GMT");
+        assertThat(decodeDateTime(
+            "21-Oct-1972 20:00:00 +0600").toGMTString()).isEqualTo("21 Oct 1972 14:00:00 GMT");
+        assertThat(decodeDateTime(
+            "21-Oct-1972 20:00:00 +0700").toGMTString()).isEqualTo("21 Oct 1972 13:00:00 GMT");
+        assertThat(decodeDateTime(
+            "21-Oct-1972 20:00:00 +0800").toGMTString()).isEqualTo("21 Oct 1972 12:00:00 GMT");
+        assertThat(decodeDateTime(
+            "21-Oct-1972 20:00:00 +0900").toGMTString()).isEqualTo("21 Oct 1972 11:00:00 GMT");
+        assertThat(decodeDateTime(
+            "21-Oct-1972 20:00:00 +1000").toGMTString()).isEqualTo("21 Oct 1972 10:00:00 GMT");
+        assertThat(decodeDateTime(
+            "21-Oct-1972 20:00:00 +1100").toGMTString()).isEqualTo("21 Oct 1972 09:00:00 GMT");
+        assertThat(decodeDateTime(
+            "21-Oct-1972 20:00:00 +1200").toGMTString()).isEqualTo("21 Oct 1972 08:00:00 GMT");
 
-        assertEquals("21 Oct 1972 10:00:00 GMT", DecoderUtils.decodeDateTime(
-                "21-Oct-1972 20:00:00 +1000").toGMTString());
-        assertEquals("21 Oct 1972 21:00:00 GMT", DecoderUtils.decodeDateTime(
-                "21-Oct-1972 20:00:00 -0100").toGMTString());
-        assertEquals("21 Oct 1972 22:00:00 GMT", DecoderUtils.decodeDateTime(
-                "21-Oct-1972 20:00:00 -0200").toGMTString());
-        assertEquals("21 Oct 1972 23:00:00 GMT", DecoderUtils.decodeDateTime(
-                "21-Oct-1972 20:00:00 -0300").toGMTString());
-        assertEquals("22 Oct 1972 00:00:00 GMT", DecoderUtils.decodeDateTime(
-                "21-Oct-1972 20:00:00 -0400").toGMTString());
-        assertEquals("22 Oct 1972 01:00:00 GMT", DecoderUtils.decodeDateTime(
-                "21-Oct-1972 20:00:00 -0500").toGMTString());
-        assertEquals("22 Oct 1972 02:00:00 GMT", DecoderUtils.decodeDateTime(
-                "21-Oct-1972 20:00:00 -0600").toGMTString());
-        assertEquals("22 Oct 1972 03:00:00 GMT", DecoderUtils.decodeDateTime(
-                "21-Oct-1972 20:00:00 -0700").toGMTString());
-        assertEquals("22 Oct 1972 04:00:00 GMT", DecoderUtils.decodeDateTime(
-                "21-Oct-1972 20:00:00 -0800").toGMTString());
-        assertEquals("22 Oct 1972 05:00:00 GMT", DecoderUtils.decodeDateTime(
-                "21-Oct-1972 20:00:00 -0900").toGMTString());
-        assertEquals("22 Oct 1972 06:00:00 GMT", DecoderUtils.decodeDateTime(
-                "21-Oct-1972 20:00:00 -1000").toGMTString());
+        assertThat(decodeDateTime(
+            "21-Oct-1972 20:00:00 +1000").toGMTString()).isEqualTo("21 Oct 1972 10:00:00 GMT");
+        assertThat(decodeDateTime(
+            "21-Oct-1972 20:00:00 -0100").toGMTString()).isEqualTo("21 Oct 1972 21:00:00 GMT");
+        assertThat(decodeDateTime(
+            "21-Oct-1972 20:00:00 -0200").toGMTString()).isEqualTo("21 Oct 1972 22:00:00 GMT");
+        assertThat(decodeDateTime(
+            "21-Oct-1972 20:00:00 -0300").toGMTString()).isEqualTo("21 Oct 1972 23:00:00 GMT");
+        assertThat(decodeDateTime(
+            "21-Oct-1972 20:00:00 -0400").toGMTString()).isEqualTo("22 Oct 1972 00:00:00 GMT");
+        assertThat(decodeDateTime(
+            "21-Oct-1972 20:00:00 -0500").toGMTString()).isEqualTo("22 Oct 1972 01:00:00 GMT");
+        assertThat(decodeDateTime(
+            "21-Oct-1972 20:00:00 -0600").toGMTString()).isEqualTo("22 Oct 1972 02:00:00 GMT");
+        assertThat(decodeDateTime(
+            "21-Oct-1972 20:00:00 -0700").toGMTString()).isEqualTo("22 Oct 1972 03:00:00 GMT");
+        assertThat(decodeDateTime(
+            "21-Oct-1972 20:00:00 -0800").toGMTString()).isEqualTo("22 Oct 1972 04:00:00 GMT");
+        assertThat(decodeDateTime(
+            "21-Oct-1972 20:00:00 -0900").toGMTString()).isEqualTo("22 Oct 1972 05:00:00 GMT");
+        assertThat(decodeDateTime(
+            "21-Oct-1972 20:00:00 -1000").toGMTString()).isEqualTo("22 Oct 1972 06:00:00 GMT");
 
-        assertEquals("21 Oct 1972 19:30:00 GMT", DecoderUtils.decodeDateTime(
-                "21-Oct-1972 20:00:00 +0030").toGMTString());
-        assertEquals("21 Oct 1972 20:30:00 GMT", DecoderUtils.decodeDateTime(
-                "21-Oct-1972 20:00:00 -0030").toGMTString());
+        assertThat(decodeDateTime(
+            "21-Oct-1972 20:00:00 +0030").toGMTString()).isEqualTo("21 Oct 1972 19:30:00 GMT");
+        assertThat(decodeDateTime(
+            "21-Oct-1972 20:00:00 -0030").toGMTString()).isEqualTo("21 Oct 1972 20:30:00 GMT");
 
-        assertEquals("22 Oct 1972 06:00:00 GMT", DecoderUtils.decodeDateTime(
-                "21-Oct-1972 20:00:00 -1000").toGMTString());
-        assertEquals("20 Oct 1972 20:00:00 GMT", DecoderUtils.decodeDateTime(
-                "21-Oct-1972 06:00:00 +1000").toGMTString());
-        assertEquals("21 Oct 1972 16:00:00 GMT", DecoderUtils.decodeDateTime(
-                "21-Oct-1972 06:00:00 -1000").toGMTString());
+        assertThat(decodeDateTime(
+            "21-Oct-1972 20:00:00 -1000").toGMTString()).isEqualTo("22 Oct 1972 06:00:00 GMT");
+        assertThat(decodeDateTime(
+            "21-Oct-1972 06:00:00 +1000").toGMTString()).isEqualTo("20 Oct 1972 20:00:00 GMT");
+        assertThat(decodeDateTime(
+            "21-Oct-1972 06:00:00 -1000").toGMTString()).isEqualTo("21 Oct 1972 16:00:00 GMT");
     }
 
     @Test
     @SuppressWarnings("deprecation")
     public void testAppleMailPrependsZeroNotSpace() throws Exception {
-        assertEquals("9 Apr 2008 13:17:51 GMT", DecoderUtils.decodeDateTime(
-                "09-Apr-2008 15:17:51 +0200").toGMTString());
+        assertThat(decodeDateTime(
+            "09-Apr-2008 15:17:51 +0200").toGMTString()).isEqualTo("9 Apr 2008 13:17:51 GMT");
     }
 
     @Test
@@ -250,7 +266,7 @@ public class DecoderUtilsTest {
     private void dateDecode(String in, TimeZone zone) throws Exception {
         Date date = DecoderUtils.decodeDateTime(in);
         String out = formatAsImap(date, zone);
-        assertEquals("Round trip", in, out);
+        assertThat(out).withFailMessage("Round trip").isEqualTo(in);
     }
 
     private String formatAsImap(Date date, TimeZone zone) {
@@ -266,16 +282,16 @@ public class DecoderUtilsTest {
 
     @Test
     public void testDecodeDigit() throws Exception {
-        assertEquals(0, DecoderUtils.decodeDigit('0'));
-        assertEquals(1, DecoderUtils.decodeDigit('1'));
-        assertEquals(2, DecoderUtils.decodeDigit('2'));
-        assertEquals(3, DecoderUtils.decodeDigit('3'));
-        assertEquals(4, DecoderUtils.decodeDigit('4'));
-        assertEquals(5, DecoderUtils.decodeDigit('5'));
-        assertEquals(6, DecoderUtils.decodeDigit('6'));
-        assertEquals(7, DecoderUtils.decodeDigit('7'));
-        assertEquals(8, DecoderUtils.decodeDigit('8'));
-        assertEquals(9, DecoderUtils.decodeDigit('9'));
+        assertThat(decodeDigit('0')).isEqualTo(0);
+        assertThat(decodeDigit('1')).isEqualTo(1);
+        assertThat(decodeDigit('2')).isEqualTo(2);
+        assertThat(decodeDigit('3')).isEqualTo(3);
+        assertThat(decodeDigit('4')).isEqualTo(4);
+        assertThat(decodeDigit('5')).isEqualTo(5);
+        assertThat(decodeDigit('6')).isEqualTo(6);
+        assertThat(decodeDigit('7')).isEqualTo(7);
+        assertThat(decodeDigit('8')).isEqualTo(8);
+        assertThat(decodeDigit('9')).isEqualTo(9);
 
         try {
             DecoderUtils.decodeDigit('/');
@@ -294,32 +310,30 @@ public class DecoderUtilsTest {
 
     @Test
     public void testDecodeMonth() throws Exception {
-        assertEquals(Calendar.JANUARY, DecoderUtils.decodeMonth('J', 'A', 'N'));
-        assertEquals(Calendar.JANUARY, DecoderUtils.decodeMonth('j', 'a', 'n'));
-        assertEquals(Calendar.FEBRUARY, DecoderUtils.decodeMonth('F', 'E', 'B'));
-        assertEquals(Calendar.FEBRUARY, DecoderUtils.decodeMonth('f', 'e', 'b'));
-        assertEquals(Calendar.MARCH, DecoderUtils.decodeMonth('M', 'A', 'R'));
-        assertEquals(Calendar.MARCH, DecoderUtils.decodeMonth('m', 'a', 'r'));
-        assertEquals(Calendar.APRIL, DecoderUtils.decodeMonth('A', 'P', 'R'));
-        assertEquals(Calendar.APRIL, DecoderUtils.decodeMonth('a', 'p', 'r'));
-        assertEquals(Calendar.MAY, DecoderUtils.decodeMonth('M', 'A', 'Y'));
-        assertEquals(Calendar.MAY, DecoderUtils.decodeMonth('m', 'a', 'y'));
-        assertEquals(Calendar.JUNE, DecoderUtils.decodeMonth('J', 'U', 'N'));
-        assertEquals(Calendar.JUNE, DecoderUtils.decodeMonth('j', 'u', 'n'));
-        assertEquals(Calendar.JULY, DecoderUtils.decodeMonth('J', 'U', 'L'));
-        assertEquals(Calendar.JULY, DecoderUtils.decodeMonth('j', 'u', 'l'));
-        assertEquals(Calendar.AUGUST, DecoderUtils.decodeMonth('A', 'U', 'G'));
-        assertEquals(Calendar.AUGUST, DecoderUtils.decodeMonth('a', 'u', 'g'));
-        assertEquals(Calendar.SEPTEMBER, DecoderUtils
-                .decodeMonth('S', 'E', 'P'));
-        assertEquals(Calendar.SEPTEMBER, DecoderUtils
-                .decodeMonth('s', 'e', 'p'));
-        assertEquals(Calendar.OCTOBER, DecoderUtils.decodeMonth('O', 'C', 'T'));
-        assertEquals(Calendar.OCTOBER, DecoderUtils.decodeMonth('o', 'c', 't'));
-        assertEquals(Calendar.NOVEMBER, DecoderUtils.decodeMonth('N', 'O', 'V'));
-        assertEquals(Calendar.NOVEMBER, DecoderUtils.decodeMonth('n', 'o', 'v'));
-        assertEquals(Calendar.DECEMBER, DecoderUtils.decodeMonth('D', 'E', 'C'));
-        assertEquals(Calendar.DECEMBER, DecoderUtils.decodeMonth('d', 'e', 'c'));
+        assertThat(decodeMonth('J', 'A', 'N')).isEqualTo(JANUARY);
+        assertThat(decodeMonth('j', 'a', 'n')).isEqualTo(JANUARY);
+        assertThat(decodeMonth('F', 'E', 'B')).isEqualTo(FEBRUARY);
+        assertThat(decodeMonth('f', 'e', 'b')).isEqualTo(FEBRUARY);
+        assertThat(decodeMonth('M', 'A', 'R')).isEqualTo(MARCH);
+        assertThat(decodeMonth('m', 'a', 'r')).isEqualTo(MARCH);
+        assertThat(decodeMonth('A', 'P', 'R')).isEqualTo(APRIL);
+        assertThat(decodeMonth('a', 'p', 'r')).isEqualTo(APRIL);
+        assertThat(decodeMonth('M', 'A', 'Y')).isEqualTo(MAY);
+        assertThat(decodeMonth('m', 'a', 'y')).isEqualTo(MAY);
+        assertThat(decodeMonth('J', 'U', 'N')).isEqualTo(JUNE);
+        assertThat(decodeMonth('j', 'u', 'n')).isEqualTo(JUNE);
+        assertThat(decodeMonth('J', 'U', 'L')).isEqualTo(JULY);
+        assertThat(decodeMonth('j', 'u', 'l')).isEqualTo(JULY);
+        assertThat(decodeMonth('A', 'U', 'G')).isEqualTo(AUGUST);
+        assertThat(decodeMonth('a', 'u', 'g')).isEqualTo(AUGUST);
+        assertThat(decodeMonth('S', 'E', 'P')).isEqualTo(SEPTEMBER);
+        assertThat(decodeMonth('s', 'e', 'p')).isEqualTo(SEPTEMBER);
+        assertThat(decodeMonth('O', 'C', 'T')).isEqualTo(OCTOBER);
+        assertThat(decodeMonth('o', 'c', 't')).isEqualTo(OCTOBER);
+        assertThat(decodeMonth('N', 'O', 'V')).isEqualTo(NOVEMBER);
+        assertThat(decodeMonth('n', 'o', 'v')).isEqualTo(NOVEMBER);
+        assertThat(decodeMonth('D', 'E', 'C')).isEqualTo(DECEMBER);
+        assertThat(decodeMonth('d', 'e', 'c')).isEqualTo(DECEMBER);
     }
 
     @Test
@@ -342,16 +356,16 @@ public class DecoderUtilsTest {
 
     @Test
     public void testDecodeYear() throws Exception {
-        assertEquals(1999, DecoderUtils.decodeYear('1', '9', '9', '9'));
-        assertEquals(747, DecoderUtils.decodeYear('0', '7', '4', '7'));
-        assertEquals(2525, DecoderUtils.decodeYear('2', '5', '2', '5'));
-        assertEquals(5678, DecoderUtils.decodeYear('5', '6', '7', '8'));
-        assertEquals(2453, DecoderUtils.decodeYear('2', '4', '5', '3'));
-        assertEquals(2000, DecoderUtils.decodeYear('2', '0', '0', '0'));
-        assertEquals(2007, DecoderUtils.decodeYear('2', '0', '0', '7'));
-        assertEquals(2008, DecoderUtils.decodeYear('2', '0', '0', '8'));
-        assertEquals(2010, DecoderUtils.decodeYear('2', '0', '1', '0'));
-        assertEquals(2020, DecoderUtils.decodeYear('2', '0', '2', '0'));
+        assertThat(decodeYear('1', '9', '9', '9')).isEqualTo(1999);
+        assertThat(decodeYear('0', '7', '4', '7')).isEqualTo(747);
+        assertThat(decodeYear('2', '5', '2', '5')).isEqualTo(2525);
+        assertThat(decodeYear('5', '6', '7', '8')).isEqualTo(5678);
+        assertThat(decodeYear('2', '4', '5', '3')).isEqualTo(2453);
+        assertThat(decodeYear('2', '0', '0', '0')).isEqualTo(2000);
+        assertThat(decodeYear('2', '0', '0', '7')).isEqualTo(2007);
+        assertThat(decodeYear('2', '0', '0', '8')).isEqualTo(2008);
+        assertThat(decodeYear('2', '0', '1', '0')).isEqualTo(2010);
+        assertThat(decodeYear('2', '0', '2', '0')).isEqualTo(2020);
     }
 
     @Test
@@ -374,58 +388,58 @@ public class DecoderUtilsTest {
 
     @Test
     public void testDecodeZone() throws Exception {
-        assertEquals(0, DecoderUtils.decodeZone('+', '0', '0', '0', '0'));
-        assertEquals(100, DecoderUtils.decodeZone('+', '0', '1', '0', '0'));
-        assertEquals(200, DecoderUtils.decodeZone('+', '0', '2', '0', '0'));
-        assertEquals(300, DecoderUtils.decodeZone('+', '0', '3', '0', '0'));
-        assertEquals(400, DecoderUtils.decodeZone('+', '0', '4', '0', '0'));
-        assertEquals(500, DecoderUtils.decodeZone('+', '0', '5', '0', '0'));
-        assertEquals(600, DecoderUtils.decodeZone('+', '0', '6', '0', '0'));
-        assertEquals(700, DecoderUtils.decodeZone('+', '0', '7', '0', '0'));
-        assertEquals(800, DecoderUtils.decodeZone('+', '0', '8', '0', '0'));
-        assertEquals(900, DecoderUtils.decodeZone('+', '0', '9', '0', '0'));
-        assertEquals(1000, DecoderUtils.decodeZone('+', '1', '0', '0', '0'));
-        assertEquals(1100, DecoderUtils.decodeZone('+', '1', '1', '0', '0'));
-        assertEquals(1200, DecoderUtils.decodeZone('+', '1', '2', '0', '0'));
-        assertEquals(30, DecoderUtils.decodeZone('+', '0', '0', '3', '0'));
-        assertEquals(130, DecoderUtils.decodeZone('+', '0', '1', '3', '0'));
-        assertEquals(230, DecoderUtils.decodeZone('+', '0', '2', '3', '0'));
-        assertEquals(330, DecoderUtils.decodeZone('+', '0', '3', '3', '0'));
-        assertEquals(430, DecoderUtils.decodeZone('+', '0', '4', '3', '0'));
-        assertEquals(530, DecoderUtils.decodeZone('+', '0', '5', '3', '0'));
-        assertEquals(630, DecoderUtils.decodeZone('+', '0', '6', '3', '0'));
-        assertEquals(730, DecoderUtils.decodeZone('+', '0', '7', '3', '0'));
-        assertEquals(830, DecoderUtils.decodeZone('+', '0', '8', '3', '0'));
-        assertEquals(930, DecoderUtils.decodeZone('+', '0', '9', '3', '0'));
-        assertEquals(1030, DecoderUtils.decodeZone('+', '1', '0', '3', '0'));
-        assertEquals(1130, DecoderUtils.decodeZone('+', '1', '1', '3', '0'));
-        assertEquals(1111, DecoderUtils.decodeZone('+', '1', '1', '1', '1'));
-        assertEquals(0, DecoderUtils.decodeZone('-', '0', '0', '0', '0'));
-        assertEquals(-100, DecoderUtils.decodeZone('-', '0', '1', '0', '0'));
-        assertEquals(-200, DecoderUtils.decodeZone('-', '0', '2', '0', '0'));
-        assertEquals(-300, DecoderUtils.decodeZone('-', '0', '3', '0', '0'));
-        assertEquals(-400, DecoderUtils.decodeZone('-', '0', '4', '0', '0'));
-        assertEquals(-500, DecoderUtils.decodeZone('-', '0', '5', '0', '0'));
-        assertEquals(-600, DecoderUtils.decodeZone('-', '0', '6', '0', '0'));
-        assertEquals(-700, DecoderUtils.decodeZone('-', '0', '7', '0', '0'));
-        assertEquals(-800, DecoderUtils.decodeZone('-', '0', '8', '0', '0'));
-        assertEquals(-900, DecoderUtils.decodeZone('-', '0', '9', '0', '0'));
-        assertEquals(-1000, DecoderUtils.decodeZone('-', '1', '0', '0', '0'));
-        assertEquals(-1100, DecoderUtils.decodeZone('-', '1', '1', '0', '0'));
-        assertEquals(-1200, DecoderUtils.decodeZone('-', '1', '2', '0', '0'));
-        assertEquals(-30, DecoderUtils.decodeZone('-', '0', '0', '3', '0'));
-        assertEquals(-130, DecoderUtils.decodeZone('-', '0', '1', '3', '0'));
-        assertEquals(-230, DecoderUtils.decodeZone('-', '0', '2', '3', '0'));
-        assertEquals(-330, DecoderUtils.decodeZone('-', '0', '3', '3', '0'));
-        assertEquals(-430, DecoderUtils.decodeZone('-', '0', '4', '3', '0'));
-        assertEquals(-530, DecoderUtils.decodeZone('-', '0', '5', '3', '0'));
-        assertEquals(-630, DecoderUtils.decodeZone('-', '0', '6', '3', '0'));
-        assertEquals(-730, DecoderUtils.decodeZone('-', '0', '7', '3', '0'));
-        assertEquals(-830, DecoderUtils.decodeZone('-', '0', '8', '3', '0'));
-        assertEquals(-930, DecoderUtils.decodeZone('-', '0', '9', '3', '0'));
-        assertEquals(-1030, DecoderUtils.decodeZone('-', '1', '0', '3', '0'));
-        assertEquals(-1130, DecoderUtils.decodeZone('-', '1', '1', '3', '0'));
-        assertEquals(-1111, DecoderUtils.decodeZone('-', '1', '1', '1', '1'));
+        assertThat(decodeZone('+', '0', '0', '0', '0')).isEqualTo(0);
+        assertThat(decodeZone('+', '0', '1', '0', '0')).isEqualTo(100);
+        assertThat(decodeZone('+', '0', '2', '0', '0')).isEqualTo(200);
+        assertThat(decodeZone('+', '0', '3', '0', '0')).isEqualTo(300);
+        assertThat(decodeZone('+', '0', '4', '0', '0')).isEqualTo(400);
+        assertThat(decodeZone('+', '0', '5', '0', '0')).isEqualTo(500);
+        assertThat(decodeZone('+', '0', '6', '0', '0')).isEqualTo(600);
+        assertThat(decodeZone('+', '0', '7', '0', '0')).isEqualTo(700);
+        assertThat(decodeZone('+', '0', '8', '0', '0')).isEqualTo(800);
+        assertThat(decodeZone('+', '0', '9', '0', '0')).isEqualTo(900);
+        assertThat(decodeZone('+', '1', '0', '0', '0')).isEqualTo(1000);
+        assertThat(decodeZone('+', '1', '1', '0', '0')).isEqualTo(1100);
+        assertThat(decodeZone('+', '1', '2', '0', '0')).isEqualTo(1200);
+        assertThat(decodeZone('+', '0', '0', '3', '0')).isEqualTo(30);
+        assertThat(decodeZone('+', '0', '1', '3', '0')).isEqualTo(130);
+        assertThat(decodeZone('+', '0', '2', '3', '0')).isEqualTo(230);
+        assertThat(decodeZone('+', '0', '3', '3', '0')).isEqualTo(330);
+        assertThat(decodeZone('+', '0', '4', '3', '0')).isEqualTo(430);
+        assertThat(decodeZone('+', '0', '5', '3', '0')).isEqualTo(530);
+        assertThat(decodeZone('+', '0', '6', '3', '0')).isEqualTo(630);
+        assertThat(decodeZone('+', '0', '7', '3', '0')).isEqualTo(730);
+        assertThat(decodeZone('+', '0', '8', '3', '0')).isEqualTo(830);
+        assertThat(decodeZone('+', '0', '9', '3', '0')).isEqualTo(930);
+        assertThat(decodeZone('+', '1', '0', '3', '0')).isEqualTo(1030);
+        assertThat(decodeZone('+', '1', '1', '3', '0')).isEqualTo(1130);
+        assertThat(decodeZone('+', '1', '1', '1', '1')).isEqualTo(1111);
+        assertThat(decodeZone('-', '0', '0', '0', '0')).isEqualTo(0);
+        assertThat(decodeZone('-', '0', '1', '0', '0')).isEqualTo(-100);
+        assertThat(decodeZone('-', '0', '2', '0', '0')).isEqualTo(-200);
+        assertThat(decodeZone('-', '0', '3', '0', '0')).isEqualTo(-300);
+        assertThat(decodeZone('-', '0', '4', '0', '0')).isEqualTo(-400);
+        assertThat(decodeZone('-', '0', '5', '0', '0')).isEqualTo(-500);
+        assertThat(decodeZone('-', '0', '6', '0', '0')).isEqualTo(-600);
+        assertThat(decodeZone('-', '0', '7', '0', '0')).isEqualTo(-700);
+        assertThat(decodeZone('-', '0', '8', '0', '0')).isEqualTo(-800);
+        assertThat(decodeZone('-', '0', '9', '0', '0')).isEqualTo(-900);
+        assertThat(decodeZone('-', '1', '0', '0', '0')).isEqualTo(-1000);
+        assertThat(decodeZone('-', '1', '1', '0', '0')).isEqualTo(-1100);
+        assertThat(decodeZone('-', '1', '2', '0', '0')).isEqualTo(-1200);
+        assertThat(decodeZone('-', '0', '0', '3', '0')).isEqualTo(-30);
+        assertThat(decodeZone('-', '0', '1', '3', '0')).isEqualTo(-130);
+        assertThat(decodeZone('-', '0', '2', '3', '0')).isEqualTo(-230);
+        assertThat(decodeZone('-', '0', '3', '3', '0')).isEqualTo(-330);
+        assertThat(decodeZone('-', '0', '4', '3', '0')).isEqualTo(-430);
+        assertThat(decodeZone('-', '0', '5', '3', '0')).isEqualTo(-530);
+        assertThat(decodeZone('-', '0', '6', '3', '0')).isEqualTo(-630);
+        assertThat(decodeZone('-', '0', '7', '3', '0')).isEqualTo(-730);
+        assertThat(decodeZone('-', '0', '8', '3', '0')).isEqualTo(-830);
+        assertThat(decodeZone('-', '0', '9', '3', '0')).isEqualTo(-930);
+        assertThat(decodeZone('-', '1', '0', '3', '0')).isEqualTo(-1030);
+        assertThat(decodeZone('-', '1', '1', '3', '0')).isEqualTo(-1130);
+        assertThat(decodeZone('-', '1', '1', '1', '1')).isEqualTo(-1111);
 
     }
 
@@ -484,24 +498,24 @@ public class DecoderUtilsTest {
 
     @Test
     public void testDecodeNumber() throws Exception {
-        assertEquals(1, DecoderUtils.decodeNumber('0', '1'));
-        assertEquals(2, DecoderUtils.decodeNumber('0', '2'));
-        assertEquals(3, DecoderUtils.decodeNumber('0', '3'));
-        assertEquals(4, DecoderUtils.decodeNumber('0', '4'));
-        assertEquals(5, DecoderUtils.decodeNumber('0', '5'));
-        assertEquals(6, DecoderUtils.decodeNumber('0', '6'));
-        assertEquals(7, DecoderUtils.decodeNumber('0', '7'));
-        assertEquals(8, DecoderUtils.decodeNumber('0', '8'));
-        assertEquals(9, DecoderUtils.decodeNumber('0', '9'));
-        assertEquals(19, DecoderUtils.decodeNumber('1', '9'));
-        assertEquals(28, DecoderUtils.decodeNumber('2', '8'));
-        assertEquals(37, DecoderUtils.decodeNumber('3', '7'));
-        assertEquals(46, DecoderUtils.decodeNumber('4', '6'));
-        assertEquals(55, DecoderUtils.decodeNumber('5', '5'));
-        assertEquals(64, DecoderUtils.decodeNumber('6', '4'));
-        assertEquals(73, DecoderUtils.decodeNumber('7', '3'));
-        assertEquals(82, DecoderUtils.decodeNumber('8', '2'));
-        assertEquals(91, DecoderUtils.decodeNumber('9', '1'));
+        assertThat(decodeNumber('0', '1')).isEqualTo(1);
+        assertThat(decodeNumber('0', '2')).isEqualTo(2);
+        assertThat(decodeNumber('0', '3')).isEqualTo(3);
+        assertThat(decodeNumber('0', '4')).isEqualTo(4);
+        assertThat(decodeNumber('0', '5')).isEqualTo(5);
+        assertThat(decodeNumber('0', '6')).isEqualTo(6);
+        assertThat(decodeNumber('0', '7')).isEqualTo(7);
+        assertThat(decodeNumber('0', '8')).isEqualTo(8);
+        assertThat(decodeNumber('0', '9')).isEqualTo(9);
+        assertThat(decodeNumber('1', '9')).isEqualTo(19);
+        assertThat(decodeNumber('2', '8')).isEqualTo(28);
+        assertThat(decodeNumber('3', '7')).isEqualTo(37);
+        assertThat(decodeNumber('4', '6')).isEqualTo(46);
+        assertThat(decodeNumber('5', '5')).isEqualTo(55);
+        assertThat(decodeNumber('6', '4')).isEqualTo(64);
+        assertThat(decodeNumber('7', '3')).isEqualTo(73);
+        assertThat(decodeNumber('8', '2')).isEqualTo(82);
+        assertThat(decodeNumber('9', '1')).isEqualTo(91);
     }
 
     @Test

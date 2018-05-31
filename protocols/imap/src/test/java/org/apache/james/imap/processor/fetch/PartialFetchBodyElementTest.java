@@ -19,7 +19,7 @@
 
 package org.apache.james.imap.processor.fetch;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.apache.james.imap.message.response.FetchResponse.BodyElement;
 import org.jmock.Expectations;
@@ -57,9 +57,7 @@ public class PartialFetchBodyElementTest {
                 }
             }
         );
-        assertEquals(
-                "Size is more than number of octets so should be number of octets",
-                NUMBER_OF_OCTETS, element.size());
+        assertThat(element.size()).withFailMessage("Size is more than number of octets so should be number of octets").isEqualTo(NUMBER_OF_OCTETS);
     }
 
     @Test
@@ -73,8 +71,7 @@ public class PartialFetchBodyElementTest {
                 }
             }
         );
-        assertEquals("Size is less than number of octets so should be size",
-                lessThanNumberOfOctets, element.size());
+        assertThat(element.size()).withFailMessage("Size is less than number of octets so should be size").isEqualTo(lessThanNumberOfOctets);
     }
 
     @Test
@@ -88,8 +85,7 @@ public class PartialFetchBodyElementTest {
                 }
             }
         );
-        assertEquals("Size is less than number of octets so should be size",
-                50, element.size());
+        assertThat(element.size()).withFailMessage("Size is less than number of octets so should be size").isEqualTo(50);
     }
 
     @Test
@@ -103,8 +99,7 @@ public class PartialFetchBodyElementTest {
                 }
             }
         );
-        assertEquals("Size is less than number of octets so should be size",
-                90, element.size());
+        assertThat(element.size()).withFailMessage("Size is less than number of octets so should be size").isEqualTo(90);
     }
 
     @Test
@@ -117,8 +112,7 @@ public class PartialFetchBodyElementTest {
                 }
             }
         );
-        assertEquals("Size is less than number of octets so should be size", 0,
-                element.size());
+        assertThat(element.size()).withFailMessage("Size is less than number of octets so should be size").isEqualTo(0);
     }
 
     @Test
@@ -132,7 +126,6 @@ public class PartialFetchBodyElementTest {
                 }
             }
         );
-        assertEquals("Content size is less than start. Size should be zero.",
-                NUMBER_OF_OCTETS, element.size());
+        assertThat(element.size()).withFailMessage("Content size is less than start. Size should be zero.").isEqualTo(NUMBER_OF_OCTETS);
     }
 }

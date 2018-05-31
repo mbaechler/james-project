@@ -19,7 +19,9 @@
 
 package org.apache.james.protocols.smtp.core.fastfail;
 
-import static org.junit.Assert.assertEquals;
+import static org.apache.james.protocols.smtp.hook.HookReturnCode.declined;
+import static org.apache.james.protocols.smtp.hook.HookReturnCode.deny;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -107,8 +109,8 @@ public class ValidSenderDomainHandlerTest {
     public void testNullSenderNotReject() {
         ValidSenderDomainHandler handler = createHandler();
         HookReturnCode response = handler.doMail(setupMockedSession(null),null).getResult();
-        
-        assertEquals("Not blocked cause its a nullsender", response, HookReturnCode.declined());
+
+        assertThat(declined()).withFailMessage("Not blocked cause its a nullsender").isEqualTo(response);
     }
 
     @Test
@@ -116,7 +118,7 @@ public class ValidSenderDomainHandlerTest {
         ValidSenderDomainHandler handler = createHandler();
         SMTPSession session = setupMockedSession(new MailAddress("invalid@invalid"));
         HookReturnCode response = handler.doMail(session,(MailAddress) session.getAttachment(SMTPSession.SENDER, State.Transaction)).getResult();
-        
-        assertEquals("Blocked cause we use reject action", response, HookReturnCode.deny());
+
+        assertThat(deny()).withFailMessage("Blocked cause we use reject action").isEqualTo(response);
     }
 }
