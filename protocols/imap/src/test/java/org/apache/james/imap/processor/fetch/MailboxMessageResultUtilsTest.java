@@ -19,8 +19,9 @@
 
 package org.apache.james.imap.processor.fetch;
 
+import static org.apache.james.imap.processor.fetch.MessageResultUtils.getMatching;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -123,8 +124,7 @@ public class MailboxMessageResultUtilsTest {
                 .iterator()));
         assertEquals(headerThree, MessageResultUtils.getMatching("Three",
                 headers.iterator()));
-        assertNull(MessageResultUtils
-                .getMatching("Missing", headers.iterator()));
+        assertThat(getMatching("Missing", headers.iterator())).isNull();
     }
 
 }

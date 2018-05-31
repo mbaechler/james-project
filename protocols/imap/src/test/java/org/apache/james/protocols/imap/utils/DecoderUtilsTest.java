@@ -256,7 +256,7 @@ public class DecoderUtilsTest {
     }
 
     private String formatAsImap(Date date, TimeZone zone) {
-        assertNotNull(date);
+        assertThat(date).isNotNull();
         FastDateFormat format = FastDateFormat.getInstance(
                 "dd-MMM-yyyy hh:mm:ss Z", zone, Locale.US);
         String out = format.format(date);
