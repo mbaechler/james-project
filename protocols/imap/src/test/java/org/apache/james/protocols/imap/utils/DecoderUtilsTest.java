@@ -19,8 +19,8 @@
 
 package org.apache.james.protocols.imap.utils;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -458,30 +458,30 @@ public class DecoderUtilsTest {
 
     @Test
     public void testIsSimpleDigit() throws Exception {
-        assertTrue(DecoderUtils.isSimpleDigit('0'));
-        assertTrue(DecoderUtils.isSimpleDigit('1'));
-        assertTrue(DecoderUtils.isSimpleDigit('2'));
-        assertTrue(DecoderUtils.isSimpleDigit('3'));
-        assertTrue(DecoderUtils.isSimpleDigit('4'));
-        assertTrue(DecoderUtils.isSimpleDigit('5'));
-        assertTrue(DecoderUtils.isSimpleDigit('6'));
-        assertTrue(DecoderUtils.isSimpleDigit('7'));
-        assertTrue(DecoderUtils.isSimpleDigit('8'));
-        assertTrue(DecoderUtils.isSimpleDigit('9'));
+        assertThat(DecoderUtils.isSimpleDigit('0')).isTrue();
+        assertThat(DecoderUtils.isSimpleDigit('1')).isTrue();
+        assertThat(DecoderUtils.isSimpleDigit('2')).isTrue();
+        assertThat(DecoderUtils.isSimpleDigit('3')).isTrue();
+        assertThat(DecoderUtils.isSimpleDigit('4')).isTrue();
+        assertThat(DecoderUtils.isSimpleDigit('5')).isTrue();
+        assertThat(DecoderUtils.isSimpleDigit('6')).isTrue();
+        assertThat(DecoderUtils.isSimpleDigit('7')).isTrue();
+        assertThat(DecoderUtils.isSimpleDigit('8')).isTrue();
+        assertThat(DecoderUtils.isSimpleDigit('9')).isTrue();
 
-        assertFalse(DecoderUtils.isSimpleDigit('/'));
-        assertFalse(DecoderUtils.isSimpleDigit('.'));
-        assertFalse(DecoderUtils.isSimpleDigit('-'));
-        assertFalse(DecoderUtils.isSimpleDigit('+'));
-        assertFalse(DecoderUtils.isSimpleDigit(','));
-        assertFalse(DecoderUtils.isSimpleDigit('*'));
-        assertFalse(DecoderUtils.isSimpleDigit(':'));
-        assertFalse(DecoderUtils.isSimpleDigit(';'));
-        assertFalse(DecoderUtils.isSimpleDigit('<'));
-        assertFalse(DecoderUtils.isSimpleDigit('='));
-        assertFalse(DecoderUtils.isSimpleDigit('>'));
-        assertFalse(DecoderUtils.isSimpleDigit('A'));
-        assertFalse(DecoderUtils.isSimpleDigit('B'));
+        assertThat(DecoderUtils.isSimpleDigit('/')).isFalse();
+        assertThat(DecoderUtils.isSimpleDigit('.')).isFalse();
+        assertThat(DecoderUtils.isSimpleDigit('-')).isFalse();
+        assertThat(DecoderUtils.isSimpleDigit('+')).isFalse();
+        assertThat(DecoderUtils.isSimpleDigit(',')).isFalse();
+        assertThat(DecoderUtils.isSimpleDigit('*')).isFalse();
+        assertThat(DecoderUtils.isSimpleDigit(':')).isFalse();
+        assertThat(DecoderUtils.isSimpleDigit(';')).isFalse();
+        assertThat(DecoderUtils.isSimpleDigit('<')).isFalse();
+        assertThat(DecoderUtils.isSimpleDigit('=')).isFalse();
+        assertThat(DecoderUtils.isSimpleDigit('>')).isFalse();
+        assertThat(DecoderUtils.isSimpleDigit('A')).isFalse();
+        assertThat(DecoderUtils.isSimpleDigit('B')).isFalse();
     }
 
     @Test

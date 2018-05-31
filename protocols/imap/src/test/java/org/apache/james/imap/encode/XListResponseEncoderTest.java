@@ -63,8 +63,8 @@ public class XListResponseEncoderTest {
     @Test
     public void encoderShouldNotAcceptLsubResponse() {
         assertThat(encoder.isAcceptable(new LSubResponse("name", true, '.'))).isFalse();
-        assertFalse(encoder.isAcceptable(context.mock(ImapMessage.class)));
-        assertFalse(encoder.isAcceptable(null));
+        assertThat(encoder.isAcceptable(context.mock(ImapMessage.class))).isFalse();
+        assertThat(encoder.isAcceptable(null)).isFalse();
     }
 
     @Test

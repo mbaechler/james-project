@@ -19,6 +19,7 @@
  */
 package org.apache.james.util.retry;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -36,7 +37,7 @@ public class DoublingRetryScheduleTest {
      */
     @Test
     public final void testDoublingRetrySchedule() {
-    Assertions.assertTrue(RetrySchedule.class.isAssignableFrom(DoublingRetrySchedule.class));
+    assertThat(RetrySchedule.class.isAssignableFrom(DoublingRetrySchedule.class)).isTrue();
     Assertions.assertEquals(0, new DoublingRetrySchedule(0, 0).getInterval(0));
     Assertions.assertEquals(0, new DoublingRetrySchedule(-1, -1).getInterval(0));
     Assertions.assertEquals(0, new DoublingRetrySchedule(-1, 0).getInterval(0));

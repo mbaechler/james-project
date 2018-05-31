@@ -18,8 +18,7 @@
  ****************************************************************/
 package org.apache.james.imap.encode;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -192,9 +191,9 @@ public class NamespaceResponseEncoderTest {
 
     @Test
     public void testNamespaceResponseIsAcceptable() throws Exception {
-        assertFalse(subject.isAcceptable(context.mock(ImapMessage.class)));
-        assertTrue(subject
-                .isAcceptable(new NamespaceResponse(null, null, null)));
+        assertThat(subject.isAcceptable(context.mock(ImapMessage.class))).isFalse();
+        assertThat(subject
+                .isAcceptable(new NamespaceResponse(null, null, null))).isTrue();
     }
 
 }

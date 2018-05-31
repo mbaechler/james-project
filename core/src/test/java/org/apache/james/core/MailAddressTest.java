@@ -19,6 +19,8 @@
 
 package org.apache.james.core;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 
@@ -97,7 +99,7 @@ public class MailAddressTest {
     public void testMailAddressString() throws AddressException {
 
         MailAddress a = new MailAddress(GOOD_ADDRESS);
-        Assert.assertTrue(GOOD_ADDRESS.equals(a.toString()));
+        assertThat(GOOD_ADDRESS.equals(a.toString())).isTrue();
 
         for (String goodAddress : GOOD_ADDRESSES) {
             try {
@@ -128,7 +130,7 @@ public class MailAddressTest {
             MailAddress a = new MailAddress("local-part", "-domain");
             Assert.assertFalse(a.toString(), true);
         } catch (AddressException e) {
-            Assert.assertTrue(true);
+            assertThat(true).isTrue();
         }
     }
 
@@ -200,7 +202,7 @@ public class MailAddressTest {
         try {
             InternetAddress b = new InternetAddress(GOOD_ADDRESS);
             MailAddress a = new MailAddress(b);
-            Assert.assertTrue(a.toInternetAddress().equals(b));
+            assertThat(a.toInternetAddress().equals(b)).isTrue();
             Assert.assertTrue(a.toString() + " != " + GOOD_ADDRESS, a.toString().equals(GOOD_ADDRESS));
         } catch (AddressException e) {
             System.out.println("AddressException" + e.getMessage());

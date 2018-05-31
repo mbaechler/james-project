@@ -19,9 +19,8 @@
 
 package org.apache.james.imap.encode;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -65,13 +64,13 @@ public class FetchResponseEncoderNoExtensionsTest  {
 
     @Test
     public void testShouldNotAcceptUnknownResponse() throws Exception {
-        assertFalse(encoder.isAcceptable(context.mock(ImapMessage.class)));
+        assertThat(encoder.isAcceptable(context.mock(ImapMessage.class))).isFalse();
     }
 
     @Test
     public void testShouldAcceptFetchResponse() throws Exception {
-        assertTrue(encoder.isAcceptable(new FetchResponse(11, null, null, null, null,
-                null, null, null, null, null)));
+        assertThat(encoder.isAcceptable(new FetchResponse(11, null, null, null, null,
+                null, null, null, null, null))).isTrue();
     }
 
     @Test

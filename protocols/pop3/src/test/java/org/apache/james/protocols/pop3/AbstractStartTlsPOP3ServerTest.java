@@ -18,6 +18,7 @@
  ****************************************************************/
 package org.apache.james.protocols.pop3;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -80,9 +81,9 @@ public abstract class AbstractStartTlsPOP3ServerTest {
 
             boolean startTlsCapa = Arrays.stream(client.getReplyStrings())
                 .anyMatch(cap -> cap.equalsIgnoreCase("STLS"));
-            assertTrue(startTlsCapa);
+            assertThat(startTlsCapa).isTrue();
             
-            assertTrue(client.execTLS());
+            assertThat(client.execTLS()).isTrue();
             // TODO: Reenable when commons-net 3.1.0 was released
             //       See NET-430
             //
