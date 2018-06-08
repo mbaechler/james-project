@@ -19,26 +19,17 @@
 
 package org.apache.james.dlp.api;
 
+import static org.apache.james.dlp.api.DLPFixture.RULE;
+import static org.apache.james.dlp.api.DLPFixture.RULE_2;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
 import org.apache.james.core.Domain;
 import org.junit.jupiter.api.Test;
 
-public interface DLPRuleStoreContract {
+import com.google.common.collect.ImmutableList;
 
-    DLPRule RULE = DLPRule.builder()
-        .explanation("explanation")
-        .expression("regex")
-        .targetsSender()
-        .build();
-    
-    DLPRule RULE_2 = DLPRule.builder()
-        .explanation("explanation2")
-        .expression("regex2")
-        .targetsSender()
-        .targetsRecipients()
-        .build();
+public interface DLPRuleStoreContract {
 
     @Test
     default void listShouldReturnEmptyWhenNone(DLPRulesStore dlpRulesStore) {
@@ -88,5 +79,22 @@ public interface DLPRuleStoreContract {
 
         assertThat(dlpRulesStore.list(otherDomain)).containsOnly(RULE_2);
     }
+    @Test
+    default void clearShouldOnlyRemovePreviouslyExistingEntries(DLPRulesStore dlpRulesStore) {
+        dlpRulesStore.store(Domain.LOCALHOST, ImmutableList.of(RULE, RULE_2));
 
+        dlpRulesStore.clear(Domain.LOCALHOST);
+
+        dlpRulesStore.store(Domain.LOCALHOST, ImmutableList.of(RULE));
+
+        assertThat(dlpRulesStore.list(Domain.LOCALHOST)).containsOnly(RULE);
+    }
+
+    @Test
+    default void storeShouldNotStoreDuplicates(DLPRulesStore dlpRulesStore) {
+        dlpRulesStore.store(Domain.LOCALHOST, ImmutableList.of(RULE, RULE_2));
+        dlpRulesStore.store(Domain.LOCALHOST, ImmutableList.of(RULE));
+
+        assertThat(dlpRulesStore.list(Domain.LOCALHOST)).containsOnly(RULE, RULE_2);
+    }
 }
