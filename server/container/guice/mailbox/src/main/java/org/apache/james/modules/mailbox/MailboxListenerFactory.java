@@ -43,23 +43,23 @@ public class MailboxListenerFactory {
             this.configuration = Optional.empty();
         }
 
-        public MailboxListenerBuilder withExecutionMode(MailboxListener.ExecutionMode executionMode) {
+        public MailboxListenerBuilder executionMode(MailboxListener.ExecutionMode executionMode) {
             this.executionMode = Optional.of(executionMode);
             return this;
         }
 
-        public MailboxListenerBuilder withConfiguration(HierarchicalConfiguration configuration) {
+        public MailboxListenerBuilder configuration(HierarchicalConfiguration configuration) {
             this.configuration = Optional.of(configuration);
             return this;
         }
 
-        public MailboxListenerBuilder withExecutionMode(Optional<MailboxListener.ExecutionMode> executionMode) {
-            executionMode.ifPresent(this::withExecutionMode);
+        public MailboxListenerBuilder executionMode(Optional<MailboxListener.ExecutionMode> executionMode) {
+            executionMode.ifPresent(this::executionMode);
             return this;
         }
 
-        public MailboxListenerBuilder withConfiguration(Optional<HierarchicalConfiguration> configuration) {
-            configuration.ifPresent(this::withConfiguration);
+        public MailboxListenerBuilder configuration(Optional<HierarchicalConfiguration> configuration) {
+            configuration.ifPresent(this::configuration);
             return this;
         }
 

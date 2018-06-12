@@ -78,8 +78,8 @@ public class MailboxListenersLoaderImpl implements Configurable, MailboxListener
         try {
             LOGGER.info("Loading user registered mailbox listener {}", listenerClass);
             return mailboxListenerFactory.newInstance()
-                .withConfiguration(configuration.getConfiguration())
-                .withExecutionMode(configuration.isAsync().map(this::getExecutionMode))
+                .configuration(configuration.getConfiguration())
+                .executionMode(configuration.isAsync().map(this::getExecutionMode))
                 .clazz(classLoader.locateClass(listenerClass))
                 .build();
         } catch (ClassNotFoundException e) {
