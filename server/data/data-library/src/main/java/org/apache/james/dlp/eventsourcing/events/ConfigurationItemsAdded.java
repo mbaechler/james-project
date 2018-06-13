@@ -19,6 +19,7 @@
 
 package org.apache.james.dlp.eventsourcing.events;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
@@ -29,13 +30,14 @@ import org.apache.james.eventsourcing.EventId;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 
 public class ConfigurationItemsAdded implements Event {
     private final DLPAggregateId aggregateId;
     private final EventId eventId;
     private final List<DLPConfigurationItem> rules;
 
-    public ConfigurationItemsAdded(DLPAggregateId aggregateId, EventId eventId, List<DLPConfigurationItem> rules) {
+    public ConfigurationItemsAdded(DLPAggregateId aggregateId, EventId eventId, Collection<DLPConfigurationItem> rules) {
         Preconditions.checkNotNull(aggregateId);
         Preconditions.checkNotNull(eventId);
         Preconditions.checkNotNull(rules);
@@ -43,7 +45,7 @@ public class ConfigurationItemsAdded implements Event {
 
         this.aggregateId = aggregateId;
         this.eventId = eventId;
-        this.rules = rules;
+        this.rules = ImmutableList.copyOf(rules);
     }
 
     @Override

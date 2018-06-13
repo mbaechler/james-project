@@ -19,6 +19,7 @@
 
 package org.apache.james.dlp.eventsourcing.events;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
@@ -37,7 +38,7 @@ public class ConfigurationItemsRemoved implements Event {
     private final EventId eventId;
     private final List<DLPConfigurationItem> rules;
 
-    public ConfigurationItemsRemoved(DLPAggregateId aggregateId, EventId eventId, List<DLPConfigurationItem> rules) {
+    public ConfigurationItemsRemoved(DLPAggregateId aggregateId, EventId eventId, Collection<DLPConfigurationItem> rules) {
         Preconditions.checkNotNull(aggregateId);
         Preconditions.checkNotNull(eventId);
         Preconditions.checkNotNull(rules);

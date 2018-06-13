@@ -44,7 +44,7 @@ public interface DLPConfigurationStoreContract {
         dlpConfigurationStore.store(Domain.LOCALHOST, RULE);
         dlpConfigurationStore.store(Domain.LOCALHOST, RULE_2);
 
-        assertThat(dlpConfigurationStore.list(Domain.LOCALHOST)).containsOnly(RULE, RULE_2);
+        assertThat(dlpConfigurationStore.list(Domain.LOCALHOST)).containsOnly(RULE_2);
     }
 
     @Test
@@ -92,10 +92,10 @@ public interface DLPConfigurationStoreContract {
     }
 
     @Test
-    default void storeShouldNotStoreDuplicates(DLPConfigurationStore dlpConfigurationStore) {
+    default void storeShouldOverwritePreviouslyStoredEntries(DLPConfigurationStore dlpConfigurationStore) {
         dlpConfigurationStore.store(Domain.LOCALHOST, ImmutableList.of(RULE, RULE_2));
         dlpConfigurationStore.store(Domain.LOCALHOST, ImmutableList.of(RULE));
 
-        assertThat(dlpConfigurationStore.list(Domain.LOCALHOST)).containsOnly(RULE, RULE_2);
+        assertThat(dlpConfigurationStore.list(Domain.LOCALHOST)).containsOnly(RULE);
     }
 }

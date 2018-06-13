@@ -20,17 +20,22 @@
 package org.apache.james.dlp.eventsourcing.aggregates;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.apache.james.dlp.api.DLPConfigurationItem;
 import org.apache.james.dlp.eventsourcing.events.ConfigurationItemsAdded;
 import org.apache.james.dlp.eventsourcing.events.ConfigurationItemsRemoved;
 import org.apache.james.eventsourcing.Event;
+import org.apache.james.eventsourcing.EventId;
 import org.apache.james.eventsourcing.eventstore.History;
+import org.apache.james.util.OptionalUtils;
 
 import com.github.steveash.guavate.Guavate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 
 public class DLPDomainConfigurationItems {
 
@@ -95,19 +100,43 @@ public class DLPDomainConfigurationItems {
         }
     }
 
-    public List<Event> store(List<DLPConfigurationItem> rules) {
+    public List<Event> store(List<DLPConfigurationItem> updatedRules) {
         ImmutableSet<DLPConfigurationItem> existingRules = retrieveRules().collect(Guavate.toImmutableSet());
-        ImmutableList<DLPConfigurationItem> addedRules = rules.stream()
-            .filter(rule -> !existingRules.contains(rule))
-            .distinct()
+        ImmutableSet<DLPConfigurationItem> updateRulesSet = ImmutableSet.copyOf(updatedRules);
+
+        Optional<Event> removedRulesEvent = generateRemovedRulesEvent(existingRules, updateRulesSet);
+        Optional<Event> addedRulesEvent = generateAddedRulesEvent(existingRules, updateRulesSet, computeNextEventId(removedRulesEvent));
+
+        ImmutableList<Event> events = Stream
+            .of(removedRulesEvent, addedRulesEvent)
+            .flatMap(OptionalUtils::toStream)
             .collect(Guavate.toImmutableList());
-        if (!addedRules.isEmpty()) {
-            ImmutableList<Event> events = ImmutableList.of(new ConfigurationItemsAdded(aggregateId, history.getNextEventId(), addedRules));
-            events.forEach(this::apply);
-            return events;
-        } else {
-            return ImmutableList.of();
+
+        events.forEach(this::apply);
+        return events;
+    }
+
+    private EventId computeNextEventId(Optional<Event> removedRulesEvent) {
+        return removedRulesEvent
+            .map(Event::eventId)
+            .map(EventId::next)
+            .orElse(history.getNextEventId());
+    }
+
+    private Optional<Event> generateRemovedRulesEvent(ImmutableSet<DLPConfigurationItem> existingRules, ImmutableSet<DLPConfigurationItem> updateRulesSet) {
+        Set<DLPConfigurationItem> removedRules = Sets.difference(existingRules, updateRulesSet);
+        if (!removedRules.isEmpty()) {
+            return Optional.of(new ConfigurationItemsRemoved(aggregateId, history.getNextEventId(), removedRules));
         }
+        return Optional.empty();
+    }
+
+    private Optional<Event> generateAddedRulesEvent(Set<DLPConfigurationItem> existingRules, Set<DLPConfigurationItem> updateRulesSet, EventId nextEventId) {
+        Set<DLPConfigurationItem> addedRules = Sets.difference(updateRulesSet, existingRules);
+        if (!addedRules.isEmpty()) {
+            return Optional.of(new ConfigurationItemsAdded(aggregateId, nextEventId, addedRules));
+        }
+        return Optional.empty();
     }
 
     private void apply(Event event) {
