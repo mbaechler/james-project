@@ -28,6 +28,7 @@ import org.apache.james.eventsourcing.EventId;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
+
 import nl.jqno.equalsverifier.EqualsVerifier;
 
 public class ConfigurationItemsRemovedTest {

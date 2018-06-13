@@ -21,8 +21,8 @@ package org.apache.james.dlp.eventsourcing.commands;
 
 import java.util.List;
 
-import org.apache.james.dlp.eventsourcing.aggregates.DLPDomainConfigurationItems;
 import org.apache.james.dlp.eventsourcing.aggregates.DLPAggregateId;
+import org.apache.james.dlp.eventsourcing.aggregates.DLPDomainConfigurationItems;
 import org.apache.james.eventsourcing.CommandHandler;
 import org.apache.james.eventsourcing.Event;
 import org.apache.james.eventsourcing.eventstore.EventStore;
