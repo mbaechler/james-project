@@ -42,7 +42,7 @@ public class ClearCommandHandler implements CommandHandler<ClearCommand> {
 
     @Override
     public List<? extends Event> handle(ClearCommand clearCommand) {
-        DLPAggregateId aggregateId = new DLPAggregateId(clearCommand.getSenderDomain());
+        DLPAggregateId aggregateId = new DLPAggregateId(clearCommand.getDomain());
 
         return DLPDomainConfigurationItems.load(
                 aggregateId,

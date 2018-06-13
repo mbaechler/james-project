@@ -28,16 +28,16 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 
 public class ClearCommand implements Command {
-    private final Domain senderDomain;
+    private final Domain domain;
 
-    public ClearCommand(Domain senderDomain) {
-        Preconditions.checkNotNull(senderDomain);
+    public ClearCommand(Domain domain) {
+        Preconditions.checkNotNull(domain);
 
-        this.senderDomain = senderDomain;
+        this.domain = domain;
     }
 
-    public Domain getSenderDomain() {
-        return senderDomain;
+    public Domain getDomain() {
+        return domain;
     }
 
     @Override
@@ -45,20 +45,20 @@ public class ClearCommand implements Command {
         if (o instanceof ClearCommand) {
             ClearCommand that = (ClearCommand) o;
 
-            return Objects.equals(this.senderDomain, that.senderDomain);
+            return Objects.equals(this.domain, that.domain);
         }
         return false;
     }
 
     @Override
     public final int hashCode() {
-        return Objects.hash(senderDomain);
+        return Objects.hash(domain);
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-            .add("senderDomain", senderDomain)
+            .add("domain", domain)
             .toString();
     }
 }
