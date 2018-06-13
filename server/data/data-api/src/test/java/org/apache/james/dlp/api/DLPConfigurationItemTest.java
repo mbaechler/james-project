@@ -97,7 +97,7 @@ public class DLPConfigurationItemTest {
     }
 
     @Test
-    void expressionShouldBeTheOnlyMandatoryField() {
+    void expressionAndIdShouldBeTheOnlyMandatoryFields() {
         assertThatCode(() ->
             DLPConfigurationItem.builder()
                 .id(UNIQUE_ID)
