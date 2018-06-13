@@ -31,6 +31,8 @@ import com.google.common.collect.ImmutableList;
 
 public interface DLPConfigurationStoreContract {
 
+    Domain OTHER_DOMAIN = Domain.of("any.com");
+
     @Test
     default void listShouldReturnEmptyWhenNone(DLPConfigurationStore dlpConfigurationStore) {
         assertThat(dlpConfigurationStore.list(Domain.LOCALHOST))
@@ -48,7 +50,7 @@ public interface DLPConfigurationStoreContract {
     @Test
     default void listShouldNotReturnEntriesOfOtherDomains(DLPConfigurationStore dlpConfigurationStore) {
         dlpConfigurationStore.store(Domain.LOCALHOST, RULE);
-        dlpConfigurationStore.store(Domain.of("any.com"), RULE_2);
+        dlpConfigurationStore.store(OTHER_DOMAIN, RULE_2);
 
         assertThat(dlpConfigurationStore.list(Domain.LOCALHOST)).containsOnly(RULE);
     }
@@ -71,13 +73,12 @@ public interface DLPConfigurationStoreContract {
 
     @Test
     default void clearShouldOnlyRemoveEntriesOfADomain(DLPConfigurationStore dlpConfigurationStore) {
-        Domain otherDomain = Domain.of("any.com");
         dlpConfigurationStore.store(Domain.LOCALHOST, RULE);
-        dlpConfigurationStore.store(otherDomain, RULE_2);
+        dlpConfigurationStore.store(OTHER_DOMAIN, RULE_2);
 
         dlpConfigurationStore.clear(Domain.LOCALHOST);
 
-        assertThat(dlpConfigurationStore.list(otherDomain)).containsOnly(RULE_2);
+        assertThat(dlpConfigurationStore.list(OTHER_DOMAIN)).containsOnly(RULE_2);
     }
     @Test
     default void clearShouldOnlyRemovePreviouslyExistingEntries(DLPConfigurationStore dlpConfigurationStore) {
