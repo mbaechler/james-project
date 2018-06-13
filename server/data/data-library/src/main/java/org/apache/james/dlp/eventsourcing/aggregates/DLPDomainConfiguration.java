@@ -102,10 +102,10 @@ public class DLPDomainConfiguration {
 
     public List<Event> store(List<DLPConfigurationItem> updatedRules) {
         ImmutableSet<DLPConfigurationItem> existingRules = retrieveRules().collect(Guavate.toImmutableSet());
-        ImmutableSet<DLPConfigurationItem> updateRulesSet = ImmutableSet.copyOf(updatedRules);
+        ImmutableSet<DLPConfigurationItem> updatedRulesSet = ImmutableSet.copyOf(updatedRules);
 
-        Optional<Event> removedRulesEvent = generateRemovedRulesEvent(existingRules, updateRulesSet);
-        Optional<Event> addedRulesEvent = generateAddedRulesEvent(existingRules, updateRulesSet, computeNextEventId(removedRulesEvent));
+        Optional<Event> removedRulesEvent = generateRemovedRulesEvent(existingRules, updatedRulesSet);
+        Optional<Event> addedRulesEvent = generateAddedRulesEvent(existingRules, updatedRulesSet, computeNextEventId(removedRulesEvent));
 
         ImmutableList<Event> events = Stream
             .of(removedRulesEvent, addedRulesEvent)
