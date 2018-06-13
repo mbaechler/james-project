@@ -17,25 +17,44 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.dlp.api;
+package org.apache.james.dlp.eventsourcing.aggregates;
 
-import java.util.List;
-import java.util.stream.Stream;
+import java.util.Objects;
 
 import org.apache.james.core.Domain;
+import org.apache.james.eventsourcing.AggregateId;
 
-import com.google.common.collect.ImmutableList;
+import com.google.common.base.Preconditions;
 
-public interface DLPRulesStore {
+public class DLPAggregateId implements AggregateId {
+    private static final String SEPARATOR = "/";
+    private static final String PREFIX = "DLPRule";
 
-    Stream<DLPRule> list(Domain domain);
+    private final Domain domain;
 
-    void store(Domain domain, List<DLPRule> rule);
+    public DLPAggregateId(Domain domain) {
+        Preconditions.checkNotNull(domain);
 
-    default void store(Domain domain, DLPRule rule) {
-        store(domain, ImmutableList.of(rule));
+        this.domain = domain;
     }
 
-    void clear(Domain domain);
-    
+    @Override
+    public String asAggregateKey() {
+        return PREFIX + SEPARATOR + domain.asString();
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (o instanceof DLPAggregateId) {
+            DLPAggregateId that = (DLPAggregateId) o;
+
+            return Objects.equals(this.domain, that.domain);
+        }
+        return false;
+    }
+
+    @Override
+    public final int hashCode() {
+        return Objects.hash(domain);
+    }
 }

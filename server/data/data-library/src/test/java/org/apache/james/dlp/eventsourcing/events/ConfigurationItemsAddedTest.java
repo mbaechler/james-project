@@ -23,7 +23,7 @@ import static org.apache.james.dlp.api.DLPFixture.RULE;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.apache.james.core.Domain;
-import org.apache.james.dlp.eventsourcing.aggregates.DLPRulesAggregateId;
+import org.apache.james.dlp.eventsourcing.aggregates.DLPAggregateId;
 import org.apache.james.eventsourcing.EventId;
 import org.junit.Test;
 
@@ -31,36 +31,36 @@ import com.google.common.collect.ImmutableList;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 
-public class RulesAddedTest {
+public class ConfigurationItemsAddedTest {
 
     @Test
     public void shouldMatchBeanContract() {
-        EqualsVerifier.forClass(RulesAdded.class)
+        EqualsVerifier.forClass(ConfigurationItemsAdded.class)
             .allFieldsShouldBeUsed()
             .verify();
     }
 
     @Test
     public void constructorShouldThrowWhenNullAggregateId() {
-        assertThatThrownBy(() -> new RulesAdded(null, EventId.first(), ImmutableList.of(RULE)))
+        assertThatThrownBy(() -> new ConfigurationItemsAdded(null, EventId.first(), ImmutableList.of(RULE)))
             .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     public void constructorShouldThrowWhenNullEventId() {
-        assertThatThrownBy(() -> new RulesAdded(new DLPRulesAggregateId(Domain.LOCALHOST), null, ImmutableList.of(RULE)))
+        assertThatThrownBy(() -> new ConfigurationItemsAdded(new DLPAggregateId(Domain.LOCALHOST), null, ImmutableList.of(RULE)))
             .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     public void constructorShouldThrowWhenNullRules() {
-        assertThatThrownBy(() -> new RulesAdded(new DLPRulesAggregateId(Domain.LOCALHOST), EventId.first(), null))
+        assertThatThrownBy(() -> new ConfigurationItemsAdded(new DLPAggregateId(Domain.LOCALHOST), EventId.first(), null))
             .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     public void constructorShouldThrowWhenEmptyRulesList() {
-        assertThatThrownBy(() -> new RulesAdded(new DLPRulesAggregateId(Domain.LOCALHOST), EventId.first(), ImmutableList.of()))
+        assertThatThrownBy(() -> new ConfigurationItemsAdded(new DLPAggregateId(Domain.LOCALHOST), EventId.first(), ImmutableList.of()))
             .isInstanceOf(IllegalArgumentException.class);
     }
 

@@ -20,12 +20,12 @@
 package org.apache.james.dlp.api;
 
 public interface DLPFixture {
-    DLPRule RULE = DLPRule.builder()
+    DLPConfigurationItem RULE = DLPConfigurationItem.builder()
         .explanation("explanation")
         .expression("regex")
         .targetsSender()
         .build();
-    DLPRule RULE_2 = DLPRule.builder()
+    DLPConfigurationItem RULE_2 = DLPConfigurationItem.builder()
         .explanation("explanation2")
         .expression("regex2")
         .targetsSender()

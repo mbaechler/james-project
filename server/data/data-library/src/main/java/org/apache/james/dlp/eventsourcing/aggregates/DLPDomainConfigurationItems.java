@@ -22,9 +22,9 @@ package org.apache.james.dlp.eventsourcing.aggregates;
 import java.util.List;
 import java.util.stream.Stream;
 
-import org.apache.james.dlp.api.DLPRule;
-import org.apache.james.dlp.eventsourcing.events.RulesAdded;
-import org.apache.james.dlp.eventsourcing.events.RulesRemoved;
+import org.apache.james.dlp.api.DLPConfigurationItem;
+import org.apache.james.dlp.eventsourcing.events.ConfigurationItemsAdded;
+import org.apache.james.dlp.eventsourcing.events.ConfigurationItemsRemoved;
 import org.apache.james.eventsourcing.Event;
 import org.apache.james.eventsourcing.eventstore.History;
 
@@ -32,10 +32,10 @@ import com.github.steveash.guavate.Guavate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
-public class DLPDomainRules {
+public class DLPDomainConfigurationItems {
 
-    public static DLPDomainRules load(DLPRulesAggregateId aggregateId, History history) {
-        return new DLPDomainRules(aggregateId, history);
+    public static DLPDomainConfigurationItems load(DLPAggregateId aggregateId, History history) {
+        return new DLPDomainConfigurationItems(aggregateId, history);
     }
 
     private static class State {
@@ -44,50 +44,50 @@ public class DLPDomainRules {
             return new State(ImmutableSet.of());
         }
 
-        final ImmutableSet<DLPRule> rules;
+        final ImmutableSet<DLPConfigurationItem> rules;
 
-        private State(ImmutableSet<DLPRule> rules) {
+        private State(ImmutableSet<DLPConfigurationItem> rules) {
             this.rules = rules;
         }
 
-        State add(DLPRule rule) {
+        State add(DLPConfigurationItem rule) {
             return add(ImmutableList.of(rule));
         }
 
-        State add(List<DLPRule> toAdd) {
-            ImmutableSet<DLPRule> union = Stream.concat(this.rules.stream(), toAdd.stream()).collect(Guavate.toImmutableSet());
+        State add(List<DLPConfigurationItem> toAdd) {
+            ImmutableSet<DLPConfigurationItem> union = Stream.concat(this.rules.stream(), toAdd.stream()).collect(Guavate.toImmutableSet());
             return new State(union);
         }
 
-        State remove(DLPRule toRemove) {
+        State remove(DLPConfigurationItem toRemove) {
             return remove(ImmutableList.of(toRemove));
         }
 
-        State remove(List<DLPRule> toRemove) {
-            ImmutableSet<DLPRule> filtered = rules.stream().filter(rule -> !toRemove.contains(rule)).collect(Guavate.toImmutableSet());
+        State remove(List<DLPConfigurationItem> toRemove) {
+            ImmutableSet<DLPConfigurationItem> filtered = rules.stream().filter(rule -> !toRemove.contains(rule)).collect(Guavate.toImmutableSet());
             return new State(filtered);
         }
     }
 
-    private final DLPRulesAggregateId aggregateId;
+    private final DLPAggregateId aggregateId;
     private final History history;
     private State state;
 
-    private DLPDomainRules(DLPRulesAggregateId aggregateId, History history) {
+    private DLPDomainConfigurationItems(DLPAggregateId aggregateId, History history) {
         this.aggregateId = aggregateId;
         this.state = State.initial();
         history.getEvents().forEach(this::apply);
         this.history = history;
     }
 
-    public Stream<DLPRule> retrieveRules() {
+    public Stream<DLPConfigurationItem> retrieveRules() {
         return state.rules.stream();
     }
 
     public List<Event> clear() {
-        ImmutableList<DLPRule> rules = retrieveRules().collect(Guavate.toImmutableList());
+        ImmutableList<DLPConfigurationItem> rules = retrieveRules().collect(Guavate.toImmutableList());
         if (!rules.isEmpty()) {
-            ImmutableList<Event> events = ImmutableList.of(new RulesRemoved(aggregateId, history.getNextEventId(), rules));
+            ImmutableList<Event> events = ImmutableList.of(new ConfigurationItemsRemoved(aggregateId, history.getNextEventId(), rules));
             events.forEach(this::apply);
             return events;
         } else {
@@ -95,14 +95,14 @@ public class DLPDomainRules {
         }
     }
 
-    public List<Event> store(List<DLPRule> rules) {
-        ImmutableSet<DLPRule> existingRules = retrieveRules().collect(Guavate.toImmutableSet());
-        ImmutableList<DLPRule> addedRules = rules.stream()
+    public List<Event> store(List<DLPConfigurationItem> rules) {
+        ImmutableSet<DLPConfigurationItem> existingRules = retrieveRules().collect(Guavate.toImmutableSet());
+        ImmutableList<DLPConfigurationItem> addedRules = rules.stream()
             .filter(rule -> !existingRules.contains(rule))
             .distinct()
             .collect(Guavate.toImmutableList());
         if (!addedRules.isEmpty()) {
-            ImmutableList<Event> events = ImmutableList.of(new RulesAdded(aggregateId, history.getNextEventId(), addedRules));
+            ImmutableList<Event> events = ImmutableList.of(new ConfigurationItemsAdded(aggregateId, history.getNextEventId(), addedRules));
             events.forEach(this::apply);
             return events;
         } else {
@@ -111,11 +111,11 @@ public class DLPDomainRules {
     }
 
     private void apply(Event event) {
-        if (event instanceof RulesAdded) {
-            state = state.add(((RulesAdded) event).getRules());
+        if (event instanceof ConfigurationItemsAdded) {
+            state = state.add(((ConfigurationItemsAdded) event).getRules());
         }
-        if (event instanceof RulesRemoved) {
-            state = state.remove(((RulesRemoved) event).getRules());
+        if (event instanceof ConfigurationItemsRemoved) {
+            state = state.remove(((ConfigurationItemsRemoved) event).getRules());
         }
     }
 

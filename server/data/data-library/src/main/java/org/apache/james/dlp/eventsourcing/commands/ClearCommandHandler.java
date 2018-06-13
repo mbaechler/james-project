@@ -21,8 +21,8 @@ package org.apache.james.dlp.eventsourcing.commands;
 
 import java.util.List;
 
-import org.apache.james.dlp.eventsourcing.aggregates.DLPDomainRules;
-import org.apache.james.dlp.eventsourcing.aggregates.DLPRulesAggregateId;
+import org.apache.james.dlp.eventsourcing.aggregates.DLPDomainConfigurationItems;
+import org.apache.james.dlp.eventsourcing.aggregates.DLPAggregateId;
 import org.apache.james.eventsourcing.CommandHandler;
 import org.apache.james.eventsourcing.Event;
 import org.apache.james.eventsourcing.eventstore.EventStore;
@@ -42,9 +42,9 @@ public class ClearCommandHandler implements CommandHandler<ClearCommand> {
 
     @Override
     public List<? extends Event> handle(ClearCommand clearCommand) {
-        DLPRulesAggregateId aggregateId = new DLPRulesAggregateId(clearCommand.getSenderDomain());
+        DLPAggregateId aggregateId = new DLPAggregateId(clearCommand.getSenderDomain());
 
-        return DLPDomainRules.load(
+        return DLPDomainConfigurationItems.load(
                 aggregateId,
                 eventStore.getEventsOfAggregate(aggregateId))
             .clear();

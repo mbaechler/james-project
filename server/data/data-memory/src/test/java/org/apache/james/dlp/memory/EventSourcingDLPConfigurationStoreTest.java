@@ -19,10 +19,10 @@
 
 package org.apache.james.dlp.memory;
 
-import org.apache.james.dlp.api.DLPRuleStoreContract;
+import org.apache.james.dlp.api.DLPConfigurationStoreContract;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-@ExtendWith(InMemoryEventSourcingDLPRuleStoreExtension.class)
-public class EventSourcingDLPRuleStoreTest implements DLPRuleStoreContract {
+@ExtendWith(InMemoryEventSourcingDLPConfigurationStoreExtension.class)
+public class EventSourcingDLPConfigurationStoreTest implements DLPConfigurationStoreContract {
 
 }

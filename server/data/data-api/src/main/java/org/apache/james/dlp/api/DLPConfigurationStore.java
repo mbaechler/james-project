@@ -17,24 +17,25 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.dlp.memory;
+package org.apache.james.dlp.api;
 
-import org.apache.james.dlp.api.DLPRulesStore;
-import org.apache.james.dlp.eventsourcing.EventSourcingDLPRulesStore;
-import org.apache.james.eventsourcing.eventstore.memory.InMemoryEventStore;
-import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.ParameterContext;
-import org.junit.jupiter.api.extension.ParameterResolutionException;
-import org.junit.jupiter.api.extension.ParameterResolver;
+import java.util.List;
+import java.util.stream.Stream;
 
-public class InMemoryEventSourcingDLPRuleStoreExtension implements ParameterResolver {
-    @Override
-    public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-        return (parameterContext.getParameter().getType() == DLPRulesStore.class);
+import org.apache.james.core.Domain;
+
+import com.google.common.collect.ImmutableList;
+
+public interface DLPConfigurationStore {
+
+    Stream<DLPConfigurationItem> list(Domain domain);
+
+    void store(Domain domain, List<DLPConfigurationItem> rule);
+
+    default void store(Domain domain, DLPConfigurationItem rule) {
+        store(domain, ImmutableList.of(rule));
     }
 
-    @Override
-    public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-        return new EventSourcingDLPRulesStore(new InMemoryEventStore());
-    }
+    void clear(Domain domain);
+    
 }

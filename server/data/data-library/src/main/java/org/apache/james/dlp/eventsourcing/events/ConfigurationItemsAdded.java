@@ -22,22 +22,20 @@ package org.apache.james.dlp.eventsourcing.events;
 import java.util.List;
 import java.util.Objects;
 
-import org.apache.james.dlp.api.DLPRule;
-import org.apache.james.dlp.eventsourcing.aggregates.DLPRulesAggregateId;
-import org.apache.james.eventsourcing.AggregateId;
+import org.apache.james.dlp.api.DLPConfigurationItem;
+import org.apache.james.dlp.eventsourcing.aggregates.DLPAggregateId;
 import org.apache.james.eventsourcing.Event;
 import org.apache.james.eventsourcing.EventId;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 
-public class RulesRemoved implements Event {
-    private final DLPRulesAggregateId aggregateId;
+public class ConfigurationItemsAdded implements Event {
+    private final DLPAggregateId aggregateId;
     private final EventId eventId;
-    private final List<DLPRule> rules;
+    private final List<DLPConfigurationItem> rules;
 
-    public RulesRemoved(DLPRulesAggregateId aggregateId, EventId eventId, List<DLPRule> rules) {
+    public ConfigurationItemsAdded(DLPAggregateId aggregateId, EventId eventId, List<DLPConfigurationItem> rules) {
         Preconditions.checkNotNull(aggregateId);
         Preconditions.checkNotNull(eventId);
         Preconditions.checkNotNull(rules);
@@ -45,7 +43,7 @@ public class RulesRemoved implements Event {
 
         this.aggregateId = aggregateId;
         this.eventId = eventId;
-        this.rules = ImmutableList.copyOf(rules);
+        this.rules = rules;
     }
 
     @Override
@@ -53,19 +51,18 @@ public class RulesRemoved implements Event {
         return eventId;
     }
 
-    @Override
-    public AggregateId getAggregateId() {
+    public DLPAggregateId getAggregateId() {
         return aggregateId;
     }
 
-    public List<DLPRule> getRules() {
+    public List<DLPConfigurationItem> getRules() {
         return rules;
     }
 
     @Override
     public final boolean equals(Object o) {
-        if (o instanceof RulesRemoved) {
-            RulesRemoved that = (RulesRemoved) o;
+        if (o instanceof ConfigurationItemsAdded) {
+            ConfigurationItemsAdded that = (ConfigurationItemsAdded) o;
 
             return Objects.equals(this.aggregateId, that.aggregateId)
                 && Objects.equals(this.eventId, that.eventId)

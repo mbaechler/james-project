@@ -17,50 +17,35 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.dlp.eventsourcing.events;
+package org.apache.james.dlp.eventsourcing.aggregates;
 
-import static org.apache.james.dlp.api.DLPFixture.RULE;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.apache.james.core.Domain;
-import org.apache.james.dlp.eventsourcing.aggregates.DLPRulesAggregateId;
-import org.apache.james.eventsourcing.EventId;
 import org.junit.Test;
 
-import com.google.common.collect.ImmutableList;
 import nl.jqno.equalsverifier.EqualsVerifier;
 
-public class RulesRemovedTest {
+public class DLPAggregateIdTest {
 
     @Test
     public void shouldMatchBeanContract() {
-        EqualsVerifier.forClass(RulesRemoved.class)
+        EqualsVerifier.forClass(DLPAggregateId.class)
             .allFieldsShouldBeUsed()
             .verify();
     }
 
     @Test
-    public void constructorShouldThrowWhenNullAggregateId() {
-        assertThatThrownBy(() -> new RulesRemoved(null, EventId.first(), ImmutableList.of(RULE)))
+    public void constructorShouldThrowWhenNullDomain() {
+        assertThatThrownBy(() -> new DLPAggregateId(null))
             .isInstanceOf(NullPointerException.class);
     }
 
     @Test
-    public void constructorShouldThrowWhenNullEventId() {
-        assertThatThrownBy(() -> new RulesRemoved(new DLPRulesAggregateId(Domain.LOCALHOST), null, ImmutableList.of()))
-            .isInstanceOf(NullPointerException.class);
-    }
-
-    @Test
-    public void constructorShouldThrowWhenEmptyRulesList() {
-        assertThatThrownBy(() -> new RulesRemoved(new DLPRulesAggregateId(Domain.LOCALHOST), EventId.first(), ImmutableList.of()))
-            .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
-    public void constructorShouldThrowWhenNullRulesList() {
-        assertThatThrownBy(() -> new RulesRemoved(new DLPRulesAggregateId(Domain.LOCALHOST), EventId.first(), null))
-            .isInstanceOf(NullPointerException.class);
+    public void asAggregateKeyShouldReturnAStringContainingThePrefixAndTheDomain() {
+        assertThat(new DLPAggregateId(Domain.LOCALHOST).asAggregateKey())
+            .isEqualTo("DLPRule/localhost");
     }
 
 }

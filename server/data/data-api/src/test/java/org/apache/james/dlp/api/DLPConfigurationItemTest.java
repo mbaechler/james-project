@@ -28,21 +28,21 @@ import org.junit.jupiter.api.Test;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 
-public class DLPRuleTest {
+public class DLPConfigurationItemTest {
 
     private static final String EXPLANATION = "explanation";
     private static final String REGEX = "regex";
 
     @Test
     void shouldMatchBeanContract() {
-        EqualsVerifier.forClass(DLPRule.class)
+        EqualsVerifier.forClass(DLPConfigurationItem.class)
             .allFieldsShouldBeUsed()
             .verify();
     }
 
     @Test
     void innerClassTargetsShouldMatchBeanContract() {
-        EqualsVerifier.forClass(DLPRule.Targets.class)
+        EqualsVerifier.forClass(DLPConfigurationItem.Targets.class)
             .allFieldsShouldBeUsed()
             .verify();
     }
@@ -50,7 +50,7 @@ public class DLPRuleTest {
     @Test
     void expressionShouldBeMandatory() {
         assertThatThrownBy(() ->
-            DLPRule.builder()
+            DLPConfigurationItem.builder()
                 .targetsRecipients()
                 .targetsSender()
                 .targetsContent()
@@ -62,7 +62,7 @@ public class DLPRuleTest {
     @Test
     void expressionShouldBeTheOnlyMandatoryField() {
         assertThatCode(() ->
-            DLPRule.builder()
+            DLPConfigurationItem.builder()
                 .expression(REGEX)
                 .build())
             .doesNotThrowAnyException();
@@ -70,81 +70,81 @@ public class DLPRuleTest {
 
     @Test
     void builderShouldPreserveExpression() {
-        DLPRule dlpRule = DLPRule.builder()
+        DLPConfigurationItem dlpConfigurationItem = DLPConfigurationItem.builder()
             .expression("regex")
             .build();
 
-        assertThat(dlpRule.getRegexp()).isEqualTo(REGEX);
+        assertThat(dlpConfigurationItem.getRegexp()).isEqualTo(REGEX);
     }
 
     @Test
     void builderShouldPreserveExplanation() {
-        DLPRule dlpRule = DLPRule.builder()
+        DLPConfigurationItem dlpConfigurationItem = DLPConfigurationItem.builder()
             .explanation("explanation")
             .expression("regex")
             .build();
 
-        assertThat(dlpRule.getExplanation()).contains(EXPLANATION);
+        assertThat(dlpConfigurationItem.getExplanation()).contains(EXPLANATION);
     }
 
     @Test
     void dlpRuleShouldHaveNoTargetsWhenNoneSpecified() {
-        DLPRule dlpRule = DLPRule.builder()
+        DLPConfigurationItem dlpConfigurationItem = DLPConfigurationItem.builder()
             .expression("regex")
             .build();
 
         SoftAssertions.assertSoftly(softly -> {
-            softly.assertThat(dlpRule.getTargets().isContentTargeted()).isFalse();
-            softly.assertThat(dlpRule.getTargets().isRecipientTargeted()).isFalse();
-            softly.assertThat(dlpRule.getTargets().isSenderTargeted()).isFalse();
+            softly.assertThat(dlpConfigurationItem.getTargets().isContentTargeted()).isFalse();
+            softly.assertThat(dlpConfigurationItem.getTargets().isRecipientTargeted()).isFalse();
+            softly.assertThat(dlpConfigurationItem.getTargets().isSenderTargeted()).isFalse();
         });
     }
 
     @Test
     void targetsRecipientsShouldBeReportedInTargets() {
-        DLPRule dlpRule = DLPRule.builder()
+        DLPConfigurationItem dlpConfigurationItem = DLPConfigurationItem.builder()
             .targetsRecipients()
             .expression("regex")
             .build();
 
         SoftAssertions.assertSoftly(softly -> {
-            softly.assertThat(dlpRule.getTargets().isContentTargeted()).isFalse();
-            softly.assertThat(dlpRule.getTargets().isRecipientTargeted()).isTrue();
-            softly.assertThat(dlpRule.getTargets().isSenderTargeted()).isFalse();
+            softly.assertThat(dlpConfigurationItem.getTargets().isContentTargeted()).isFalse();
+            softly.assertThat(dlpConfigurationItem.getTargets().isRecipientTargeted()).isTrue();
+            softly.assertThat(dlpConfigurationItem.getTargets().isSenderTargeted()).isFalse();
         });
     }
 
     @Test
     void targetsSenderShouldBeReportedInTargets() {
-        DLPRule dlpRule = DLPRule.builder()
+        DLPConfigurationItem dlpConfigurationItem = DLPConfigurationItem.builder()
             .targetsSender()
             .expression("regex")
             .build();
 
         SoftAssertions.assertSoftly(softly -> {
-            softly.assertThat(dlpRule.getTargets().isContentTargeted()).isFalse();
-            softly.assertThat(dlpRule.getTargets().isRecipientTargeted()).isFalse();
-            softly.assertThat(dlpRule.getTargets().isSenderTargeted()).isTrue();
+            softly.assertThat(dlpConfigurationItem.getTargets().isContentTargeted()).isFalse();
+            softly.assertThat(dlpConfigurationItem.getTargets().isRecipientTargeted()).isFalse();
+            softly.assertThat(dlpConfigurationItem.getTargets().isSenderTargeted()).isTrue();
         });
     }
 
     @Test
     void targetsContentShouldBeReportedInTargets() {
-        DLPRule dlpRule = DLPRule.builder()
+        DLPConfigurationItem dlpConfigurationItem = DLPConfigurationItem.builder()
             .targetsContent()
             .expression("regex")
             .build();
 
         SoftAssertions.assertSoftly(softly -> {
-            softly.assertThat(dlpRule.getTargets().isContentTargeted()).isTrue();
-            softly.assertThat(dlpRule.getTargets().isRecipientTargeted()).isFalse();
-            softly.assertThat(dlpRule.getTargets().isSenderTargeted()).isFalse();
+            softly.assertThat(dlpConfigurationItem.getTargets().isContentTargeted()).isTrue();
+            softly.assertThat(dlpConfigurationItem.getTargets().isRecipientTargeted()).isFalse();
+            softly.assertThat(dlpConfigurationItem.getTargets().isSenderTargeted()).isFalse();
         });
     }
 
     @Test
     void allTargetsShouldBeReportedInTargets() {
-        DLPRule dlpRule = DLPRule.builder()
+        DLPConfigurationItem dlpConfigurationItem = DLPConfigurationItem.builder()
             .targetsContent()
             .targetsSender()
             .targetsRecipients()
@@ -152,9 +152,9 @@ public class DLPRuleTest {
             .build();
 
         SoftAssertions.assertSoftly(softly -> {
-            softly.assertThat(dlpRule.getTargets().isContentTargeted()).isTrue();
-            softly.assertThat(dlpRule.getTargets().isRecipientTargeted()).isTrue();
-            softly.assertThat(dlpRule.getTargets().isSenderTargeted()).isTrue();
+            softly.assertThat(dlpConfigurationItem.getTargets().isContentTargeted()).isTrue();
+            softly.assertThat(dlpConfigurationItem.getTargets().isRecipientTargeted()).isTrue();
+            softly.assertThat(dlpConfigurationItem.getTargets().isSenderTargeted()).isTrue();
         });
     }
 

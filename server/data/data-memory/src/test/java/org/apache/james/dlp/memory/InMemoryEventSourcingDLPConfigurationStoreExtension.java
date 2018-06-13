@@ -17,44 +17,24 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.dlp.eventsourcing.aggregates;
+package org.apache.james.dlp.memory;
 
-import java.util.Objects;
+import org.apache.james.dlp.api.DLPConfigurationStore;
+import org.apache.james.dlp.eventsourcing.EventSourcingDLPConfigurationStore;
+import org.apache.james.eventsourcing.eventstore.memory.InMemoryEventStore;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.ParameterContext;
+import org.junit.jupiter.api.extension.ParameterResolutionException;
+import org.junit.jupiter.api.extension.ParameterResolver;
 
-import org.apache.james.core.Domain;
-import org.apache.james.eventsourcing.AggregateId;
-
-import com.google.common.base.Preconditions;
-
-public class DLPRulesAggregateId implements AggregateId {
-    private static final String SEPARATOR = "/";
-    private static final String PREFIX = "DLPRule";
-
-    private final Domain domain;
-
-    public DLPRulesAggregateId(Domain domain) {
-        Preconditions.checkNotNull(domain);
-
-        this.domain = domain;
+public class InMemoryEventSourcingDLPConfigurationStoreExtension implements ParameterResolver {
+    @Override
+    public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
+        return (parameterContext.getParameter().getType() == DLPConfigurationStore.class);
     }
 
     @Override
-    public String asAggregateKey() {
-        return PREFIX + SEPARATOR + domain.asString();
-    }
-
-    @Override
-    public final boolean equals(Object o) {
-        if (o instanceof DLPRulesAggregateId) {
-            DLPRulesAggregateId that = (DLPRulesAggregateId) o;
-
-            return Objects.equals(this.domain, that.domain);
-        }
-        return false;
-    }
-
-    @Override
-    public final int hashCode() {
-        return Objects.hash(domain);
+    public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
+        return new EventSourcingDLPConfigurationStore(new InMemoryEventStore());
     }
 }

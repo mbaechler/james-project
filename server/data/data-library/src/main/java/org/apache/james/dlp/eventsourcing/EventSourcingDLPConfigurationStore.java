@@ -25,10 +25,10 @@ import java.util.stream.Stream;
 import javax.inject.Inject;
 
 import org.apache.james.core.Domain;
-import org.apache.james.dlp.api.DLPRule;
-import org.apache.james.dlp.api.DLPRulesStore;
-import org.apache.james.dlp.eventsourcing.aggregates.DLPDomainRules;
-import org.apache.james.dlp.eventsourcing.aggregates.DLPRulesAggregateId;
+import org.apache.james.dlp.api.DLPConfigurationItem;
+import org.apache.james.dlp.api.DLPConfigurationStore;
+import org.apache.james.dlp.eventsourcing.aggregates.DLPDomainConfigurationItems;
+import org.apache.james.dlp.eventsourcing.aggregates.DLPAggregateId;
 import org.apache.james.dlp.eventsourcing.commands.ClearCommand;
 import org.apache.james.dlp.eventsourcing.commands.ClearCommandHandler;
 import org.apache.james.dlp.eventsourcing.commands.StoreCommand;
@@ -39,7 +39,7 @@ import org.apache.james.eventsourcing.eventstore.EventStore;
 
 import com.google.common.collect.ImmutableSet;
 
-public class EventSourcingDLPRulesStore implements DLPRulesStore {
+public class EventSourcingDLPConfigurationStore implements DLPConfigurationStore {
 
     private static final ImmutableSet<Subscriber> NO_SUBSCRIBER = ImmutableSet.of();
 
@@ -47,7 +47,7 @@ public class EventSourcingDLPRulesStore implements DLPRulesStore {
     private final EventStore eventStore;
 
     @Inject
-    public EventSourcingDLPRulesStore(EventStore eventStore) {
+    public EventSourcingDLPConfigurationStore(EventStore eventStore) {
         this.eventSourcingSystem = new EventSourcingSystem(
             ImmutableSet.of(
                 new ClearCommandHandler(eventStore),
@@ -58,18 +58,18 @@ public class EventSourcingDLPRulesStore implements DLPRulesStore {
     }
 
     @Override
-    public Stream<DLPRule> list(Domain domain) {
+    public Stream<DLPConfigurationItem> list(Domain domain) {
 
-        DLPRulesAggregateId aggregateId = new DLPRulesAggregateId(domain);
+        DLPAggregateId aggregateId = new DLPAggregateId(domain);
 
-        return DLPDomainRules.load(
+        return DLPDomainConfigurationItems.load(
                 aggregateId,
                 eventStore.getEventsOfAggregate(aggregateId))
             .retrieveRules();
     }
 
     @Override
-    public void store(Domain domain, List<DLPRule> rules) {
+    public void store(Domain domain, List<DLPConfigurationItem> rules) {
         eventSourcingSystem.dispatch(new StoreCommand(domain, rules));
     }
 

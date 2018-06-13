@@ -25,7 +25,7 @@ import java.util.Optional;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 
-public class DLPRule {
+public class DLPConfigurationItem {
 
     public static class Builder {
         public static final boolean NOT_TARGETED = false;
@@ -69,9 +69,9 @@ public class DLPRule {
             return this;
         }
 
-        public DLPRule build() {
+        public DLPConfigurationItem build() {
             Preconditions.checkState(expression.isPresent(), "`expression` is mandatory");
-            return new DLPRule(
+            return new DLPConfigurationItem(
                 explanation,
                 expression.get(),
                 new Targets(
@@ -139,7 +139,7 @@ public class DLPRule {
     private final String regexp;
     private final Targets targets;
 
-    private DLPRule(Optional<String> explanation, String regexp, Targets targets) {
+    private DLPConfigurationItem(Optional<String> explanation, String regexp, Targets targets) {
         this.explanation = explanation;
         this.regexp = regexp;
         this.targets = targets;
@@ -159,12 +159,12 @@ public class DLPRule {
 
     @Override
     public final boolean equals(Object o) {
-        if (o instanceof DLPRule) {
-            DLPRule dlpRule = (DLPRule) o;
+        if (o instanceof DLPConfigurationItem) {
+            DLPConfigurationItem dlpConfigurationItem = (DLPConfigurationItem) o;
 
-            return Objects.equals(this.explanation, dlpRule.explanation)
-                && Objects.equals(this.regexp, dlpRule.regexp)
-                && Objects.equals(this.targets, dlpRule.targets);
+            return Objects.equals(this.explanation, dlpConfigurationItem.explanation)
+                && Objects.equals(this.regexp, dlpConfigurationItem.regexp)
+                && Objects.equals(this.targets, dlpConfigurationItem.targets);
         }
         return false;
     }
