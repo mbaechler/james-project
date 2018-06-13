@@ -71,7 +71,7 @@ public class DLPConfigurationItemTest {
     @Test
     void builderShouldPreserveExpression() {
         DLPConfigurationItem dlpConfigurationItem = DLPConfigurationItem.builder()
-            .expression("regex")
+            .expression(REGEX)
             .build();
 
         assertThat(dlpConfigurationItem.getRegexp()).isEqualTo(REGEX);
@@ -80,8 +80,8 @@ public class DLPConfigurationItemTest {
     @Test
     void builderShouldPreserveExplanation() {
         DLPConfigurationItem dlpConfigurationItem = DLPConfigurationItem.builder()
-            .explanation("explanation")
-            .expression("regex")
+            .explanation(EXPLANATION)
+            .expression(REGEX)
             .build();
 
         assertThat(dlpConfigurationItem.getExplanation()).contains(EXPLANATION);
@@ -90,7 +90,7 @@ public class DLPConfigurationItemTest {
     @Test
     void dlpRuleShouldHaveNoTargetsWhenNoneSpecified() {
         DLPConfigurationItem dlpConfigurationItem = DLPConfigurationItem.builder()
-            .expression("regex")
+            .expression(REGEX)
             .build();
 
         SoftAssertions.assertSoftly(softly -> {
@@ -104,7 +104,7 @@ public class DLPConfigurationItemTest {
     void targetsRecipientsShouldBeReportedInTargets() {
         DLPConfigurationItem dlpConfigurationItem = DLPConfigurationItem.builder()
             .targetsRecipients()
-            .expression("regex")
+            .expression(REGEX)
             .build();
 
         SoftAssertions.assertSoftly(softly -> {
@@ -118,7 +118,7 @@ public class DLPConfigurationItemTest {
     void targetsSenderShouldBeReportedInTargets() {
         DLPConfigurationItem dlpConfigurationItem = DLPConfigurationItem.builder()
             .targetsSender()
-            .expression("regex")
+            .expression(REGEX)
             .build();
 
         SoftAssertions.assertSoftly(softly -> {
@@ -132,7 +132,7 @@ public class DLPConfigurationItemTest {
     void targetsContentShouldBeReportedInTargets() {
         DLPConfigurationItem dlpConfigurationItem = DLPConfigurationItem.builder()
             .targetsContent()
-            .expression("regex")
+            .expression(REGEX)
             .build();
 
         SoftAssertions.assertSoftly(softly -> {
@@ -148,7 +148,7 @@ public class DLPConfigurationItemTest {
             .targetsContent()
             .targetsSender()
             .targetsRecipients()
-            .expression("regex")
+            .expression(REGEX)
             .build();
 
         SoftAssertions.assertSoftly(softly -> {

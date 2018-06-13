@@ -28,7 +28,7 @@ import com.google.common.base.Preconditions;
 public class DLPConfigurationItem {
 
     public static class Builder {
-        public static final boolean NOT_TARGETED = false;
+        private static final boolean NOT_TARGETED = false;
 
         private Optional<Boolean> targetsSender;
         private Optional<Boolean> targetsRecipients;
