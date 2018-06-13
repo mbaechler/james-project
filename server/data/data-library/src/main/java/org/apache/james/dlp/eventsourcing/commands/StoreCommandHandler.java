@@ -22,7 +22,7 @@ package org.apache.james.dlp.eventsourcing.commands;
 import java.util.List;
 
 import org.apache.james.dlp.eventsourcing.aggregates.DLPAggregateId;
-import org.apache.james.dlp.eventsourcing.aggregates.DLPDomainConfigurationItems;
+import org.apache.james.dlp.eventsourcing.aggregates.DLPDomainConfiguration;
 import org.apache.james.eventsourcing.CommandHandler;
 import org.apache.james.eventsourcing.Event;
 import org.apache.james.eventsourcing.eventstore.EventStore;
@@ -44,7 +44,7 @@ public class StoreCommandHandler implements CommandHandler<StoreCommand> {
     public List<? extends Event> handle(StoreCommand storeCommand) {
         DLPAggregateId aggregateId = new DLPAggregateId(storeCommand.getDomain());
 
-        return DLPDomainConfigurationItems.load(
+        return DLPDomainConfiguration.load(
                 aggregateId,
                 eventStore.getEventsOfAggregate(aggregateId))
             .store(storeCommand.getRules());

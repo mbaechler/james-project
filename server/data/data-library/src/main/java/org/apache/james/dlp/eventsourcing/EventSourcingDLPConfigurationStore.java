@@ -28,7 +28,7 @@ import org.apache.james.core.Domain;
 import org.apache.james.dlp.api.DLPConfigurationItem;
 import org.apache.james.dlp.api.DLPConfigurationStore;
 import org.apache.james.dlp.eventsourcing.aggregates.DLPAggregateId;
-import org.apache.james.dlp.eventsourcing.aggregates.DLPDomainConfigurationItems;
+import org.apache.james.dlp.eventsourcing.aggregates.DLPDomainConfiguration;
 import org.apache.james.dlp.eventsourcing.commands.ClearCommand;
 import org.apache.james.dlp.eventsourcing.commands.ClearCommandHandler;
 import org.apache.james.dlp.eventsourcing.commands.StoreCommand;
@@ -62,7 +62,7 @@ public class EventSourcingDLPConfigurationStore implements DLPConfigurationStore
 
         DLPAggregateId aggregateId = new DLPAggregateId(domain);
 
-        return DLPDomainConfigurationItems.load(
+        return DLPDomainConfiguration.load(
                 aggregateId,
                 eventStore.getEventsOfAggregate(aggregateId))
             .retrieveRules();

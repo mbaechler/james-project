@@ -37,10 +37,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
-public class DLPDomainConfigurationItems {
+public class DLPDomainConfiguration {
 
-    public static DLPDomainConfigurationItems load(DLPAggregateId aggregateId, History history) {
-        return new DLPDomainConfigurationItems(aggregateId, history);
+    public static DLPDomainConfiguration load(DLPAggregateId aggregateId, History history) {
+        return new DLPDomainConfiguration(aggregateId, history);
     }
 
     private static class State {
@@ -78,7 +78,7 @@ public class DLPDomainConfigurationItems {
     private final History history;
     private State state;
 
-    private DLPDomainConfigurationItems(DLPAggregateId aggregateId, History history) {
+    private DLPDomainConfiguration(DLPAggregateId aggregateId, History history) {
         this.aggregateId = aggregateId;
         this.state = State.initial();
         history.getEvents().forEach(this::apply);
