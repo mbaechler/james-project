@@ -13,8 +13,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
-import javax.mail.MessagingException;
-
 import org.apache.james.core.Domain;
 import org.apache.james.core.builder.MimeMessageBuilder;
 import org.apache.james.dlp.api.DLPConfigurationItem.Id;
@@ -35,7 +33,7 @@ class DlpTest {
     }
 
     @Test
-    void matchShouldReturnEmptyWhenNoRecipient() throws MessagingException {
+    void matchShouldReturnEmptyWhenNoRecipient() throws Exception {
         Dlp dlp = new Dlp(MATCH_ALL_FOR_ALL_DOMAINS);
 
         FakeMail mail = FakeMail.builder().sender(RECIPIENT1).build();
@@ -44,7 +42,7 @@ class DlpTest {
     }
 
     @Test
-    void matchShouldReturnEmptyWhenNoSender() throws MessagingException {
+    void matchShouldReturnEmptyWhenNoSender() throws Exception {
         Dlp dlp = new Dlp(MATCH_ALL_FOR_ALL_DOMAINS);
 
         FakeMail mail = FakeMail.builder().recipient(RECIPIENT1).build();
@@ -60,7 +58,7 @@ class DlpTest {
     }
 
     @Test
-    void matchShouldReturnEmptyWhenNoRuleMatch() throws MessagingException {
+    void matchShouldReturnEmptyWhenNoRuleMatch() throws Exception {
         Dlp dlp = new Dlp(MATCH_NOTHING_FOR_ALL_DOMAINS);
 
         FakeMail mail = FakeMail.builder()
@@ -73,7 +71,7 @@ class DlpTest {
     }
 
     @Test
-    void matchSenderShouldReturnRecipientsWhenEnvelopSenderMatches() throws MessagingException {
+    void matchSenderShouldReturnRecipientsWhenEnvelopSenderMatches() throws Exception {
         Dlp dlp = new Dlp(
             asRulesLoaderFor(
                 JAMES_APACHE_ORG_DOMAIN,
@@ -86,7 +84,7 @@ class DlpTest {
     }
 
     @Test
-    void matchSenderShouldReturnRecipientsWhenFromHeaderMatches() throws MessagingException {
+    void matchSenderShouldReturnRecipientsWhenFromHeaderMatches() throws Exception {
         Dlp dlp = new Dlp(
             asRulesLoaderFor(
                 JAMES_APACHE_ORG_DOMAIN,
@@ -106,7 +104,7 @@ class DlpTest {
     }
 
     @Test
-    void matchShouldReturnRecipientsWhenEnvelopRecipientsMatches() throws MessagingException {
+    void matchShouldReturnRecipientsWhenEnvelopRecipientsMatches() throws Exception {
         Dlp dlp = new Dlp(
             asRulesLoaderFor(
                 JAMES_APACHE_ORG_DOMAIN,
@@ -123,7 +121,7 @@ class DlpTest {
     }
 
     @Test
-    void matchShouldReturnRecipientsWhenToHeaderMatches() throws MessagingException {
+    void matchShouldReturnRecipientsWhenToHeaderMatches() throws Exception {
         Dlp dlp = new Dlp(
             asRulesLoaderFor(
                 JAMES_APACHE_ORG_DOMAIN,
@@ -139,12 +137,11 @@ class DlpTest {
                 .addToRecipient(RECIPIENT2.toInternetAddress()))
             .build();
 
-
         assertThat(dlp.match(mail)).contains(RECIPIENT1);
     }
 
     @Test
-    void matchShouldReturnRecipientsWhenCcHeaderMatches() throws MessagingException {
+    void matchShouldReturnRecipientsWhenCcHeaderMatches() throws Exception {
         Dlp dlp = new Dlp(
             asRulesLoaderFor(
                 JAMES_APACHE_ORG_DOMAIN,
@@ -160,12 +157,11 @@ class DlpTest {
                 .addCcRecipient(RECIPIENT2.toInternetAddress()))
             .build();
 
-
         assertThat(dlp.match(mail)).contains(RECIPIENT1);
     }
 
     @Test
-    void matchShouldReturnRecipientsWhenBccHeaderMatches() throws MessagingException {
+    void matchShouldReturnRecipientsWhenBccHeaderMatches() throws Exception {
         Dlp dlp = new Dlp(
             asRulesLoaderFor(
                 JAMES_APACHE_ORG_DOMAIN,
@@ -181,12 +177,11 @@ class DlpTest {
                 .addBccRecipient(RECIPIENT2.toInternetAddress()))
             .build();
 
-
         assertThat(dlp.match(mail)).contains(RECIPIENT1);
     }
 
     @Test
-    void matchShouldReturnRecipientsWhenSubjectHeaderMatches() throws MessagingException {
+    void matchShouldReturnRecipientsWhenSubjectHeaderMatches() throws Exception {
         Dlp dlp = new Dlp(
             asRulesLoaderFor(
                 JAMES_APACHE_ORG_DOMAIN,
@@ -202,12 +197,11 @@ class DlpTest {
                 .setSubject("I just bought a pony"))
             .build();
 
-
         assertThat(dlp.match(mail)).contains(RECIPIENT1);
     }
 
     @Test
-    void matchShouldReturnRecipientsWhenMessageBodyMatches() throws MessagingException {
+    void matchShouldReturnRecipientsWhenMessageBodyMatches() throws Exception {
         Dlp dlp = new Dlp(
             asRulesLoaderFor(
                 JAMES_APACHE_ORG_DOMAIN,
@@ -224,14 +218,222 @@ class DlpTest {
                 .setText("It's actually a horse, not a pony"))
             .build();
 
+        assertThat(dlp.match(mail)).contains(RECIPIENT1);
+    }
+
+    @Test
+    void matchShouldReturnRecipientsWhenMessageMultipartBodyMatches() throws Exception {
+        Dlp dlp = new Dlp(
+            asRulesLoaderFor(
+                JAMES_APACHE_ORG_DOMAIN,
+                DlpDomainRules.of(DlpDomainRule.factory()
+                    .contentRule(Id.of("match content"), Pattern.compile("horse")))));
+
+        FakeMail mail = FakeMail
+            .builder()
+            .sender(OTHER_AT_JAMES)
+            .recipient(RECIPIENT1)
+            .mimeMessage(MimeMessageBuilder
+                .mimeMessageBuilder()
+                .setSubject("I just bought a pony")
+                .setMultipartWithBodyParts(
+                    MimeMessageBuilder.bodyPartBuilder()
+                        .data("It's actually a donkey, not a pony"),
+                    MimeMessageBuilder.bodyPartBuilder()
+                        .data("What??? No it's a horse!!!")))
+            .build();
 
         assertThat(dlp.match(mail)).contains(RECIPIENT1);
     }
 
-    //TODO: We lack some test about more complex messages
+    @Test
+    void matchShouldReturnRecipientsWhenEmbeddedMessageContentMatches() throws Exception {
+        Dlp dlp = new Dlp(
+            asRulesLoaderFor(
+                JAMES_APACHE_ORG_DOMAIN,
+                DlpDomainRules.of(DlpDomainRule.factory()
+                    .contentRule(Id.of("match content"), Pattern.compile("horse")))));
+
+        FakeMail mail = FakeMail
+            .builder()
+            .sender(OTHER_AT_JAMES)
+            .recipient(RECIPIENT1)
+            .mimeMessage(MimeMessageBuilder
+                .mimeMessageBuilder()
+                .setSubject("I just bought a pony")
+                .setContent(
+                    MimeMessageBuilder.multipartBuilder()
+                        .addBody(
+                    MimeMessageBuilder.bodyPartBuilder()
+                        .data("It's actually a donkey, not a pony"))
+                        .addBody(
+                    MimeMessageBuilder.mimeMessageBuilder()
+                        .setSender(RECIPIENT2.asString())
+                        .setSubject("Embedded message with truth")
+                        .setText("What??? No it's a horse!!!"))))
+            .build();
+
+        assertThat(dlp.match(mail)).contains(RECIPIENT1);
+    }
 
     @Test
-    void matchShouldAttachMatchingRuleNameToMail() throws MessagingException {
+    void matchShouldReturnEmptyWhenEmbeddedSenderMatchesInSubMessage() throws Exception {
+        Dlp dlp = new Dlp(
+            asRulesLoaderFor(
+                JAMES_APACHE_ORG_DOMAIN,
+                DlpDomainRules.of(DlpDomainRule.factory()
+                    .senderRule(Id.of("match content"), Pattern.compile(RECIPIENT2.asString())))));
+
+        FakeMail mail = FakeMail
+            .builder()
+            .sender(OTHER_AT_JAMES)
+            .recipient(RECIPIENT1)
+            .mimeMessage(MimeMessageBuilder
+                .mimeMessageBuilder()
+                .setSubject("I just bought a pony")
+                .setSender(RECIPIENT1.asString())
+                .setContent(
+                    MimeMessageBuilder.multipartBuilder()
+                        .addBody(
+                            MimeMessageBuilder.bodyPartBuilder()
+                                .data("It's actually a donkey, not a pony"))
+                        .addBody(
+                            MimeMessageBuilder.mimeMessageBuilder()
+                                .setSender(RECIPIENT2.asString())
+                                .setSubject("Embedded message with truth")
+                                .setText("What??? No it's a horse!!!"))))
+            .build();
+
+        assertThat(dlp.match(mail)).isEmpty();
+    }
+
+    @Test
+    void matchShouldReturnEmptyWhenEmbeddedRecipientMatchesInSubMessage() throws Exception {
+        Dlp dlp = new Dlp(
+            asRulesLoaderFor(
+                JAMES_APACHE_ORG_DOMAIN,
+                DlpDomainRules.of(DlpDomainRule.factory()
+                    .recipientRule(Id.of("match content"), Pattern.compile(RECIPIENT2.asString())))));
+
+        FakeMail mail = FakeMail
+            .builder()
+            .sender(OTHER_AT_JAMES)
+            .recipient(RECIPIENT1)
+            .mimeMessage(MimeMessageBuilder
+                .mimeMessageBuilder()
+                .setSubject("I just bought a pony")
+                .setSender(RECIPIENT1.asString())
+                .setContent(
+                    MimeMessageBuilder.multipartBuilder()
+                        .addBody(
+                            MimeMessageBuilder.bodyPartBuilder()
+                                .data("It's actually a donkey, not a pony"))
+                        .addBody(
+                            MimeMessageBuilder.mimeMessageBuilder()
+                                .addToRecipient(RECIPIENT1.asString())
+                                .setSubject("Embedded message with truth")
+                                .setText("What??? No it's a horse!!!"))))
+            .build();
+
+        assertThat(dlp.match(mail)).isEmpty();
+    }
+
+    @Test
+    void matchShouldReturnRecipientsWhenEncodedTextMatchesContentRule() throws Exception {
+        Dlp dlp = new Dlp(
+            asRulesLoaderFor(
+                JAMES_APACHE_ORG_DOMAIN,
+                DlpDomainRules.of(DlpDomainRule.factory()
+                    .contentRule(Id.of("match content"), Pattern.compile("poné")))));
+
+        FakeMail mail = FakeMail
+            .builder()
+            .sender(OTHER_AT_JAMES)
+            .recipient(RECIPIENT1)
+            .mimeMessage(MimeMessageBuilder
+                .mimeMessageBuilder()
+                .setSubject("=?ISO-8859-1?Q?I_just_bought_a_pon=E9?=")
+                .setSender(RECIPIENT1.asString())
+                .setText("Meaningless text"))
+            .build();
+
+        assertThat(dlp.match(mail)).containsOnly(RECIPIENT1);
+    }
+
+    @Test
+    void matchShouldReturnRecipientsWhenRulesMatchesAMailboxRecipient() throws Exception {
+        Dlp dlp = new Dlp(
+            asRulesLoaderFor(
+                JAMES_APACHE_ORG_DOMAIN,
+                DlpDomainRules.of(DlpDomainRule.factory()
+                    .recipientRule(Id.of("id1"), Pattern.compile(RECIPIENT1.asString())))));
+
+        MimeMessageBuilder meaningless_text = MimeMessageBuilder
+            .mimeMessageBuilder()
+            .addToRecipient("Name <" + RECIPIENT1.asString() + " >")
+            .setSubject("=?ISO-8859-1?Q?I_just_bought_a_pon=E9?=")
+            .setText("Meaningless text");
+
+        FakeMail mail = FakeMail
+            .builder()
+            .sender(OTHER_AT_JAMES)
+            .recipient(RECIPIENT2)
+            .mimeMessage(meaningless_text)
+            .build();
+
+        assertThat(dlp.match(mail)).containsOnly(RECIPIENT2);
+    }
+
+    @Test
+    void matchShouldReturnRecipientsWhenRulesMatchesAQuotedPrintableRecipient() throws Exception {
+        Dlp dlp = new Dlp(
+            asRulesLoaderFor(
+                JAMES_APACHE_ORG_DOMAIN,
+                DlpDomainRules.of(DlpDomainRule.factory()
+                    .recipientRule(Id.of("id1"), Pattern.compile("Benoît")))));
+
+        MimeMessageBuilder meaningless_text = MimeMessageBuilder
+            .mimeMessageBuilder()
+            .addToRecipient("=?ISO-8859-1?Q?Beno=EEt_TELLIER?=")
+            .setSubject("=?ISO-8859-1?Q?I_just_bought_a_pon=E9?=")
+            .setText("Meaningless text");
+
+        FakeMail mail = FakeMail
+            .builder()
+            .sender(OTHER_AT_JAMES)
+            .recipient(RECIPIENT2)
+            .mimeMessage(meaningless_text)
+            .build();
+
+        assertThat(dlp.match(mail)).containsOnly(RECIPIENT2);
+    }
+
+    @Test
+    void matchShouldReturnRecipientsWhenRulesMatchesAQuotedPrintableSender() throws Exception {
+        Dlp dlp = new Dlp(
+            asRulesLoaderFor(
+                JAMES_APACHE_ORG_DOMAIN,
+                DlpDomainRules.of(DlpDomainRule.factory()
+                    .senderRule(Id.of("id1"), Pattern.compile("Benoît")))));
+
+        MimeMessageBuilder meaningless_text = MimeMessageBuilder
+            .mimeMessageBuilder()
+            .addFrom("=?ISO-8859-1?Q?Beno=EEt_TELLIER?=")
+            .setSubject("=?ISO-8859-1?Q?I_just_bought_a_pon=E9?=")
+            .setText("Meaningless text");
+
+        FakeMail mail = FakeMail
+            .builder()
+            .sender(OTHER_AT_JAMES)
+            .recipient(RECIPIENT2)
+            .mimeMessage(meaningless_text)
+            .build();
+
+        assertThat(dlp.match(mail)).containsOnly(RECIPIENT2);
+    }
+
+    @Test
+    void matchShouldAttachMatchingRuleNameToMail() throws Exception {
         Dlp dlp = new Dlp(
             asRulesLoaderFor(
                 JAMES_APACHE_ORG_DOMAIN,

@@ -53,7 +53,14 @@ public class DlpDomainRules {
     }
 
     public Optional<DlpDomainRule> match(Mail mail) {
-        return rules.stream().flatMap(rule -> Stream.of(rule).filter(x -> x.match(mail))).findFirst();
+        return rules.stream()
+            .flatMap(rule -> applyRule(mail, rule))
+            .findFirst();
+    }
+
+    private Stream<DlpDomainRule> applyRule(Mail mail, DlpDomainRule rule) {
+        return Stream.of(rule)
+            .filter(x -> x.match(mail));
     }
 
 }

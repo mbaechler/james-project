@@ -59,8 +59,7 @@ public class Dlp extends GenericMatcher {
     }
 
     private Optional<DlpDomainRule> findFirstMatchingRule(Mail mail) {
-        return Optional
-                .ofNullable(mail.getSender())
+        return Optional.ofNullable(mail.getSender())
                 .flatMap(sender -> matchingRule(sender, mail));
     }
 

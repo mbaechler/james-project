@@ -36,6 +36,7 @@ import javax.mail.internet.MimeMessage;
 import org.apache.james.core.MailAddress;
 import org.apache.james.dlp.api.DLPConfigurationItem;
 import org.apache.james.javax.MultipartUtil;
+import org.apache.james.mime4j.util.MimeUtil;
 import org.apache.james.util.OptionalUtils;
 import org.apache.mailet.Mail;
 
@@ -65,9 +66,20 @@ public class DlpDomainRule {
         private Stream<String> listHeaderRecipients(Mail mail) throws MessagingException {
             MimeMessage message = mail.getMessage();
             if (message != null) {
-                return Arrays.stream(message.getAllRecipients()).map(Address::toString);
+                return toStringStream(message.getAllRecipients());
             }
             return Stream.of();
+        }
+
+        private Stream<String> toStringStream(Address[] allRecipients) {
+            return Optional.ofNullable(allRecipients)
+                .map(Arrays::stream)
+                .orElse(Stream.of())
+                .map(this::asString);
+        }
+
+        private String asString(Address a) {
+            return MimeUtil.unscrambleHeaderValue(a.toString());
         }
 
         public DlpDomainRule senderRule(DLPConfigurationItem.Id id, Pattern pattern) {
@@ -86,7 +98,7 @@ public class DlpDomainRule {
         private Stream<String> listFromHeaders(Mail mail) throws MessagingException {
             MimeMessage message = mail.getMessage();
             if (message != null) {
-                return Arrays.stream(message.getFrom()).map(Address::toString);
+                return toStringStream(message.getFrom());
             }
             return Stream.of();
         }
