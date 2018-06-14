@@ -53,7 +53,7 @@ class DlpTest {
     }
 
     @Test
-    void matchShouldThrowOnNullMail() throws MessagingException {
+    void matchShouldThrowOnNullMail() {
         Dlp dlp = new Dlp(MATCH_ALL_FOR_ALL_DOMAINS);
 
         assertThatThrownBy(() -> dlp.match(null)).isInstanceOf(NullPointerException.class);
@@ -77,7 +77,8 @@ class DlpTest {
         Dlp dlp = new Dlp(
             asRulesLoaderFor(
                 JAMES_APACHE_ORG_DOMAIN,
-                DlpDomainRules.builder().senderRule(Id.of("match sender"), Pattern.compile(ANY_AT_JAMES.asString())).build()));
+                DlpDomainRules.of(DlpDomainRule.factory()
+                    .senderRule(Id.of("match sender"), Pattern.compile(ANY_AT_JAMES.asString())))));
 
         FakeMail mail = FakeMail.builder().sender(ANY_AT_JAMES).recipient(RECIPIENT1).build();
 
@@ -89,7 +90,8 @@ class DlpTest {
         Dlp dlp = new Dlp(
             asRulesLoaderFor(
                 JAMES_APACHE_ORG_DOMAIN,
-                DlpDomainRules.builder().senderRule(Id.of("match sender"), Pattern.compile(ANY_AT_JAMES.asString())).build()));
+                DlpDomainRules.of(DlpDomainRule.factory()
+                    .senderRule(Id.of("match sender"), Pattern.compile(ANY_AT_JAMES.asString())))));
 
         FakeMail mail = FakeMail
             .builder()
@@ -108,7 +110,8 @@ class DlpTest {
         Dlp dlp = new Dlp(
             asRulesLoaderFor(
                 JAMES_APACHE_ORG_DOMAIN,
-                DlpDomainRules.builder().recipientRule(Id.of("match recipient"), Pattern.compile(RECIPIENT1.asString())).build()));
+                DlpDomainRules.of(DlpDomainRule.factory()
+                    .recipientRule(Id.of("match recipient"), Pattern.compile(RECIPIENT1.asString())))));
 
         FakeMail mail = FakeMail.builder()
             .sender(ANY_AT_JAMES)
@@ -124,7 +127,8 @@ class DlpTest {
         Dlp dlp = new Dlp(
             asRulesLoaderFor(
                 JAMES_APACHE_ORG_DOMAIN,
-                DlpDomainRules.builder().recipientRule(Id.of("match recipient"), Pattern.compile(RECIPIENT2.asString())).build()));
+                DlpDomainRules.of(DlpDomainRule.factory()
+                    .recipientRule(Id.of("match recipient"), Pattern.compile(RECIPIENT2.asString())))));
 
         FakeMail mail = FakeMail
             .builder()
@@ -144,7 +148,8 @@ class DlpTest {
         Dlp dlp = new Dlp(
             asRulesLoaderFor(
                 JAMES_APACHE_ORG_DOMAIN,
-                DlpDomainRules.builder().recipientRule(Id.of("match recipient"), Pattern.compile(RECIPIENT2.asString())).build()));
+                DlpDomainRules.of(DlpDomainRule.factory()
+                    .recipientRule(Id.of("match recipient"), Pattern.compile(RECIPIENT2.asString())))));
 
         FakeMail mail = FakeMail
             .builder()
@@ -164,7 +169,8 @@ class DlpTest {
         Dlp dlp = new Dlp(
             asRulesLoaderFor(
                 JAMES_APACHE_ORG_DOMAIN,
-                DlpDomainRules.builder().recipientRule(Id.of("match recipient"), Pattern.compile(RECIPIENT2.asString())).build()));
+                DlpDomainRules.of(DlpDomainRule.factory()
+                    .recipientRule(Id.of("match recipient"), Pattern.compile(RECIPIENT2.asString())))));
 
         FakeMail mail = FakeMail
             .builder()
@@ -184,7 +190,8 @@ class DlpTest {
         Dlp dlp = new Dlp(
             asRulesLoaderFor(
                 JAMES_APACHE_ORG_DOMAIN,
-                DlpDomainRules.builder().contentRule(Id.of("match subject"), Pattern.compile("pony")).build()));
+                DlpDomainRules.of(DlpDomainRule.factory()
+                    .contentRule(Id.of("match subject"), Pattern.compile("pony")))));
 
         FakeMail mail = FakeMail
             .builder()
@@ -204,7 +211,8 @@ class DlpTest {
         Dlp dlp = new Dlp(
             asRulesLoaderFor(
                 JAMES_APACHE_ORG_DOMAIN,
-                DlpDomainRules.builder().contentRule(Id.of("match content"), Pattern.compile("horse")).build()));
+                DlpDomainRules.of(DlpDomainRule.factory()
+                    .contentRule(Id.of("match content"), Pattern.compile("horse")))));
 
         FakeMail mail = FakeMail
             .builder()
@@ -227,10 +235,11 @@ class DlpTest {
         Dlp dlp = new Dlp(
             asRulesLoaderFor(
                 JAMES_APACHE_ORG_DOMAIN,
-                DlpDomainRules.builder()
-                    .recipientRule(Id.of("should not match recipient"), Pattern.compile(RECIPIENT3.asString()))
-                    .senderRule(Id.of("should match sender"), Pattern.compile(JAMES_APACHE_ORG))
-                    .build()));
+                DlpDomainRules.of(
+                    DlpDomainRule.factory()
+                        .recipientRule(Id.of("should not match recipient"), Pattern.compile(RECIPIENT3.asString())),
+                    DlpDomainRule.factory()
+                        .senderRule(Id.of("should match sender"), Pattern.compile(JAMES_APACHE_ORG)))));
 
         FakeMail mail = FakeMail.builder()
             .sender(ANY_AT_JAMES)

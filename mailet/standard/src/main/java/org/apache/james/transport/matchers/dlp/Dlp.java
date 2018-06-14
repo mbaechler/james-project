@@ -25,18 +25,17 @@ import java.util.Optional;
 import javax.inject.Inject;
 import javax.mail.MessagingException;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.james.core.MailAddress;
 import org.apache.mailet.Mail;
-import org.apache.mailet.Matcher;
-import org.apache.mailet.MatcherConfig;
+import org.apache.mailet.base.GenericMatcher;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 
-public class Dlp implements Matcher {
+public class Dlp extends GenericMatcher {
 
     public static final String DLP_MATCHED_RULE = "DlpMatchedRule";
+
     private final DlpRulesLoader rulesLoader;
 
     @Inject
@@ -46,38 +45,27 @@ public class Dlp implements Matcher {
     }
 
     @Override
-    public void init(MatcherConfig config) throws MessagingException {
-    }
-
-    @Override
     public Collection<MailAddress> match(Mail mail) throws MessagingException {
-        Optional<Pair<Mail, DlpDomainRules.Rule>> mailRulePair = findFirstMatchingRule(mail);
-        mailRulePair.ifPresent(this::setRuleIdAsMailAttribute);
-        return mailRulePair.map(pair -> pair.getLeft().getRecipients()).orElse(ImmutableList.of());
+        Optional<DlpDomainRule> firstMatchingRule = findFirstMatchingRule(mail);
+
+        firstMatchingRule.ifPresent(rule -> setRuleIdAsMailAttribute(mail, rule));
+
+        return firstMatchingRule.map(rule -> mail.getRecipients())
+            .orElse(ImmutableList.of());
     }
 
-    private void setRuleIdAsMailAttribute(Pair<Mail, DlpDomainRules.Rule> pair) {
-        pair.getLeft().setAttribute(DLP_MATCHED_RULE, pair.getRight().id().asString());
+    private void setRuleIdAsMailAttribute(Mail mail, DlpDomainRule rule) {
+        mail.setAttribute(DLP_MATCHED_RULE, rule.id().asString());
     }
 
-    private Optional<Pair<Mail, DlpDomainRules.Rule>> findFirstMatchingRule(Mail mail) {
+    private Optional<DlpDomainRule> findFirstMatchingRule(Mail mail) {
         return Optional
                 .ofNullable(mail.getSender())
-                .flatMap(sender -> matchingRule(sender, mail)
-                    .map(rule -> Pair.of(mail, rule)));
+                .flatMap(sender -> matchingRule(sender, mail));
     }
 
-    private Optional<DlpDomainRules.Rule> matchingRule(MailAddress address, Mail mail) {
+    private Optional<DlpDomainRule> matchingRule(MailAddress address, Mail mail) {
         return rulesLoader.load(address.getDomain()).match(mail);
-    }
-
-    @Override
-    public void destroy() {
-    }
-
-    @Override
-    public MatcherConfig getMatcherConfig() {
-        return null;
     }
 
     @Override

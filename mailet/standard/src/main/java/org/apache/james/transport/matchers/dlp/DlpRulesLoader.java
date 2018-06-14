@@ -19,6 +19,7 @@
 
 package org.apache.james.transport.matchers.dlp;
 
+import java.util.function.BiFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -27,6 +28,9 @@ import javax.inject.Inject;
 import org.apache.james.core.Domain;
 import org.apache.james.dlp.api.DLPConfigurationItem;
 import org.apache.james.dlp.api.DLPConfigurationStore;
+import org.apache.james.util.StreamUtils;
+
+import com.github.steveash.guavate.Guavate;
 
 public interface DlpRulesLoader {
 
@@ -35,10 +39,12 @@ public interface DlpRulesLoader {
     class Impl implements DlpRulesLoader {
 
         private final DLPConfigurationStore configurationStore;
+        private final DlpDomainRule.Factory factory;
 
         @Inject
         public Impl(DLPConfigurationStore configurationStore) {
             this.configurationStore = configurationStore;
+            this.factory = DlpDomainRule.factory();
         }
 
         @Override
@@ -47,19 +53,36 @@ public interface DlpRulesLoader {
         }
 
         private DlpDomainRules toRules(Stream<DLPConfigurationItem> items) {
-            DlpDomainRules.DlpDomainRulesBuilder builder = DlpDomainRules.builder();
-            items.forEach(item -> {
-                if (item.getTargets().isContentTargeted()) {
-                    builder.contentRule(item.getId(), Pattern.compile(item.getRegexp()));
-                }
-                if (item.getTargets().isRecipientTargeted()) {
-                    builder.recipientRule(item.getId(), Pattern.compile(item.getRegexp()));
-                }
-                if (item.getTargets().isSenderTargeted()) {
-                    builder.senderRule(item.getId(), Pattern.compile(item.getRegexp()));
-                }
-            });
-            return builder.build();
+            return DlpDomainRules.of(items.flatMap(this::toRules)
+                .collect(Guavate.toImmutableList()));
         }
+
+        private Stream<DlpDomainRule> toRules(DLPConfigurationItem item) {
+            return StreamUtils.flatten(
+                toRecipientsRule(item),
+                toSenderRule(item),
+                toContentRule(item));
+        }
+
+        private Stream<DlpDomainRule> toRecipientsRule(DLPConfigurationItem item) {
+            return toRule(item, factory::recipientRule);
+        }
+
+        private Stream<DlpDomainRule> toSenderRule(DLPConfigurationItem item) {
+            return toRule(item, factory::senderRule);
+        }
+
+        private Stream<DlpDomainRule> toContentRule(DLPConfigurationItem item) {
+            return toRule(item, factory::contentRule);
+        }
+
+        private Stream<DlpDomainRule> toRule(DLPConfigurationItem item,
+                                                   BiFunction<DLPConfigurationItem.Id, Pattern, DlpDomainRule> toRule) {
+            if (item.getTargets().isRecipientTargeted()) {
+                return Stream.of(toRule.apply(item.getId(), Pattern.compile(item.getRegexp())));
+            }
+            return Stream.of();
+        }
+
     }
 }
