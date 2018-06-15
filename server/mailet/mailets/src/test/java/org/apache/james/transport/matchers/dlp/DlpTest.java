@@ -234,6 +234,25 @@ class DlpTest {
     }
 
     @Test
+    void matchShouldReturnRecipientsWhenMessageBodyMatchesWithNoSubject() throws Exception {
+        Dlp dlp = new Dlp(
+            asRulesLoaderFor(
+                JAMES_APACHE_ORG_DOMAIN,
+                DlpDomainRules.builder().contentRule(Id.of("match content"), Pattern.compile("horse")).build()));
+
+        FakeMail mail = FakeMail
+            .builder()
+            .sender(OTHER_AT_JAMES)
+            .recipient(RECIPIENT1)
+            .mimeMessage(MimeMessageBuilder
+                .mimeMessageBuilder()
+                .setText("It's actually a horse, not a pony"))
+            .build();
+
+        assertThat(dlp.match(mail)).contains(RECIPIENT1);
+    }
+
+    @Test
     void matchShouldReturnRecipientsWhenMessageMultipartBodyMatches() throws Exception {
         Dlp dlp = new Dlp(
             asRulesLoaderFor(
