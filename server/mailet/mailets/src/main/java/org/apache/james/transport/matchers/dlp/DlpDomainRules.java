@@ -281,7 +281,11 @@ public class DlpDomainRules {
         }
 
         private boolean containsDuplicateIds(ImmutableCollection<Rule> rules) {
-            return rules.stream().map(Rule::id).distinct().count() != rules.size();
+            long distinctIdCount = rules.stream()
+                .map(Rule::id)
+                .distinct()
+                .count();
+            return distinctIdCount != rules.size();
         }
 
     }
