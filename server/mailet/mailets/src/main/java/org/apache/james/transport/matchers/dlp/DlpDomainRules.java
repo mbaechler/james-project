@@ -90,11 +90,9 @@ public class DlpDomainRules {
 
             @Override
             public boolean doTest(Mail mail) throws MessagingException, IOException {
-                return matchSubject(pattern, mail) || matchBody(pattern, mail);
-            }
-
-            private boolean matchSubject(Pattern pattern, Mail mail) throws MessagingException {
-                return getMessageSubjects(mail).anyMatch(pattern.asPredicate());
+                return Stream
+                    .concat(getMessageSubjects(mail), getMessageBodies(mail.getMessage()))
+                    .anyMatch(pattern.asPredicate());
             }
 
             private Stream<String> getMessageSubjects(Mail mail) throws MessagingException {
@@ -104,10 +102,6 @@ public class DlpDomainRules {
                         Optional.ofNullable(message.getSubject()));
                 }
                 return Stream.of();
-            }
-
-            private boolean matchBody(Pattern pattern, Mail mail) throws MessagingException, IOException {
-                return getMessageBodies(mail.getMessage()).anyMatch(pattern.asPredicate());
             }
 
             private Stream<String> getMessageBodies(Message message) throws MessagingException, IOException {
@@ -298,13 +292,9 @@ public class DlpDomainRules {
 
     public Optional<DLPConfigurationItem.Id> match(Mail mail) {
         return rules.stream()
-            .flatMap(rule -> applyRule(rule, mail))
+            .filter(rule -> rule.match(mail))
             .map(Rule::id)
             .findFirst();
-    }
-
-    private Stream<Rule> applyRule(Rule rule, Mail mail) {
-        return Stream.of(rule).filter(x -> x.match(mail));
     }
 
 }
