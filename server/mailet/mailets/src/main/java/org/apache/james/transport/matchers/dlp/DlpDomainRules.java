@@ -269,7 +269,7 @@ public class DlpDomainRules {
 
         public DlpDomainRules build() {
             ImmutableMultimap<Targets.Type, Rule> rules = this.rules.build();
-            Preconditions.checkState(!containsDuplicateIds(rules));
+            Preconditions.checkState(!containsDuplicateIds(rules), "Rules should not contain duplicated `id`");
             return new DlpDomainRules(rules.values());
         }
 
