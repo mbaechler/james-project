@@ -265,7 +265,7 @@ public class DLPConfigurationItem {
 
             return Objects.equals(this.id, dlpConfigurationItem.id)
                 && Objects.equals(this.explanation, dlpConfigurationItem.explanation)
-                && Objects.equals(this.regexp, dlpConfigurationItem.regexp)
+                && Objects.equals(this.regexp.pattern(), dlpConfigurationItem.regexp.pattern())
                 && Objects.equals(this.targets, dlpConfigurationItem.targets);
         }
         return false;
