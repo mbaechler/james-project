@@ -204,7 +204,6 @@ public class TikaTextExtractorTest {
 
     @Test
     public void asListOfStringShouldReturnAListWhenMultipleElements() {
-        boolean bigDecimalExact = false;
         ArrayNode jsonArray = new ArrayNode(JsonNodeFactory.instance)
             .add("first")
             .add("second")
