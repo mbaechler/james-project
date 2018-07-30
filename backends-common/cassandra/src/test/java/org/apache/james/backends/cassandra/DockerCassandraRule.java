@@ -66,16 +66,16 @@ public class DockerCassandraRule implements TestRule {
                         .run("sed -i -e \"s/commitlog_sync_period_in_ms: 10000/commitlog_sync_period_in_ms: 9999999/\" " + CASSANDRA_YAML)
                         //auto_bootstrap should be useless when no existing data
                         .run("echo auto_bootstrap: false >> " + CASSANDRA_YAML)
-                        .run("echo \"-Xms500M\" >> " + JVM_OPTIONS)
-                        .run("echo \"-Xmx500M\" >> " + JVM_OPTIONS)
+                        .run("echo \"-Xms1500M\" >> " + JVM_OPTIONS)
+                        .run("echo \"-Xmx1500M\" >> " + JVM_OPTIONS)
                         // disable assertions (modest performance benefit)
                         .run("sed -i -e 's/JVM_OPTS=\"$JVM_OPTS -ea\"/JVM_OPTS=\"$JVM_OPTS -da\"/' " + CASSANDRA_ENV)
                         // use caches for keys & rows
-                        .run("sed -i -e \"s/key_cache_size_in_mb:/key_cache_size_in_mb: 50/\" " + CASSANDRA_YAML)
-                        .run("sed -i -e \"s/row_cache_size_in_mb: 0/row_cache_size_in_mb: 50/\" " + CASSANDRA_YAML)
+                        .run("sed -i -e \"s/key_cache_size_in_mb:/key_cache_size_in_mb: 256/\" " + CASSANDRA_YAML)
+                        .run("sed -i -e \"s/row_cache_size_in_mb: 0/row_cache_size_in_mb: 512/\" " + CASSANDRA_YAML)
                         .build()))
-            .withCreateContainerCmdModifier(cmd -> cmd.withMemory(800 * 1024 * 1024L))
-            .withCreateContainerCmdModifier(cmd -> cmd.getHostConfig().withTmpFs(ImmutableMap.of("/var/lib/cassandra", "rw,noexec,nosuid,size=50m")))
+            .withCreateContainerCmdModifier(cmd -> cmd.withMemory(2000 * 1024 * 1024L))
+            .withCreateContainerCmdModifier(cmd -> cmd.getHostConfig().withTmpFs(ImmutableMap.of("/var/lib/cassandra", "rw,noexec,nosuid,size=100m")))
             .withExposedPorts(CASSANDRA_PORT)
             .withLogConsumer(this::displayDockerLog);
         cassandraContainer
