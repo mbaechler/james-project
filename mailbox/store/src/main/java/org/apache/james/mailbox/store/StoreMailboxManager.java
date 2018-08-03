@@ -501,7 +501,7 @@ public class StoreMailboxManager implements MailboxManager {
         } else {
             MailboxPath sanitizedMailboxPath = mailboxPath.sanitize(mailboxSession.getPathDelimiter());
             if (isMailboxNameTooLong(mailboxPath)) {
-                throw new TooLongMailboxNameException("Mailbox name exceed maximum size");
+                throw new TooLongMailboxNameException("Mailbox name exceed maximum size of " + MAX_MAILBOX_NAME_LENGTH + " characters");
             }
             if (mailboxExists(sanitizedMailboxPath, mailboxSession)) {
                 throw new MailboxExistsException(sanitizedMailboxPath.asString());
@@ -576,7 +576,7 @@ public class StoreMailboxManager implements MailboxManager {
             throw new MailboxExistsException(to.toString());
         }
         if (isMailboxNameTooLong(to)) {
-            throw new TooLongMailboxNameException("Mailbox name exceed maximum size");
+            throw new TooLongMailboxNameException("Mailbox name exceed maximum size of " + MAX_MAILBOX_NAME_LENGTH + " characters");
         }
 
         assertIsOwner(session, from);
