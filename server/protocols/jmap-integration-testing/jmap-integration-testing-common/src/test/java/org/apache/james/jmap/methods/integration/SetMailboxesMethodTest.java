@@ -200,7 +200,7 @@ public abstract class SetMailboxesMethodTest {
             .header("Authorization", accessToken.serialize())
             .body(requestBody)
         .when()
-            .post("/jmap").prettyPeek()
+            .post("/jmap")
         .then()
             .statusCode(200)
             .body(NAME, equalTo("mailboxesSet"))
