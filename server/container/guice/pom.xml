@@ -61,6 +61,7 @@
         <module>protocols/webadmin</module>
         <module>protocols/webadmin-cassandra</module>
         <module>protocols/webadmin-data</module>
+        <module>protocols/wedadmin-guice</module>
         <module>protocols/webadmin-mailbox</module>
         <module>protocols/webadmin-mailqueue</module>
         <module>protocols/webadmin-mailrepository</module>

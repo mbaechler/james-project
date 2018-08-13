@@ -46,6 +46,7 @@ import org.apache.james.modules.server.SwaggerRoutesModule;
 import org.apache.james.modules.server.WebAdminServerModule;
 import org.apache.james.modules.spamassassin.SpamAssassinListenerModule;
 import org.apache.james.server.core.configuration.Configuration;
+import org.apache.james.webadmin.guice.StatusRouteModule;
 
 import com.google.inject.Module;
 import com.google.inject.util.Modules;
@@ -60,7 +61,8 @@ public class MemoryJamesServerMain {
         new MailRepositoriesRoutesModule(),
         new SwaggerRoutesModule(),
         new DLPRoutesModule(),
-        new SieveQuotaRoutesModule());
+        new SieveQuotaRoutesModule(),
+        new StatusRouteModule());
 
     public static final Module PROTOCOLS = Modules.combine(
         new IMAPServerModule(),
