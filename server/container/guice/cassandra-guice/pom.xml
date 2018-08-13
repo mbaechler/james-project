@@ -195,8 +195,6 @@
         <dependency>
             <groupId>${james.groupId}</groupId>
             <artifactId>james-server-jmap-integration-testing</artifactId>
-            <type>test-jar</type>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>${james.groupId}</groupId>
