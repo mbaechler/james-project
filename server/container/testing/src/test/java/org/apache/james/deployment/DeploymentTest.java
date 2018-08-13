@@ -54,6 +54,9 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
@@ -91,7 +94,20 @@ public class DeploymentTest {
         .withCopyFileToContainer(MountableFile.forClasspathResource("/jwt_publickey"), "/root/conf/")
         .withNetwork(network)
         .withLogConsumer(log -> logger.info(log.getUtf8String()))
-        .waitingFor(new HttpWaitStrategy().forPort(WEBADMIN_PORT).forStatusCodeMatching(status -> true));
+        .waitingFor(new HttpWaitStrategy()
+            .forPort(WEBADMIN_PORT)
+            .forPath("/status")
+            .forResponsePredicate(this::isStarted));
+
+    private boolean isStarted(String string) {
+        try {
+            return new ObjectMapper().readValue(string, JsonNode.class)
+                .get("started")
+                .asBoolean();
+        } catch (Exception e) {
+            return false;
+        }
+    }
 
     @Rule
     public RuleChain chain = RuleChain.outerRule(network).around(cassandra).around(elasticsearch).around(james);
