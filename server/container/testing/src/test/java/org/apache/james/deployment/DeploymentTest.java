@@ -1,4 +1,24 @@
+/****************************************************************
+ * Licensed to the Apache Software Foundation (ASF) under one   *
+ * or more contributor license agreements.  See the NOTICE file *
+ * distributed with this work for additional information        *
+ * regarding copyright ownership.  The ASF licenses this file   *
+ * to you under the Apache License, Version 2.0 (the            *
+ * "License"); you may not use this file except in compliance   *
+ * with the License.  You may obtain a copy of the License at   *
+ *                                                              *
+ *   http://www.apache.org/licenses/LICENSE-2.0                 *
+ *                                                              *
+ * Unless required by applicable law or agreed to in writing,   *
+ * software distributed under the License is distributed on an  *
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY       *
+ * KIND, either express or implied.  See the License for the    *
+ * specific language governing permissions and limitations      *
+ * under the License.                                           *
+ ****************************************************************/
+
 package org.apache.james.deployment;
+
 import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
 import static io.restassured.config.EncoderConfig.encoderConfig;
@@ -39,27 +59,7 @@ import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import net.javacrumbs.jsonunit.assertj.JsonAssertions;
 
-/****************************************************************
- * Licensed to the Apache Software Foundation (ASF) under one   *
- * or more contributor license agreements.  See the NOTICE file *
- * distributed with this work for additional information        *
- * regarding copyright ownership.  The ASF licenses this file   *
- * to you under the Apache License, Version 2.0 (the            *
- * "License"); you may not use this file except in compliance   *
- * with the License.  You may obtain a copy of the License at   *
- *                                                              *
- *   http://www.apache.org/licenses/LICENSE-2.0                 *
- *                                                              *
- * Unless required by applicable law or agreed to in writing,   *
- * software distributed under the License is distributed on an  *
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY       *
- * KIND, either express or implied.  See the License for the    *
- * specific language governing permissions and limitations      *
- * under the License.                                           *
- ****************************************************************/
-
 public class DeploymentTest {
-
     private static final String LOCALHOST = "localhost";
     private static final String SIMPSON = "simpson";
     private static final String HOMER = "homer@" + SIMPSON;
@@ -97,7 +97,6 @@ public class DeploymentTest {
     public RuleChain chain = RuleChain.outerRule(network).around(cassandra).around(elasticsearch).around(james);
 
     private URIBuilder jmapApi;
-
     
     @Before
     public void setup() {
@@ -115,8 +114,10 @@ public class DeploymentTest {
         registerDomain();
         registerHomer();
         registerBart();
+
         sendMessageFromBartToHomer();
         assertImapMessageReceived();
+
         AccessToken homerAccessToken = HttpJmapAuthentication.authenticateJamesUser(jmapApi, HOMER, HOMER_PASSWORD);
         assertJmapWorks(homerAccessToken);
         assertJmapSearchWork(homerAccessToken);
@@ -159,32 +160,37 @@ public class DeploymentTest {
     private void assertImapMessageReceived() throws IOException {
         try (IMAPMessageReader imapMessageReader = new IMAPMessageReader()) {
             imapMessageReader.connect(LOCALHOST, james.getMappedPort(IMAP_PORT))
-            .login(HOMER, HOMER_PASSWORD)
-            .select("INBOX");
+                .login(HOMER, HOMER_PASSWORD)
+                .select("INBOX");
+
             await().atMost(Duration.TEN_SECONDS).until(imapMessageReader::hasAMessage);
             assertThat(imapMessageReader.readFirstMessage()).contains("FROM: " + BART);
         }
     }
 
-    private void assertJmapWorks(AccessToken homerAccessToken)
-            throws ClientProtocolException, IOException, URISyntaxException {
+    private void assertJmapWorks(AccessToken homerAccessToken) throws ClientProtocolException, IOException, URISyntaxException {
         Content lastMessageId = Request.Post(jmapApi.setPath("/jmap").build())
             .addHeader("Authorization", homerAccessToken.serialize())
             .bodyString("[[\"getMessageList\", {\"sort\":[\"date desc\"]}, \"#0\"]]", org.apache.http.entity.ContentType.APPLICATION_JSON)
             .execute()
             .returnContent();
         
-        JsonAssertions.assertThatJson(lastMessageId.asString(StandardCharsets.UTF_8)).inPath("$..messageIds[*]").isArray().hasSize(1);
+        JsonAssertions.assertThatJson(lastMessageId.asString(StandardCharsets.UTF_8))
+            .inPath("$..messageIds[*]")
+            .isArray()
+            .hasSize(1);
     }
 
-    private void assertJmapSearchWork(AccessToken homerAccessToken)
-            throws ClientProtocolException, IOException, URISyntaxException {
+    private void assertJmapSearchWork(AccessToken homerAccessToken) throws ClientProtocolException, IOException, URISyntaxException {
         Content searchResult = Request.Post(jmapApi.setPath("/jmap").build())
                 .addHeader("Authorization", homerAccessToken.serialize())
                 .bodyString("[[\"getMessageList\", {\"filter\" : {\"text\": \"content\"}}, \"#0\"]]", org.apache.http.entity.ContentType.APPLICATION_JSON)
                 .execute()
                 .returnContent();
         
-        JsonAssertions.assertThatJson(searchResult.asString(StandardCharsets.UTF_8)).inPath("$..messageIds[*]").isArray().hasSize(1);
+        JsonAssertions.assertThatJson(searchResult.asString(StandardCharsets.UTF_8))
+            .inPath("$..messageIds[*]")
+            .isArray()
+            .hasSize(1);
     }
 }
