@@ -1,4 +1,3 @@
-package org.apache.james.deployment;
 /****************************************************************
  * Licensed to the Apache Software Foundation (ASF) under one   *
  * or more contributor license agreements.  See the NOTICE file *
@@ -18,7 +17,9 @@ package org.apache.james.deployment;
  * under the License.                                           *
  ****************************************************************/
 
+package org.apache.james.deployment;
 
+import org.apache.james.backends.cassandra.CassandraWaitStrategy;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
@@ -26,12 +27,11 @@ public class CassandraContainer extends GenericContainer<CassandraContainer>{
 
     private static final int CASSANDRA_PORT = 9042;
 
-    static final boolean deleteOnExit = false;
     static final int cassandraMemory = 1000;
     static final long cassandraContainerMemory = Float.valueOf(cassandraMemory * 1.2f * 1024 * 1024L).longValue();
     
     public CassandraContainer() {
-        super("cassandra:2.2.12");
+        super("cassandra:3.11.3");
         withCreateContainerCmdModifier(cmd -> cmd.getHostConfig().withTmpFs(ImmutableMap.of("/var/lib/cassandra", "rw,noexec,nosuid,size=200m")));
         withCreateContainerCmdModifier(cmd -> cmd.withMemory(cassandraContainerMemory));
         withExposedPorts(CASSANDRA_PORT);
