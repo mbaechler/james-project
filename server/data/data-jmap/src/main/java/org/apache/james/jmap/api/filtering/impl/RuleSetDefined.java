@@ -57,8 +57,12 @@ public class RuleSetDefined implements Event {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         RuleSetDefined that = (RuleSetDefined) o;
         return Objects.equals(aggregateId, that.aggregateId) &&
             Objects.equals(eventId, that.eventId) &&
