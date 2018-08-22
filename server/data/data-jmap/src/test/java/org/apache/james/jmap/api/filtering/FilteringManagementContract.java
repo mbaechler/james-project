@@ -75,4 +75,13 @@ public interface FilteringManagementContract {
         assertThat(testee.listRulesForUser(user)).containsExactly(Rule.of("3"), Rule.of("2"), Rule.of("1"));
     }
 
+    @Test
+    default void definingEmptyRuleListShouldRemoveExistingRules() {
+        User user = User.fromUsername("bart@simpson.cartoon");
+        FilteringManagement testee = instanciateFilteringManagement();
+        testee.defineRulesForUser(user, ImmutableList.of(Rule.of("3"), Rule.of("2"), Rule.of("1")));
+        testee.defineRulesForUser(user, ImmutableList.of());
+        assertThat(testee.listRulesForUser(user)).isEmpty();
+    }
+
 }
