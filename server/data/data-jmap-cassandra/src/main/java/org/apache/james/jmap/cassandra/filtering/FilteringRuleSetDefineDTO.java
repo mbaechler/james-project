@@ -17,37 +17,54 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.jmap.api.filtering.impl;
+package org.apache.james.jmap.cassandra.filtering;
 
-import java.util.Objects;
-
-import org.apache.james.eventsourcing.AggregateId;
 import org.apache.james.eventsourcing.Event;
 import org.apache.james.eventsourcing.EventId;
+import org.apache.james.eventsourcing.eventstore.cassandra.dto.EventDTO;
 import org.apache.james.jmap.api.filtering.Rule;
+import org.apache.james.jmap.api.filtering.impl.FilteringAggregateId;
+import org.apache.james.jmap.api.filtering.impl.RuleSetDefined;
 
-import com.google.common.base.MoreObjects;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 
-public class RuleSetDefined implements Event {
+public class FilteringRuleSetDefineDTO implements EventDTO {
 
-    private final FilteringAggregateId aggregateId;
-    private final EventId eventId;
+    public static EventDTO from(RuleSetDefined event, String type) {
+        return new FilteringRuleSetDefineDTO(
+            type, event.eventId().serialize(),
+            event.getAggregateId().asAggregateKey(),
+            event.getRules());
+    }
+
+    private final String type;
+    private final int eventId;
+    private final String aggregateId;
     private final ImmutableList<Rule> rules;
 
-    public RuleSetDefined(FilteringAggregateId aggregateId, EventId eventId, ImmutableList<Rule> rules) {
-        this.aggregateId = aggregateId;
+    @JsonCreator
+    public FilteringRuleSetDefineDTO(@JsonProperty("type") String type,
+                                     @JsonProperty("eventId") int eventId,
+                                     @JsonProperty("aggregateId") String aggregateId,
+                                     @JsonProperty("rules") ImmutableList<Rule> rules) {
+        this.type = type;
         this.eventId = eventId;
+        this.aggregateId = aggregateId;
         this.rules = rules;
     }
 
-    @Override
-    public EventId eventId() {
+    public String getType() {
+        return type;
+    }
+
+    public int getEventId() {
         return eventId;
     }
 
-    @Override
-    public AggregateId getAggregateId() {
+    public String getAggregateId() {
         return aggregateId;
     }
 
@@ -55,31 +72,12 @@ public class RuleSetDefined implements Event {
         return rules;
     }
 
+    @JsonIgnore
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        RuleSetDefined that = (RuleSetDefined) o;
-        return Objects.equals(aggregateId, that.aggregateId) &&
-            Objects.equals(eventId, that.eventId) &&
-            Objects.equals(rules, that.rules);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(aggregateId, eventId, rules);
-    }
-
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-            .add("aggregateId", aggregateId)
-            .add("eventId", eventId)
-            .add("rules", rules)
-            .toString();
+    public Event toEvent() {
+        return new RuleSetDefined(
+            FilteringAggregateId.parse(aggregateId),
+            EventId.fromSerialized(eventId),
+            rules);
     }
 }
