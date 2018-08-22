@@ -17,13 +17,36 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.jmap.api.filtering.impl;
+package org.apache.james.jmap.cassandra.filtering;
 
-import org.apache.james.eventsourcing.eventstore.memory.InMemoryEventStoreExtension;
-import org.apache.james.jmap.api.filtering.FilteringManagementContract;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.apache.james.eventsourcing.Event;
+import org.apache.james.eventsourcing.eventstore.cassandra.dto.EventDTO;
+import org.apache.james.eventsourcing.eventstore.cassandra.dto.EventDTOModule;
+import org.apache.james.jmap.api.filtering.impl.RuleSetDefined;
 
-@ExtendWith(InMemoryEventStoreExtension.class)
-public class EventSourcingFilteringManagementTest implements FilteringManagementContract {
+import com.google.common.base.Preconditions;
 
+public class FilteringRuleSetDefineDTOModule implements EventDTOModule {
+    private static final String FILTERING_RULE_SET_DEFINED = "filtering-rule-set-defined";
+
+    @Override
+    public String getType() {
+        return FILTERING_RULE_SET_DEFINED;
+    }
+
+    @Override
+    public Class<? extends EventDTO> getDTOClass() {
+        return FilteringRuleSetDefineDTO.class;
+    }
+
+    @Override
+    public Class<? extends Event> getEventClass() {
+        return RuleSetDefined.class;
+    }
+
+    @Override
+    public EventDTO toDTO(Event event) {
+        Preconditions.checkArgument(event instanceof RuleSetDefined);
+        return FilteringRuleSetDefineDTO.from((RuleSetDefined) event, FILTERING_RULE_SET_DEFINED);
+    }
 }

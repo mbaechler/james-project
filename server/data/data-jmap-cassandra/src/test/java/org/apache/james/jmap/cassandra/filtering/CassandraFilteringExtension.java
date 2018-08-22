@@ -17,13 +17,15 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.jmap.api.filtering.impl;
+package org.apache.james.jmap.cassandra.filtering;
 
-import org.apache.james.eventsourcing.eventstore.memory.InMemoryEventStoreExtension;
-import org.apache.james.jmap.api.filtering.FilteringManagementContract;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.apache.james.eventsourcing.eventstore.cassandra.CassandraGenericEventStoreExtension;
 
-@ExtendWith(InMemoryEventStoreExtension.class)
-public class EventSourcingFilteringManagementTest implements FilteringManagementContract {
+import com.google.common.collect.ImmutableSet;
 
+public class CassandraFilteringExtension extends CassandraGenericEventStoreExtension {
+    public CassandraFilteringExtension() {
+        super(ImmutableSet.of(
+            new FilteringRuleSetDefineDTOModule()));
+    }
 }
