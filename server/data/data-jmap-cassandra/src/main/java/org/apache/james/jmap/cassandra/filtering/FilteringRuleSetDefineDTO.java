@@ -19,6 +19,8 @@
 
 package org.apache.james.jmap.cassandra.filtering;
 
+import java.util.Objects;
+
 import org.apache.james.eventsourcing.Event;
 import org.apache.james.eventsourcing.EventId;
 import org.apache.james.eventsourcing.eventstore.cassandra.dto.EventDTO;
@@ -79,5 +81,23 @@ public class FilteringRuleSetDefineDTO implements EventDTO {
             FilteringAggregateId.parse(aggregateId),
             EventId.fromSerialized(eventId),
             rules);
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (o instanceof FilteringRuleSetDefineDTO) {
+            FilteringRuleSetDefineDTO that = (FilteringRuleSetDefineDTO) o;
+
+            return Objects.equals(this.eventId, that.eventId)
+                && Objects.equals(this.type, that.type)
+                && Objects.equals(this.aggregateId, that.aggregateId)
+                && Objects.equals(this.rules, that.rules);
+        }
+        return false;
+    }
+
+    @Override
+    public final int hashCode() {
+        return Objects.hash(type, eventId, aggregateId, rules);
     }
 }

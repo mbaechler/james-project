@@ -30,13 +30,15 @@ import com.google.common.collect.ImmutableList;
 
 public interface FilteringManagementContract {
 
+    String BART_SIMPSON_CARTOON = "bart@simpson.cartoon";
+
     default FilteringManagement instanciateFilteringManagement(EventStore eventStore) {
         return new EventSourcingFilteringManagement(eventStore);
     }
 
     @Test
     default void listingRulesForUnknownUserShouldReturnEmptyList(EventStore eventStore) {
-        User user = User.fromUsername("bart@simpson.cartoon");
+        User user = User.fromUsername(BART_SIMPSON_CARTOON);
         assertThat(instanciateFilteringManagement(eventStore).listRulesForUser(user)).isEmpty();
     }
 
@@ -48,7 +50,7 @@ public interface FilteringManagementContract {
 
     @Test
     default void listingRulesShouldReturnDefinedRules(EventStore eventStore) {
-        User user = User.fromUsername("bart@simpson.cartoon");
+        User user = User.fromUsername(BART_SIMPSON_CARTOON);
         FilteringManagement testee = instanciateFilteringManagement(eventStore);
         testee.defineRulesForUser(user, ImmutableList.of(Rule.of("1"), Rule.of("2")));
         assertThat(testee.listRulesForUser(user)).containsExactly(Rule.of("1"), Rule.of("2"));
@@ -56,7 +58,7 @@ public interface FilteringManagementContract {
 
     @Test
     default void listingRulesShouldReturnLastDefinedRules(EventStore eventStore) {
-        User user = User.fromUsername("bart@simpson.cartoon");
+        User user = User.fromUsername(BART_SIMPSON_CARTOON);
         FilteringManagement testee = instanciateFilteringManagement(eventStore);
         testee.defineRulesForUser(user, ImmutableList.of(Rule.of("1"), Rule.of("2")));
         testee.defineRulesForUser(user, ImmutableList.of(Rule.of("2"), Rule.of("1")));
@@ -65,7 +67,7 @@ public interface FilteringManagementContract {
 
     @Test
     default void definingRulesShouldThrowWhenDuplicateRules(EventStore eventStore) {
-        User user = User.fromUsername("bart@simpson.cartoon");
+        User user = User.fromUsername(BART_SIMPSON_CARTOON);
         FilteringManagement testee = instanciateFilteringManagement(eventStore);
         assertThatThrownBy(() -> testee.defineRulesForUser(user, ImmutableList.of(Rule.of("1"), Rule.of("1"))))
             .isInstanceOf(IllegalArgumentException.class);
@@ -73,7 +75,7 @@ public interface FilteringManagementContract {
 
     @Test
     default void definingRulesShouldKeepOrdering(EventStore eventStore) {
-        User user = User.fromUsername("bart@simpson.cartoon");
+        User user = User.fromUsername(BART_SIMPSON_CARTOON);
         FilteringManagement testee = instanciateFilteringManagement(eventStore);
         testee.defineRulesForUser(user, ImmutableList.of(Rule.of("3"), Rule.of("2"), Rule.of("1")));
         assertThat(testee.listRulesForUser(user)).containsExactly(Rule.of("3"), Rule.of("2"), Rule.of("1"));
@@ -81,7 +83,7 @@ public interface FilteringManagementContract {
 
     @Test
     default void definingEmptyRuleListShouldRemoveExistingRules(EventStore eventStore) {
-        User user = User.fromUsername("bart@simpson.cartoon");
+        User user = User.fromUsername(BART_SIMPSON_CARTOON);
         FilteringManagement testee = instanciateFilteringManagement(eventStore);
         testee.defineRulesForUser(user, ImmutableList.of(Rule.of("3"), Rule.of("2"), Rule.of("1")));
         testee.defineRulesForUser(user, ImmutableList.of());

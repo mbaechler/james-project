@@ -21,6 +21,8 @@ package org.apache.james.jmap.api.filtering;
 
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 
 public class Rule {
@@ -31,7 +33,8 @@ public class Rule {
         return new Rule(id);
     }
 
-    public Rule(String id) {
+    @JsonCreator
+    public Rule(@JsonProperty("id") String id) {
         this.id = id;
     }
 
