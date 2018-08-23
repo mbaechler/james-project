@@ -24,7 +24,6 @@ import java.util.Objects;
 import org.apache.james.eventsourcing.Event;
 import org.apache.james.eventsourcing.EventId;
 import org.apache.james.eventsourcing.eventstore.cassandra.dto.EventDTO;
-import org.apache.james.jmap.api.filtering.Rule;
 import org.apache.james.jmap.api.filtering.impl.FilteringAggregateId;
 import org.apache.james.jmap.api.filtering.impl.RuleSetDefined;
 
@@ -39,19 +38,19 @@ public class FilteringRuleSetDefineDTO implements EventDTO {
         return new FilteringRuleSetDefineDTO(
             type, event.eventId().serialize(),
             event.getAggregateId().asAggregateKey(),
-            event.getRules());
+            RuleDTO.from(event.getRules()));
     }
 
     private final String type;
     private final int eventId;
     private final String aggregateId;
-    private final ImmutableList<Rule> rules;
+    private final ImmutableList<RuleDTO> rules;
 
     @JsonCreator
     public FilteringRuleSetDefineDTO(@JsonProperty("type") String type,
                                      @JsonProperty("eventId") int eventId,
                                      @JsonProperty("aggregateId") String aggregateId,
-                                     @JsonProperty("rules") ImmutableList<Rule> rules) {
+                                     @JsonProperty("rules") ImmutableList<RuleDTO> rules) {
         this.type = type;
         this.eventId = eventId;
         this.aggregateId = aggregateId;
@@ -70,7 +69,7 @@ public class FilteringRuleSetDefineDTO implements EventDTO {
         return aggregateId;
     }
 
-    public ImmutableList<Rule> getRules() {
+    public ImmutableList<RuleDTO> getRules() {
         return rules;
     }
 
@@ -80,7 +79,7 @@ public class FilteringRuleSetDefineDTO implements EventDTO {
         return new RuleSetDefined(
             FilteringAggregateId.parse(aggregateId),
             EventId.fromSerialized(eventId),
-            rules);
+            RuleDTO.toRules(rules));
     }
 
     @Override

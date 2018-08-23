@@ -24,6 +24,6 @@ import org.apache.james.jmap.api.filtering.FilteringManagementContract;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 @ExtendWith(InMemoryEventStoreExtension.class)
-public class EventSourcingFilteringManagementTest implements FilteringManagementContract {
+public class InMemoryEventSourcingFilteringManagementTest implements FilteringManagementContract {
 
 }

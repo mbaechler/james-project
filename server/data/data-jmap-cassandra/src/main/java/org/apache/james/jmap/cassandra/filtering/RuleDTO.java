@@ -17,21 +17,45 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.jmap.api.filtering;
+package org.apache.james.jmap.cassandra.filtering;
 
+import java.util.List;
 import java.util.Objects;
 
-import com.google.common.base.MoreObjects;
+import org.apache.james.jmap.api.filtering.Rule;
 
-public class Rule {
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
+
+public class RuleDTO {
+
+    public static ImmutableList<Rule> toRules(List<RuleDTO> ruleDTOList) {
+        Preconditions.checkNotNull(ruleDTOList);
+        return ruleDTOList.stream()
+                .map(dto -> Rule.of(dto.getId()))
+                .collect(ImmutableList.toImmutableList());
+    }
+
+    public static ImmutableList<RuleDTO> from(List<Rule> rules) {
+        Preconditions.checkNotNull(rules);
+        return rules.stream()
+            .map(RuleDTO::from)
+            .collect(ImmutableList.toImmutableList());
+    }
+
+    public static RuleDTO from(Rule rule) {
+        return new RuleDTO(rule.getId());
+    }
 
     private final String id;
 
-    public static Rule of(String id) {
-        return new Rule(id);
-    }
+    @JsonCreator
+    public RuleDTO(@JsonProperty("id") String id) {
+        Preconditions.checkNotNull(id);
 
-    public Rule(String id) {
         this.id = id;
     }
 
@@ -40,19 +64,17 @@ public class Rule {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
+    public final boolean equals(Object o) {
+        if (o instanceof RuleDTO) {
+            RuleDTO ruleDTO = (RuleDTO) o;
+
+            return Objects.equals(this.id, ruleDTO.id);
         }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        Rule rule = (Rule) o;
-        return Objects.equals(id, rule.id);
+        return false;
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         return Objects.hash(id);
     }
 
@@ -62,5 +84,4 @@ public class Rule {
             .add("id", id)
             .toString();
     }
-
 }
