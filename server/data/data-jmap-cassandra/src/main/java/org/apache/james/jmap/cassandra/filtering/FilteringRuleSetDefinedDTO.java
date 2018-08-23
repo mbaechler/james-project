@@ -32,10 +32,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 
-public class FilteringRuleSetDefineDTO implements EventDTO {
+public class FilteringRuleSetDefinedDTO implements EventDTO {
 
     public static EventDTO from(RuleSetDefined event, String type) {
-        return new FilteringRuleSetDefineDTO(
+        return new FilteringRuleSetDefinedDTO(
             type, event.eventId().serialize(),
             event.getAggregateId().asAggregateKey(),
             RuleDTO.from(event.getRules()));
@@ -47,10 +47,10 @@ public class FilteringRuleSetDefineDTO implements EventDTO {
     private final ImmutableList<RuleDTO> rules;
 
     @JsonCreator
-    public FilteringRuleSetDefineDTO(@JsonProperty("type") String type,
-                                     @JsonProperty("eventId") int eventId,
-                                     @JsonProperty("aggregateId") String aggregateId,
-                                     @JsonProperty("rules") ImmutableList<RuleDTO> rules) {
+    public FilteringRuleSetDefinedDTO(@JsonProperty("type") String type,
+                                      @JsonProperty("eventId") int eventId,
+                                      @JsonProperty("aggregateId") String aggregateId,
+                                      @JsonProperty("rules") ImmutableList<RuleDTO> rules) {
         this.type = type;
         this.eventId = eventId;
         this.aggregateId = aggregateId;
@@ -84,8 +84,8 @@ public class FilteringRuleSetDefineDTO implements EventDTO {
 
     @Override
     public final boolean equals(Object o) {
-        if (o instanceof FilteringRuleSetDefineDTO) {
-            FilteringRuleSetDefineDTO that = (FilteringRuleSetDefineDTO) o;
+        if (o instanceof FilteringRuleSetDefinedDTO) {
+            FilteringRuleSetDefinedDTO that = (FilteringRuleSetDefinedDTO) o;
 
             return Objects.equals(this.eventId, that.eventId)
                 && Objects.equals(this.type, that.type)

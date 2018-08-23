@@ -36,7 +36,7 @@ public class FilteringRuleSetDefineDTOModule implements EventDTOModule {
 
     @Override
     public Class<? extends EventDTO> getDTOClass() {
-        return FilteringRuleSetDefineDTO.class;
+        return FilteringRuleSetDefinedDTO.class;
     }
 
     @Override
@@ -47,6 +47,6 @@ public class FilteringRuleSetDefineDTOModule implements EventDTOModule {
     @Override
     public EventDTO toDTO(Event event) {
         Preconditions.checkArgument(event instanceof RuleSetDefined);
-        return FilteringRuleSetDefineDTO.from((RuleSetDefined) event, FILTERING_RULE_SET_DEFINED);
+        return FilteringRuleSetDefinedDTO.from((RuleSetDefined) event, FILTERING_RULE_SET_DEFINED);
     }
 }
