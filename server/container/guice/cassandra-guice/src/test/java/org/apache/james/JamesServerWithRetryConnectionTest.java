@@ -35,7 +35,6 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.testcontainers.shaded.com.google.common.base.Throwables;
 
 public class JamesServerWithRetryConnectionTest {
     private static final int IMAP_PORT = 1143;
@@ -102,7 +101,7 @@ public class JamesServerWithRetryConnectionTest {
             try {
                 Thread.sleep(waitingTime);
             } catch (InterruptedException e) {
-                throw Throwables.propagate(e);
+                throw new RuntimeException(e);
             }
             action.execute();
         });
