@@ -19,6 +19,8 @@
 
 package org.apache.james.queue.rabbitmq;
 
+import static org.mockito.Mockito.mock;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
