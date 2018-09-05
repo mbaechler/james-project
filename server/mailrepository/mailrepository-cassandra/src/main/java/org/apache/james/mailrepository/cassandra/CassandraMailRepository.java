@@ -19,13 +19,10 @@
 
 package org.apache.james.mailrepository.cassandra;
 
-import static org.apache.commons.io.output.NullOutputStream.NULL_OUTPUT_STREAM;
+import static org.apache.james.util.mime.MessageSplitter.splitHeaderBody;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Properties;
@@ -36,14 +33,12 @@ import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.internet.MimeMessage;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.james.blob.api.BlobId;
 import org.apache.james.blob.api.BlobStore;
 import org.apache.james.mailrepository.api.MailKey;
 import org.apache.james.mailrepository.api.MailRepository;
 import org.apache.james.mailrepository.api.MailRepositoryUrl;
-import org.apache.james.util.BodyOffsetInputStream;
 import org.apache.james.util.CompletableFutureUtil;
 import org.apache.james.util.FluentFutureStream;
 import org.apache.mailet.Mail;
@@ -94,57 +89,6 @@ public class CassandraMailRepository implements MailRepository {
             return countDAO.increment(url);
         }
         return CompletableFuture.completedFuture(null);
-    }
-
-    private Pair<byte[], byte[]> splitHeaderBody(MimeMessage message) throws IOException, MessagingException {
-        byte[] messageAsArray = messageToArray(message);
-        int bodyStartOctet = computeBodyStartOctet(messageAsArray);
-
-        return Pair.of(
-            getHeaderBytes(messageAsArray, bodyStartOctet),
-            getBodyBytes(messageAsArray, bodyStartOctet));
-    }
-
-    private byte[] messageToArray(MimeMessage message) throws IOException, MessagingException {
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        message.writeTo(byteArrayOutputStream);
-        return byteArrayOutputStream.toByteArray();
-    }
-
-    private byte[] getHeaderBytes(byte[] messageContentAsArray, int bodyStartOctet) {
-        ByteBuffer headerContent = ByteBuffer.wrap(messageContentAsArray, 0, bodyStartOctet);
-        byte[] headerBytes = new byte[bodyStartOctet];
-        headerContent.get(headerBytes);
-        return headerBytes;
-    }
-
-    private byte[] getBodyBytes(byte[] messageContentAsArray, int bodyStartOctet) {
-        if (bodyStartOctet < messageContentAsArray.length) {
-            ByteBuffer bodyContent = ByteBuffer.wrap(messageContentAsArray,
-                bodyStartOctet,
-                messageContentAsArray.length - bodyStartOctet);
-            byte[] bodyBytes = new byte[messageContentAsArray.length - bodyStartOctet];
-            bodyContent.get(bodyBytes);
-            return bodyBytes;
-        } else {
-            return new byte[] {};
-        }
-    }
-
-    private int computeBodyStartOctet(byte[] messageAsArray) throws IOException {
-        try (BodyOffsetInputStream bodyOffsetInputStream =
-                 new BodyOffsetInputStream(new ByteArrayInputStream(messageAsArray))) {
-            consume(bodyOffsetInputStream);
-
-            if (bodyOffsetInputStream.getBodyStartOffset() == -1) {
-                return 0;
-            }
-            return (int) bodyOffsetInputStream.getBodyStartOffset();
-        }
-    }
-
-    private void consume(InputStream in) throws IOException {
-        IOUtils.copy(in, NULL_OUTPUT_STREAM);
     }
 
     @Override
