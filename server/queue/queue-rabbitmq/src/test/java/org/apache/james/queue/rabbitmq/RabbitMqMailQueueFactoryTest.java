@@ -25,7 +25,6 @@ import java.net.URISyntaxException;
 import java.util.concurrent.TimeoutException;
 
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.james.queue.api.MailQueue;
 import org.apache.james.queue.api.MailQueueFactory;
 import org.apache.james.queue.api.MailQueueFactoryContract;
 import org.junit.jupiter.api.BeforeEach;

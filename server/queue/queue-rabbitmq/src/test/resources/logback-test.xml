@@ -10,7 +10,6 @@
         <logger name="org.testcontainers" level="ERROR"/>
         <logger name="org.apache.james" level="WARN"/>
         <logger name="org.apache.james.queue.rabbitmq.DockerRabbitMQ" level="WARN"/>
-        <logger name="RabbitMQManagementApi" level="DEBUG" />
 
         <root level="ERROR">
                 <appender-ref ref="CONSOLE" />

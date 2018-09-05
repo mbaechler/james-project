@@ -86,7 +86,9 @@ public class DockerRabbitMQ {
         return container.getMappedPort(DEFAULT_RABBITMQ_PORT);
     }
 
-    public Integer getAdminPort() { return container.getMappedPort(DEFAULT_RABBITMQ_ADMIN_PORT); }
+    public Integer getAdminPort() {
+        return container.getMappedPort(DEFAULT_RABBITMQ_ADMIN_PORT);
+    }
 
     public String getUsername() {
         return DEFAULT_RABBITMQ_USERNAME;

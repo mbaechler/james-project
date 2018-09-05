@@ -25,7 +25,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import org.apache.james.queue.api.MailQueue;
 import org.apache.james.queue.api.MailQueueFactory;
 
 import com.github.steveash.guavate.Guavate;
@@ -41,6 +40,7 @@ public class RabbitMQMailQueueFactory implements MailQueueFactory<RabbitMQMailQu
     private static final boolean RABBIT_OPTION_DURABLE = true;
     private static final boolean RABBIT_OPTION_EXCLUSIVE = true;
     private static final boolean RABBIT_OPTION_AUTO_DELETE = true;
+    private static final ImmutableMap<String, Object> RABBIT_OPTION_NO_ARGUMENTS = ImmutableMap.of();
 
     private final Channel channel;
     private final RabbitMQManagementApi mqManagementApi;
@@ -81,7 +81,7 @@ public class RabbitMQMailQueueFactory implements MailQueueFactory<RabbitMQMailQu
     private RabbitMQMailQueue attemptQueueCreation(MailQueueName name) {
         try {
             channel.exchangeDeclare(name.toRabbitExchangeName(), "direct", RABBIT_OPTION_DURABLE);
-            channel.queueDeclare(name.toRabbitWorkQueueName(), RABBIT_OPTION_DURABLE, !RABBIT_OPTION_EXCLUSIVE, !RABBIT_OPTION_AUTO_DELETE, ImmutableMap.of());
+            channel.queueDeclare(name.toRabbitWorkQueueName(), RABBIT_OPTION_DURABLE, !RABBIT_OPTION_EXCLUSIVE, !RABBIT_OPTION_AUTO_DELETE, RABBIT_OPTION_NO_ARGUMENTS);
             channel.queueBind(name.toRabbitWorkQueueName(), name.toRabbitExchangeName(), ROUTING_KEY);
         } catch (IOException e) {
             throw new RuntimeException(e);

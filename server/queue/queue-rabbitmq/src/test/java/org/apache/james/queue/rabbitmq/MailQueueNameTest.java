@@ -10,36 +10,36 @@ import nl.jqno.equalsverifier.EqualsVerifier;
 class MailQueueNameTest {
 
     @Test
-    void fromStringShouldThrowOnNull() {
+    void fromStringShouldThrowWhenNull() {
         assertThatThrownBy(() -> MailQueueName.fromString(null))
             .isInstanceOf(NullPointerException.class);
     }
 
     @Test
-    void fromStringShouldReturnInstanceOnEmptyString() {
+    void fromStringShouldReturnInstanceWhenEmptyString() {
         assertThat(MailQueueName.fromString("")).isNotNull();
     }
 
     @Test
-    void fromStringShouldReturnInstanceOnArbitraryString() {
+    void fromStringShouldReturnInstanceWhenArbitraryString() {
         assertThat(MailQueueName.fromString("whatever")).isNotNull();
     }
 
 
     @Test
-    void fromRabbitWorkQueueNameShouldReturnEmptyOnArbitraryString() {
+    void fromRabbitWorkQueueNameShouldReturnEmptyWhenArbitraryString() {
         assertThat(MailQueueName.fromRabbitWorkQueueName("whatever"))
             .isEmpty();
     }
 
     @Test
-    void fromRabbitWorkQueueNameShouldReturnInstanceOnPrefixOnlyString() {
+    void fromRabbitWorkQueueNameShouldReturnInstanceWhenPrefixOnlyString() {
         assertThat(MailQueueName.fromRabbitWorkQueueName(MailQueueName.WORKQUEUE_PREFIX))
             .contains(MailQueueName.fromString(""));
     }
 
     @Test
-    void fromRabbitWorkQueueNameShouldReturnInstanceOnValidQueueName() {
+    void fromRabbitWorkQueueNameShouldReturnInstanceWhenValidQueueName() {
         assertThat(MailQueueName.fromRabbitWorkQueueName(MailQueueName.WORKQUEUE_PREFIX + "myQueue"))
             .contains(MailQueueName.fromString("myQueue"));
     }
@@ -50,7 +50,7 @@ class MailQueueNameTest {
     }
 
     @Test
-    void fromRabbitWorkQueueNameShouldReturnIdentityOnToRabbitWorkQueueName() {
+    void fromRabbitWorkQueueNameShouldReturnIdentityWhenToRabbitWorkQueueName() {
         MailQueueName myQueue = MailQueueName.fromString("myQueue");
         assertThat(MailQueueName.fromRabbitWorkQueueName(myQueue.toRabbitWorkQueueName()))
             .contains(myQueue);

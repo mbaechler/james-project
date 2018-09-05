@@ -54,7 +54,7 @@ class RabbitMQManagementApi {
     RabbitMQManagementApi(URI rabbitManagementUri, RabbitMQManagementCredentials credentials) throws MalformedURLException {
         api = Feign.builder()
             .requestInterceptor(new BasicAuthRequestInterceptor(credentials.getUser(), new String(credentials.getPassword())))
-            .logger(new Slf4jLogger("RabbitMQManagementApi"))
+            .logger(new Slf4jLogger(RabbitMQManagementApi.class))
             .logLevel(Logger.Level.FULL)
             .encoder(new JacksonEncoder())
             .decoder(new JacksonDecoder())
