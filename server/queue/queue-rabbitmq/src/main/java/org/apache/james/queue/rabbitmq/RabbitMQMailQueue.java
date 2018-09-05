@@ -28,6 +28,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import javax.inject.Inject;
 import javax.mail.MessagingException;
 import javax.mail.internet.AddressException;
 
@@ -52,10 +53,12 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.fge.lambdas.Throwing;
 import com.github.steveash.guavate.Guavate;
+import com.google.common.annotations.VisibleForTesting;
 import com.nurkiewicz.asyncretry.AsyncRetryExecutor;
 import com.rabbitmq.client.GetResponse;
 
 public class RabbitMQMailQueue implements MailQueue {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(RabbitMQMailQueue.class);
 
     private static class NoMailYetException extends RuntimeException {
@@ -84,6 +87,23 @@ public class RabbitMQMailQueue implements MailQueue {
             } catch (IOException e) {
                 throw new MailQueueException("Failed to ACK " + mail.getName() + " with delivery tag " + deliveryTag, e);
             }
+        }
+    }
+
+    static class Factory {
+        private final RabbitClient rabbitClient;
+        private final BlobStore blobStore;
+        private final BlobId.Factory blobIdFactory;
+
+        @Inject
+        @VisibleForTesting Factory(RabbitClient rabbitClient, BlobStore blobStore, BlobId.Factory blobIdFactory) {
+            this.rabbitClient = rabbitClient;
+            this.blobStore = blobStore;
+            this.blobIdFactory = blobIdFactory;
+        }
+
+        RabbitMQMailQueue create(MailQueueName mailQueueName) {
+            return new RabbitMQMailQueue(mailQueueName, rabbitClient, blobStore, blobIdFactory);
         }
     }
 
@@ -186,7 +206,7 @@ public class RabbitMQMailQueue implements MailQueue {
                 dto.getRecipients()
                     .stream()
                     .map(Throwing.<String, MailAddress>function(MailAddress::new).sneakyThrow())
-                    .collect(G.toImmutableList()),
+                    .collect(Guavate.toImmutableList()),
                 new SequenceInputStream(
                     blobStore.read(blobIdFactory.from(dto.getHeaderBlobId())),
                     blobStore.read(blobIdFactory.from(dto.getBodyBlobId()))));

@@ -45,7 +45,7 @@ class RabbitClient {
         this.channel = channel;
     }
 
-    RabbitMQMailQueue attemptQueueCreation(MailQueueName name) {
+    void attemptQueueCreation(MailQueueName name) {
         try {
             channel.exchangeDeclare(name.toRabbitExchangeName(), "direct", DURABLE);
             channel.queueDeclare(name.toRabbitWorkQueueName(), DURABLE, !EXCLUSIVE, !AUTO_DELETE, NO_ARGUMENTS);
@@ -53,7 +53,6 @@ class RabbitClient {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return new RabbitMQMailQueue(name, this);
     }
 
     void publish(MailQueueName name, byte[] message) throws MailQueue.MailQueueException {

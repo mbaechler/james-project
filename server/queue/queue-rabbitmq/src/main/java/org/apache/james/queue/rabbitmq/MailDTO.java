@@ -56,10 +56,10 @@ class MailDTO {
             bodyBlobId.asString());
     }
 
-    public static ImmutableMap<String, String> serializedAttributes(Mail mail) {
+    private static ImmutableMap<String, String> serializedAttributes(Mail mail) {
         return Iterators.toStream(mail.getAttributeNames())
             .map(name -> Pair.of(name, SerializationUtil.serialize(mail.getAttribute(name))))
-            .collect(ImmutableMap.toImmutableMap(
+            .collect(Guavate.toImmutableMap(
                 Pair::getKey,
                 Pair::getValue));
     }
@@ -67,18 +67,15 @@ class MailDTO {
     private final ImmutableList<String> recipients;
     private final String name;
     private final String sender;
-    private ImmutableList<String> recipients;
-    private String name;
-    private String sender;
-    private String state;
-    private String errorMessage;
-    private Instant lastUpdated;
-    private ImmutableMap<String, String> attributes;
-    private String remoteAddr;
-    private String remoteHost;
-    private String perRecipientHeaders;
-    private String headerBlobId;
-    private String bodyBlobId;
+    private final String state;
+    private final String errorMessage;
+    private final Instant lastUpdated;
+    private final ImmutableMap<String, String> attributes;
+    private final String remoteAddr;
+    private final String remoteHost;
+    private final String perRecipientHeaders;
+    private final String headerBlobId;
+    private final String bodyBlobId;
 
     @JsonCreator
     private MailDTO(@JsonProperty("recipients") ImmutableList<String> recipients,
@@ -119,39 +116,39 @@ class MailDTO {
         return sender;
     }
 
-    public String getState() {
+    String getState() {
         return state;
     }
 
-    public String getErrorMessage() {
+    String getErrorMessage() {
         return errorMessage;
     }
 
-    public Instant getLastUpdated() {
+    Instant getLastUpdated() {
         return lastUpdated;
     }
 
-    public Map<String, String> getAttributes() {
+    Map<String, String> getAttributes() {
         return attributes;
     }
 
-    public String getRemoteAddr() {
+    String getRemoteAddr() {
         return remoteAddr;
     }
 
-    public String getRemoteHost() {
+    String getRemoteHost() {
         return remoteHost;
     }
 
-    public String getPerRecipientHeaders() {
+    String getPerRecipientHeaders() {
         return perRecipientHeaders;
     }
 
-    public String getHeaderBlobId() {
+    String getHeaderBlobId() {
         return headerBlobId;
     }
 
-    public String getBodyBlobId() {
+    String getBodyBlobId() {
         return bodyBlobId;
     }
 }

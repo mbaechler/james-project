@@ -19,34 +19,68 @@
 
 package org.apache.james.queue.rabbitmq;
 
-import static org.mockito.Mockito.mock;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.concurrent.TimeoutException;
 
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.james.backends.cassandra.CassandraCluster;
+import org.apache.james.backends.cassandra.DockerCassandraExtension;
+import org.apache.james.backends.cassandra.init.configuration.CassandraConfiguration;
+import org.apache.james.blob.api.HashBlobId;
+import org.apache.james.blob.cassandra.CassandraBlobModule;
+import org.apache.james.blob.cassandra.CassandraBlobsDAO;
 import org.apache.james.queue.api.MailQueueFactory;
 import org.apache.james.queue.api.MailQueueFactoryContract;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-@ExtendWith(DockerRabbitMQExtension.class)
+@ExtendWith({DockerRabbitMQExtension.class, DockerCassandraExtension.class})
 class RabbitMqMailQueueFactoryTest implements MailQueueFactoryContract<RabbitMQMailQueue> {
+
+    private static final int CHUNK_SIZE = 10240;
+
+    private static CassandraCluster cassandra;
 
     private RabbitMQMailQueueFactory mailQueueFactory;
 
+    @BeforeAll
+    static void setUpClass(DockerCassandraExtension.DockerCassandra dockerCassandra) {
+        cassandra = CassandraCluster.create(CassandraBlobModule.MODULE, dockerCassandra.getHost());
+    }
+
     @BeforeEach
     void setup(DockerRabbitMQ rabbitMQ) throws IOException, TimeoutException, URISyntaxException {
+        CassandraBlobsDAO blobsDAO = new CassandraBlobsDAO(cassandra.getConf(),
+            CassandraConfiguration.builder()
+                .blobPartSize(CHUNK_SIZE)
+                .build(),
+            new HashBlobId.Factory());
+
         URI rabbitManagementUri = new URIBuilder()
             .setScheme("http")
             .setHost(rabbitMQ.getHostIp())
             .setPort(rabbitMQ.getAdminPort())
             .build();
-        mailQueueFactory = new RabbitMQMailQueueFactory(
-            rabbitMQ.connectionFactory().newConnection(),
-            new RabbitMQManagementApi(rabbitManagementUri, new RabbitMQManagementCredentials("guest", "guest".toCharArray())));
+
+        RabbitClient rabbitClient = new RabbitClient(rabbitMQ.connectionFactory().newConnection().createChannel());
+        RabbitMQMailQueue.Factory factory = new RabbitMQMailQueue.Factory(rabbitClient, blobsDAO, new HashBlobId.Factory());
+        RabbitMQManagementApi mqManagementApi = new RabbitMQManagementApi(rabbitManagementUri, new RabbitMQManagementCredentials("guest", "guest".toCharArray()));
+        mailQueueFactory = new RabbitMQMailQueueFactory(rabbitClient, mqManagementApi, factory);
+    }
+
+    @AfterEach
+    void tearDown() {
+        cassandra.clearTables();
+    }
+
+    @AfterAll
+    static void tearDownClass() {
+        cassandra.closeCluster();
     }
 
     @Override

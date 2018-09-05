@@ -41,6 +41,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 @ExtendWith({DockerRabbitMQExtension.class, DockerCassandraExtension.class})
 public class RabbitMQMailQueueTest implements MailQueueContract {
+
     private static final int CHUNK_SIZE = 10240;
 
     private static CassandraCluster cassandra;
@@ -54,6 +55,7 @@ public class RabbitMQMailQueueTest implements MailQueueContract {
 
     @BeforeEach
     void setup(DockerRabbitMQ rabbitMQ) throws IOException, TimeoutException, URISyntaxException {
+        //We do we need cassandra ? I would have tested with a memory impl here
         CassandraBlobsDAO blobsDAO = new CassandraBlobsDAO(cassandra.getConf(),
             CassandraConfiguration.builder()
                 .blobPartSize(CHUNK_SIZE)
@@ -65,11 +67,10 @@ public class RabbitMQMailQueueTest implements MailQueueContract {
             .setHost(rabbitMQ.getHostIp())
             .setPort(rabbitMQ.getAdminPort())
             .build();
-        mailQueueFactory = new RabbitMQMailQueueFactory(
-            rabbitMQ.connectionFactory().newConnection(),
-            rabbitManagementUri,
-            blobsDAO,
-            new HashBlobId.Factory());
+        RabbitClient rabbitClient = new RabbitClient(rabbitMQ.connectionFactory().newConnection().createChannel());
+        RabbitMQMailQueue.Factory factory = new RabbitMQMailQueue.Factory(rabbitClient, blobsDAO, new HashBlobId.Factory());
+        RabbitMQManagementApi mqManagementApi = new RabbitMQManagementApi(rabbitManagementUri, new RabbitMQManagementCredentials("guest", "guest".toCharArray()));
+        mailQueueFactory = new RabbitMQMailQueueFactory(rabbitClient, mqManagementApi, factory);
     }
 
     @AfterEach
