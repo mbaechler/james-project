@@ -18,7 +18,7 @@
  ****************************************************************/
 package org.apache.james.smtpserver;
 
-import static org.apache.james.util.scanner.SpamAssassinResult.STATUS_MAIL_ATTRIBUTE_NAME;
+import static org.apache.james.spamassassin.SpamAssassinResult.STATUS_MAIL_ATTRIBUTE_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
