@@ -28,6 +28,88 @@ import com.google.common.base.Preconditions;
 
 final class MailQueueName {
 
+    static class WorkQueueName {
+        static Optional<WorkQueueName> fromString(String name) {
+            Preconditions.checkNotNull(name);
+            return Optional.of(name)
+                .filter(WorkQueueName::isJamesWorkQueueName)
+                .map(s -> s.substring(WORKQUEUE_PREFIX.length()))
+                .map(WorkQueueName::new);
+        }
+
+        static boolean isJamesWorkQueueName(String name) {
+            return name.startsWith(WORKQUEUE_PREFIX);
+        }
+
+        private final String name;
+
+        private WorkQueueName(String name) {
+            this.name = name;
+        }
+
+        String asString() {
+            return WORKQUEUE_PREFIX + name;
+        }
+
+        MailQueueName toMailQueueName() {
+            return MailQueueName.fromString(name);
+        }
+
+        @Override
+        public final boolean equals(Object o) {
+            if (o instanceof WorkQueueName) {
+                WorkQueueName that = (WorkQueueName) o;
+                return Objects.equals(name, that.name);
+            }
+            return false;
+        }
+
+        @Override
+        public final int hashCode() {
+            return Objects.hash(name);
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                .add("name", name)
+                .toString();
+        }
+    }
+
+    static class ExchangeName {
+        private final String name;
+
+        private ExchangeName(String name) {
+            this.name = name;
+        }
+
+        String asString() {
+            return EXCHANGE_PREFIX + name;
+        }
+
+        @Override
+        public final boolean equals(Object o) {
+            if (o instanceof ExchangeName) {
+                ExchangeName that = (ExchangeName) o;
+                return Objects.equals(name, that.name);
+            }
+            return false;
+        }
+
+        @Override
+        public final int hashCode() {
+            return Objects.hash(name);
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                .add("name", name)
+                .toString();
+        }
+    }
+
     private static final String PREFIX = "JamesMailQueue";
     private static final String EXCHANGE_PREFIX = PREFIX + "-exchange-";
     @VisibleForTesting static final String WORKQUEUE_PREFIX = PREFIX + "-workqueue-";
@@ -38,17 +120,8 @@ final class MailQueueName {
     }
 
     static Optional<MailQueueName> fromRabbitWorkQueueName(String workQueueName) {
-        return Optional.of(workQueueName)
-            .filter(MailQueueName::isMailQueueName)
-            .map(name -> new MailQueueName(toMailqueueName(workQueueName)));
-    }
-
-    private static boolean isMailQueueName(String name) {
-        return name.startsWith(WORKQUEUE_PREFIX);
-    }
-
-    private static String toMailqueueName(String name) {
-        return name.substring(WORKQUEUE_PREFIX.length());
+        return WorkQueueName.fromString(workQueueName)
+            .map(WorkQueueName::toMailQueueName);
     }
 
     private final String name;
@@ -61,16 +134,16 @@ final class MailQueueName {
         return name;
     }
 
-    String toRabbitWorkQueueName() {
-        return WORKQUEUE_PREFIX + name;
+    ExchangeName toRabbitExchangeName() {
+        return new ExchangeName(name);
     }
 
-    String toRabbitExchangeName() {
-        return EXCHANGE_PREFIX + name;
+    WorkQueueName toWorkQueueName() {
+        return new WorkQueueName(name);
     }
 
     @Override
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (o instanceof MailQueueName) {
             MailQueueName that = (MailQueueName) o;
             return Objects.equals(name, that.name);
@@ -79,7 +152,7 @@ final class MailQueueName {
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         return Objects.hash(name);
     }
 
