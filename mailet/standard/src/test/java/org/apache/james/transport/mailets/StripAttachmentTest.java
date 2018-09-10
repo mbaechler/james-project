@@ -82,7 +82,7 @@ class StripAttachmentTest {
     };
 
     @Test
-    void serviceShouldNotModifyMailWhenNotMultipart(TemporaryFolder temporaryFolder) throws MessagingException, IOException {
+    void serviceShouldNotModifyMailWhenNotMultipart(TemporaryFolder temporaryFolder) throws Exception {
         Mailet mailet = initMailet(temporaryFolder);
         MimeMessageBuilder message = MimeMessageBuilder.mimeMessageBuilder()
             .setSubject("test")
@@ -235,7 +235,7 @@ class StripAttachmentTest {
     }
 
     @Test
-    void serviceShouldSaveFilenameAttachmentAndFileContentInCustomAttribute(TemporaryFolder temporaryFolder) throws MessagingException, IOException {
+    void serviceShouldSaveFilenameAttachmentAndFileContentInCustomAttribute(TemporaryFolder temporaryFolder) throws Exception {
         StripAttachment mailet = new StripAttachment();
 
         String customAttribute = "my.custom.attribute";
@@ -270,7 +270,7 @@ class StripAttachmentTest {
     }
 
     @Test
-    void serviceShouldDecodeHeaderFilenames() throws MessagingException, IOException {
+    void serviceShouldDecodeHeaderFilenames() throws Exception {
         StripAttachment mailet = new StripAttachment();
 
         String customAttribute = "my.custom.attribute";

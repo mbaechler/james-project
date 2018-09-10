@@ -104,7 +104,7 @@ public class MimeMessageWrapperTest extends MimeMessageFromStreamTest {
     }
 
     @Test
-    public void testDeferredMessageLoading() throws MessagingException, IOException {
+    public void testDeferredMessageLoading() throws Exception {
         assertThat(mw.getSubject()).isEqualTo("foo");
         assertThat(mw.messageParsed()).isFalse();
         assertThat(mw.getContent()).isEqualTo("bar\r\n");
@@ -124,7 +124,7 @@ public class MimeMessageWrapperTest extends MimeMessageFromStreamTest {
      * }
      */
     @Test
-    public void testDeferredHeaderLoading() throws MessagingException, IOException {
+    public void testDeferredHeaderLoading() throws Exception {
         mw.setHeadersLoadable(false);
 
         assertThatThrownBy(() -> mw.getSubject()).isInstanceOf(IllegalStateException.class);
@@ -135,7 +135,7 @@ public class MimeMessageWrapperTest extends MimeMessageFromStreamTest {
      * message.
      */
     @Test
-    public void testMessageCloned() throws MessagingException, IOException, InterruptedException {
+    public void testMessageCloned() throws Exception {
         MimeMessageWrapper mmw = new MimeMessageWrapper(mw);
         LifecycleUtil.dispose(mw);
         mw = null;
@@ -207,7 +207,7 @@ public class MimeMessageWrapperTest extends MimeMessageFromStreamTest {
      * Test for JAMES-1154
      */
     @Test
-    public void testMessageStreamWithUpatedHeaders() throws MessagingException, IOException {
+    public void testMessageStreamWithUpatedHeaders() throws Exception {
         mw.addHeader("X-Test", "X-Value");
 
         assertThat(mw.getHeader("X-Test")[0]).isEqualTo("X-Value");
@@ -226,7 +226,7 @@ public class MimeMessageWrapperTest extends MimeMessageFromStreamTest {
      * Test for JAMES-1154
      */
     @Test
-    public void testMessageStreamWithUpatedContent() throws MessagingException, IOException {
+    public void testMessageStreamWithUpatedContent() throws Exception {
         String newContent = "This is the new message content!";
         mw.setText(newContent);
         assertThat(mw.getContent()).isEqualTo(newContent);
@@ -268,7 +268,7 @@ public class MimeMessageWrapperTest extends MimeMessageFromStreamTest {
     }
     
     @Test
-    public void jiraJames1593() throws MessagingException, IOException {
+    public void jiraJames1593() throws Exception {
         Properties noProperties = new Properties();
         Session session = Session.getDefaultInstance(noProperties);
         InputStream stream = ClassLoader.getSystemResourceAsStream("JAMES-1593.eml");

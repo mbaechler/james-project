@@ -203,7 +203,7 @@ public class MimeMessageCopyOnWriteProxyTest extends MimeMessageFromStreamTest {
     }
 
     @Test
-    public void testNPE1() throws MessagingException, InterruptedException {
+    public void testNPE1() throws Exception {
         ArrayList<MailAddress> recipients = new ArrayList<>();
         recipients.add(new MailAddress("recipient@test.com"));
         MimeMessageCopyOnWriteProxy mw = new MimeMessageCopyOnWriteProxy(new MimeMessageInputStreamSource("test",

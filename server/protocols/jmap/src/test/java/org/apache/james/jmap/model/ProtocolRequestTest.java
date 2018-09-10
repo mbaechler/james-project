@@ -53,7 +53,7 @@ public class ProtocolRequestTest {
     }
 
     @Test(expected = IllegalStateException.class)
-    public void deserializedRequestsShouldThrowWhenFirstParameterIsNotString() throws JsonParseException, JsonMappingException, IOException {
+    public void deserializedRequestsShouldThrowWhenFirstParameterIsNotString() throws IOException {
         JsonNode[] nodes = new JsonNode[] { new ObjectNode(new JsonNodeFactory(false)).booleanNode(true),
                 new ObjectNode(new JsonNodeFactory(false)).putObject("{}"),
                 new ObjectNode(new JsonNodeFactory(false)).textNode("#0")};
@@ -62,7 +62,7 @@ public class ProtocolRequestTest {
     }
 
     @Test(expected = IllegalStateException.class)
-    public void deserializedRequestsShouldThrowWhenSecondParameterIsNotJson() throws JsonParseException, JsonMappingException, IOException {
+    public void deserializedRequestsShouldThrowWhenSecondParameterIsNotJson() throws IOException {
         JsonNode[] nodes = new JsonNode[] { new ObjectNode(new JsonNodeFactory(false)).textNode("getAccounts"),
                 new ObjectNode(new JsonNodeFactory(false)).textNode("true"),
                 new ObjectNode(new JsonNodeFactory(false)).textNode("#0")};
@@ -71,7 +71,7 @@ public class ProtocolRequestTest {
     }
 
     @Test(expected = IllegalStateException.class)
-    public void deserializedRequestsShouldThrowWhenThirdParameterIsNotString() throws JsonParseException, JsonMappingException, IOException {
+    public void deserializedRequestsShouldThrowWhenThirdParameterIsNotString() throws IOException {
         JsonNode[] nodes = new JsonNode[] { new ObjectNode(new JsonNodeFactory(false)).textNode("getAccounts"),
                 new ObjectNode(new JsonNodeFactory(false)).putObject("{}"),
                 new ObjectNode(new JsonNodeFactory(false)).booleanNode(true)};
@@ -80,7 +80,7 @@ public class ProtocolRequestTest {
     }
 
     @Test
-    public void deserializedRequestsShouldWorkWhenSingleRequest() throws JsonParseException, JsonMappingException, IOException {
+    public void deserializedRequestsShouldWorkWhenSingleRequest() throws IOException {
         JsonNode[] nodes = new JsonNode[] { new ObjectNode(new JsonNodeFactory(false)).textNode("getAccounts"),
                 new ObjectNode(new JsonNodeFactory(false)).putObject("{\"id\": \"id\"}"),
                 new ObjectNode(new JsonNodeFactory(false)).textNode("#1")};

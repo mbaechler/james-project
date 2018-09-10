@@ -44,7 +44,7 @@ public class ContainerTest {
             .withRateLimiter(RateLimiters.TWENTIES_PER_SECOND));
 
     @Test
-    public void containerShouldBeReachableOnExposedPort() throws IOException, URISyntaxException {
+    public void containerShouldBeReachableOnExposedPort() throws Exception {
         Response response = Request.Get(new URIBuilder()
             .setScheme("http")
             .setHost(container.getHostIp())

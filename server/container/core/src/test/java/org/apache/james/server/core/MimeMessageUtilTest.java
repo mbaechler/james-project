@@ -33,7 +33,7 @@ import org.junit.jupiter.api.Test;
 public class MimeMessageUtilTest {
 
     @Test
-    public void testWriteMimeMessageMultipartWithMessageID() throws MessagingException, IOException {
+    public void testWriteMimeMessageMultipartWithMessageID() throws Exception {
         String message = "Received: from localhost.localdomain ([127.0.0.1])\r\n" +
         "          by athlon14 (JAMES SMTP Server 2.3-dev) with SMTP ID 694\r\n" +
         "          for <test_int1@athlon14.bf.loc>;\r\n" +

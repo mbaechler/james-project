@@ -62,7 +62,7 @@ public class UserProvisioningFilterTest {
     }
 
     @Test
-    public void filterShouldDoNothingOnNullSession() throws IOException, ServletException, UsersRepositoryException {
+    public void filterShouldDoNothingOnNullSession() throws Exception {
         sut.doFilter(request, response, chain);
 
         verify(chain).doFilter(request, response);

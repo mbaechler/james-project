@@ -136,7 +136,7 @@ public class MailImplTest extends ContractMailTest {
     }
 
     @Test
-    public void duplicateFactoryMethodShouldGenerateNewObjectWithSameValuesButName() throws MessagingException, IOException {
+    public void duplicateFactoryMethodShouldGenerateNewObjectWithSameValuesButName() throws Exception {
         ImmutableList<MailAddress> recipients = ImmutableList.of();
         String name = MailUtil.newId();
         String sender = "sender@localhost";
@@ -151,7 +151,7 @@ public class MailImplTest extends ContractMailTest {
     }
 
     @Test
-    public void duplicateShouldGenerateNewObjectWithSameValuesButName() throws MessagingException, IOException {
+    public void duplicateShouldGenerateNewObjectWithSameValuesButName() throws Exception {
         ImmutableList<MailAddress> recipients = ImmutableList.of();
         String name = MailUtil.newId();
         String sender = "sender@localhost";

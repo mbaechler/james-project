@@ -47,7 +47,7 @@ public class AbstractProtocolTransportTest {
     private static final String US_ASCII = "US-ASCII";
     
     @Test
-    public void testWriteOrder() throws InterruptedException, UnsupportedEncodingException {
+    public void testWriteOrder() throws Exception {
         final List<Response> messages = IntStream.range(0, 2000)
             .mapToObj(i -> new TestResponse())
             .collect(Guavate.toImmutableList());
@@ -56,7 +56,7 @@ public class AbstractProtocolTransportTest {
     }
     
     @Test
-    public void testWriteOrderFutureResponseAllReady() throws InterruptedException, UnsupportedEncodingException {
+    public void testWriteOrderFutureResponseAllReady() throws Exception {
         final List<Response> messages = new ArrayList<>();
         for (int i = 0; i < 2000; i++) {
                 FutureResponseImpl r = new FutureResponseImpl();
@@ -68,7 +68,7 @@ public class AbstractProtocolTransportTest {
         
        
     @Test
-    public void testWriteOrderFutureResponse() throws InterruptedException, UnsupportedEncodingException {
+    public void testWriteOrderFutureResponse() throws Exception {
         final List<Response> messages = IntStream.range(0, 2000)
             .mapToObj(i -> new FutureResponseImpl())
             .collect(Guavate.toImmutableList());
@@ -79,7 +79,7 @@ public class AbstractProtocolTransportTest {
     }
 
     @Test
-    public void testWriteOrderFutureResponseReverseNotify() throws InterruptedException, UnsupportedEncodingException {
+    public void testWriteOrderFutureResponseReverseNotify() throws Exception {
         final List<Response> messages = IntStream.range(0, 2000)
             .mapToObj(i -> new FutureResponseImpl())
             .collect(Guavate.toImmutableList());
@@ -90,7 +90,7 @@ public class AbstractProtocolTransportTest {
     }
     
     @Test
-    public void testWriteOrderMixedResponse() throws InterruptedException, UnsupportedEncodingException {
+    public void testWriteOrderMixedResponse() throws Exception {
         final List<Response> messages = new ArrayList<>();
         for (int i = 0; i < 2000; i++) {
             if (i % 2 == 0) {

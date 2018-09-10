@@ -40,19 +40,19 @@ public class MimeMessageInputStreamSourceTest {
     }
     
     @Test
-    public void streamWith1MBytesShouldBeReadable() throws MessagingException, IOException {
+    public void streamWith1MBytesShouldBeReadable() throws Exception {
         testee = new MimeMessageInputStreamSource("myKey", new ZeroedInputStream(_1M));
         assertThat(testee.getInputStream()).hasSameContentAs(new ZeroedInputStream(_1M));
     }
     
     @Test
-    public void streamWith10KBytesShouldBeReadable() throws MessagingException, IOException {
+    public void streamWith10KBytesShouldBeReadable() throws Exception {
         testee = new MimeMessageInputStreamSource("myKey", new ZeroedInputStream(_10KB));
         assertThat(testee.getInputStream()).hasSameContentAs(new ZeroedInputStream(_10KB));
     }
 
     @Test
-    public void streamWithVeryShortNameShouldWork() throws MessagingException, IOException {
+    public void streamWithVeryShortNameShouldWork() throws Exception {
         String veryShortName = "1";
         testee = new MimeMessageInputStreamSource(veryShortName, new ZeroedInputStream(_1M));
         assertThat(testee.getInputStream()).isNotNull();

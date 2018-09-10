@@ -163,7 +163,7 @@ public class URIRBLHandlerTest {
     }
 
     @Test
-    public void testNotBlocked() throws IOException, MessagingException {
+    public void testNotBlocked() throws Exception {
 
         ArrayList<String> servers = new ArrayList<>();
         servers.add(URISERVER);
@@ -181,7 +181,7 @@ public class URIRBLHandlerTest {
     }
 
     @Test
-    public void testBlocked() throws IOException, MessagingException {
+    public void testBlocked() throws Exception {
 
         ArrayList<String> servers = new ArrayList<>();
         servers.add(URISERVER);
@@ -199,7 +199,7 @@ public class URIRBLHandlerTest {
     }
 
     @Test
-    public void testBlockedMultiPart() throws IOException, MessagingException {
+    public void testBlockedMultiPart() throws Exception {
 
         ArrayList<String> servers = new ArrayList<>();
         servers.add(URISERVER);

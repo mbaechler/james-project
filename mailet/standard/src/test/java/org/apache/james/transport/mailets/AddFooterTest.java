@@ -76,7 +76,7 @@ class AddFooterTest {
 
     @ParameterizedTest
     @ArgumentsSource(CharsetTuples.class)
-    void shouldAddFooterWhenQuotedPrintableTextPlainMessage(String javaCharset, String javaMailCharset) throws MessagingException, IOException {
+    void shouldAddFooterWhenQuotedPrintableTextPlainMessage(String javaCharset, String javaMailCharset) throws Exception {
         FakeMailetConfig mailetConfig = FakeMailetConfig.builder()
                 .mailetName("Test")
                 .setProperty("text", "------ " + MY_FOOTER + " à/€ ------")
@@ -102,7 +102,7 @@ class AddFooterTest {
 
     @ParameterizedTest
     @ArgumentsSource(CharsetTuples.class)
-    void shouldEnsureCarriageReturnWhenAddFooterWithTextPlainMessage(String javaCharset, String javaMailCharset) throws MessagingException, IOException {
+    void shouldEnsureCarriageReturnWhenAddFooterWithTextPlainMessage(String javaCharset, String javaMailCharset) throws Exception {
         FakeMailetConfig mailetConfig = FakeMailetConfig.builder()
                 .mailetName("Test")
                 .setProperty("text", "------ " + MY_FOOTER + " à/€ ------")
@@ -128,7 +128,7 @@ class AddFooterTest {
 
     @ParameterizedTest
     @ArgumentsSource(CharsetTuples.class)
-    void shouldNotAddFooterWhenUnsupportedEncoding(String javaCharset, String javaMailCharset) throws MessagingException, IOException {
+    void shouldNotAddFooterWhenUnsupportedEncoding(String javaCharset, String javaMailCharset) throws Exception {
         FakeMailetConfig mailetConfig = FakeMailetConfig.builder()
                 .mailetName("Test")
                 .setProperty("text", "------ " + MY_FOOTER + " à/€ ------")
@@ -152,7 +152,7 @@ class AddFooterTest {
 
     @ParameterizedTest
     @ArgumentsSource(CharsetTuples.class)
-    void shouldNotAddFooterWhenUnsupportedTextContentType(String javaCharset, String javaMailCharset) throws MessagingException, IOException {
+    void shouldNotAddFooterWhenUnsupportedTextContentType(String javaCharset, String javaMailCharset) throws Exception {
         FakeMailetConfig mailetConfig = FakeMailetConfig.builder()
                 .mailetName("Test")
                 .setProperty("text", "------ " + MY_FOOTER + " à/€ ------")
@@ -180,7 +180,7 @@ class AddFooterTest {
      */
     @ParameterizedTest
     @ArgumentsSource(CharsetTuples.class)
-    void shouldNotAddFooterWhenNestedUnsupportedMultipart(String javaCharset, String javaMailCharset) throws MessagingException, IOException {
+    void shouldNotAddFooterWhenNestedUnsupportedMultipart(String javaCharset, String javaMailCharset) throws Exception {
         FakeMailetConfig mailetConfig = FakeMailetConfig.builder()
                 .mailetName("Test")
                 .setProperty("text", "------ " + MY_FOOTER + " à/€ ------")
@@ -217,7 +217,7 @@ class AddFooterTest {
      */
     @ParameterizedTest
     @ArgumentsSource(CharsetTuples.class)
-    void shouldAddFooterWhenMultipartRelatedHtmlMessage(String javaCharset, String javaMailCharset) throws MessagingException, IOException {
+    void shouldAddFooterWhenMultipartRelatedHtmlMessage(String javaCharset, String javaMailCharset) throws Exception {
         FakeMailetConfig mailetConfig = FakeMailetConfig.builder()
                 .mailetName("Test")
                 .setProperty("text", "------ " + MY_FOOTER + " à/€ ------")
@@ -270,8 +270,7 @@ class AddFooterTest {
 
     @ParameterizedTest
     @ArgumentsSource(CharsetTuples.class)
-    void shouldAddFooterWhenMultipartAlternivateMessage(String javaCharset, String javaMailCharset) throws MessagingException,
-            IOException {
+    void shouldAddFooterWhenMultipartAlternivateMessage(String javaCharset, String javaMailCharset) throws Exception {
         FakeMailetConfig mailetConfig = FakeMailetConfig.builder()
                 .mailetName("Test")
                 .setProperty("text", "------ " + MY_FOOTER + " à/€ ------")
@@ -308,8 +307,7 @@ class AddFooterTest {
 
     @ParameterizedTest
     @ArgumentsSource(CharsetTuples.class)
-    void shouldAddFooterWhenHtmlMessageWithMixedCaseBodyTag(String javaCharset, String javaMailCharset) throws MessagingException,
-            IOException {
+    void shouldAddFooterWhenHtmlMessageWithMixedCaseBodyTag(String javaCharset, String javaMailCharset) throws Exception {
         FakeMailetConfig mailetConfig = FakeMailetConfig.builder()
                 .mailetName("Test")
                 .setProperty("text", "------ " + MY_FOOTER + " à/€ ------")
@@ -336,8 +334,7 @@ class AddFooterTest {
 
     @ParameterizedTest
     @ArgumentsSource(CharsetTuples.class)
-    void shouldAddFooterWhenHtmlMessageWithNoBodyTag(String javaCharset, String javaMailCharset) throws MessagingException,
-            IOException {
+    void shouldAddFooterWhenHtmlMessageWithNoBodyTag(String javaCharset, String javaMailCharset) throws Exception {
         FakeMailetConfig mailetConfig = FakeMailetConfig.builder()
                 .mailetName("Test")
                 .setProperty("text", "------ " + MY_FOOTER + " à/€ ------")

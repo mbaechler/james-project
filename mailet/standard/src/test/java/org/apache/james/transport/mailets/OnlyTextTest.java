@@ -47,7 +47,7 @@ class OnlyTextTest {
      * @throws IOException
      */
     @Test
-    void testService() throws MessagingException, IOException {
+    void testService() throws Exception {
         Mailet mailet;
         FakeMailetConfig mci;
         MimeMessage message;
