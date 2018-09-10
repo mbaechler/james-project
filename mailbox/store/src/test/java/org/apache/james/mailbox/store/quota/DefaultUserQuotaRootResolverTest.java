@@ -20,6 +20,7 @@
 package org.apache.james.mailbox.store.quota;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -36,8 +37,8 @@ import org.apache.james.mailbox.model.TestId;
 import org.apache.james.mailbox.store.MailboxSessionMapperFactory;
 import org.apache.james.mailbox.store.mail.MailboxMapper;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Lists;
 
@@ -55,7 +56,7 @@ public class DefaultUserQuotaRootResolverTest {
     private DefaultUserQuotaRootResolver testee;
     private MailboxSessionMapperFactory mockedFactory;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         MailboxManager mailboxManager = mock(MailboxManager.class);
         mockedFactory = mock(MailboxSessionMapperFactory.class);
@@ -67,14 +68,16 @@ public class DefaultUserQuotaRootResolverTest {
         assertThat(testee.getQuotaRoot(MAILBOX_PATH)).isEqualTo(QUOTA_ROOT);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void getQuotaRootShouldThrowWhenNamespaceContainsSeparator() {
-        testee.getQuotaRoot(new MailboxPath("#pr&ivate", "benwa", "INBOX"));
+        assertThatThrownBy(() -> testee.getQuotaRoot(new MailboxPath("#pr&ivate", "benwa", "INBOX")))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void getQuotaRootShouldThrowWhenUserContainsSeparator() {
-        testee.getQuotaRoot(MailboxPath.forUser("ben&wa", "INBOX"));
+        assertThatThrownBy(() -> testee.getQuotaRoot(MailboxPath.forUser("ben&wa", "INBOX")))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -93,9 +96,10 @@ public class DefaultUserQuotaRootResolverTest {
         assertThat(testee.retrieveAssociatedMailboxes(QUOTA_ROOT, MAILBOX_SESSION)).containsOnly(MAILBOX_PATH, MAILBOX_PATH_2);
     }
 
-    @Test(expected = MailboxException.class)
+    @Test
     public void retrieveAssociatedMailboxesShouldThrowWhenQuotaRootContainsSeparator2Times() throws Exception {
-        testee.retrieveAssociatedMailboxes(QuotaRoot.quotaRoot("#private&be&nwa", Optional.empty()), MAILBOX_SESSION);
+        assertThatThrownBy(() -> testee.retrieveAssociatedMailboxes(QuotaRoot.quotaRoot("#private&be&nwa", Optional.empty()), MAILBOX_SESSION))
+            .isInstanceOf(MailboxException.class);
     }
 
     @Test

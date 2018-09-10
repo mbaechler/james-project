@@ -19,6 +19,8 @@
 package org.apache.james.mailbox.store.mail.model.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -39,12 +41,10 @@ import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.mailbox.model.TestId;
 import org.apache.james.mailbox.model.TestMessageId;
 import org.apache.james.mailbox.store.mail.model.DefaultMessageId;
-import org.assertj.core.api.JUnitSoftAssertions;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import com.github.fge.lambdas.Throwing;
 import com.google.common.collect.ImmutableList;
 
 public class SimpleMailboxMessageTest {
@@ -59,13 +59,7 @@ public class SimpleMailboxMessageTest {
     private SimpleMailboxMessage message;
     private SimpleMailboxMessage messageSpecialChar;
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
-    @Rule
-    public final JUnitSoftAssertions soft = new JUnitSoftAssertions();
-
-    @Before
+    @BeforeEach
     public void setUp() {
         this.message = buildMessage(MESSAGE_CONTENT);
         this.messageSpecialChar = buildMessage(MESSAGE_CONTENT_SPECIAL_CHAR);
@@ -144,26 +138,23 @@ public class SimpleMailboxMessageTest {
 
     @Test
     public void modseqShouldThrowWhenNegative() {
-        expectedException.expect(IllegalArgumentException.class);
-
-        SimpleMailboxMessage.builder()
-            .modseq(-1);
+        assertThatThrownBy(() -> SimpleMailboxMessage.builder()
+                .modseq(-1))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void sizeShouldThrowWhenNegative() {
-        expectedException.expect(IllegalArgumentException.class);
-
-        SimpleMailboxMessage.builder()
-            .size(-1);
+        assertThatThrownBy(() -> SimpleMailboxMessage.builder()
+                .size(-1))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void bodyStartOctetShouldThrowWhenNegative() {
-        expectedException.expect(IllegalArgumentException.class);
-
-        SimpleMailboxMessage.builder()
-            .bodyStartOctet(-1);
+        assertThatThrownBy(() -> SimpleMailboxMessage.builder()
+                .bodyStartOctet(-1))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -212,144 +203,138 @@ public class SimpleMailboxMessageTest {
             .addAttachments(ImmutableList.of(messageAttachment))
             .build();
 
-        soft.assertThat(message.getMessageId()).isEqualTo(MESSAGE_ID);
-        soft.assertThat(message.getMailboxId()).isEqualTo(TEST_ID);
-        soft.assertThat(message.getInternalDate()).isEqualTo(internalDate);
-        soft.assertThat(message.getHeaderOctets()).isEqualTo(BODY_START_OCTET);
-        soft.assertThat(message.getFullContentOctets()).isEqualTo(SIZE);
-        soft.assertThat(IOUtils.toString(message.getFullContent(), StandardCharsets.UTF_8)).isEqualTo(MESSAGE_CONTENT);
-        soft.assertThat(message.createFlags()).isEqualTo(flags);
-        soft.assertThat(message.getProperties()).isEqualTo(propertyBuilder.toProperties());
-        soft.assertThat(message.getUid()).isEqualTo(uid);
-        soft.assertThat(message.getModSeq()).isEqualTo(modseq);
-        soft.assertThat(message.getAttachments()).containsOnly(messageAttachment);
+        assertSoftly(Throwing.consumer(soft -> {
+            soft.assertThat(message.getMessageId()).isEqualTo(MESSAGE_ID);
+            soft.assertThat(message.getMailboxId()).isEqualTo(TEST_ID);
+            soft.assertThat(message.getInternalDate()).isEqualTo(internalDate);
+            soft.assertThat(message.getHeaderOctets()).isEqualTo(BODY_START_OCTET);
+            soft.assertThat(message.getFullContentOctets()).isEqualTo(SIZE);
+            soft.assertThat(IOUtils.toString(message.getFullContent(), StandardCharsets.UTF_8)).isEqualTo(MESSAGE_CONTENT);
+            soft.assertThat(message.createFlags()).isEqualTo(flags);
+            soft.assertThat(message.getProperties()).isEqualTo(propertyBuilder.toProperties());
+            soft.assertThat(message.getUid()).isEqualTo(uid);
+            soft.assertThat(message.getModSeq()).isEqualTo(modseq);
+            soft.assertThat(message.getAttachments()).containsOnly(messageAttachment);
+        }));
     }
 
     @Test
     public void buildShouldThrowOnMissingMessageId() {
-        expectedException.expect(NullPointerException.class);
-
         Date internalDate = new Date();
-        SimpleMailboxMessage.builder()
-            .mailboxId(TEST_ID)
-            .internalDate(internalDate)
-            .bodyStartOctet(BODY_START_OCTET)
-            .size(SIZE)
-            .content(CONTENT_STREAM)
-            .flags(new Flags())
-            .propertyBuilder(new PropertyBuilder())
-            .build();
+        assertThatThrownBy(() -> SimpleMailboxMessage.builder()
+                .mailboxId(TEST_ID)
+                .internalDate(internalDate)
+                .bodyStartOctet(BODY_START_OCTET)
+                .size(SIZE)
+                .content(CONTENT_STREAM)
+                .flags(new Flags())
+                .propertyBuilder(new PropertyBuilder())
+                .build())
+            .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     public void buildShouldThrowOnMissingMailboxId() {
-        expectedException.expect(NullPointerException.class);
-
         Date internalDate = new Date();
-        SimpleMailboxMessage.builder()
-            .messageId(MESSAGE_ID)
-            .internalDate(internalDate)
-            .bodyStartOctet(BODY_START_OCTET)
-            .size(SIZE)
-            .content(CONTENT_STREAM)
-            .flags(new Flags())
-            .propertyBuilder(new PropertyBuilder())
-            .build();
+        assertThatThrownBy(() -> SimpleMailboxMessage.builder()
+                .messageId(MESSAGE_ID)
+                .internalDate(internalDate)
+                .bodyStartOctet(BODY_START_OCTET)
+                .size(SIZE)
+                .content(CONTENT_STREAM)
+                .flags(new Flags())
+                .propertyBuilder(new PropertyBuilder())
+                .build())
+            .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     public void buildShouldThrowOnMissingInternalDate() {
-        expectedException.expect(NullPointerException.class);
-
-        SimpleMailboxMessage.builder()
-            .messageId(MESSAGE_ID)
-            .mailboxId(TEST_ID)
-            .bodyStartOctet(BODY_START_OCTET)
-            .size(SIZE)
-            .content(CONTENT_STREAM)
-            .flags(new Flags())
-            .propertyBuilder(new PropertyBuilder())
-            .build();
+        assertThatThrownBy(() -> SimpleMailboxMessage.builder()
+                .messageId(MESSAGE_ID)
+                .mailboxId(TEST_ID)
+                .bodyStartOctet(BODY_START_OCTET)
+                .size(SIZE)
+                .content(CONTENT_STREAM)
+                .flags(new Flags())
+                .propertyBuilder(new PropertyBuilder())
+                .build())
+            .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     public void buildShouldThrowOnMissingBodyStartOctets() {
-        expectedException.expect(NullPointerException.class);
-
         Date internalDate = new Date();
-        SimpleMailboxMessage.builder()
-            .messageId(MESSAGE_ID)
-            .mailboxId(TEST_ID)
-            .internalDate(internalDate)
-            .size(SIZE)
-            .content(CONTENT_STREAM)
-            .flags(new Flags())
-            .propertyBuilder(new PropertyBuilder())
-            .build();
+        assertThatThrownBy(() -> SimpleMailboxMessage.builder()
+                .messageId(MESSAGE_ID)
+                .mailboxId(TEST_ID)
+                .internalDate(internalDate)
+                .size(SIZE)
+                .content(CONTENT_STREAM)
+                .flags(new Flags())
+                .propertyBuilder(new PropertyBuilder())
+                .build())
+            .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     public void buildShouldThrowOnMissingSize() {
-        expectedException.expect(NullPointerException.class);
-
         Date internalDate = new Date();
-        SimpleMailboxMessage.builder()
-            .messageId(MESSAGE_ID)
-            .mailboxId(TEST_ID)
-            .internalDate(internalDate)
-            .bodyStartOctet(BODY_START_OCTET)
-            .content(CONTENT_STREAM)
-            .flags(new Flags())
-            .propertyBuilder(new PropertyBuilder())
-            .build();
+        assertThatThrownBy(() -> SimpleMailboxMessage.builder()
+                .messageId(MESSAGE_ID)
+                .mailboxId(TEST_ID)
+                .internalDate(internalDate)
+                .bodyStartOctet(BODY_START_OCTET)
+                .content(CONTENT_STREAM)
+                .flags(new Flags())
+                .propertyBuilder(new PropertyBuilder())
+                .build())
+            .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     public void buildShouldThrowOnMissingContent() {
-        expectedException.expect(NullPointerException.class);
-
         Date internalDate = new Date();
-        SimpleMailboxMessage.builder()
-            .messageId(MESSAGE_ID)
-            .mailboxId(TEST_ID)
-            .internalDate(internalDate)
-            .bodyStartOctet(BODY_START_OCTET)
-            .size(SIZE)
-            .flags(new Flags())
-            .propertyBuilder(new PropertyBuilder())
-            .build();
+        assertThatThrownBy(() -> SimpleMailboxMessage.builder()
+                .messageId(MESSAGE_ID)
+                .mailboxId(TEST_ID)
+                .internalDate(internalDate)
+                .bodyStartOctet(BODY_START_OCTET)
+                .size(SIZE)
+                .flags(new Flags())
+                .propertyBuilder(new PropertyBuilder())
+                .build())
+            .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     public void buildShouldThrowOnMissingFlags() {
-        expectedException.expect(NullPointerException.class);
-
         Date internalDate = new Date();
-        SimpleMailboxMessage.builder()
-            .messageId(MESSAGE_ID)
-            .mailboxId(TEST_ID)
-            .internalDate(internalDate)
-            .bodyStartOctet(BODY_START_OCTET)
-            .size(SIZE)
-            .content(CONTENT_STREAM)
-            .propertyBuilder(new PropertyBuilder())
-            .build();
+        assertThatThrownBy(() -> SimpleMailboxMessage.builder()
+                .messageId(MESSAGE_ID)
+                .mailboxId(TEST_ID)
+                .internalDate(internalDate)
+                .bodyStartOctet(BODY_START_OCTET)
+                .size(SIZE)
+                .content(CONTENT_STREAM)
+                .propertyBuilder(new PropertyBuilder())
+                .build())
+            .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     public void buildShouldThrowOnMissingProperties() {
-        expectedException.expect(NullPointerException.class);
-
         Date internalDate = new Date();
-        SimpleMailboxMessage.builder()
-            .messageId(MESSAGE_ID)
-            .mailboxId(TEST_ID)
-            .internalDate(internalDate)
-            .bodyStartOctet(BODY_START_OCTET)
-            .size(SIZE)
-            .content(CONTENT_STREAM)
-            .flags(new Flags())
-            .build();
+        assertThatThrownBy(() -> SimpleMailboxMessage.builder()
+                .messageId(MESSAGE_ID)
+                .mailboxId(TEST_ID)
+                .internalDate(internalDate)
+                .bodyStartOctet(BODY_START_OCTET)
+                .size(SIZE)
+                .content(CONTENT_STREAM)
+                .flags(new Flags())
+                .build())
+            .isInstanceOf(NullPointerException.class);
     }
 
 }

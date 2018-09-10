@@ -23,8 +23,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import javax.mail.Flags;
 import javax.mail.Flags.Flag;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableList;
 
@@ -35,7 +35,7 @@ public class FlagsFactoryTest {
     private Flags emptyFlags;
     private Flags someFlags;
 
-    @Before
+    @BeforeEach
     public void setup() {
         emptyFlags = new Flags();
         someFlags = new Flags();

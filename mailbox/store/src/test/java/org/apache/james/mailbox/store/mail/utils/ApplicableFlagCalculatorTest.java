@@ -20,6 +20,8 @@
 package org.apache.james.mailbox.store.mail.utils;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
 import java.util.Date;
 import java.util.List;
@@ -34,25 +36,15 @@ import org.apache.james.mailbox.store.mail.model.DefaultMessageId;
 import org.apache.james.mailbox.store.mail.model.MailboxMessage;
 import org.apache.james.mailbox.store.mail.model.impl.PropertyBuilder;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailboxMessage;
-import org.assertj.core.api.JUnitSoftAssertions;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableList;
 
 public class ApplicableFlagCalculatorTest {
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
-    @Rule
-    public final JUnitSoftAssertions softly = new JUnitSoftAssertions();
-
     @Test
     public void constructorShouldThrowWhenNull() throws Exception {
-        expectedException.expect(NullPointerException.class);
-        new ApplicableFlagCalculator(null);
+        assertThatThrownBy(() -> new ApplicableFlagCalculator(null)).isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -101,8 +93,10 @@ public class ApplicableFlagCalculatorTest {
 
         Flags result = calculator.computeApplicableFlags();
 
-        softly.assertThat(result.contains(Flag.RECENT)).isFalse();
-        softly.assertThat(result.contains(Flag.USER)).isFalse();
+        assertSoftly(softly -> {
+            softly.assertThat(result.contains(Flag.RECENT)).isFalse();
+            softly.assertThat(result.contains(Flag.USER)).isFalse();
+        });
     }
 
     private MailboxMessage createMessage(Flags messageFlags) {

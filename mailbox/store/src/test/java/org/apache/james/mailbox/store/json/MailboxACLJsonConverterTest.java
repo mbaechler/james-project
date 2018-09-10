@@ -38,7 +38,7 @@ import org.apache.james.mailbox.model.MailboxACL;
 import org.apache.james.mailbox.model.MailboxACL.EntryKey;
 import org.apache.james.mailbox.model.MailboxACL.NameType;
 import org.apache.james.mailbox.model.MailboxACL.Rfc4314Rights;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import net.javacrumbs.jsonunit.core.Option;
 

@@ -31,7 +31,7 @@ import org.apache.james.mailbox.MailboxSessionUtil;
 import org.apache.james.mailbox.MessageManager;
 import org.apache.james.mailbox.fixture.MailboxFixture;
 import org.apache.james.mailbox.model.MailboxACL;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public abstract class AbstractMessageManagerTest {
 

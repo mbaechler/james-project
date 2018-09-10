@@ -21,14 +21,14 @@ package org.apache.james.mailbox.store.mail.model;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.apache.james.mailbox.MessageUid;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class MessageUidProviderTest {
 
     private MessageUidProvider testee;
 
-    @Before
+    @BeforeEach
     public void setup() {
         testee = new MessageUidProvider();
     }

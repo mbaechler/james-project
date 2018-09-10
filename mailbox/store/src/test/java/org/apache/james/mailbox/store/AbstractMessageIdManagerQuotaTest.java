@@ -20,6 +20,7 @@
 package org.apache.james.mailbox.store;
 
 import static org.apache.james.mailbox.fixture.MailboxFixture.ALICE;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import javax.mail.Flags;
 
@@ -36,10 +37,8 @@ import org.apache.james.mailbox.quota.CurrentQuotaManager;
 import org.apache.james.mailbox.quota.MaxQuotaManager;
 import org.apache.james.mailbox.quota.QuotaManager;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableList;
 
@@ -47,9 +46,6 @@ public abstract class AbstractMessageIdManagerQuotaTest {
     private static final MessageUid messageUid1 = MessageUid.of(111);
 
     public static final Flags FLAGS = new Flags();
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     private MessageIdManager messageIdManager;
     private MailboxSession session;
@@ -67,7 +63,7 @@ public abstract class AbstractMessageIdManagerQuotaTest {
     
     protected abstract QuotaManager createQuotaManager(MaxQuotaManager maxQuotaManager, CurrentQuotaManager currentQuotaManager);
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         maxQuotaManager = createMaxQuotaManager();
         CurrentQuotaManager currentQuotaManager = createCurrentQuotaManager();
@@ -107,8 +103,9 @@ public abstract class AbstractMessageIdManagerQuotaTest {
         testingData.persist(mailbox1.getMailboxId(), messageUid1, FLAGS, session);
         MessageId messageId = testingData.persist(mailbox2.getMailboxId(), messageUid1, FLAGS, session);
 
-        expectedException.expect(OverQuotaException.class);
-        messageIdManager.setInMailboxes(messageId, ImmutableList.of(mailbox1.getMailboxId(), mailbox2.getMailboxId()), session);
+        assertThatThrownBy(() ->
+                messageIdManager.setInMailboxes(messageId, ImmutableList.of(mailbox1.getMailboxId(), mailbox2.getMailboxId()), session))
+            .isInstanceOf(OverQuotaException.class);
     }
 
     @Test
@@ -117,8 +114,9 @@ public abstract class AbstractMessageIdManagerQuotaTest {
 
         MessageId messageId = testingData.persist(mailbox1.getMailboxId(), messageUid1, FLAGS, session);
 
-        expectedException.expect(OverQuotaException.class);
-        messageIdManager.setInMailboxes(messageId, ImmutableList.of(mailbox1.getMailboxId(), mailbox2.getMailboxId(), mailbox3.getMailboxId()), session);
+        assertThatThrownBy(() ->
+                messageIdManager.setInMailboxes(messageId, ImmutableList.of(mailbox1.getMailboxId(), mailbox2.getMailboxId(), mailbox3.getMailboxId()), session))
+            .isInstanceOf(OverQuotaException.class);
     }
 
     @Test
@@ -128,7 +126,8 @@ public abstract class AbstractMessageIdManagerQuotaTest {
         testingData.persist(mailbox1.getMailboxId(), messageUid1, FLAGS, session);
         MessageId messageId = testingData.persist(mailbox2.getMailboxId(), messageUid1, FLAGS, session);
 
-        expectedException.expect(OverQuotaException.class);
-        messageIdManager.setInMailboxes(messageId, ImmutableList.of(mailbox1.getMailboxId(), mailbox2.getMailboxId(), mailbox3.getMailboxId()), session);
+        assertThatThrownBy(() ->
+                messageIdManager.setInMailboxes(messageId, ImmutableList.of(mailbox1.getMailboxId(), mailbox2.getMailboxId(), mailbox3.getMailboxId()), session))
+            .isInstanceOf(OverQuotaException.class);
     }
 }

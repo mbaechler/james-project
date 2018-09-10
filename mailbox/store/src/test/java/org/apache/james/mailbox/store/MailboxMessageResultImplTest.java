@@ -25,8 +25,8 @@ import java.util.Date;
 
 import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.store.mail.model.MailboxMessage;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class MailboxMessageResultImplTest {
     private MessageResultImpl msgResultA;
@@ -37,7 +37,7 @@ public class MailboxMessageResultImplTest {
     /**
      * Initialize name instances
      */
-    @Before
+    @BeforeEach
     public void initNames() throws Exception {
         Date dateAB = new Date();
         MailboxMessage msgA = buildMessage(MessageUid.of(100), dateAB);

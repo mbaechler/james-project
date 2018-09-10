@@ -20,6 +20,7 @@
 package org.apache.james.mailbox.store.event;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -35,8 +36,8 @@ import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.model.QuotaRoot;
 import org.apache.james.mailbox.model.TestId;
 import org.apache.james.mailbox.util.EventCollector;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class DefaultDelegatingMailboxListenerTest {
 
@@ -50,7 +51,7 @@ public class DefaultDelegatingMailboxListenerTest {
     private EventCollector eachNodeEventCollector;
     private EventCollector onceEventCollector;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         mailboxEventCollector = new EventCollector(MailboxListener.ListenerType.MAILBOX);
         eachNodeEventCollector = new EventCollector(MailboxListener.ListenerType.EACH_NODE);
@@ -61,22 +62,25 @@ public class DefaultDelegatingMailboxListenerTest {
         defaultDelegatingMailboxListener.addGlobalListener(eachNodeEventCollector, null);
     }
 
-    @Test(expected = MailboxException.class)
+    @Test
     public void addListenerShouldThrowOnEACH_NODEListenerType() throws Exception {
         MailboxListener mailboxListener = new EventCollector(MailboxListener.ListenerType.EACH_NODE);
-        defaultDelegatingMailboxListener.addListener(MAILBOX_ID, mailboxListener, null);
+        assertThatThrownBy(() -> defaultDelegatingMailboxListener.addListener(MAILBOX_ID, mailboxListener, null))
+            .isInstanceOf(MailboxException.class);
     }
 
-    @Test(expected = MailboxException.class)
+    @Test
     public void addListenerShouldThrowOnONCEListenerType() throws Exception {
         MailboxListener mailboxListener = new EventCollector(MailboxListener.ListenerType.ONCE);
-        defaultDelegatingMailboxListener.addListener(MAILBOX_ID, mailboxListener, null);
+        assertThatThrownBy(() -> defaultDelegatingMailboxListener.addListener(MAILBOX_ID, mailboxListener, null))
+            .isInstanceOf(MailboxException.class);
     }
 
-    @Test(expected = MailboxException.class)
+    @Test
     public void addGlobalListenerShouldThrowOnMAILBOXListenerType() throws Exception {
         MailboxListener mailboxListener = new EventCollector(MailboxListener.ListenerType.MAILBOX);
-        defaultDelegatingMailboxListener.addGlobalListener(mailboxListener, null);
+        assertThatThrownBy(() -> defaultDelegatingMailboxListener.addGlobalListener(mailboxListener, null))
+            .isInstanceOf(MailboxException.class);
     }
 
     @Test

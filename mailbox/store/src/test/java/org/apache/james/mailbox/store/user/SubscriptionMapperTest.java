@@ -26,8 +26,8 @@ import java.util.List;
 import org.apache.james.mailbox.exception.SubscriptionException;
 import org.apache.james.mailbox.store.user.model.Subscription;
 import org.apache.james.mailbox.store.user.model.impl.SimpleSubscription;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public abstract class SubscriptionMapperTest {
     private static final String USER_1 = "user1";
@@ -39,7 +39,7 @@ public abstract class SubscriptionMapperTest {
 
     protected abstract SubscriptionMapper createSubscriptionMapper();
 
-    @Before
+    @BeforeEach
     public void setUp() {
         testee = createSubscriptionMapper();
     }

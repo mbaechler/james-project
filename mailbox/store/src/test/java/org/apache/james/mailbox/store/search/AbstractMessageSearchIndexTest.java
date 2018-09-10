@@ -21,6 +21,8 @@
 package org.apache.james.mailbox.store.search;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
@@ -54,9 +56,8 @@ import org.apache.james.mime4j.message.BodyPartBuilder;
 import org.apache.james.mime4j.message.MultipartBuilder;
 import org.apache.james.mime4j.message.SingleBodyBuilder;
 import org.apache.james.util.ClassLoaderUtils;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableList;
 
@@ -98,7 +99,7 @@ public abstract class AbstractMessageSearchIndexTest {
     private StoreMessageManager inboxMessageManager;
 
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         initializeMailboxManager();
 
@@ -228,7 +229,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void searchingMessageInMultipleMailboxShouldNotReturnTwiceTheSameMessage() throws MailboxException {
-        Assume.assumeTrue(messageIdManager != null);
+        assumeTrue(messageIdManager != null);
 
         messageIdManager.setInMailboxes(m4.getMessageId(),
             ImmutableList.of(mailbox.getMailboxId(), mailbox2.getMailboxId()),
@@ -261,7 +262,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void searchingMessageInMultipleMailboxShouldUnionOfTheTwoMailbox() throws MailboxException {
-        Assume.assumeTrue(messageIdManager != null);
+        assumeTrue(messageIdManager != null);
         messageIdManager.setInMailboxes(m4.getMessageId(),
             ImmutableList.of(mailbox2.getMailboxId()),
             session);
@@ -292,7 +293,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void searchingMessageInMultipleMailboxShouldNotReturnLessMessageThanLimitArgument() throws MailboxException {
-        Assume.assumeTrue(messageIdManager != null);
+        assumeTrue(messageIdManager != null);
         messageIdManager.setInMailboxes(m1.getMessageId(), ImmutableList.of(mailbox.getMailboxId(), mailbox2.getMailboxId()), session);
         messageIdManager.setInMailboxes(m2.getMessageId(), ImmutableList.of(mailbox.getMailboxId(), mailbox2.getMailboxId()), session);
         messageIdManager.setInMailboxes(m3.getMessageId(), ImmutableList.of(mailbox.getMailboxId(), mailbox2.getMailboxId()), session);
@@ -330,7 +331,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void searchingMessageInMultipleMailboxShouldNotReturnLessMessageThanLimitArgumentEvenIfDuplicatedMessageAreBeforeLegitimeMessage() throws MailboxException {
-        Assume.assumeTrue(messageIdManager != null);
+        assumeTrue(messageIdManager != null);
         messageIdManager.setInMailboxes(m1.getMessageId(), ImmutableList.of(mailbox.getMailboxId(), mailbox2.getMailboxId()), session);
 
         SearchQuery searchQuery = new SearchQuery();
@@ -352,12 +353,11 @@ public abstract class AbstractMessageSearchIndexTest {
                 .hasSize(limit);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void searchShouldThrowWhenSessionIsNull() throws MailboxException {
         SearchQuery searchQuery = new SearchQuery();
         MailboxSession session = null;
-        assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
-            .isEmpty();
+        assertThatThrownBy(() -> messageSearchIndex.search(session, mailbox, searchQuery)).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -419,7 +419,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void searchShouldBeExactOnEmailAddresses() throws MailboxException {
-        Assume.assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
+        assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
 
         ComposedMessageId m11 = inboxMessageManager.appendMessage(
             MessageManager.AppendCommand.builder()
@@ -566,7 +566,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void multimailboxSearchShouldWorkWithOtherUserMailbox() throws  MailboxException {
-        Assume.assumeTrue(storeMailboxManager.hasCapability(MailboxManager.MailboxCapabilities.ACL));
+        assumeTrue(storeMailboxManager.hasCapability(MailboxManager.MailboxCapabilities.ACL));
         SearchQuery searchQuery = new SearchQuery();
 
         long limit = 256;
@@ -791,7 +791,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void addressShouldReturnUidHavingRightExpeditorWhenFromIsSpecifiedWithOnlyUserPartOfEmail() throws Exception {
-        Assume.assumeTrue(storeMailboxManager
+        assumeTrue(storeMailboxManager
             .getSupportedSearchCapabilities()
             .contains(MailboxManager.SearchCapabilities.PartialEmailMatch));
 
@@ -803,7 +803,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void addressShouldReturnUidHavingRightExpeditorWhenFromIsSpecifiedWithDomainPartOfEmail() throws Exception {
-        Assume.assumeTrue(storeMailboxManager
+        assumeTrue(storeMailboxManager
             .getSupportedSearchCapabilities()
             .contains(MailboxManager.SearchCapabilities.PartialEmailMatch));
 
@@ -823,7 +823,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void addressShouldReturnUidHavingRightRecipientWhenToIsSpecifiedWithOnlyEmailUserPart() throws Exception {
-        Assume.assumeTrue(storeMailboxManager
+        assumeTrue(storeMailboxManager
             .getSupportedSearchCapabilities()
             .contains(MailboxManager.SearchCapabilities.PartialEmailMatch));
 
@@ -835,7 +835,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void addressShouldReturnUidHavingRightRecipientWhenToIsSpecifiedWithOnlyDomainPartSpecified() throws Exception {
-        Assume.assumeTrue(storeMailboxManager
+        assumeTrue(storeMailboxManager
             .getSupportedSearchCapabilities()
             .contains(MailboxManager.SearchCapabilities.PartialEmailMatch));
 
@@ -847,7 +847,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void addressShouldReturnUidHavingRightRecipientWhenCcIsSpecified() throws Exception {
-        Assume.assumeTrue(storeMailboxManager
+        assumeTrue(storeMailboxManager
             .getSupportedSearchCapabilities()
             .contains(MailboxManager.SearchCapabilities.PartialEmailMatch));
 
@@ -858,7 +858,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void addressShouldReturnUidHavingRightRecipientWhenCcIsSpecifiedWithOnlyUserPartOfTheEmail() throws Exception {
-        Assume.assumeTrue(storeMailboxManager
+        assumeTrue(storeMailboxManager
             .getSupportedSearchCapabilities()
             .contains(MailboxManager.SearchCapabilities.PartialEmailMatch));
 
@@ -869,7 +869,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void addressShouldReturnUidHavingRightRecipientWhenCcIsSpecifiedWithOnlyDomainPartOfTheEmail() throws Exception {
-        Assume.assumeTrue(storeMailboxManager
+        assumeTrue(storeMailboxManager
             .getSupportedSearchCapabilities()
             .contains(MailboxManager.SearchCapabilities.PartialEmailMatch));
 
@@ -880,7 +880,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void addressShouldReturnUidHavingRightRecipientWhenBccIsSpecifiedWithOnlyUserPartOfTheEmail() throws Exception {
-        Assume.assumeTrue(storeMailboxManager
+        assumeTrue(storeMailboxManager
             .getSupportedSearchCapabilities()
             .contains(MailboxManager.SearchCapabilities.PartialEmailMatch));
 
@@ -892,7 +892,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void addressShouldReturnUidHavingRightRecipientWhenBccIsSpecifiedWithOnlyDomainPartOfTheEmail() throws Exception {
-        Assume.assumeTrue(storeMailboxManager
+        assumeTrue(storeMailboxManager
             .getSupportedSearchCapabilities()
             .contains(MailboxManager.SearchCapabilities.PartialEmailMatch));
 
@@ -903,7 +903,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void addressShouldReturnUidHavingRightRecipientWhenBccIsSpecified() throws Exception {
-        Assume.assumeTrue(storeMailboxManager
+        assumeTrue(storeMailboxManager
             .getSupportedSearchCapabilities()
             .contains(MailboxManager.SearchCapabilities.PartialEmailMatch));
 
@@ -1154,7 +1154,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void searchWithTextShouldReturnNoMailWhenNotMatching() throws Exception {
-        Assume.assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
+        assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
         SearchQuery searchQuery = new SearchQuery(SearchQuery.textContains("unmatching"));
 
         assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
@@ -1163,7 +1163,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void searchWithTextShouldReturnMailsWhenFromMatches() throws Exception {
-        Assume.assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
+        assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
         SearchQuery searchQuery = new SearchQuery(SearchQuery.textContains("spam.minet.net"));
 
         assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
@@ -1172,7 +1172,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void searchWithTextShouldReturnMailsWhenMatches() throws Exception {
-        Assume.assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
+        assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
         SearchQuery searchQuery = new SearchQuery(SearchQuery.textContains("root@listes.minet.net"));
 
         assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
@@ -1181,7 +1181,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void searchWithTextShouldReturnMailsWhenToIsNotAnExactMatches() throws Exception {
-        Assume.assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
+        assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
         SearchQuery searchQuery = new SearchQuery(SearchQuery.textContains("root"));
 
         assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
@@ -1190,7 +1190,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void searchWithTextShouldReturnMailsWhenCcMatches() throws Exception {
-        Assume.assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
+        assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
         SearchQuery searchQuery = new SearchQuery(SearchQuery.textContains("abc@abc.org"));
 
         assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
@@ -1199,7 +1199,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void searchWithTextShouldReturnMailsWhenCcIsNotAExactMatch() throws Exception {
-        Assume.assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
+        assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
         SearchQuery searchQuery = new SearchQuery(SearchQuery.textContains("monkey"));
 
         assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
@@ -1208,7 +1208,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void searchWithTextShouldReturnMailsWhenBccMatches() throws Exception {
-        Assume.assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
+        assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
         SearchQuery searchQuery = new SearchQuery(SearchQuery.textContains("monkey@any.com"));
 
         assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
@@ -1217,7 +1217,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void searchWithTextShouldReturnMailsWhenBccIsNotAExactMatch() throws Exception {
-        Assume.assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
+        assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
         SearchQuery searchQuery = new SearchQuery(SearchQuery.textContains("monkey"));
 
         assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
@@ -1226,7 +1226,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void searchWithTextShouldReturnMailsWhenTextBodyMatches() throws Exception {
-        Assume.assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
+        assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
         SearchQuery searchQuery = new SearchQuery(SearchQuery.textContains("reviewing work"));
 
         // text/plain contains: "We are reviewing work I did for this feature."
@@ -1236,7 +1236,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void searchWithTextShouldReturnMailsWhenTextBodyMatchesAndNonContinuousWords() throws Exception {
-        Assume.assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
+        assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
         SearchQuery searchQuery = new SearchQuery(SearchQuery.textContains("reviewing feature"));
         // 2: text/plain contains: "Issue Type: New Feature"
         // 3: text/plain contains: "We are reviewing work I did for this feature."
@@ -1247,7 +1247,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void searchWithTextShouldReturnMailsWhenTextBodyMatchesInsensitiveWords() throws Exception {
-        Assume.assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
+        assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
         SearchQuery searchQuery = new SearchQuery(SearchQuery.textContains("reVieWing"));
         // text/plain contains: "We are reviewing work I did for this feature."
 
@@ -1257,7 +1257,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void searchWithTextShouldReturnMailsWhenTextBodyWithExtraUnindexedWords() throws Exception {
-        Assume.assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
+        assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
         SearchQuery searchQuery = new SearchQuery(SearchQuery.textContains("a reviewing of the work"));
         // text/plain contains: "We are reviewing work I did for this feature."
 
@@ -1267,7 +1267,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void searchWithTextShouldReturnMailsWhenHtmlBodyMatches() throws Exception {
-        Assume.assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
+        assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
         SearchQuery searchQuery = new SearchQuery(SearchQuery.textContains("contains a banana"));
         // text/html contains: "This is a mail with beautifull html content which contains a banana."
 
@@ -1277,7 +1277,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void searchWithTextShouldReturnMailsWhenHtmlBodyMatchesWithStemming() throws Exception {
-        Assume.assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
+        assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
         SearchQuery searchQuery = new SearchQuery(SearchQuery.textContains("contain banana"));
 
         assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
@@ -1286,7 +1286,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void searchWithTextShouldReturnMailsWhenHtmlBodyMatchesAndNonContinuousWords() throws Exception {
-        Assume.assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
+        assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
         SearchQuery searchQuery = new SearchQuery(SearchQuery.textContains("beautifull banana"));
 
         assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
@@ -1295,7 +1295,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void searchWithFullTextShouldReturnMailsWhenNotAPerfectMatch() throws Exception {
-        Assume.assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.FullText));
+        assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.FullText));
         ComposedMessageId messageWithBeautifulBananaAsTextAttachment = myFolderMessageManager.appendMessage(
             MessageManager.AppendCommand.builder()
             .build(ClassLoader.getSystemResourceAsStream("eml/emailWithTextAttachment.eml")),
@@ -1310,7 +1310,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void searchWithTextAttachmentShouldReturnMailsWhenAttachmentContentMatches() throws Exception {
-        Assume.assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Attachment));
+        assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Attachment));
         ComposedMessageId messageWithBeautifulBananaAsTextAttachment = myFolderMessageManager.appendMessage(
             MessageManager.AppendCommand.builder()
                 .build(ClassLoader.getSystemResourceAsStream("eml/emailWithTextAttachment.eml")),
@@ -1325,7 +1325,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void searchWithPDFAttachmentShouldReturnMailsWhenAttachmentContentMatches() throws Exception {
-        Assume.assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Attachment));
+        assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Attachment));
         byte[] attachmentContent = ClassLoaderUtils.getSystemResourceAsByteArray("eml/attachment.pdf");
         Multipart multipart = MultipartBuilder.create("mixed")
                 .addBodyPart(BodyPartBuilder.create()
@@ -1454,7 +1454,7 @@ public abstract class AbstractMessageSearchIndexTest {
 
     @Test
     public void searchShouldRetrieveMailByAttachmentFileName() throws Exception {
-        Assume.assumeTrue(messageSearchIndex.getSupportedCapabilities(storeMailboxManager.getSupportedMessageCapabilities())
+        assumeTrue(messageSearchIndex.getSupportedCapabilities(storeMailboxManager.getSupportedMessageCapabilities())
             .contains(MailboxManager.SearchCapabilities.AttachmentFileName));
 
         String fileName = "matchme.txt";

@@ -37,14 +37,14 @@ import org.apache.james.mdn.sending.mode.DispositionSendingMode;
 import org.apache.james.mdn.type.DispositionType;
 import org.apache.james.mime4j.dom.Message;
 import org.apache.james.mime4j.message.DefaultMessageWriter;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class MessageParserTest {
 
     private MessageParser testee;
 
-    @Before
+    @BeforeEach
     public void setup() {
         testee = new MessageParser();
     }

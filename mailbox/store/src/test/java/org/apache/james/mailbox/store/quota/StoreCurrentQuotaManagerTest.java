@@ -20,14 +20,15 @@
 package org.apache.james.mailbox.store.quota;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.Optional;
 
 import org.apache.james.core.quota.QuotaCount;
 import org.apache.james.core.quota.QuotaSize;
 import org.apache.james.mailbox.model.QuotaRoot;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public abstract class StoreCurrentQuotaManagerTest {
     public static final QuotaRoot QUOTA_ROOT = QuotaRoot.quotaRoot("benwa", Optional.empty());
@@ -36,7 +37,7 @@ public abstract class StoreCurrentQuotaManagerTest {
     
     private StoreCurrentQuotaManager testee;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         testee = provideTestee();
     }
@@ -72,43 +73,43 @@ public abstract class StoreCurrentQuotaManagerTest {
         assertThat(testee.getCurrentStorage(QUOTA_ROOT)).isEqualTo(QuotaSize.size(-100));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void increaseShouldThrowOnZeroCount() throws Exception {
-        testee.increase(QUOTA_ROOT, 0, 5);
+        assertThatThrownBy(() -> testee.increase(QUOTA_ROOT, 0, 5)).isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void increaseShouldThrowOnNegativeCount() throws Exception {
-        testee.increase(QUOTA_ROOT, -1, 5);
+        assertThatThrownBy(() -> testee.increase(QUOTA_ROOT, -1, 5)).isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void increaseShouldThrowOnZeroSize() throws Exception {
-        testee.increase(QUOTA_ROOT, 5, 0);
+        assertThatThrownBy(() -> testee.increase(QUOTA_ROOT, 5, 0)).isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void increaseShouldThrowOnNegativeSize() throws Exception {
-        testee.increase(QUOTA_ROOT, 5, -1);
+        assertThatThrownBy(() -> testee.increase(QUOTA_ROOT, 5, -1)).isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void decreaseShouldThrowOnZeroCount() throws Exception {
-        testee.decrease(QUOTA_ROOT, 0, 5);
+        assertThatThrownBy(() -> testee.decrease(QUOTA_ROOT, 0, 5)).isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void decreaseShouldThrowOnNegativeCount() throws Exception {
-        testee.decrease(QUOTA_ROOT, -1, 5);
+        assertThatThrownBy(() -> testee.decrease(QUOTA_ROOT, -1, 5)).isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void decreaseShouldThrowOnZeroSize() throws Exception {
-        testee.decrease(QUOTA_ROOT, 5, 0);
+        assertThatThrownBy(() -> testee.decrease(QUOTA_ROOT, 5, 0)).isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void decreaseShouldThrowOnNegativeSize() throws Exception {
-        testee.decrease(QUOTA_ROOT, 5, -1);
+        assertThatThrownBy(() -> testee.decrease(QUOTA_ROOT, 5, -1)).isInstanceOf(IllegalArgumentException.class);
     }
 }

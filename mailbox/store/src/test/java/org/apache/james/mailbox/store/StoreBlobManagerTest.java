@@ -44,8 +44,8 @@ import org.apache.james.mailbox.model.Content;
 import org.apache.james.mailbox.model.FetchGroupImpl;
 import org.apache.james.mailbox.model.MessageResult;
 import org.apache.james.mailbox.model.TestMessageId;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableList;
 
@@ -63,7 +63,7 @@ public class StoreBlobManagerTest {
     private MessageIdManager messageIdManager;
     private MailboxSession session;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         attachmentManager = mock(AttachmentManager.class);
         messageIdManager = mock(MessageIdManager.class);

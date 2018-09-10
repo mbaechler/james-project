@@ -30,8 +30,8 @@ import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.apache.james.mailbox.model.MessageResult.Header;
 import org.apache.james.mailbox.store.streaming.PartContentBuilder;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class PartContentBuilderMultipartAlternativeTest {
 
@@ -73,7 +73,7 @@ public class PartContentBuilderMultipartAlternativeTest {
 
     PartContentBuilder builder;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         builder = new PartContentBuilder();
     }

@@ -22,7 +22,7 @@ package org.apache.james.mailbox.store.mail.model;
 import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.model.ComposedMessageId;
 import org.apache.james.mailbox.model.TestId;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class DefaultMessageIdTest {
 

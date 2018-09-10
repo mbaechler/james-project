@@ -21,7 +21,7 @@ package org.apache.james.mailbox.store.search.comparator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SentDateComparatorTest {
     @Test

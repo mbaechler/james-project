@@ -30,8 +30,8 @@ import org.apache.james.mailbox.model.MailboxACL;
 import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableList;
 
@@ -47,7 +47,7 @@ public class ListMailboxAssertTest {
     private ListMailboxAssert listMaiboxAssert;
     private List<Mailbox> actualMailbox;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         actualMailbox = ImmutableList.of(mailbox1, mailbox2);
         listMaiboxAssert = ListMailboxAssert.assertMailboxes(actualMailbox);

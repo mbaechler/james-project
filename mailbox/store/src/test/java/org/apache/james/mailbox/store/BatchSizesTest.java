@@ -19,17 +19,13 @@
 package org.apache.james.mailbox.store;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 
 public class BatchSizesTest {
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Test
     public void shouldRespectJavaBeanContract() {
@@ -61,98 +57,86 @@ public class BatchSizesTest {
 
     @Test
     public void fetchMetadataShouldThrowWhenNegative() {
-        expectedException.expect(IllegalArgumentException.class);
-
-        BatchSizes.builder()
-            .fetchMetadata(-1);
+        assertThatThrownBy(() -> BatchSizes.builder()
+                .fetchMetadata(-1))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void fetchMetadataShouldThrowWhenZero() {
-        expectedException.expect(IllegalArgumentException.class);
-
-        BatchSizes.builder()
-            .fetchMetadata(0);
+        assertThatThrownBy(() -> BatchSizes.builder()
+                .fetchMetadata(0))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void fetchHeadersShouldThrowWhenNegative() {
-        expectedException.expect(IllegalArgumentException.class);
-
-        BatchSizes.builder()
-            .fetchHeaders(-1);
+        assertThatThrownBy(() -> BatchSizes.builder()
+                .fetchHeaders(-1))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void fetchHeadersShouldThrowWhenZero() {
-        expectedException.expect(IllegalArgumentException.class);
-
-        BatchSizes.builder()
-            .fetchHeaders(0);
+        assertThatThrownBy(() -> BatchSizes.builder()
+                .fetchHeaders(0))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void fetchBodyShouldThrowWhenNegative() {
-        expectedException.expect(IllegalArgumentException.class);
-
-        BatchSizes.builder()
-            .fetchBody(-1);
+        assertThatThrownBy(() -> BatchSizes.builder()
+                .fetchBody(-1))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void fetchBodyShouldThrowWhenZero() {
-        expectedException.expect(IllegalArgumentException.class);
-
-        BatchSizes.builder()
-            .fetchBody(0);
+        assertThatThrownBy(() -> BatchSizes.builder()
+                .fetchBody(0))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void fetchFullShouldThrowWhenNegative() {
-        expectedException.expect(IllegalArgumentException.class);
-
-        BatchSizes.builder()
-            .fetchFull(-1);
+        assertThatThrownBy(() -> BatchSizes.builder()
+                .fetchFull(-1))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void fetchFullShouldThrowWhenZero() {
-        expectedException.expect(IllegalArgumentException.class);
-
-        BatchSizes.builder()
-            .fetchFull(0);
+        assertThatThrownBy(() -> BatchSizes.builder()
+                .fetchFull(0))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void copyBatchSizeShouldThrowWhenNegative() {
-        expectedException.expect(IllegalArgumentException.class);
-
-        BatchSizes.builder()
-            .copyBatchSize(-1);
+        assertThatThrownBy(() -> BatchSizes.builder()
+                .copyBatchSize(-1))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void copyBatchSizeShouldThrowWhenZero() {
-        expectedException.expect(IllegalArgumentException.class);
-
-        BatchSizes.builder()
-            .copyBatchSize(0);
+        assertThatThrownBy(() -> BatchSizes.builder()
+                .copyBatchSize(0))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void moveBatchSizeShouldThrowWhenNegative() {
-        expectedException.expect(IllegalArgumentException.class);
-
-        BatchSizes.builder()
-            .moveBatchSize(-1);
+        assertThatThrownBy(() -> BatchSizes.builder()
+                .moveBatchSize(-1))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void moveBatchSizeShouldThrowWhenZero() {
-        expectedException.expect(IllegalArgumentException.class);
-
-        BatchSizes.builder()
-            .moveBatchSize(0);
+        assertThatThrownBy(() -> BatchSizes.builder()
+                .moveBatchSize(0))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

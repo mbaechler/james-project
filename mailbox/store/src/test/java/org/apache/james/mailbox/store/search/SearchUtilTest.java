@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
 
 import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.mailbox.store.mail.model.MailboxMessage;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SearchUtilTest {
 

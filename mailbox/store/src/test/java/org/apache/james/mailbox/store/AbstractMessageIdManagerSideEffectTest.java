@@ -23,6 +23,7 @@ import static org.apache.james.mailbox.fixture.MailboxFixture.ALICE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
@@ -56,9 +57,7 @@ import org.apache.james.mailbox.quota.QuotaManager;
 import org.apache.james.mailbox.store.event.MailboxEventDispatcher;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.MailboxMessage;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableList;
 
@@ -71,9 +70,6 @@ public abstract class AbstractMessageIdManagerSideEffectTest {
     private static final MessageUid messageUid2 = MessageUid.of(113);
 
     public static final Flags FLAGS = new Flags();
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     private MessageIdManager messageIdManager;
     private MailboxEventDispatcher dispatcher;
@@ -194,9 +190,9 @@ public abstract class AbstractMessageIdManagerSideEffectTest {
         when(quotaManager.getStorageQuota(any(QuotaRoot.class))).thenReturn(
             Quota.<QuotaSize>builder().used(QuotaSize.size(2)).computedLimit(QuotaSize.unlimited()).build());
 
-        expectedException.expect(OverQuotaException.class);
-
-        messageIdManager.setInMailboxes(messageId, ImmutableList.of(mailbox1.getMailboxId(), mailbox2.getMailboxId()), session);
+        assertThatThrownBy(() ->
+                messageIdManager.setInMailboxes(messageId, ImmutableList.of(mailbox1.getMailboxId(), mailbox2.getMailboxId()), session))
+            .isInstanceOf(OverQuotaException.class);
     }
 
     @Test

@@ -41,7 +41,7 @@ import org.apache.james.mailbox.store.mail.MessageMapper;
 import org.apache.james.mailbox.store.mail.MessageMapper.FetchType;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.MailboxMessage;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public abstract class AbstractMailboxManagerAttachmentTest {
     private static final String USERNAME = "user@domain.tld";

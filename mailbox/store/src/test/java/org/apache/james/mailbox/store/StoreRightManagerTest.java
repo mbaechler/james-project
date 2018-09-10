@@ -50,8 +50,8 @@ import org.apache.james.mailbox.store.event.MailboxEventDispatcher;
 import org.apache.james.mailbox.store.mail.MailboxMapper;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class StoreRightManagerTest {
 
@@ -62,7 +62,7 @@ public class StoreRightManagerTest {
     private GroupMembershipResolver groupMembershipResolver;
     private MailboxMapper mockedMailboxMapper;
 
-    @Before
+    @BeforeEach
     public void setup() throws MailboxException {
         aliceSession = MailboxSessionUtil.create(MailboxFixture.ALICE);
         MailboxSessionMapperFactory mockedMapperFactory = mock(MailboxSessionMapperFactory.class);

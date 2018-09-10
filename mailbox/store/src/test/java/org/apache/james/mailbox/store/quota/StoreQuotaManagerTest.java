@@ -31,8 +31,8 @@ import org.apache.james.mailbox.model.Quota;
 import org.apache.james.mailbox.model.QuotaRoot;
 import org.apache.james.mailbox.quota.CurrentQuotaManager;
 import org.apache.james.mailbox.quota.MaxQuotaManager;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class StoreQuotaManagerTest {
 
@@ -41,7 +41,7 @@ public class StoreQuotaManagerTest {
     private MaxQuotaManager mockedMaxQuotaManager;
     private QuotaRoot quotaRoot;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         mockedCurrentQuotaManager = mock(CurrentQuotaManager.class);
         mockedMaxQuotaManager = mock(MaxQuotaManager.class);

@@ -40,8 +40,8 @@ import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
 import org.apache.james.mailbox.util.EventCollector;
 import org.assertj.core.api.Condition;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -65,7 +65,7 @@ public class MailboxEventDispatcherTest {
 
     private MailboxSession session = MailboxSessionUtil.create("test", SESSION_ID);
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         collector = new EventCollector();
 

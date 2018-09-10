@@ -38,8 +38,8 @@ import org.apache.james.mailbox.model.SearchQuery.AddressType;
 import org.apache.james.mailbox.model.SearchQuery.DateResolution;
 import org.apache.james.mailbox.store.mail.model.MailboxMessage;
 import org.apache.james.mailbox.store.search.MessageSearches;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class SearchUtilsTest {
 
@@ -75,7 +75,7 @@ public class SearchUtilsTest {
         return cal.getTime();
     }
     
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         recent = new ArrayList<>();
         builder = new MessageBuilder();

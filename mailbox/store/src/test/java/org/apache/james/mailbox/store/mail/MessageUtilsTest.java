@@ -21,6 +21,7 @@ package org.apache.james.mailbox.store.mail;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -38,10 +39,8 @@ import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.MailboxMessage;
 import org.apache.james.mailbox.store.mail.model.impl.PropertyBuilder;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailboxMessage;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -56,13 +55,10 @@ public class MessageUtilsTest {
     @Mock private Mailbox mailbox;
     private MailboxSession mailboxSession;
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     private MessageUtils messageUtils;
     private MailboxMessage message;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         mailboxSession = MailboxSessionUtil.create("user");
@@ -72,14 +68,14 @@ public class MessageUtilsTest {
     
     @Test
     public void newInstanceShouldFailWhenNullUidProvider() {
-        expectedException.expect(NullPointerException.class);
-        new MessageUtils(mailboxSession, null, modSeqProvider);
+        assertThatThrownBy(() -> new MessageUtils(mailboxSession, null, modSeqProvider))
+            .isInstanceOf(NullPointerException.class);
     }
     
     @Test
     public void newInstanceShouldFailWhenNullModSeqProvider() {
-        expectedException.expect(NullPointerException.class);
-        new MessageUtils(mailboxSession, uidProvider, null);
+        assertThatThrownBy(() -> new MessageUtils(mailboxSession, uidProvider, null))
+            .isInstanceOf(NullPointerException.class);
     }
     
     @Test

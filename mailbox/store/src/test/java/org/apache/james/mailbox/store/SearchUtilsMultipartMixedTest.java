@@ -32,8 +32,8 @@ import org.apache.james.mailbox.extractor.TextExtractor;
 import org.apache.james.mailbox.model.SearchQuery;
 import org.apache.james.mailbox.store.mail.model.MailboxMessage;
 import org.apache.james.mailbox.store.search.MessageSearches;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class SearchUtilsMultipartMixedTest {
 
@@ -113,7 +113,7 @@ public class SearchUtilsMultipartMixedTest {
     Collection<MessageUid> recent;
     private MessageSearches messageSearches;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         final MessageBuilder builder = new MessageBuilder();
         

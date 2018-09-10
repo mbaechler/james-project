@@ -46,9 +46,7 @@ import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.mailbox.model.MessageResult;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 import com.github.steveash.guavate.Guavate;
 import com.google.common.collect.ImmutableList;
@@ -68,9 +66,6 @@ public abstract class AbstractMessageIdManagerStorageTest {
     private MailboxSession aliceSession;
     private MailboxSession bobSession;
     private MailboxSession systemSession;
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     protected abstract MessageIdManagerTestSystem createTestingData() throws Exception;
 
@@ -247,20 +242,20 @@ public abstract class AbstractMessageIdManagerStorageTest {
 
     @Test
     public void setInMailboxesShouldThrowExceptionWhenSetInMailboxesInAnotherSession() throws Exception {
-        expectedException.expect(MailboxNotFoundException.class);
-
         MessageId messageId = testingData.persist(aliceMailbox1.getMailboxId(), messageUid1, FLAGS, aliceSession);
 
-        messageIdManager.setInMailboxes(messageId, ImmutableList.of(aliceMailbox1.getMailboxId(), aliceMailbox2.getMailboxId()), bobSession);
+        assertThatThrownBy(() ->
+                messageIdManager.setInMailboxes(messageId, ImmutableList.of(aliceMailbox1.getMailboxId(), aliceMailbox2.getMailboxId()), bobSession))
+            .isInstanceOf(MailboxNotFoundException.class);
     }
 
     @Test
     public void setInMailboxesShouldThrowExceptionWhenOneMailboxDoesNotBelongToMailboxSession() throws Exception {
-        expectedException.expect(MailboxNotFoundException.class);
-
         MessageId messageId = testingData.persist(aliceMailbox1.getMailboxId(), messageUid1, FLAGS, aliceSession);
 
-        messageIdManager.setInMailboxes(messageId, ImmutableList.of(aliceMailbox1.getMailboxId(), bobMailbox1.getMailboxId()), aliceSession);
+        assertThatThrownBy(() ->
+                messageIdManager.setInMailboxes(messageId, ImmutableList.of(aliceMailbox1.getMailboxId(), bobMailbox1.getMailboxId()), aliceSession))
+            .isInstanceOf(MailboxNotFoundException.class);
     }
 
     @Test
@@ -325,11 +320,11 @@ public abstract class AbstractMessageIdManagerStorageTest {
 
     @Test
     public void deleteMessageShouldThrowExceptionWhenDeletingOnOtherSession() throws Exception {
-        expectedException.expect(MailboxNotFoundException.class);
-
         MessageId messageId = testingData.persist(aliceMailbox1.getMailboxId(), messageUid1, FLAGS, aliceSession);
 
-        messageIdManager.delete(messageId, ImmutableList.of(aliceMailbox1.getMailboxId()), bobSession);
+        assertThatThrownBy(() ->
+                messageIdManager.delete(messageId, ImmutableList.of(aliceMailbox1.getMailboxId()), bobSession))
+            .isInstanceOf(MailboxNotFoundException.class);
     }
 
     @Test
@@ -342,20 +337,20 @@ public abstract class AbstractMessageIdManagerStorageTest {
 
     @Test
     public void deleteMessageShouldThrowExceptionWhenDeletingOnSystemSession() throws Exception {
-        expectedException.expect(MailboxNotFoundException.class);
-
         MessageId messageId = testingData.persist(aliceMailbox1.getMailboxId(), messageUid1, FLAGS, aliceSession);
 
-        messageIdManager.delete(messageId, ImmutableList.of(aliceMailbox1.getMailboxId()), systemSession);
+        assertThatThrownBy(() ->
+                messageIdManager.delete(messageId, ImmutableList.of(aliceMailbox1.getMailboxId()), systemSession))
+            .isInstanceOf(MailboxNotFoundException.class);
     }
 
     @Test
     public void deleteMessageShouldThrowExceptionWhenOneMailboxDoesNotBelongToUser() throws Exception {
-        expectedException.expect(MailboxNotFoundException.class);
-
         MessageId messageId = testingData.persist(bobMailbox1.getMailboxId(), messageUid1, FLAGS, bobSession);
 
-        messageIdManager.delete(messageId, ImmutableList.of(bobMailbox1.getMailboxId()), aliceSession);
+        assertThatThrownBy(() ->
+                messageIdManager.delete(messageId, ImmutableList.of(bobMailbox1.getMailboxId()), aliceSession))
+            .isInstanceOf(MailboxNotFoundException.class);
     }
 
     @Test
@@ -487,31 +482,32 @@ public abstract class AbstractMessageIdManagerStorageTest {
 
     @Test
     public void setFlagsShouldThrowExceptionWhenSetFlagsOnOtherSession() throws Exception {
-        expectedException.expect(MailboxNotFoundException.class);
-
         Flags newFlags = new Flags(Flags.Flag.SEEN);
         MessageId messageId = testingData.persist(aliceMailbox1.getMailboxId(), messageUid1, FLAGS, aliceSession);
 
-        messageIdManager.setFlags(newFlags, MessageManager.FlagsUpdateMode.ADD, messageId, ImmutableList.of(aliceMailbox1.getMailboxId()), bobSession);
+        assertThatThrownBy(() ->
+                messageIdManager.setFlags(newFlags, MessageManager.FlagsUpdateMode.ADD, messageId, ImmutableList.of(aliceMailbox1.getMailboxId()), bobSession))
+            .isInstanceOf(MailboxNotFoundException.class);
     }
 
     @Test
     public void setFlagsShouldThrowExceptionWhenSetFlagsOnSystemSession() throws Exception {
-        expectedException.expect(MailboxNotFoundException.class);
-
         Flags newFlags = new Flags(Flags.Flag.SEEN);
         MessageId messageId = testingData.persist(aliceMailbox1.getMailboxId(), messageUid1, FLAGS, aliceSession);
 
-        messageIdManager.setFlags(newFlags, MessageManager.FlagsUpdateMode.ADD, messageId, ImmutableList.of(aliceMailbox1.getMailboxId()), systemSession);
+        assertThatThrownBy(() ->
+                messageIdManager.setFlags(newFlags, MessageManager.FlagsUpdateMode.ADD, messageId, ImmutableList.of(aliceMailbox1.getMailboxId()), systemSession))
+            .isInstanceOf(MailboxNotFoundException.class);
     }
 
     @Test
     public void setFlagsShouldThrowExceptionWhenMailboxDoesNotBelongToMailboxSession() throws Exception {
-        expectedException.expect(MailboxNotFoundException.class);
         Flags newFlags = new Flags(Flags.Flag.SEEN);
         MessageId messageId = testingData.persist(aliceMailbox1.getMailboxId(), messageUid1, FLAGS, aliceSession);
 
-        messageIdManager.setFlags(newFlags, MessageManager.FlagsUpdateMode.ADD, messageId, ImmutableList.of(aliceMailbox1.getMailboxId(), bobMailbox1.getMailboxId()), aliceSession);
+        assertThatThrownBy(() ->
+                messageIdManager.setFlags(newFlags, MessageManager.FlagsUpdateMode.ADD, messageId, ImmutableList.of(aliceMailbox1.getMailboxId(), bobMailbox1.getMailboxId()), aliceSession))
+            .isInstanceOf(MailboxNotFoundException.class);
 
     }
 

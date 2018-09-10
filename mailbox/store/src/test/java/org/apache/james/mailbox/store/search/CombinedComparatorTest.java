@@ -20,8 +20,8 @@
 package org.apache.james.mailbox.store.search;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import org.apache.james.mailbox.model.SearchQuery;
 import org.apache.james.mailbox.model.SearchQuery.Sort;
 import org.apache.james.mailbox.model.SearchQuery.Sort.Order;
 import org.apache.james.mailbox.model.SearchQuery.Sort.SortClause;
@@ -35,29 +35,20 @@ import org.apache.james.mailbox.store.search.comparator.ReverseComparator;
 import org.apache.james.mailbox.store.search.comparator.SentDateComparator;
 import org.apache.james.mailbox.store.search.comparator.SizeComparator;
 import org.apache.james.mailbox.store.search.comparator.UidComparator;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableList;
 
 public class CombinedComparatorTest {
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     @Test
     public void createShouldThrowOnNullListOfSort() {
-        expectedException.expect(NullPointerException.class);
-
-        CombinedComparator.create(null);
+        assertThatThrownBy(() -> CombinedComparator.create(null)).isInstanceOf(NullPointerException.class);
     }
 
     @Test
     public void createShouldThrowOnEmptySort() {
-        expectedException.expect(IllegalArgumentException.class);
-
-        CombinedComparator.create(ImmutableList.<SearchQuery.Sort>of());
+        assertThatThrownBy(() -> CombinedComparator.create(ImmutableList.<Sort>of())).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

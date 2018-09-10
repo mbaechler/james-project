@@ -31,10 +31,8 @@ import org.apache.james.mailbox.MessageManager;
 import org.apache.james.mailbox.Role;
 import org.apache.james.mailbox.exception.MailboxNotFoundException;
 import org.apache.james.mailbox.fixture.MailboxFixture;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class SystemMailboxesProviderImplTest {
 
@@ -45,10 +43,7 @@ public class SystemMailboxesProviderImplTest {
 
     private MessageManager inboxMessageManager;
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         mailboxManager = mock(MailboxManager.class);
         inboxMessageManager = mock(MessageManager.class);

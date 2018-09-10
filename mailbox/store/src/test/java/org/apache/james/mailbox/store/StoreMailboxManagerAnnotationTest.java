@@ -22,6 +22,7 @@ package org.apache.james.mailbox.store;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -44,8 +45,8 @@ import org.apache.james.mailbox.store.mail.AnnotationMapper;
 import org.apache.james.mailbox.store.mail.MailboxMapper;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.transaction.Mapper;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -76,7 +77,7 @@ public class StoreMailboxManagerAnnotationTest {
 
 
     @SuppressWarnings("unchecked")
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
 
@@ -98,10 +99,12 @@ public class StoreMailboxManagerAnnotationTest {
             storeRightManager));
     }
 
-    @Test(expected = MailboxException.class)
+    @Test
     public void updateAnnotationsShouldThrowExceptionWhenDoesNotLookupMailbox() throws Exception {
         doThrow(MailboxException.class).when(mailboxMapper).findMailboxByPath(eq(mailboxPath));
-        annotationManager.updateAnnotations(mailboxPath, session, ImmutableList.of(PRIVATE_ANNOTATION));
+        assertThatThrownBy(() ->
+                annotationManager.updateAnnotations(mailboxPath, session, ImmutableList.of(PRIVATE_ANNOTATION)))
+            .isInstanceOf(MailboxException.class);
     }
 
     @Test
@@ -121,10 +124,10 @@ public class StoreMailboxManagerAnnotationTest {
         verify(annotationMapper, times(1)).deleteAnnotation(eq(mailboxId), eq(SHARED_KEY));
     }
 
-    @Test(expected = MailboxException.class)
+    @Test
     public void getAllAnnotationsShouldThrowExceptionWhenDoesNotLookupMailbox() throws Exception {
         doThrow(MailboxException.class).when(mailboxMapper).findMailboxByPath(eq(mailboxPath));
-        annotationManager.getAllAnnotations(mailboxPath, session);
+        assertThatThrownBy(() -> annotationManager.getAllAnnotations(mailboxPath, session)).isInstanceOf(MailboxException.class);
     }
 
     @Test
@@ -143,10 +146,10 @@ public class StoreMailboxManagerAnnotationTest {
         assertThat(annotationManager.getAllAnnotations(mailboxPath, session)).isEqualTo(ANNOTATIONS);
     }
 
-    @Test(expected = MailboxException.class)
+    @Test
     public void getAnnotationsByKeysShouldThrowExceptionWhenDoesNotLookupMailbox() throws Exception {
         doThrow(MailboxException.class).when(mailboxMapper).findMailboxByPath(eq(mailboxPath));
-        annotationManager.getAnnotationsByKeys(mailboxPath, session, KEYS);
+        assertThatThrownBy(() -> annotationManager.getAnnotationsByKeys(mailboxPath, session, KEYS)).isInstanceOf(MailboxException.class);
     }
 
     @Test

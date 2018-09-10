@@ -20,6 +20,7 @@
 package org.apache.james.mailbox.store;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -48,7 +49,7 @@ import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.MailboxMessage;
 import org.apache.james.mailbox.store.mail.model.impl.PropertyBuilder;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailboxMessage;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Iterables;
 
@@ -209,13 +210,13 @@ public class StoreMailboxMessageResultIteratorTest {
         assertThat(iterator.next()).isNotNull();
     }
     
-    @Test(expected = NoSuchElementException.class)
+    @Test
     public void nextShouldThrowWhenNoElement() {
         MessageRange messages = MessageUid.of(1).toRange();
         MessageRange findRange = MessageUid.of(2).toRange();
         BatchSizes batchSize = BatchSizes.uniqueBatchSize(42);
         StoreMessageResultIterator iterator = new StoreMessageResultIterator(new TestMessageMapper(messages), null, findRange, batchSize, new TestFetchGroup());
-        iterator.next();
+        assertThatThrownBy(() -> iterator.next()).isInstanceOf(NoSuchElementException.class);
     }
     
     @Test

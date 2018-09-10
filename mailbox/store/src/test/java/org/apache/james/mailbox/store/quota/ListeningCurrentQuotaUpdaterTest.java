@@ -44,8 +44,8 @@ import org.apache.james.mailbox.quota.QuotaManager;
 import org.apache.james.mailbox.quota.QuotaRootResolver;
 import org.apache.james.mailbox.store.event.MailboxEventDispatcher;
 import org.apache.james.mailbox.store.mail.model.DefaultMessageId;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Lists;
 
@@ -61,7 +61,7 @@ public class ListeningCurrentQuotaUpdaterTest {
     private QuotaRootResolver mockedQuotaRootResolver;
     private ListeningCurrentQuotaUpdater testee;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         mockedQuotaRootResolver = mock(QuotaRootResolver.class);
         mockedCurrentQuotaManager = mock(StoreCurrentQuotaManager.class);

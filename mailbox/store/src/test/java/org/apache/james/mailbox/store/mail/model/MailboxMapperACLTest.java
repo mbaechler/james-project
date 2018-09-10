@@ -20,6 +20,7 @@
 package org.apache.james.mailbox.store.mail.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import org.apache.james.mailbox.acl.ACLDiff;
 import org.apache.james.mailbox.exception.MailboxException;
@@ -32,9 +33,7 @@ import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.mail.MailboxMapper;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -44,9 +43,6 @@ public abstract class MailboxMapperACLTest {
     public static final boolean NEGATIVE = !POSITIVE;
 
     private Mailbox benwaInboxMailbox;
-
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
 
     private MailboxMapper mailboxMapper;
 

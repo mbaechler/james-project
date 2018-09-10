@@ -29,8 +29,8 @@ import org.apache.james.core.quota.QuotaSize;
 import org.apache.james.mailbox.model.Quota;
 import org.apache.james.mailbox.model.QuotaRoot;
 import org.apache.james.mailbox.quota.MaxQuotaManager;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public abstract class GenericMaxQuotaManagerTest {
 
@@ -41,7 +41,7 @@ public abstract class GenericMaxQuotaManagerTest {
 
     protected abstract MaxQuotaManager provideMaxQuotaManager();
 
-    @Before
+    @BeforeEach
     public void setUp() {
         maxQuotaManager = provideMaxQuotaManager();
     }

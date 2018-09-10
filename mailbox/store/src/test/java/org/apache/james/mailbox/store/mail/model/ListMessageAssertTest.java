@@ -20,6 +20,7 @@
 package org.apache.james.mailbox.store.mail.model;
 
 import static org.apache.james.mailbox.store.mail.model.ListMessageAssert.assertMessages;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,8 +41,8 @@ import org.apache.james.mailbox.model.TestId;
 import org.apache.james.mailbox.store.mail.model.impl.PropertyBuilder;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailboxMessage;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableList;
 
@@ -60,7 +61,7 @@ public class ListMessageAssertTest {
     private MailboxMessage message1;
     private MailboxMessage message2;
     
-    @Before
+    @BeforeEach
     public void setUp() {
         benwaInboxMailbox = createMailbox(MailboxPath.forUser("user", "INBOX"));
 
@@ -75,10 +76,12 @@ public class ListMessageAssertTest {
                 createMailboxMessage(MAILBOX_ID, MESSAGE_ID, MESSAGE_UID, INTERNAL_DATE, BODY_CONTENT2, BODY_START, new PropertyBuilder()));
     }
 
-    @Test(expected = AssertionError.class)
+    @Test
     public void containsOnlyShouldThrowExceptionWhenHavingElementDoesNotBelongToList() throws IOException {
         List<MailboxMessage> actual = ImmutableList.of(message1);
-        assertMessages(actual).containOnly(createMailboxMessage(MAILBOX_ID, MESSAGE_ID, MESSAGE_UID, INTERNAL_DATE, BODY_CONTENT2, BODY_START, new PropertyBuilder()));
+        assertThatThrownBy(() ->
+                assertMessages(actual).containOnly(createMailboxMessage(MAILBOX_ID, MESSAGE_ID, MESSAGE_UID, INTERNAL_DATE, BODY_CONTENT2, BODY_START, new PropertyBuilder())))
+            .isInstanceOf(AssertionError.class);
     }
 
     private MailboxMessage createMailboxMessage(final MailboxId mailboxId, final MessageId messageId, final MessageUid uid,

@@ -20,6 +20,8 @@
 package org.apache.james.mailbox.store.mail.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
@@ -31,9 +33,7 @@ import org.apache.james.mailbox.model.Attachment;
 import org.apache.james.mailbox.model.AttachmentId;
 import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.mailbox.store.mail.AttachmentMapper;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableList;
 
@@ -43,9 +43,6 @@ public abstract class AttachmentMapperTest {
     public static final Username ADDITIONAL_OWNER = Username.fromRawValue("additionalOwner");
 
     private AttachmentMapper attachmentMapper;
-
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
 
     protected abstract AttachmentMapper createAttachmentMapper();
 
@@ -57,14 +54,12 @@ public abstract class AttachmentMapperTest {
 
     @Test
     public void getAttachmentShouldThrowWhenNullAttachmentId() throws Exception {
-        expected.expect(IllegalArgumentException.class);
-        attachmentMapper.getAttachment(null);
+        assertThatThrownBy(() -> attachmentMapper.getAttachment(null)).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void getAttachmentShouldThrowWhenNonReferencedAttachmentId() throws Exception {
-        expected.expect(AttachmentNotFoundException.class);
-        attachmentMapper.getAttachment(UNKNOWN_ATTACHMENT_ID);
+        assertThatThrownBy(() -> attachmentMapper.getAttachment(UNKNOWN_ATTACHMENT_ID)).isInstanceOf(AttachmentNotFoundException.class);
     }
 
     @Test
@@ -106,8 +101,7 @@ public abstract class AttachmentMapperTest {
 
     @Test
     public void getAttachmentsShouldThrowWhenNullAttachmentId() {
-        expected.expect(IllegalArgumentException.class);
-        attachmentMapper.getAttachments(null);
+        assertThatThrownBy(() -> attachmentMapper.getAttachments(null)).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

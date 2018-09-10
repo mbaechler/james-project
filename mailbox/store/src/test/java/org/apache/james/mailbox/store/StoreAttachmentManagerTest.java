@@ -35,8 +35,8 @@ import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.mailbox.model.TestMessageId;
 import org.apache.james.mailbox.store.mail.AttachmentMapper;
 import org.apache.james.mailbox.store.mail.AttachmentMapperFactory;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -55,7 +55,7 @@ public class StoreAttachmentManagerTest {
     private AttachmentMapper attachmentMapper;
     private MessageIdManager messageIdManager;
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         attachmentMapper = mock(AttachmentMapper.class);
         AttachmentMapperFactory attachmentMapperFactory = mock(AttachmentMapperFactory.class);

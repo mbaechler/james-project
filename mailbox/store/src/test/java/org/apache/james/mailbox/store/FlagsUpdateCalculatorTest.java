@@ -25,8 +25,7 @@ import javax.mail.Flags;
 
 import org.apache.james.mailbox.FlagsBuilder;
 import org.apache.james.mailbox.MessageManager;
-import org.apache.james.mailbox.store.FlagsUpdateCalculator;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class FlagsUpdateCalculatorTest {
 

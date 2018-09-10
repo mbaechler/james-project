@@ -35,8 +35,8 @@ import org.apache.james.mailbox.model.QuotaRoot;
 import org.apache.james.mailbox.quota.QuotaManager;
 import org.apache.james.mailbox.quota.QuotaRootResolver;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class QuotaCheckerTest {
 
@@ -47,7 +47,7 @@ public class QuotaCheckerTest {
     private QuotaRootResolver mockedQuotaRootResolver;
     private QuotaManager mockedQuotaManager;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         mockedQuotaManager = mock(QuotaManager.class);
         mockedQuotaRootResolver = mock(QuotaRootResolver.class);

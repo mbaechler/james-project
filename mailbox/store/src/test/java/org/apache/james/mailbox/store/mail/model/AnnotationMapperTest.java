@@ -20,15 +20,15 @@
 package org.apache.james.mailbox.store.mail.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MailboxAnnotation;
 import org.apache.james.mailbox.model.MailboxAnnotationKey;
 import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.store.mail.AnnotationMapper;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableSet;
 
@@ -52,9 +52,6 @@ public abstract class AnnotationMapperTest {
     private AnnotationMapper annotationMapper;
     private MailboxId mailboxId;
 
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
-
     protected abstract AnnotationMapper createAnnotationMapper();
 
     protected abstract MailboxId generateMailboxId();
@@ -66,8 +63,8 @@ public abstract class AnnotationMapperTest {
 
     @Test
     public void insertAnnotationShouldThrowExceptionWithNilData() {
-        expected.expect(IllegalArgumentException.class);
-        annotationMapper.insertAnnotation(mailboxId, MailboxAnnotation.nil(PRIVATE_KEY));
+        assertThatThrownBy(() -> annotationMapper.insertAnnotation(mailboxId, MailboxAnnotation.nil(PRIVATE_KEY)))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -168,7 +165,7 @@ public abstract class AnnotationMapperTest {
         annotationMapper.insertAnnotation(mailboxId, SHARED_ANNOTATION);
         annotationMapper.insertAnnotation(mailboxId, PRIVATE_USER_ANNOTATION);
 
-        assertThat(annotationMapper.getAnnotationsByKeysWithOneDepth(mailboxId, ImmutableSet.<MailboxAnnotationKey>of())).isEmpty();
+        assertThat(annotationMapper.getAnnotationsByKeysWithOneDepth(mailboxId, ImmutableSet.of())).isEmpty();
     }
 
     @Test

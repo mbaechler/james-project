@@ -23,6 +23,8 @@ import static org.apache.james.mailbox.store.mail.model.ListMessageAssert.assert
 import static org.apache.james.mailbox.store.mail.model.ListMessagePropertiesAssert.assertProperties;
 import static org.apache.james.mailbox.store.mail.model.MessageAssert.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -53,10 +55,7 @@ import org.apache.james.mailbox.store.mail.model.impl.PropertyBuilder;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailboxMessage;
 import org.apache.james.util.concurrency.ConcurrentTestRunner;
-import org.junit.Assume;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Lists;
 
@@ -84,15 +83,12 @@ public abstract class MessageMapperTest {
     private MailboxMessage message5;
     private MailboxMessage message6;
 
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
-
     protected abstract MapperProvider createMapperProvider();
 
     public void setUp() throws Exception {
         this.mapperProvider = createMapperProvider();
 
-        Assume.assumeTrue(mapperProvider.getSupportedCapabilities().contains(MapperProvider.Capabilities.MESSAGE));
+        assumeTrue(mapperProvider.getSupportedCapabilities().contains(MapperProvider.Capabilities.MESSAGE));
 
         this.messageMapper = mapperProvider.createMessageMapper();
         this.mailboxMapper = mapperProvider.createMailboxMapper();
@@ -790,7 +786,7 @@ public abstract class MessageMapperTest {
 
     @Test
     public void userFlagsUpdateShouldWorkInConcurrentEnvironment() throws Exception {
-        Assume.assumeTrue(mapperProvider.getSupportedCapabilities().contains(MapperProvider.Capabilities.THREAD_SAFE_FLAGS_UPDATE));
+        assumeTrue(mapperProvider.getSupportedCapabilities().contains(MapperProvider.Capabilities.THREAD_SAFE_FLAGS_UPDATE));
 
         saveMessages();
 
@@ -812,7 +808,7 @@ public abstract class MessageMapperTest {
 
     @Test
     public void setFlagsShouldWorkWithConcurrencyWithRemove() throws Exception {
-        Assume.assumeTrue(mapperProvider.getSupportedCapabilities().contains(MapperProvider.Capabilities.THREAD_SAFE_FLAGS_UPDATE));
+        assumeTrue(mapperProvider.getSupportedCapabilities().contains(MapperProvider.Capabilities.THREAD_SAFE_FLAGS_UPDATE));
         saveMessages();
 
         int threadCount = 4;
@@ -911,7 +907,7 @@ public abstract class MessageMapperTest {
 
     @Test
     public void getApplicableFlagShouldHaveNotEffectWhenUpdateFlagsByReplaceThenIncrementalApplicableFlags() throws Exception {
-        Assume.assumeTrue(mapperProvider.getSupportedCapabilities().contains(Capabilities.INCREMENTAL_APPLICABLE_FLAGS));
+        assumeTrue(mapperProvider.getSupportedCapabilities().contains(Capabilities.INCREMENTAL_APPLICABLE_FLAGS));
         String customFlags = "custom";
         message1.setFlags(new Flags(customFlags));
         message2.setFlags(new Flags(Flag.DELETED));
@@ -929,7 +925,7 @@ public abstract class MessageMapperTest {
 
     @Test
     public void getApplicableFlagShouldHaveEffectWhenUpdateFlagsByReplaceThenComputingApplicableFlagsFromCurrentMailboxState() throws Exception {
-        Assume.assumeFalse(mapperProvider.getSupportedCapabilities().contains(Capabilities.INCREMENTAL_APPLICABLE_FLAGS));
+        assumeFalse(mapperProvider.getSupportedCapabilities().contains(Capabilities.INCREMENTAL_APPLICABLE_FLAGS));
         String customFlags = "custom";
         message1.setFlags(new Flags(customFlags));
         message2.setFlags(new Flags(Flag.DELETED));
@@ -946,7 +942,7 @@ public abstract class MessageMapperTest {
 
     @Test
     public void getApplicableFlagShouldHaveNotEffectWhenUpdateFlagsByRemoveThenIncrementalApplicableFlags() throws Exception {
-        Assume.assumeTrue(mapperProvider.getSupportedCapabilities().contains(Capabilities.INCREMENTAL_APPLICABLE_FLAGS));
+        assumeTrue(mapperProvider.getSupportedCapabilities().contains(Capabilities.INCREMENTAL_APPLICABLE_FLAGS));
         String customFlags = "custom";
         message1.setFlags(new FlagsBuilder().add(Flag.ANSWERED).add(customFlags).build());
         message2.setFlags(new Flags(Flag.DELETED));
@@ -964,7 +960,7 @@ public abstract class MessageMapperTest {
 
     @Test
     public void getApplicableFlagShouldHaveEffectWhenUpdateFlagsByRemoveThenComputingApplicableFlagsFromCurrentMailboxState() throws Exception {
-        Assume.assumeFalse(mapperProvider.getSupportedCapabilities().contains(Capabilities.INCREMENTAL_APPLICABLE_FLAGS));
+        assumeFalse(mapperProvider.getSupportedCapabilities().contains(Capabilities.INCREMENTAL_APPLICABLE_FLAGS));
         String customFlags = "custom";
         message1.setFlags(new FlagsBuilder().add(Flag.ANSWERED).add(customFlags).build());
         message2.setFlags(new Flags(Flag.DELETED));
@@ -981,7 +977,7 @@ public abstract class MessageMapperTest {
 
     @Test
     public void getApplicableFlagShouldHaveEffectWhenUnsetMessageFlagThenComputingApplicableFlagsFromCurrentMailboxState() throws Exception {
-        Assume.assumeFalse(mapperProvider.getSupportedCapabilities().contains(Capabilities.INCREMENTAL_APPLICABLE_FLAGS));
+        assumeFalse(mapperProvider.getSupportedCapabilities().contains(Capabilities.INCREMENTAL_APPLICABLE_FLAGS));
         String customFlag1 = "custom1";
         String customFlag2 = "custom2";
         String customFlag3 = "custom3";
@@ -1001,7 +997,7 @@ public abstract class MessageMapperTest {
 
     @Test
     public void getApplicableFlagShouldHaveNotEffectWhenUnsetMessageFlagThenIncrementalApplicableFlags() throws Exception {
-        Assume.assumeTrue(mapperProvider.getSupportedCapabilities().contains(MapperProvider.Capabilities.THREAD_SAFE_FLAGS_UPDATE));
+        assumeTrue(mapperProvider.getSupportedCapabilities().contains(MapperProvider.Capabilities.THREAD_SAFE_FLAGS_UPDATE));
         String customFlag1 = "custom1";
         String customFlag2 = "custom2";
         message1.setFlags(new Flags(customFlag1));
@@ -1021,7 +1017,7 @@ public abstract class MessageMapperTest {
 
     @Test
     public void getApplicableFlagShouldHaveNotEffectWhenDeleteMessageThenIncrementalApplicableFlags() throws Exception {
-        Assume.assumeTrue(mapperProvider.getSupportedCapabilities().contains(Capabilities.INCREMENTAL_APPLICABLE_FLAGS));
+        assumeTrue(mapperProvider.getSupportedCapabilities().contains(Capabilities.INCREMENTAL_APPLICABLE_FLAGS));
         String customFlag1 = "custom1";
         String customFlag2 = "custom2";
         message1.setFlags(new Flags(customFlag1));
@@ -1049,7 +1045,7 @@ public abstract class MessageMapperTest {
 
     @Test
     public void getApplicableFlagShouldHaveEffectWhenDeleteMessageThenComputingApplicableFlagsFromCurrentMailboxState() throws Exception {
-        Assume.assumeFalse(mapperProvider.getSupportedCapabilities().contains(Capabilities.INCREMENTAL_APPLICABLE_FLAGS));
+        assumeFalse(mapperProvider.getSupportedCapabilities().contains(Capabilities.INCREMENTAL_APPLICABLE_FLAGS));
         String customFlag1 = "custom1";
         String customFlag2 = "custom2";
         message1.setFlags(new Flags(customFlag1));

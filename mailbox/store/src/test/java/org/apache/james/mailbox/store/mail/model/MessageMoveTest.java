@@ -20,6 +20,7 @@
 package org.apache.james.mailbox.store.mail.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 
 import java.util.Date;
 
@@ -38,10 +39,7 @@ import org.apache.james.mailbox.store.mail.MessageMapper.FetchType;
 import org.apache.james.mailbox.store.mail.model.impl.PropertyBuilder;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailboxMessage;
-import org.junit.Assume;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 public abstract class MessageMoveTest {
 
@@ -61,16 +59,13 @@ public abstract class MessageMoveTest {
 
     protected abstract MapperProvider createMapperProvider();
 
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
-
     public void setUp() throws Exception {
         this.mapperProvider = createMapperProvider();
-        Assume.assumeTrue(mapperProvider.getSupportedCapabilities().contains(MapperProvider.Capabilities.MOVE));
+        assumeThat(mapperProvider.getSupportedCapabilities().contains(MapperProvider.Capabilities.MOVE)).isTrue();
         this.messageMapper = mapperProvider.createMessageMapper();
-        Assume.assumeNotNull(messageMapper);
+        assumeThat(messageMapper).isNotNull();
         this.mailboxMapper = mapperProvider.createMailboxMapper();
-        Assume.assumeNotNull(mailboxMapper);
+        assumeThat(mailboxMapper).isNotNull();
 
         benwaInboxMailbox = createMailbox(MailboxPath.forUser("benwa", "INBOX"));
         benwaWorkMailbox = createMailbox(MailboxPath.forUser("benwa", "INBOX" + DELIMITER + "work"));

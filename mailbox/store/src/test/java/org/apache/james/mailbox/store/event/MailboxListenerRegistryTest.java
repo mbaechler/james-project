@@ -25,8 +25,8 @@ import static org.mockito.Mockito.mock;
 import org.apache.james.mailbox.MailboxListener;
 import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.TestId;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class MailboxListenerRegistryTest {
     private static final MailboxId MAILBOX_ID = TestId.of(42);
@@ -36,7 +36,7 @@ public class MailboxListenerRegistryTest {
     private MailboxListener mailboxListener;
     private MailboxListener otherMailboxListener;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         testee = new MailboxListenerRegistry();
         mailboxListener = mock(MailboxListener.class);

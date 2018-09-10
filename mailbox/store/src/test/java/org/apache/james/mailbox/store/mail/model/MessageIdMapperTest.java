@@ -20,6 +20,8 @@
 package org.apache.james.mailbox.store.mail.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.time.Duration;
 import java.util.Date;
@@ -48,19 +50,13 @@ import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailboxMessage;
 import org.apache.james.util.concurrency.ConcurrentTestRunner;
 import org.assertj.core.data.MapEntry;
-import org.junit.Assume;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 import com.github.steveash.guavate.Guavate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 
 public abstract class MessageIdMapperTest {
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     private static final char DELIMITER = '.';
     private static final int BODY_START = 16;
@@ -78,15 +74,13 @@ public abstract class MessageIdMapperTest {
     protected SimpleMailboxMessage message3;
     protected SimpleMailboxMessage message4;
 
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
     private MapperProvider mapperProvider;
 
     protected abstract MapperProvider provideMapper();
 
     public void setUp() throws MailboxException {
         this.mapperProvider = provideMapper();
-        Assume.assumeTrue(mapperProvider.getSupportedCapabilities().contains(MapperProvider.Capabilities.UNIQUE_MESSAGE_ID));
+        assumeTrue(mapperProvider.getSupportedCapabilities().contains(MapperProvider.Capabilities.UNIQUE_MESSAGE_ID));
 
         this.sut = mapperProvider.createMessageIdMapper();
         this.messageMapper = mapperProvider.createMessageMapper();
@@ -169,8 +163,7 @@ public abstract class MessageIdMapperTest {
         message.setUid(mapperProvider.generateMessageUid());
         message.setModSeq(mapperProvider.generateModSeq(notPersistedMailbox));
 
-        expectedException.expect(MailboxNotFoundException.class);
-        sut.save(message);
+        assertThatThrownBy(() -> sut.save(message)).isInstanceOf(MailboxNotFoundException.class);
     }
 
     @Test
@@ -215,8 +208,7 @@ public abstract class MessageIdMapperTest {
         message1InOtherMailbox.setUid(mapperProvider.generateMessageUid());
         message1InOtherMailbox.setModSeq(mapperProvider.generateModSeq(benwaWorkMailbox));
 
-        expectedException.expect(MailboxNotFoundException.class);
-        sut.copyInMailbox(message1InOtherMailbox);
+        assertThatThrownBy(() -> sut.copyInMailbox(message1InOtherMailbox)).isInstanceOf(MailboxNotFoundException.class);
     }
 
     @Test
@@ -670,7 +662,7 @@ public abstract class MessageIdMapperTest {
 
     @Test
     public void setFlagsShouldWorkWithConcurrencyWithAdd() throws Exception {
-        Assume.assumeTrue(mapperProvider.getSupportedCapabilities().contains(MapperProvider.Capabilities.THREAD_SAFE_FLAGS_UPDATE));
+        assumeTrue(mapperProvider.getSupportedCapabilities().contains(MapperProvider.Capabilities.THREAD_SAFE_FLAGS_UPDATE));
         message1.setUid(mapperProvider.generateMessageUid());
         message1.setModSeq(mapperProvider.generateModSeq(benwaInboxMailbox));
         sut.save(message1);
@@ -693,7 +685,7 @@ public abstract class MessageIdMapperTest {
 
     @Test
     public void setFlagsShouldWorkWithConcurrencyWithRemove() throws Exception {
-        Assume.assumeTrue(mapperProvider.getSupportedCapabilities().contains(MapperProvider.Capabilities.THREAD_SAFE_FLAGS_UPDATE));
+        assumeTrue(mapperProvider.getSupportedCapabilities().contains(MapperProvider.Capabilities.THREAD_SAFE_FLAGS_UPDATE));
         message1.setUid(mapperProvider.generateMessageUid());
         message1.setModSeq(mapperProvider.generateModSeq(benwaInboxMailbox));
         sut.save(message1);

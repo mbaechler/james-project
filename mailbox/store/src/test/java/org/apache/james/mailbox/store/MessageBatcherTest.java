@@ -20,11 +20,12 @@
 package org.apache.james.mailbox.store;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MessageRange;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Lists;
 
@@ -51,19 +52,21 @@ public class MessageBatcherTest {
             .containsOnly(MessageRange.range(MessageUid.of(2), MessageUid.of(6)), MessageRange.range(MessageUid.of(7), MessageUid.of(11)));
     }
 
-    @Test(expected = MailboxException.class)
+    @Test
     public void batchMessagesShouldPropagateExceptions() throws Exception {
         MessageBatcher messageBatcher = new MessageBatcher(0);
 
-        messageBatcher.batchMessages(MessageRange.range(MessageUid.of(1), MessageUid.of(10)),
-            messageRange -> {
-                throw new MailboxException();
-            });
+        assertThatThrownBy(() ->
+            messageBatcher.batchMessages(MessageRange.range(MessageUid.of(1), MessageUid.of(10)),
+                messageRange -> {
+                    throw new MailboxException();
+                }))
+            .isInstanceOf(MailboxException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void messageBatcherShouldThrowOnNegativeBatchSize() throws Exception {
-        new MessageBatcher(-1);
+        assertThatThrownBy(() -> new MessageBatcher(-1)).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

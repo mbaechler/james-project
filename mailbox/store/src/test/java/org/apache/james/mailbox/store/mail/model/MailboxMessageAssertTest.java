@@ -19,6 +19,8 @@
 
 package org.apache.james.mailbox.store.mail.model;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import java.io.IOException;
 import java.util.Date;
 
@@ -31,7 +33,7 @@ import org.apache.james.mailbox.model.TestId;
 import org.apache.james.mailbox.store.mail.MessageMapper;
 import org.apache.james.mailbox.store.mail.model.impl.PropertyBuilder;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailboxMessage;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class MailboxMessageAssertTest {
 
@@ -68,7 +70,7 @@ public class MailboxMessageAssertTest {
         MessageAssert.assertThat(message1).isEqualTo(message2, MessageMapper.FetchType.Headers);
     }
 
-    @Test(expected = AssertionError.class)
+    @Test
     public void messageAssertShouldFailWhenBodyMismatchInFetchBodyMode() throws IOException {
         String headerString = "name: headerName\n\n";
         String bodyString = "body\n.\n";
@@ -80,7 +82,9 @@ public class MailboxMessageAssertTest {
         SimpleMailboxMessage message2 = new SimpleMailboxMessage(MESSAGE_ID, date, headerString.length() + bodyString.length(),
             headerString.length(), new SharedByteArrayInputStream((headerString + bodyString).getBytes()), new Flags(), new PropertyBuilder(), MAILBOX_ID);
         message2.setUid(UID);
-        MessageAssert.assertThat(message1).isEqualTo(message2, MessageMapper.FetchType.Body);
+        assertThatThrownBy(() ->
+                MessageAssert.assertThat(message1).isEqualTo(message2, MessageMapper.FetchType.Body))
+            .isInstanceOf(AssertionError.class);
     }
 
 }
