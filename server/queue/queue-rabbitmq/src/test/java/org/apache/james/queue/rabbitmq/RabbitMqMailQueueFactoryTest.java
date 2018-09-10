@@ -28,6 +28,7 @@ import javax.mail.internet.MimeMessage;
 
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.james.backend.mailqueue.DockerRabbitMQ;
+import org.apache.james.backend.mailqueue.RabbitChannelPool;
 import org.apache.james.backends.cassandra.CassandraCluster;
 import org.apache.james.backends.cassandra.DockerCassandraExtension;
 import org.apache.james.backends.cassandra.init.configuration.CassandraConfiguration;
@@ -69,7 +70,7 @@ class RabbitMqMailQueueFactoryTest implements MailQueueFactoryContract<RabbitMQM
             .setPort(rabbitMQ.getAdminPort())
             .build();
 
-        RabbitClient rabbitClient = new RabbitClient(rabbitMQ.connectionFactory().newConnection().createChannel());
+        RabbitClient rabbitClient = new RabbitClient(new RabbitChannelPool(rabbitMQ.connectionFactory().newConnection()));
         RabbitMQMailQueue.Factory factory = new RabbitMQMailQueue.Factory(rabbitClient, mimeMessageStore, BLOB_ID_FACTORY);
         RabbitMQManagementApi mqManagementApi = new RabbitMQManagementApi(rabbitManagementUri, new RabbitMQManagementCredentials("guest", "guest".toCharArray()));
         mailQueueFactory = new RabbitMQMailQueueFactory(rabbitClient, mqManagementApi, factory);
