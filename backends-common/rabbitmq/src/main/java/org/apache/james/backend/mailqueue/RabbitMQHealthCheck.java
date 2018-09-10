@@ -19,6 +19,10 @@
 
 package org.apache.james.backend.mailqueue;
 
+import java.net.URISyntaxException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+
 import javax.inject.Inject;
 
 import org.apache.james.core.healthcheck.ComponentName;
@@ -34,11 +38,12 @@ public class RabbitMQHealthCheck implements HealthCheck {
     private static final Logger LOGGER = LoggerFactory.getLogger(RabbitMQHealthCheck.class);
     private static final ComponentName COMPONENT_NAME = new ComponentName("RabbiMQ backend");
 
-    private final RabbitMQConfiguration configuration;
+    private final ConnectionFactory connectionFactory;
 
     @Inject
-    public RabbitMQHealthCheck(RabbitMQConfiguration configuration) {
-        this.configuration = configuration;
+    public RabbitMQHealthCheck(RabbitMQConfiguration configuration) throws NoSuchAlgorithmException, KeyManagementException, URISyntaxException {
+        this.connectionFactory = new ConnectionFactory();
+        this.connectionFactory.setUri(configuration.getUri());
     }
 
     @Override
@@ -48,17 +53,12 @@ public class RabbitMQHealthCheck implements HealthCheck {
 
     @Override
     public Result check() {
-        try {
-            ConnectionFactory connectionFactory = new ConnectionFactory();
-            connectionFactory.setUri(configuration.getUri());
-
-            try (Connection connection = connectionFactory.newConnection()) {
-                if (connection.isOpen()) {
-                    return Result.healthy(COMPONENT_NAME);
-                }
-                LOGGER.error("The created connection was not opened");
-                return Result.unhealthy(COMPONENT_NAME);
+        try (Connection connection = connectionFactory.newConnection()) {
+            if (connection.isOpen()) {
+                return Result.healthy(COMPONENT_NAME);
             }
+            LOGGER.error("The created connection was not opened");
+            return Result.unhealthy(COMPONENT_NAME);
         } catch (Exception e) {
             LOGGER.error("Unhealthy RabbitMQ instances: could not establish a connection", e);
             return Result.unhealthy(COMPONENT_NAME);

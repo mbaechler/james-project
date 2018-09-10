@@ -33,7 +33,7 @@ class RabbitMQHealthCheckTest {
     private RabbitMQHealthCheck healthCheck;
 
     @BeforeEach
-    void setUp(DockerRabbitMQ rabbitMQ) {
+    void setUp(DockerRabbitMQ rabbitMQ) throws Exception {
         URI amqpUri = URI.create("amqp://" + rabbitMQ.getHostIp() + ":" + rabbitMQ.getPort());
         URI managementUri = URI.create("http://" + rabbitMQ.getHostIp() + ":" + rabbitMQ.getAdminPort());
 
@@ -57,6 +57,27 @@ class RabbitMQHealthCheckTest {
 
         Result check = healthCheck.check();
 
+        assertThat(check.isHealthy()).isFalse();
+    }
+
+    @Test
+    void checkShouldDetectWhenRabbitMQRecovered(DockerRabbitMQ rabbitMQ) throws Exception {
+        rabbitMQ.stopApp();
+        healthCheck.check();
+
+        rabbitMQ.startApp();
+
+        Result check = healthCheck.check();
+        assertThat(check.isHealthy()).isTrue();
+    }
+
+    @Test
+    void checkShouldDetectWhenRabbitMQFail(DockerRabbitMQ rabbitMQ) throws Exception {
+        healthCheck.check();
+
+        rabbitMQ.stopApp();
+
+        Result check = healthCheck.check();
         assertThat(check.isHealthy()).isFalse();
     }
 }
