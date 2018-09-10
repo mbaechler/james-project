@@ -21,7 +21,7 @@ package org.apache.james.mailbox.model.search;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class PrefixedRegexTest {
     private static final char PATH_DELIMITER = '.';

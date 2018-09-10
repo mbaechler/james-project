@@ -20,8 +20,9 @@
 package org.apache.james.mailbox.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class MailboxAnnotationTest {
     private static final MailboxAnnotationKey ANNOTATION_KEY = new MailboxAnnotationKey("/private/comment");
@@ -41,14 +42,14 @@ public class MailboxAnnotationTest {
         assertThat(mailboxAnnotation.size()).isEqualTo(0);
     }
     
-    @Test(expected = NullPointerException.class)
+    @Test
     public void newInstanceShouldThrowsExceptionWithNullKey() throws Exception {
-        MailboxAnnotation.newInstance(null, null);
+        assertThatThrownBy(() -> MailboxAnnotation.newInstance(null, null)).isInstanceOf(NullPointerException.class);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void newInstanceShouldThrowsExceptionWithNullValue() throws Exception {
-        MailboxAnnotation.newInstance(ANNOTATION_KEY, null);
+        assertThatThrownBy(() -> MailboxAnnotation.newInstance(ANNOTATION_KEY, null)).isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -70,9 +71,9 @@ public class MailboxAnnotationTest {
         assertThat(nilAnnotation.isNil()).isFalse();
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void newInstanceMailboxAnnotationShouldThrowExceptionWithNullValue() throws Exception {
-        MailboxAnnotation.newInstance(ANNOTATION_KEY, null);
+        assertThatThrownBy(() -> MailboxAnnotation.newInstance(ANNOTATION_KEY, null)).isInstanceOf(NullPointerException.class);
     }
 
     @Test

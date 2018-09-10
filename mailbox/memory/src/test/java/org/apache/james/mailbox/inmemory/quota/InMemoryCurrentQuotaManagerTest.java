@@ -20,6 +20,7 @@
 package org.apache.james.mailbox.inmemory.quota;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -30,8 +31,8 @@ import org.apache.james.core.quota.QuotaSize;
 import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.model.QuotaRoot;
 import org.apache.james.mailbox.store.quota.CurrentQuotaCalculator;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class InMemoryCurrentQuotaManagerTest {
 
@@ -40,7 +41,7 @@ public class InMemoryCurrentQuotaManagerTest {
     private InMemoryCurrentQuotaManager testee;
     private CurrentQuotaCalculator mockedCurrentQuotaCalculator;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         mockedCurrentQuotaCalculator = mock(CurrentQuotaCalculator.class);
         MailboxManager mockedMailboxManager = mock(MailboxManager.class);
@@ -74,44 +75,44 @@ public class InMemoryCurrentQuotaManagerTest {
         assertThat(testee.getCurrentStorage(QUOTA_ROOT)).isEqualTo(QuotaSize.size(612));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void increaseShouldThrowOnZeroCount() throws Exception {
-        testee.increase(QUOTA_ROOT, 0, 5);
+        assertThatThrownBy(() -> testee.increase(QUOTA_ROOT, 0, 5)).isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void increaseShouldThrowOnNegativeCount() throws Exception {
-        testee.increase(QUOTA_ROOT, -1, 5);
+        assertThatThrownBy(() -> testee.increase(QUOTA_ROOT, -1, 5)).isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void increaseShouldThrowOnZeroSize() throws Exception {
-        testee.increase(QUOTA_ROOT, 5, 0);
+        assertThatThrownBy(() -> testee.increase(QUOTA_ROOT, 5, 0)).isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void increaseShouldThrowOnNegativeSize() throws Exception {
-        testee.increase(QUOTA_ROOT, 5, -1);
+        assertThatThrownBy(() -> testee.increase(QUOTA_ROOT, 5, -1)).isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void decreaseShouldThrowOnZeroCount() throws Exception {
-        testee.decrease(QUOTA_ROOT, 0, 5);
+        assertThatThrownBy(() -> testee.decrease(QUOTA_ROOT, 0, 5)).isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void decreaseShouldThrowOnNegativeCount() throws Exception {
-        testee.decrease(QUOTA_ROOT, -1, 5);
+        assertThatThrownBy(() -> testee.decrease(QUOTA_ROOT, -1, 5)).isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void decreaseShouldThrowOnZeroSize() throws Exception {
-        testee.decrease(QUOTA_ROOT, 5, 0);
+        assertThatThrownBy(() -> testee.decrease(QUOTA_ROOT, 5, 0)).isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void decreaseShouldThrowOnNegativeSize() throws Exception {
-        testee.decrease(QUOTA_ROOT, 5, -1);
+        assertThatThrownBy(() -> testee.decrease(QUOTA_ROOT, 5, -1)).isInstanceOf(IllegalArgumentException.class);
     }
 
 }

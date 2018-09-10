@@ -36,8 +36,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.apache.james.mailbox.exception.UnsupportedRightException;
 import org.apache.james.mailbox.model.MailboxACL.Rfc4314Rights;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Peter Palaga
@@ -50,7 +50,7 @@ public class Rfc4314RightsTest {
     private Rfc4314Rights full;
     private Rfc4314Rights none;
     
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         aeik = Rfc4314Rights.fromSerializedRfc4314Rights("aeik");
         lprs = Rfc4314Rights.fromSerializedRfc4314Rights("lprs");
@@ -59,9 +59,9 @@ public class Rfc4314RightsTest {
         none = MailboxACL.NO_RIGHTS;
     }
     
-    @Test(expected = NullPointerException.class)
+    @Test
     public void newInstanceShouldThrowWhenNullString() throws UnsupportedRightException {
-        Rfc4314Rights.fromSerializedRfc4314Rights((String) null);
+        assertThatThrownBy(() -> Rfc4314Rights.fromSerializedRfc4314Rights((String) null)).isInstanceOf(NullPointerException.class);
     }
     
     @Test

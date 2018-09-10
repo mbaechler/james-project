@@ -20,47 +20,39 @@
 package org.apache.james.mailbox.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.Optional;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 
 public class CidTest {
 
-    @Rule public ExpectedException expectedException = ExpectedException.none();
-
     @Test
     public void fromShouldThrowWhenNull() {
-        expectedException.expect(IllegalArgumentException.class);
-        Cid.from(null);
+        assertThatThrownBy(() -> Cid.from(null)).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void fromShouldThrowWhenEmpty() {
-        expectedException.expect(IllegalArgumentException.class);
-        Cid.from("");
+        assertThatThrownBy(() -> Cid.from("")).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void fromShouldThrowWhenBlank() {
-        expectedException.expect(IllegalArgumentException.class);
-        Cid.from("    ");
+        assertThatThrownBy(() -> Cid.from("    ")).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void fromShouldThrowWhenEmptyAfterRemoveTags() {
-        expectedException.expect(IllegalArgumentException.class);
-        Cid.from("<>");
+        assertThatThrownBy(() -> Cid.from("<>")).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void fromShouldThrowWhenBlankAfterRemoveTags() {
-        expectedException.expect(IllegalArgumentException.class);
-        Cid.from("<   >");
+        assertThatThrownBy(() -> Cid.from("<   >")).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -247,29 +239,26 @@ public class CidTest {
 
     @Test
     public void fromStrictNoUnwrapShouldThrowWhenNull() {
-        expectedException.expect(IllegalArgumentException.class);
-
-        Cid.parser()
-            .strict()
-            .parse(null);
+        assertThatThrownBy(() -> Cid.parser()
+                .strict()
+                .parse(null))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void fromStrictNoUnwrapShouldThrowWhenEmpty() {
-        expectedException.expect(IllegalArgumentException.class);
-
-        Cid.parser()
-            .strict()
-            .parse("");
+        assertThatThrownBy(() -> Cid.parser()
+                .strict()
+                .parse(""))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void fromStrinctNoUnwrapShouldThrowWhenBlank() {
-        expectedException.expect(IllegalArgumentException.class);
-
-        Cid.parser()
-            .strict()
-            .parse("   ");
+        assertThatThrownBy(() -> Cid.parser()
+                .strict()
+                .parse("   "))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

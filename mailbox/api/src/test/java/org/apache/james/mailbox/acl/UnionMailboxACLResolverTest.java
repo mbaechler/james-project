@@ -28,8 +28,8 @@ import org.apache.james.mailbox.model.MailboxACL.Entry;
 import org.apache.james.mailbox.model.MailboxACL.EntryKey;
 import org.apache.james.mailbox.model.MailboxACL.NameType;
 import org.apache.james.mailbox.model.MailboxACL.Rfc4314Rights;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Peter Palaga
@@ -63,7 +63,7 @@ public class UnionMailboxACLResolverTest {
     private EntryKey group1Key;
     private EntryKey group2Key;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         user1Key = EntryKey.createUserEntryKey(USER_1);
         user2Key = EntryKey.createUserEntryKey(USER_2);

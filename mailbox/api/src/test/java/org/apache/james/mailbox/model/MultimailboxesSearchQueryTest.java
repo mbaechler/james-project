@@ -19,8 +19,9 @@
 package org.apache.james.mailbox.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableSet;
 
@@ -31,9 +32,9 @@ public class MultimailboxesSearchQueryTest {
     private static final MailboxId ID_1 = FACTORY.fromString("1");
     private static final MailboxId ID_2 = FACTORY.fromString("2");
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void buildShouldThrowWhenQueryIsNull() {
-        MultimailboxesSearchQuery.from(null);
+        assertThatThrownBy(() -> MultimailboxesSearchQuery.from(null)).isInstanceOf(NullPointerException.class);
     }
 
     @Test

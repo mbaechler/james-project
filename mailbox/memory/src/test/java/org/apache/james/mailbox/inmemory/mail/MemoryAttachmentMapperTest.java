@@ -24,12 +24,12 @@ import org.apache.james.mailbox.inmemory.InMemoryMessageId;
 import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.mailbox.store.mail.AttachmentMapper;
 import org.apache.james.mailbox.store.mail.model.AttachmentMapperTest;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 
 public class MemoryAttachmentMapperTest extends AttachmentMapperTest {
     
     @Override
-    @Before
+    @BeforeEach
     public void setUp() throws MailboxException {
         super.setUp();
     }

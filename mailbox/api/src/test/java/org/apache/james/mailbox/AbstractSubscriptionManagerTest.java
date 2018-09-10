@@ -21,7 +21,7 @@ package org.apache.james.mailbox;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.apache.james.mailbox.exception.SubscriptionException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Abstract base class to test {@link SubscriptionManager} implementations

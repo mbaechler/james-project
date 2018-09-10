@@ -19,12 +19,13 @@
 package org.apache.james.mailbox.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import javax.mail.Flags;
 import javax.mail.Flags.Flag;
 
 import org.apache.james.mailbox.MessageUid;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 
@@ -35,24 +36,27 @@ public class ComposedMessageIdWithMetaDataTest {
     public static final MessageUid MESSAGE_UID = MessageUid.of(3);
     public static final ComposedMessageId COMPOSED_MESSAGE_ID = new ComposedMessageId(TEST_ID, TEST_MESSAGE_ID, MESSAGE_UID);
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void buildShoudThrownWhenComposedMessageIdIsNull() {
-        ComposedMessageIdWithMetaData.builder().build();
+        assertThatThrownBy(() -> ComposedMessageIdWithMetaData.builder().build())
+            .isInstanceOf(NullPointerException.class);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void buildShoudThrownWhenFlagsIsNull() {
-        ComposedMessageIdWithMetaData.builder()
-            .composedMessageId(COMPOSED_MESSAGE_ID)
-            .build();
+        assertThatThrownBy(() -> ComposedMessageIdWithMetaData.builder()
+                .composedMessageId(COMPOSED_MESSAGE_ID)
+                .build())
+            .isInstanceOf(NullPointerException.class);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void buildShoudThrownWhenModSeqIsNull() {
-        ComposedMessageIdWithMetaData.builder()
-            .composedMessageId(COMPOSED_MESSAGE_ID)
-            .flags(new Flags())
-            .build();
+        assertThatThrownBy(() -> ComposedMessageIdWithMetaData.builder()
+                .composedMessageId(COMPOSED_MESSAGE_ID)
+                .flags(new Flags())
+                .build())
+            .isInstanceOf(NullPointerException.class);
     }
 
     @Test

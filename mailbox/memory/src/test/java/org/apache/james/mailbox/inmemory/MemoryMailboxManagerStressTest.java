@@ -22,12 +22,12 @@ package org.apache.james.mailbox.inmemory;
 import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.MailboxManagerStressTest;
 import org.apache.james.mailbox.exception.MailboxException;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 
 public class MemoryMailboxManagerStressTest extends MailboxManagerStressTest {
     
     @Override
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
     }

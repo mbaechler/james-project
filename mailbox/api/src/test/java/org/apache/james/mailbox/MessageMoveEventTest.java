@@ -20,23 +20,17 @@ package org.apache.james.mailbox;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
 import org.apache.james.core.User;
-import org.apache.james.mailbox.MailboxSession;
-import org.apache.james.mailbox.MailboxSessionUtil;
 import org.apache.james.mailbox.model.MessageMoves;
 import org.apache.james.mailbox.model.TestId;
 import org.apache.james.mailbox.model.TestMessageId;
-import org.assertj.core.api.JUnitSoftAssertions;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 
 public class MessageMoveEventTest {
-
-    @Rule
-    public JUnitSoftAssertions softly = new JUnitSoftAssertions();
 
     @Test
     public void shouldRespectBeanContract() {
@@ -103,9 +97,11 @@ public class MessageMoveEventTest {
             .messageId(messageId)
             .build();
 
-        softly.assertThat(event.getUser()).isEqualTo(User.fromUsername(username));
-        softly.assertThat(event.getMessageMoves()).isEqualTo(messageMoves);
-        softly.assertThat(event.getMessageIds()).containsExactly(messageId);
+        assertSoftly(softly -> {
+            softly.assertThat(event.getUser()).isEqualTo(User.fromUsername(username));
+            softly.assertThat(event.getMessageMoves()).isEqualTo(messageMoves);
+            softly.assertThat(event.getMessageIds()).containsExactly(messageId);
+        });
     }
 
     @Test

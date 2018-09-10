@@ -24,13 +24,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.InputStream;
 
 import org.apache.james.mailbox.extractor.TextExtractor;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class JsoupTextExtractorTest {
     private TextExtractor textExtractor;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         textExtractor = new JsoupTextExtractor();
     }

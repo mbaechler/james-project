@@ -20,23 +20,26 @@
 package org.apache.james.mailbox.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.Optional;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class MessageAttachmentTest {
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void buildShouldThrowWhenAttachmentIsNotGiven() {
-        MessageAttachment.builder()
-            .build();
+        assertThatThrownBy(() -> MessageAttachment.builder()
+                .build())
+            .isInstanceOf(IllegalStateException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void builderShouldThrowWhenAttachmentIsNull() {
-        MessageAttachment.builder()
-            .attachment(null);
+        assertThatThrownBy(() -> MessageAttachment.builder()
+                .attachment(null))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

@@ -20,53 +20,55 @@
 package org.apache.james.mailbox.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class MailboxAnnotationKeyTest {
-    @Test(expected = IllegalArgumentException.class)
+
+    @Test
     public void newInstanceShouldThrowsExceptionWhenKeyDoesNotStartWithSlash() throws Exception {
-        new MailboxAnnotationKey("shared");
+        assertThatThrownBy(() -> new MailboxAnnotationKey("shared")).isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void newInstanceShouldThrowsExceptionWhenKeyContainsAsterisk() throws Exception {
-        new MailboxAnnotationKey("/private/key*comment");
+        assertThatThrownBy(() -> new MailboxAnnotationKey("/private/key*comment")).isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void newInstanceShouldThrowsExceptionWhenKeyContainsPercent() throws Exception {
-        new MailboxAnnotationKey("/private/key%comment");
+        assertThatThrownBy(() -> new MailboxAnnotationKey("/private/key%comment")).isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void validKeyShouldThrowsExceptionWhenKeyContainsTwoConsecutiveSlash() throws Exception {
-        new MailboxAnnotationKey("/private//keycomment");
+        assertThatThrownBy(() -> new MailboxAnnotationKey("/private//keycomment")).isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void validKeyShouldThrowsExceptionWhenKeyEndsWithSlash() throws Exception {
-        new MailboxAnnotationKey("/private/keycomment/");
+        assertThatThrownBy(() -> new MailboxAnnotationKey("/private/keycomment/")).isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void validKeyShouldThrowsExceptionWhenKeyContainsNonASCII() throws Exception {
-        new MailboxAnnotationKey("/private/key┬ácomment");
+        assertThatThrownBy(() -> new MailboxAnnotationKey("/private/key┬ácomment")).isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void validKeyShouldThrowsExceptionWhenKeyContainsTabCharacter() throws Exception {
-        new MailboxAnnotationKey("/private/key\tcomment");
+        assertThatThrownBy(() -> new MailboxAnnotationKey("/private/key\tcomment")).isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void newInstanceShouldThrowsExceptionWithEmptyKey() throws Exception {
-        new MailboxAnnotationKey("");
+        assertThatThrownBy(() -> new MailboxAnnotationKey("")).isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void newInstanceShouldThrowsExceptionWithBlankKey() throws Exception {
-        new MailboxAnnotationKey("    ");
+        assertThatThrownBy(() -> new MailboxAnnotationKey("    ")).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -83,9 +85,9 @@ public class MailboxAnnotationKeyTest {
         assertThat(annotationKey).isEqualTo(anotherAnnotationKey);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void newInstanceShouldThrowsExceptionWhenKeyContainsPunctuationCharacters() throws Exception {
-        new MailboxAnnotationKey("/private/+comment");
+        assertThatThrownBy(() -> new MailboxAnnotationKey("/private/+comment")).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -94,19 +96,19 @@ public class MailboxAnnotationKeyTest {
         assertThat(annotationKey.countComponents()).isEqualTo(4);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void keyMustContainAtLeastTwoComponents() throws Exception {
-        new MailboxAnnotationKey("/private");
+        assertThatThrownBy(() -> new MailboxAnnotationKey("/private")).isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void keyVendorShouldThrowsExceptionWithTwoComponents() throws Exception {
-        new MailboxAnnotationKey("/private/vendor");
+        assertThatThrownBy(() -> new MailboxAnnotationKey("/private/vendor")).isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void keyVendorShouldThrowsExceptionWithThreeComponents() throws Exception {
-        new MailboxAnnotationKey("/shared/vendor/token");
+        assertThatThrownBy(() -> new MailboxAnnotationKey("/shared/vendor/token")).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

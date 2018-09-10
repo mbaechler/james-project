@@ -19,15 +19,12 @@
 package org.apache.james.mailbox;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 public class MessageUidTest {
 
-    @Rule public ExpectedException exception = ExpectedException.none();
-    
     private static final MessageUid _1 = MessageUid.of(1);
     private static final MessageUid _2 = MessageUid.of(2);
     private static final MessageUid _3 = MessageUid.of(3);
@@ -40,8 +37,7 @@ public class MessageUidTest {
 
     @Test
     public void distanceShouldThrowWhenNullArgument() {
-        exception.expect(NullPointerException.class);
-        _1.distance(null);
+        assertThatThrownBy(() -> _1.distance(null)).isInstanceOf(NullPointerException.class);
     }
 
 

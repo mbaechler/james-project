@@ -21,12 +21,12 @@ package org.apache.james.mailbox.inmemory;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.store.AbstractMessageIdManagerStorageTest;
 import org.apache.james.mailbox.store.MessageIdManagerTestSystem;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 
 public class InMemoryMessageIdManagerStorageTest extends AbstractMessageIdManagerStorageTest {
 
     @Override
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
     }

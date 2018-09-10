@@ -19,6 +19,8 @@
 
 package org.apache.james.mailbox.manager;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import java.nio.charset.StandardCharsets;
 
 import javax.mail.Flags;
@@ -39,9 +41,9 @@ import org.apache.james.mailbox.quota.MaxQuotaManager;
 import org.apache.james.mailbox.quota.QuotaRootResolver;
 import org.apache.james.mime4j.dom.Message;
 import org.assertj.core.api.SoftAssertions;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test for quota support upon basic Message manager operation.
@@ -64,7 +66,7 @@ public abstract class QuotaMessageManagerTest<T extends MailboxManager> {
 
     protected abstract ManagerTestResources<T> createResources() throws Exception;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         resources = createResources();
         resources.createMailboxes();
@@ -77,26 +79,26 @@ public abstract class QuotaMessageManagerTest<T extends MailboxManager> {
         quotaRootResolver = resources.getQuotaRootResolver();
     }
 
-    @After
+    @AfterEach
     public void cleanUp() throws Exception {
         resources.getIntegrationResources().clean();
     }
 
-    @Test(expected = OverQuotaException.class)
+    @Test
     public void testAppendOverQuotaMessages() throws Exception {
         QuotaCount maxMessageCount = QuotaCount.count(8);
         maxQuotaManager.setMaxMessage(quotaRootResolver.getQuotaRoot(inbox), maxMessageCount);
-        resources.fillMailbox();
+        assertThatThrownBy(() -> resources.fillMailbox()).isInstanceOf(OverQuotaException.class);
     }
 
-    @Test(expected = OverQuotaException.class)
+    @Test
     public void testAppendOverQuotaSize() throws Exception {
         QuotaSize maxQuotaSize = QuotaSize.size(3 * MockMail.MAIL_TEXT_PLAIN.length() + 1);
         maxQuotaManager.setMaxStorage(quotaRootResolver.getQuotaRoot(inbox), maxQuotaSize);
-        resources.fillMailbox();
+        assertThatThrownBy(() -> resources.fillMailbox()).isInstanceOf(OverQuotaException.class);
     }
 
-    @Test(expected = OverQuotaException.class)
+    @Test
     public void testCopyOverQuotaMessages() throws Exception {
         try {
             resources.fillMailbox();
@@ -105,10 +107,12 @@ public abstract class QuotaMessageManagerTest<T extends MailboxManager> {
         }
         QuotaCount maxMessageCount = QuotaCount.count(20L);
         maxQuotaManager.setMaxMessage(quotaRootResolver.getQuotaRoot(inbox), maxMessageCount);
-        mailboxManager.copyMessages(MessageRange.all(), inbox, subFolder, session);
+        assertThatThrownBy(() ->
+                mailboxManager.copyMessages(MessageRange.all(), inbox, subFolder, session))
+            .isInstanceOf(OverQuotaException.class);
     }
 
-    @Test(expected = OverQuotaException.class)
+    @Test
     public void testCopyOverQuotaSize() throws Exception {
         QuotaSize maxQuotaSize = QuotaSize.size(20L * MockMail.MAIL_TEXT_PLAIN.length());
         maxQuotaManager.setMaxStorage(quotaRootResolver.getQuotaRoot(inbox), maxQuotaSize);
@@ -117,7 +121,9 @@ public abstract class QuotaMessageManagerTest<T extends MailboxManager> {
         } catch (OverQuotaException overQuotaException) {
             // Silent these exception as we don't want it to disturb the test
         }
-        mailboxManager.copyMessages(MessageRange.all(), inbox, subFolder, session);
+        assertThatThrownBy(() ->
+                mailboxManager.copyMessages(MessageRange.all(), inbox, subFolder, session))
+            .isInstanceOf(OverQuotaException.class);
     }
 
     @Test

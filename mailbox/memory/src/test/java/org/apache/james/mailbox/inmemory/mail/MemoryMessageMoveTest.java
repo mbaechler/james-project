@@ -21,12 +21,12 @@ package org.apache.james.mailbox.inmemory.mail;
 
 import org.apache.james.mailbox.store.mail.model.MapperProvider;
 import org.apache.james.mailbox.store.mail.model.MessageMoveTest;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 
 public class MemoryMessageMoveTest extends MessageMoveTest {
 
     @Override
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
     }

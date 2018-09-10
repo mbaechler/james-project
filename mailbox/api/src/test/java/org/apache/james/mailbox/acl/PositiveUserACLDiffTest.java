@@ -26,7 +26,7 @@ import org.apache.james.mailbox.model.MailboxACL.Entry;
 import org.apache.james.mailbox.model.MailboxACL.EntryKey;
 import org.apache.james.mailbox.model.MailboxACL.Rfc4314Rights;
 import org.apache.james.mailbox.model.MailboxACL.Right;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class PositiveUserACLDiffTest {
 

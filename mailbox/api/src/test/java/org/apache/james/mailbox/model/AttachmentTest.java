@@ -21,13 +21,14 @@
 package org.apache.james.mailbox.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class AttachmentTest {
 
@@ -72,48 +73,54 @@ public class AttachmentTest {
         assertThat(IOUtils.toString(stream, CHARSET)).isEqualTo(input);
     }
 
-    @Test (expected = IllegalArgumentException.class)
+    @Test
     public void builderShouldThrowWhenAttachmentIdIsNull() {
-        Attachment.builder()
-            .attachmentId(null);
+        assertThatThrownBy(() -> Attachment.builder()
+                .attachmentId(null))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test (expected = IllegalArgumentException.class)
+    @Test
     public void builderShouldThrowWhenBytesIsNull() {
-        Attachment.builder()
-            .bytes(null);
+        assertThatThrownBy(() -> Attachment.builder()
+                .bytes(null))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test (expected = IllegalArgumentException.class)
+    @Test
     public void builderShouldThrowWhenTypeIsNull() {
-        Attachment.builder()
-            .type(null);
+        assertThatThrownBy(() -> Attachment.builder()
+                .type(null))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test (expected = IllegalArgumentException.class)
+    @Test
     public void builderShouldThrowWhenTypeIsEmpty() {
-        Attachment.builder()
-            .type("");
+        assertThatThrownBy(() -> Attachment.builder()
+                .type(""))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test (expected = IllegalStateException.class)
+    @Test
     public void buildShouldThrowWhenAttachmentIdIsNotProvided() {
-        Attachment.builder().build();
+        assertThatThrownBy(() -> Attachment.builder().build()).isInstanceOf(IllegalStateException.class);
     }
 
-    @Test (expected = IllegalStateException.class)
+    @Test
     public void buildShouldThrowWhenBytesIsNotProvided() {
-        Attachment.builder()
-            .attachmentId(AttachmentId.random())
-            .build();
+        assertThatThrownBy(() -> Attachment.builder()
+                .attachmentId(AttachmentId.random())
+                .build())
+            .isInstanceOf(IllegalStateException.class);
     }
 
-    @Test (expected = IllegalStateException.class)
+    @Test
     public void buildShouldThrowWhenTypeIsNotProvided() {
-        Attachment.builder()
-            .attachmentId(AttachmentId.random())
-            .bytes("mystream".getBytes(CHARSET))
-            .build();
+        assertThatThrownBy(() -> Attachment.builder()
+                .attachmentId(AttachmentId.random())
+                .bytes("mystream".getBytes(CHARSET))
+                .build())
+            .isInstanceOf(IllegalStateException.class);
     }
 
     @Test

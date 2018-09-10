@@ -25,7 +25,7 @@ import java.util.List;
 
 import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.model.MessageRange;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class MessageRangeTest {
 

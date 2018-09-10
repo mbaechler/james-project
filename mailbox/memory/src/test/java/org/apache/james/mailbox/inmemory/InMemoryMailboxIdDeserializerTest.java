@@ -20,11 +20,12 @@
 package org.apache.james.mailbox.inmemory;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.apache.james.mailbox.store.mail.model.MailboxIdDeserialisationException;
 import org.apache.james.mailbox.store.mail.model.MailboxIdDeserializer;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class InMemoryMailboxIdDeserializerTest {
 
@@ -34,7 +35,7 @@ public class InMemoryMailboxIdDeserializerTest {
 
     private MailboxIdDeserializer mailboxIdDeserializer;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         mailboxIdDeserializer = new InMemoryMailboxIdDeserializer();
     }
@@ -44,9 +45,10 @@ public class InMemoryMailboxIdDeserializerTest {
         assertThat(mailboxIdDeserializer.deserialize(SERIALIZED_ID)).isEqualTo(IN_MEMORY_ID);
     }
 
-    @Test(expected = MailboxIdDeserialisationException.class)
+    @Test
     public void deserializeShouldThrowOnMalformedData() throws MailboxIdDeserialisationException {
-        mailboxIdDeserializer.deserialize(MALFORMED_SERIALIZED_ID);
+        assertThatThrownBy(() -> mailboxIdDeserializer.deserialize(MALFORMED_SERIALIZED_ID))
+            .isInstanceOf(MailboxIdDeserialisationException.class);
     }
 
 }

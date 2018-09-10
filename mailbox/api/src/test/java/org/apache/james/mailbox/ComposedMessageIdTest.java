@@ -20,7 +20,7 @@
 package org.apache.james.mailbox;
 
 import org.apache.james.mailbox.model.ComposedMessageId;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 

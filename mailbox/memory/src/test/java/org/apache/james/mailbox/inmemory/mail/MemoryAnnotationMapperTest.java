@@ -25,14 +25,14 @@ import org.apache.james.mailbox.inmemory.InMemoryId;
 import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.store.mail.AnnotationMapper;
 import org.apache.james.mailbox.store.mail.model.AnnotationMapperTest;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 
 public class MemoryAnnotationMapperTest extends AnnotationMapperTest {
 
     private final AtomicInteger counter = new AtomicInteger();
 
     @Override
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
     }

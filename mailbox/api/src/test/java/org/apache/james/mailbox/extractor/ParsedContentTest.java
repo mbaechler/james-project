@@ -19,7 +19,7 @@
 
 package org.apache.james.mailbox.extractor;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 

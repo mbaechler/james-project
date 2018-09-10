@@ -21,12 +21,12 @@ package org.apache.james.mailbox.inmemory;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.store.AbstractCombinationManagerTest;
 import org.apache.james.mailbox.store.CombinationManagerTestSystem;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 
 public class InMemoryCombinationManagerTest extends AbstractCombinationManagerTest {
 
     @Override
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
     }

@@ -21,18 +21,19 @@
 package org.apache.james.mailbox.model.search;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.model.search.MailboxQuery.Builder;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class MailboxQueryTest {
     private static final String CURRENT_USER = "user";
 
     private MailboxPath mailboxPath;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         mailboxPath = new MailboxPath("namespace", "user", "name");
     }
@@ -81,22 +82,20 @@ public class MailboxQueryTest {
         testee.build();
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void builderShouldThrowWhenBaseAndUsernameGiven() throws Exception {
-        Builder testee = MailboxQuery.builder()
+        assertThatThrownBy(() -> MailboxQuery.builder()
                 .userAndNamespaceFrom(mailboxPath)
-                .username("user");
-
-        testee.build();
+                .username("user"))
+            .isInstanceOf(IllegalStateException.class);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void builderShouldThrowWhenBaseGiven() throws Exception {
-        Builder testee = MailboxQuery.builder()
+        assertThatThrownBy(() -> MailboxQuery.builder()
                 .userAndNamespaceFrom(mailboxPath)
-                .privateNamespace();
-
-        testee.build();
+                .privateNamespace())
+            .isInstanceOf(IllegalStateException.class);
     } 
 
     @Test

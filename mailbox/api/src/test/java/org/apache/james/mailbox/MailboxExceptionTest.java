@@ -21,7 +21,7 @@ package org.apache.james.mailbox;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.apache.james.mailbox.exception.MailboxException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Ensure that {@link MailboxException} construction is correct.

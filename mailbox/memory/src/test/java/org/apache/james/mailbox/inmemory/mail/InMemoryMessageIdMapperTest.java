@@ -22,12 +22,12 @@ package org.apache.james.mailbox.inmemory.mail;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.store.mail.model.MapperProvider;
 import org.apache.james.mailbox.store.mail.model.MessageIdMapperTest;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 
 public class InMemoryMessageIdMapperTest extends MessageIdMapperTest {
 
     @Override
-    @Before
+    @BeforeEach
     public void setUp() throws MailboxException {
         super.setUp();
     }
