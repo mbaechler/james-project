@@ -23,7 +23,9 @@ package org.apache.james.protocols.smtp.core.esmtp;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -31,7 +33,6 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.StringTokenizer;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.james.protocols.api.Request;
@@ -251,7 +252,7 @@ public class AuthCmdHandler
         String pass = null;
         try {
             if (userpass != null) {
-                userpass = new String(Base64.decodeBase64(userpass));
+                userpass = decodeBase64(userpass);
             }
             if (userpass != null) {
                 /*  See: RFC 2595, Section 6
@@ -316,7 +317,7 @@ public class AuthCmdHandler
     private Response doLoginAuthPass(SMTPSession session, String user) {
         if (user != null) {
             try {
-                user = new String(Base64.decodeBase64(user));
+                user = decodeBase64(user);
             } catch (Exception e) {
                 // Ignored - this parse error will be
                 // addressed in the if clause below
@@ -356,7 +357,7 @@ public class AuthCmdHandler
     private Response doLoginAuthPassCheck(SMTPSession session, String user, String pass) {
         if (pass != null) {
             try {
-                pass = new String(Base64.decodeBase64(pass));
+                pass = decodeBase64(pass);
             } catch (Exception e) {
                 // Ignored - this parse error will be
                 // addressed in the if clause below
@@ -561,6 +562,14 @@ public class AuthCmdHandler
     @Override
     public String[] getMailParamNames() {
         return MAIL_PARAMS;
+    }
+
+    private String decodeBase64(String line) {
+        if (line != null) {
+            String lineWithoutTrailingCrLf = line.replace("\r\n", "");
+            return new String(Base64.getDecoder().decode(lineWithoutTrailingCrLf), StandardCharsets.UTF_8);
+        }
+        return null;
     }
 
 }
