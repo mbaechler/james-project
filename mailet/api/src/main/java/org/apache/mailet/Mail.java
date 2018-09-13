@@ -23,6 +23,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.Optional;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
@@ -181,8 +182,12 @@ public interface Mail extends Serializable, Cloneable {
      * @param name the attribute name
      * @return the attribute value, or null if the attribute does not exist
      * @since Mailet API v2.1
+     * @deprecated see {@link #getAttribute(AttributeName)}
      */
+    @Deprecated
     Serializable getAttribute(String name);
+    
+    Optional<Attribute> getAttribute(AttributeName name);
     
     /**
      * Returns an Iterator over the names of all attributes which are set
@@ -193,8 +198,11 @@ public interface Mail extends Serializable, Cloneable {
      *
      * @return an Iterator (of Strings) over all attribute names
      * @since Mailet API v2.1
+     * @deprecated see {@link #attributeNames()}
      */
     Iterator<String> getAttributeNames();
+
+    Iterator<AttributeName> attributeNames();
 
     /**
      * Returns whether this Mail instance has any attributes set.
@@ -212,8 +220,11 @@ public interface Mail extends Serializable, Cloneable {
      *      if there was no such attribute (or if the attribute existed
      *      and its value was null)
      * @since Mailet API v2.1
+     * @deprecated see {@link #removeAttribute(AttributeName)
      */
     Serializable removeAttribute(String name);
+
+    Attribute removeAttribute(AttributeName attributeName);
     
     /**
      * Removes all attributes associated with this Mail instance. 
@@ -237,8 +248,11 @@ public interface Mail extends Serializable, Cloneable {
      *      or null if there was no such attribute (or if the attribute existed
      *      and its value was null)
      * @since Mailet API v2.1
+     * @deprecated see {@link #setAttribute(Attribute)
      */
     Serializable setAttribute(String name, Serializable object);
+
+    Attribute setAttribute(Attribute attribute);
 
     /**
      * Store a header (and its specific values) for a recipient
