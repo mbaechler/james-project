@@ -24,9 +24,13 @@ import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
+import org.apache.mailet.Attribute;
+import org.apache.mailet.AttributeName;
+import org.apache.mailet.AttributeValue;
 import org.apache.mailet.Mail;
 import org.apache.mailet.MailetException;
 import org.apache.mailet.base.GenericMailet;
@@ -69,7 +73,7 @@ public class AmqpForwardAttribute extends GenericMailet {
     public static final String ROUTING_KEY_DEFAULT_VALUE = "";
 
     private String exchange;
-    private String attribute;
+    private AttributeName attribute;
     private ConnectionFactory connectionFactory;
     @VisibleForTesting String routingKey;
 
@@ -86,11 +90,12 @@ public class AmqpForwardAttribute extends GenericMailet {
                     + " parameter was provided.");
         }
         routingKey = getInitParameter(ROUTING_KEY_PARAMETER_NAME, ROUTING_KEY_DEFAULT_VALUE);
-        attribute = getInitParameter(ATTRIBUTE_PARAMETER_NAME);
+        String attribute = getInitParameter(ATTRIBUTE_PARAMETER_NAME);
         if (Strings.isNullOrEmpty(attribute)) {
             throw new MailetException("No value for " + ATTRIBUTE_PARAMETER_NAME
                     + " parameter was provided.");
         }
+        this.attribute = AttributeName.of(attribute);
         connectionFactory = new ConnectionFactory();
         try {
             connectionFactory.setUri(uri);
@@ -106,9 +111,6 @@ public class AmqpForwardAttribute extends GenericMailet {
 
     @Override
     public void service(Mail mail) throws MailetException {
-        if (mail.getAttribute(attribute) == null) {
-            return;
-        }
         Stream<byte[]> content = getAttributeContent(mail);
         try {
             sendContent(content);
@@ -123,7 +125,14 @@ public class AmqpForwardAttribute extends GenericMailet {
 
     @SuppressWarnings("unchecked")
     private Stream<byte[]> getAttributeContent(Mail mail) throws MailetException {
-        Serializable attributeContent = mail.getAttribute(attribute);
+        return mail.getAttribute(attribute)
+            .map(Attribute::getValue)
+            .map(x -> x.value())
+            .map(Throwing.function(this::toByteStream).sneakyThrow())
+            .orElse(Stream.of());
+    }
+
+    private Stream<byte[]> toByteStream(Object attributeContent) throws MailetException {
         if (attributeContent instanceof Map) {
             return ((Map<String, byte[]>) attributeContent).values().stream();
         }

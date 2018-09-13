@@ -28,9 +28,9 @@ import java.util.Objects;
  */
 public class Attribute {
     private final AttributeName name;
-    private final Object /*for the moment*/ value;
+    private final AttributeValue<?> value;
 
-    public Attribute(AttributeName name, Object value) {
+    public Attribute(AttributeName name, AttributeValue<?> value) {
         this.name = name;
         this.value = value;
     }
@@ -39,8 +39,12 @@ public class Attribute {
         return name;
     }
 
-    public Object /*for the moment*/ getValue() {
+    public AttributeValue<?> getValue() {
         return value;
+    }
+
+    public Attribute duplicate() {
+        return new Attribute(name, value.duplicate());
     }
 
     @Override
@@ -53,9 +57,9 @@ public class Attribute {
         }
         return false;
     }
-
     @Override
     public final int hashCode() {
         return Objects.hash(name, value);
     }
+
 }
