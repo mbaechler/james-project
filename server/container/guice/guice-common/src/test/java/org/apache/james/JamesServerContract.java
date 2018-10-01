@@ -64,38 +64,42 @@ public interface JamesServerContract {
 
     @Test
     default void connectIMAPServerShouldSendShabangOnConnect(GuiceJamesServer jamesServer) throws Exception {
-        SocketChannel socketChannel = SocketChannel.open();
-
-        socketChannel.connect(new InetSocketAddress(JAMES_SERVER_HOST, jamesServer.getProbe(ImapGuiceProbe.class).getImapPort()));
-        assertThat(getServerConnectionResponse(socketChannel)).startsWith("* OK JAMES IMAP4rev1 Server");
+        try (SocketChannel socketChannel = SocketChannel.open()) {
+            socketChannel.connect(new InetSocketAddress(JAMES_SERVER_HOST, jamesServer.getProbe(ImapGuiceProbe.class).getImapPort()));
+            assertThat(getServerConnectionResponse(socketChannel)).startsWith("* OK JAMES IMAP4rev1 Server");
+        }
     }
 
     @Test
     default void connectOnSecondaryIMAPServerIMAPServerShouldSendShabangOnConnect(GuiceJamesServer jamesServer) throws Exception {
-        SocketChannel socketChannel = SocketChannel.open();
-        socketChannel.connect(new InetSocketAddress(JAMES_SERVER_HOST, jamesServer.getProbe(ImapGuiceProbe.class).getImapsPort()));
-        assertThat(getServerConnectionResponse(socketChannel)).startsWith("* OK JAMES IMAP4rev1 Server");
+        try (SocketChannel socketChannel = SocketChannel.open()) {
+            socketChannel.connect(new InetSocketAddress(JAMES_SERVER_HOST, jamesServer.getProbe(ImapGuiceProbe.class).getImapsPort()));
+            assertThat(getServerConnectionResponse(socketChannel)).startsWith("* OK JAMES IMAP4rev1 Server");
+        }
     }
 
     @Test
     default void connectPOP3ServerShouldSendShabangOnConnect(GuiceJamesServer jamesServer) throws Exception {
-        SocketChannel socketChannel = SocketChannel.open();
-        socketChannel.connect(new InetSocketAddress(JAMES_SERVER_HOST, jamesServer.getProbe(Pop3GuiceProbe.class).getPop3Port()));
-        assertThat(getServerConnectionResponse(socketChannel)).contains("POP3 server (JAMES POP3 Server ) ready");
+        try (SocketChannel socketChannel = SocketChannel.open()) {
+            socketChannel.connect(new InetSocketAddress(JAMES_SERVER_HOST, jamesServer.getProbe(Pop3GuiceProbe.class).getPop3Port()));
+            assertThat(getServerConnectionResponse(socketChannel)).contains("POP3 server (JAMES POP3 Server ) ready");
+        }
     }
 
     @Test
     default void connectSMTPServerShouldSendShabangOnConnect(GuiceJamesServer jamesServer) throws Exception {
-        SocketChannel socketChannel = SocketChannel.open();
-        socketChannel.connect(new InetSocketAddress(JAMES_SERVER_HOST, jamesServer.getProbe(SmtpGuiceProbe.class).getSmtpPort()));
-        assertThat(getServerConnectionResponse(socketChannel)).startsWith("220 JAMES Linagora's SMTP awesome Server");
+        try (SocketChannel socketChannel = SocketChannel.open()) {
+            socketChannel.connect(new InetSocketAddress(JAMES_SERVER_HOST, jamesServer.getProbe(SmtpGuiceProbe.class).getSmtpPort()));
+            assertThat(getServerConnectionResponse(socketChannel)).startsWith("220 JAMES Linagora's SMTP awesome Server");
+        }
     }
 
     @Test
     default void connectLMTPServerShouldSendShabangOnConnect(GuiceJamesServer jamesServer) throws Exception {
-        SocketChannel socketChannel = SocketChannel.open();
-        socketChannel.connect(new InetSocketAddress(JAMES_SERVER_HOST, jamesServer.getProbe(LmtpGuiceProbe.class).getLmtpPort()));
-        assertThat(getServerConnectionResponse(socketChannel)).contains("LMTP Server (JAMES Protocols Server) ready");
+        try (SocketChannel socketChannel = SocketChannel.open()) {
+            socketChannel.connect(new InetSocketAddress(JAMES_SERVER_HOST, jamesServer.getProbe(LmtpGuiceProbe.class).getLmtpPort()));
+            assertThat(getServerConnectionResponse(socketChannel)).contains("LMTP Server (JAMES Protocols Server) ready");
+        }
     }
 
     static String getServerConnectionResponse(SocketChannel socketChannel) throws IOException {

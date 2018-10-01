@@ -51,8 +51,8 @@ public class EmbeddedElasticSearchExtension implements GuiceModuleTestExtension 
 
     @Override
     public Module getModule() {
-            return new TestElasticSearchModule(embeddedElasticSearch);
-        }
+        return new TestElasticSearchModule(embeddedElasticSearch);
+    }
 
     @Override
     public void await() {
