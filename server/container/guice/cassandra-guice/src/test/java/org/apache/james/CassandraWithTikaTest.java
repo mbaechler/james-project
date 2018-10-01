@@ -19,28 +19,33 @@
 
 package org.apache.james;
 
-import java.io.IOException;
+import static org.apache.james.CassandraJamesServerMain.ALL_BUT_JMX_CASSANDRA_MODULE;
 
-import org.junit.ClassRule;
-import org.junit.Rule;
+import org.apache.james.mailbox.extractor.TextExtractor;
+import org.apache.james.mailbox.store.search.PDFTextExtractor;
+import org.apache.james.modules.TestESMetricReporterModule;
+import org.apache.james.modules.TestJMAPServerModule;
+import org.apache.james.server.core.configuration.Configuration;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-public class CassandraWithTikaTest extends AbstractJamesServerTest {
+import com.google.inject.util.Modules;
 
-    @ClassRule
-    public static final DockerCassandraRule cassandra = new DockerCassandraRule();
-    @ClassRule
-    public static final GuiceTikaRule guiceTikaRule = new GuiceTikaRule();
+class CassandraWithTikaTest implements JamesServerContract {
 
-    @Rule
-    public CassandraJmapTestRule cassandraJmap = CassandraJmapTestRule.defaultTestRule();
+    private static final int LIMIT_TO_10_MESSAGES = 10;
 
-    @Override
-    protected GuiceJamesServer createJamesServer() throws IOException {
-        return cassandraJmap.jmapServer(guiceTikaRule.getModule(), cassandra.getModule(), DOMAIN_LIST_CONFIGURATION_MODULE);
-    }
-
-    @Override
-    protected void clean() {
-    }
-
+    @RegisterExtension
+    static JamesServerExtension testExtension =
+        new JamesServerExtensionBuilder()
+            .extension(CassandraExtension::new)
+            .extension(TikaExtension::new)
+            .extension(EmbeddedElasticSearchExtension::new)
+            .server(configuration -> GuiceJamesServer.forConfiguration(configuration)
+                .combineWith(ALL_BUT_JMX_CASSANDRA_MODULE)
+                .overrideWith(Modules.combine(
+                    binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class),
+                    new TestJMAPServerModule(LIMIT_TO_10_MESSAGES),
+                    new TestESMetricReporterModule()))
+                .overrideWith(DOMAIN_LIST_CONFIGURATION_MODULE))
+            .build();
 }

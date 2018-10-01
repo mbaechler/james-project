@@ -19,20 +19,34 @@
 
 package org.apache.james;
 
-import java.io.IOException;
+import java.util.List;
 
-import org.junit.Rule;
+import org.apache.activemq.store.PersistenceAdapter;
+import org.apache.activemq.store.memory.MemoryPersistenceAdapter;
+import org.apache.james.mailbox.extractor.TextExtractor;
+import org.apache.james.mailbox.store.search.MessageSearchIndex;
+import org.apache.james.mailbox.store.search.PDFTextExtractor;
+import org.apache.james.mailbox.store.search.SimpleMessageSearchIndex;
+import org.apache.james.modules.TestJMAPServerModule;
+import org.apache.james.server.core.configuration.Configuration;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-public class MemoryJamesServerTest extends AbstractJamesServerTest {
-    @Rule
-    public MemoryJmapTestRule memoryJmap = new MemoryJmapTestRule();
+import com.google.common.collect.ImmutableList;
+import com.google.inject.Module;
 
-    @Override
-    protected GuiceJamesServer createJamesServer() throws IOException {
-        return memoryJmap.jmapServer(DOMAIN_LIST_CONFIGURATION_MODULE);
-    }
+class MemoryJamesServerTest implements JamesServerContract {
 
-    @Override
-    protected void clean() {
-    }
+    private static final int LIMIT_TO_10_MESSAGES = 10;
+
+    @RegisterExtension
+    static JamesServerExtension jamesServerExtension = new JamesServerExtensionBuilder()
+        .server(configuration -> GuiceJamesServer.forConfiguration(configuration)
+            .combineWith(MemoryJamesServerMain.IN_MEMORY_SERVER_AGGREGATE_MODULE)
+            .overrideWith(new TestJMAPServerModule(LIMIT_TO_10_MESSAGES))
+            .overrideWith(binder -> binder.bind(PersistenceAdapter.class).to(MemoryPersistenceAdapter.class))
+            .overrideWith(binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class))
+            .overrideWith(binder -> binder.bind(MessageSearchIndex.class).to(SimpleMessageSearchIndex.class))
+            .overrideWith(DOMAIN_LIST_CONFIGURATION_MODULE))
+        .build();
+
 }
