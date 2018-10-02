@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.AddressException;
@@ -39,6 +41,9 @@ import javax.mail.internet.MimeMessage;
 import org.apache.james.core.MailAddress;
 import org.apache.james.core.builder.MimeMessageBuilder;
 import org.apache.james.util.MimeMessageUtil;
+import org.apache.mailet.Attribute;
+import org.apache.mailet.AttributeName;
+import org.apache.mailet.AttributeValue;
 import org.apache.mailet.Mail;
 import org.apache.mailet.PerRecipientHeaders;
 import org.apache.mailet.PerRecipientHeaders.Header;
@@ -111,7 +116,7 @@ public class FakeMail implements Mail, Serializable {
         private Optional<String> state;
         private Optional<String> errorMessage;
         private Optional<Date> lastUpdated;
-        private Map<String, Serializable> attributes;
+        private Map<AttributeName, AttributeValue<?>> attributes;
         private Optional<Long> size;
         private Optional<String> remoteAddr;
         private Optional<String> remoteHost;
@@ -210,12 +215,12 @@ public class FakeMail implements Mail, Serializable {
         }
 
         public Builder attribute(String name, Serializable object) {
-            this.attributes.put(name, object);
+            this.attributes.put(AttributeName.of(name), AttributeValue.of(object));
             return this;
         }
 
         public Builder attributes(Map<String, Serializable> attributes) {
-            this.attributes.putAll(attributes);
+            attributes.forEach((key, value) -> attribute(key, value));
             return this;
         }
 
@@ -252,12 +257,12 @@ public class FakeMail implements Mail, Serializable {
         return FakeMail.builder().build();
     }
 
-    private static Map<String, Serializable> attributes(Mail mail) {
-        ImmutableMap.Builder<String, Serializable> builder = ImmutableMap.builder();
-        for (String attributeName: ImmutableList.copyOf(mail.getAttributeNames())) {
-            builder.put(attributeName, mail.getAttribute(attributeName));
-        }
-        return builder.build();
+    private static Map<AttributeName, AttributeValue<?>> attributes(Mail mail) {
+        return mail.attributes()
+            .map(Attribute::duplicate)
+            .collect(Collectors.toMap(
+                Attribute::getName,
+                Attribute::getValue));
     }
 
     private transient MimeMessage msg;
@@ -267,14 +272,14 @@ public class FakeMail implements Mail, Serializable {
     private String state;
     private String errorMessage;
     private Date lastUpdated;
-    private Map<String, Serializable> attributes;
+    private Map<AttributeName, AttributeValue<?>> attributes;
     private long size;
     private String remoteAddr;
     private String remoteHost;
     private PerRecipientHeaders perRecipientHeaders;
     
     public FakeMail(MimeMessage msg, List<MailAddress> recipients, String name, MailAddress sender, String state, String errorMessage, Date lastUpdated,
-            Map<String, Serializable> attributes, long size, String remoteAddr, String remoteHost, PerRecipientHeaders perRecipientHeaders) {
+                    Map<AttributeName, AttributeValue<?>> attributes, long size, String remoteAddr, String remoteHost, PerRecipientHeaders perRecipientHeaders) {
         this.msg = msg;
         this.recipients = recipients;
         this.name = name;
@@ -362,13 +367,28 @@ public class FakeMail implements Mail, Serializable {
     }
 
     @Override
+    public Stream<Attribute> attributes() {
+        return attributes.entrySet().stream().map(entry -> new Attribute(entry.getKey(), entry.getValue()));
+    }
+
+    @Override
     public Serializable getAttribute(String name) {
-        return attributes.get(name);
+        return (Serializable) attributes.get(name).value();
+    }
+
+    @Override
+    public Optional<Attribute> getAttribute(AttributeName name) {
+        throw new RuntimeException("to be implemented");
     }
 
     @Override
     public Iterator<String> getAttributeNames() {
-        return attributes.keySet().iterator();
+        return attributes.keySet().stream().map(AttributeName::asString).iterator();
+    }
+
+    @Override
+    public Iterator<AttributeName> attributeNames() {
+        throw new RuntimeException("to be implemented");
     }
 
     @Override
@@ -378,8 +398,13 @@ public class FakeMail implements Mail, Serializable {
 
     @Override
     public Serializable removeAttribute(String name) {
-        return attributes.remove(name);
+        AttributeValue<?> previous = attributes.remove(name);
+        return (Serializable) Optional.ofNullable(previous).map(AttributeValue::value).orElse(null);
+    }
 
+    @Override
+    public Attribute removeAttribute(AttributeName attributeName) {
+        throw new RuntimeException("to be implemented");
     }
 
     @Override
@@ -389,7 +414,13 @@ public class FakeMail implements Mail, Serializable {
 
     @Override
     public Serializable setAttribute(String name, Serializable object) {
-        return attributes.put(name, object);
+        AttributeValue<?> previous = attributes.put(AttributeName.of(name), AttributeValue.of(object));
+        return (Serializable) Optional.ofNullable(previous).map(AttributeValue::value).orElse(null);
+    }
+
+    @Override
+    public Attribute setAttribute(Attribute attribute) {
+        throw new RuntimeException("to be implemented");
     }
 
     @Override

@@ -30,8 +30,11 @@ import org.apache.james.util.streams.Iterators;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.IntNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import com.github.steveash.guavate.Guavate;
 import com.google.common.collect.ImmutableList;
 
 /** 
@@ -42,6 +45,10 @@ import com.google.common.collect.ImmutableList;
 public class AttributeValue<T> {
     private final T value;
     private final Serializer<T> serializer;
+
+    public static AttributeValue<Boolean> of(Boolean value) {
+        return new AttributeValue<>(value, Serializer.BOOLEAN_SERIALIZER);
+    }
 
     public static AttributeValue<String> of(String value) {
         return new AttributeValue<>(value, Serializer.STRING_SERIALIZER);
@@ -62,6 +69,9 @@ public class AttributeValue<T> {
 
     @SuppressWarnings("unchecked")
     public static AttributeValue<?> of(Object otherValue) {
+        if (otherValue instanceof Boolean) {
+            return of((Boolean) otherValue);
+        }
         if (otherValue instanceof String) {
             return of((String) otherValue);
         }
@@ -74,7 +84,7 @@ public class AttributeValue<T> {
         if (otherValue instanceof Map<?,?>) {
             return of(((Map<String, AttributeValue<?>>) otherValue));
         }
-        throw new NotImplementedException("comming soon?");
+        throw new NotImplementedException("coming soon?");
     }
 
     private AttributeValue(T value, Serializer<T> serializer) {
@@ -82,8 +92,46 @@ public class AttributeValue<T> {
         this.serializer = serializer;
     }
 
+    public T value() {
+        return value;
+    }
+
+    //FIXME : poor performance
+    public AttributeValue<T> duplicate() {
+        return (AttributeValue<T>) fromJson(toJson());
+    }
+
     public JsonNode toJson() {
         return serializer.serialize(value);
+    }
+
+    public static AttributeValue<?> fromJsonString(String json) throws IOException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode tree = objectMapper.readTree(json);
+        return fromJson(tree);
+    }
+
+    public static AttributeValue<?> fromJson(JsonNode input) {
+        if (input instanceof BooleanNode) {
+            return fromJson((BooleanNode) input);
+        }
+        if (input instanceof TextNode) {
+            return fromJson((TextNode) input);
+        }
+        if (input instanceof IntNode) {
+            return fromJson((IntNode) input);
+        }
+        if (input instanceof ArrayNode) {
+            return fromJson((ArrayNode) input);
+        }
+        if (input instanceof ObjectNode) {
+            return fromJson((ObjectNode) input);
+        }
+        throw new NotImplementedException("coming soon?");
+    }
+
+    public static AttributeValue<Boolean> fromJson(BooleanNode booleanAsJson) {
+        return AttributeValue.of(booleanAsJson.asBoolean());
     }
 
     public static AttributeValue<String> fromJson(TextNode stringAsJson) {
@@ -101,23 +149,13 @@ public class AttributeValue<T> {
                 .collect(ImmutableList.toImmutableList()));
     }
 
-    public static AttributeValue<?> fromJson(JsonNode otherJson) {
-        if (otherJson instanceof TextNode) {
-            return fromJson((TextNode) otherJson);
-        }
-        if (otherJson instanceof IntNode) {
-            return fromJson((IntNode) otherJson);
-        }
-        if (otherJson instanceof ArrayNode) {
-            return fromJson((ArrayNode) otherJson);
-        }
-        throw new NotImplementedException("comming soon?");
-    }
-
-    public static AttributeValue<?> fromJsonString(String json) throws IOException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode tree = objectMapper.readTree(json);
-        return fromJson(tree);
+    public static AttributeValue<? extends Map<String, ?>> fromJson(ObjectNode mapAsJson) {
+        return AttributeValue.of(
+            Iterators.toStream(mapAsJson.fields())
+                .collect(Guavate.toImmutableMap(
+                    Map.Entry::getKey,
+                    entry -> fromJson(entry.getValue())
+                )));
     }
 
     @Override

@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
@@ -174,7 +175,9 @@ public interface Mail extends Serializable, Cloneable {
      * @param state the new state of this message
      */
     void setState(String state);
-    
+
+    Stream<Attribute> attributes();
+
     /**
      * Returns the value of the named Mail instance attribute,
      * or null if the attribute does not exist.

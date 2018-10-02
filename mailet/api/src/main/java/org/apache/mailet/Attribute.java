@@ -58,4 +58,8 @@ public class Attribute {
     public final int hashCode() {
         return Objects.hash(name, value);
     }
+
+    public Attribute duplicate() {
+        return new Attribute(name, value.duplicate());
+    }
 }

@@ -26,6 +26,7 @@ import java.util.Map.Entry;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -40,6 +41,20 @@ import com.google.common.collect.ImmutableMap;
  */
 public interface Serializer<T> {
     JsonNode serialize(T object);
+
+    class BooleanSerializer implements Serializer<Boolean> {
+        @Override
+        public JsonNode serialize(Boolean object) {
+            return BooleanNode.valueOf(object);
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            return this.getClass() == other.getClass();
+        }
+    }
+
+    Serializer<Boolean> BOOLEAN_SERIALIZER = new BooleanSerializer();
 
     class StringSerializer implements Serializer<String> {
         @Override

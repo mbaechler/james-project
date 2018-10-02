@@ -39,18 +39,27 @@ public class AttributeValueTest {
         AttributeValue<String> expected = AttributeValue.of("value");
         
         JsonNode json = expected.toJson();
-        System.out.println(json);
         AttributeValue<?> actual = AttributeValue.fromJson(json);
         
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
+    void booleanShouldBeSerializedAndBack() {
+        AttributeValue<Boolean> expected = AttributeValue.of(true);
+
+        JsonNode json = expected.toJson();
+        AttributeValue<?> actual = AttributeValue.fromJson(json);
+
+        assertThat(actual).isEqualTo(expected);
+    }
+
+
+    @Test
     void intShouldBeSerializedAndBack() {
         AttributeValue<Integer> expected = AttributeValue.of(42);
         
         JsonNode json = expected.toJson();
-        System.out.println(json);
         AttributeValue<?> actual = AttributeValue.fromJson(json);
         
         assertThat(actual).isEqualTo(expected);
@@ -61,7 +70,6 @@ public class AttributeValueTest {
         AttributeValue<?> expected = AttributeValue.of(ImmutableList.<String>of());
         
         JsonNode json = expected.toJson();
-        System.out.println(json);
         AttributeValue<?> actual = AttributeValue.fromJson(json);
         
         assertThat(actual).isEqualTo(expected);
@@ -72,7 +80,6 @@ public class AttributeValueTest {
         AttributeValue<?> expected = AttributeValue.of(ImmutableList.of(AttributeValue.of("first"), AttributeValue.of("second")));
         
         JsonNode json = expected.toJson();
-        System.out.println(json);
         AttributeValue<?> actual = AttributeValue.fromJson(json);
         
         assertThat(actual).isEqualTo(expected);
@@ -82,9 +89,17 @@ public class AttributeValueTest {
     void emptyMapShouldBeSerializedAndBack() {
         AttributeValue<?> expected = AttributeValue.of(ImmutableMap.of());
         JsonNode json = expected.toJson();
-        System.out.println(json);
         AttributeValue<?> actual = AttributeValue.fromJson(json);
         
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void mapWithPrimitiveTypesShouldBeSerializedAndBack() {
+        AttributeValue<?> expected = AttributeValue.of(ImmutableMap.of("a", AttributeValue.of("value"), "b", AttributeValue.of(12)));
+        JsonNode json = expected.toJson();
+        AttributeValue<?> actual = AttributeValue.fromJson(json);
+
         assertThat(actual).isEqualTo(expected);
     }
 

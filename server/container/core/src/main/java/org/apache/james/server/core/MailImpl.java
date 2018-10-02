@@ -37,6 +37,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.mail.Address;
 import javax.mail.MessagingException;
@@ -46,10 +49,15 @@ import javax.mail.internet.MimeMessage;
 import javax.mail.internet.ParseException;
 
 import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.james.core.MailAddress;
 import org.apache.james.core.builder.MimeMessageBuilder;
 import org.apache.james.lifecycle.api.Disposable;
 import org.apache.james.lifecycle.api.LifecycleUtil;
+import org.apache.mailet.Attribute;
+import org.apache.mailet.AttributeName;
+import org.apache.mailet.AttributeValue;
 import org.apache.mailet.Mail;
 import org.apache.mailet.PerRecipientHeaders;
 import org.apache.mailet.PerRecipientHeaders.Header;
@@ -351,7 +359,7 @@ public class MailImpl implements Disposable, Mail {
     /**
      * Attributes added to this MailImpl instance
      */
-    private Map<String, Object> attributes;
+    private Map<AttributeName, AttributeValue<?>> attributes;
     /**
      * Specific headers for some recipients
      * These headers will be added at delivery time
@@ -394,21 +402,9 @@ public class MailImpl implements Disposable, Mail {
         setRemoteAddr(mail.getRemoteAddr());
         setLastUpdated(mail.getLastUpdated());
         setErrorMessage(mail.getErrorMessage());
-        try {
-            if (mail instanceof MailImpl) {
-                setAttributesRaw((HashMap<String, Object>) cloneSerializableObject(((MailImpl) mail).getAttributesRaw()));
-            } else {
-                HashMap<String, Object> attribs = new HashMap<>();
-                for (Iterator<String> i = mail.getAttributeNames(); i.hasNext(); ) {
-                    String hashKey = i.next();
-                    attribs.put(hashKey, cloneSerializableObject(mail.getAttribute(hashKey)));
-                }
-                setAttributesRaw(attribs);
-            }
-        } catch (IOException | ClassNotFoundException e) {
-            LOGGER.error("Error while deserializing attributes", e);
-            setAttributesRaw(new HashMap<>());
-        }
+        this.attributes = mail.attributes()
+            .map(attribute -> attribute.duplicate())
+            .collect(Collectors.toMap(Attribute::getName, Attribute::getValue));
     }
 
     /**
@@ -642,7 +638,7 @@ public class MailImpl implements Disposable, Mail {
         // the following is under try/catch to be backwards compatible
         // with messages created with James version <= 2.2.0a8
         try {
-            attributes = (HashMap<String, Object>) in.readObject();
+            attributes = (HashMap<AttributeName, AttributeValue<?>>) in.readObject();
         } catch (OptionalDataException ode) {
             if (ode.eof) {
                 attributes = new HashMap<>();
@@ -692,7 +688,11 @@ public class MailImpl implements Disposable, Mail {
      * @since 2.2.0
      */
     public Map<String, Object> getAttributesRaw() {
-        return attributes;
+        return attributes.entrySet().stream()
+            .collect(
+                Guavate.toImmutableMap(
+                    x -> x.getKey().asString(),
+                    x -> x.getValue().value()));
     }
 
     /**
@@ -709,23 +709,58 @@ public class MailImpl implements Disposable, Mail {
      * @since 2.2.0
      */
     public void setAttributesRaw(HashMap<String, Object> attr) {
-        this.attributes = (attr == null) ? new HashMap<>() : attr;
+        this.attributes = Optional.ofNullable(attr)
+            .map(this::toStronglyTypedMap)
+            .orElse(new HashMap<>());
+    }
+
+    private Map<AttributeName, AttributeValue<?>> toStronglyTypedMap(Map<String, Object> input) {
+        return input
+            .entrySet()
+            .stream()
+            .collect(Collectors.toMap(
+                x -> AttributeName.of(x.getKey()),
+                x -> AttributeValue.of(x.getValue())));
+    }
+
+    @Override
+    public Stream<Attribute> attributes() {
+        return this.attributes.entrySet().stream().map(entry -> new Attribute(entry.getKey(), entry.getValue()));
     }
 
     @Override
     public Serializable getAttribute(String key) {
-        return (Serializable) attributes.get(key);
+        return (Serializable) Optional.ofNullable(attributes.get(AttributeName.of(key))).map(AttributeValue::value).orElse(null);
+    }
+
+    @Override
+    public Optional<Attribute> getAttribute(AttributeName name) {
+        return Optional.ofNullable(attributes.get(name)).map(value -> new Attribute(name, value));
     }
 
     @Override
     public Serializable setAttribute(String key, Serializable object) {
         Preconditions.checkNotNull(key, "Key of an attribute should not be null");
-        return (Serializable) attributes.put(key, object);
+        AttributeValue<?> previous = attributes.put(AttributeName.of(key), AttributeValue.of(object));
+        return Optional.ofNullable(previous).map(x -> (Serializable) x.value()).orElse(null);
+    }
+
+    @Override
+    public Attribute setAttribute(Attribute attribute) {
+        AttributeValue<?> previous = this.attributes.put(attribute.getName(), attribute.getValue());
+        return Optional.ofNullable(previous).map(value -> new Attribute(attribute.getName(), value)).orElse(null);
     }
 
     @Override
     public Serializable removeAttribute(String key) {
-        return (Serializable) attributes.remove(key);
+        AttributeValue<?> remove = attributes.remove(AttributeName.of(key));
+        return (Serializable) Optional.ofNullable(remove).map(AttributeValue::value).orElse(null);
+    }
+
+    @Override
+    public Attribute removeAttribute(AttributeName attributeName) {
+        AttributeValue<?> previous = attributes.remove(attributeName);
+        return Optional.ofNullable(previous).map(value -> new Attribute(attributeName, value)).orElse(null);
     }
 
     @Override
@@ -735,6 +770,11 @@ public class MailImpl implements Disposable, Mail {
 
     @Override
     public Iterator<String> getAttributeNames() {
+        return attributes.keySet().stream().map(AttributeName::asString).iterator();
+    }
+
+    @Override
+    public Iterator<AttributeName> attributeNames() {
         return attributes.keySet().iterator();
     }
 
