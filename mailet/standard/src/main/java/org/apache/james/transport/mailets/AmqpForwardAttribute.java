@@ -148,6 +148,9 @@ public class AmqpForwardAttribute extends GenericMailet {
     }
 
     private void sendContent(Stream<byte[]> content) throws IOException, TimeoutException {
+        //FIXME: we open a connection even when there's no contact to collect
+        //also, opening a connection for every mail looks like a bad idea, we should use
+        //our connection pool
         Connection connection = null;
         Channel channel = null;
         try {
