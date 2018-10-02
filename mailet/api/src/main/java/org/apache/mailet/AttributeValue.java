@@ -20,6 +20,7 @@
 package org.apache.mailet;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
@@ -67,24 +68,31 @@ public class AttributeValue<T> {
         return new AttributeValue<>(value, new Serializer.MapSerializer());
     }
 
+    public static AttributeValue<Serializable> ofSerializable(Serializable value) {
+        return new AttributeValue<>(value, new Serializer.FSTSerializer());
+    }
+
     @SuppressWarnings("unchecked")
-    public static AttributeValue<?> of(Object otherValue) {
-        if (otherValue instanceof Boolean) {
-            return of((Boolean) otherValue);
+    public static AttributeValue<?> of(Object value) {
+        if (value instanceof Boolean) {
+            return of((Boolean) value);
         }
-        if (otherValue instanceof String) {
-            return of((String) otherValue);
+        if (value instanceof String) {
+            return of((String) value);
         }
-        if (otherValue instanceof Integer) {
-            return of((Integer) otherValue);
+        if (value instanceof Integer) {
+            return of((Integer) value);
         }
-        if (otherValue instanceof Collection<?>) {
-            return of(((Collection<AttributeValue<?>>) otherValue));
+        if (value instanceof Collection<?>) {
+            return of(((Collection<AttributeValue<?>>) value));
         }
-        if (otherValue instanceof Map<?,?>) {
-            return of(((Map<String, AttributeValue<?>>) otherValue));
+        if (value instanceof Map<?,?>) {
+            return of(((Map<String, AttributeValue<?>>) value));
         }
-        throw new NotImplementedException("coming soon?");
+        if (value instanceof Serializable) {
+            return ofSerializable((Serializable) value);
+        }
+        throw new IllegalArgumentException("input should at least be Serializable");
     }
 
     private AttributeValue(T value, Serializer<T> serializer) {
@@ -124,10 +132,11 @@ public class AttributeValue<T> {
         if (input instanceof ArrayNode) {
             return fromJson((ArrayNode) input);
         }
+        //FIXME how are we supposed to choose between a Map and an Object Graph from FST
         if (input instanceof ObjectNode) {
             return fromJson((ObjectNode) input);
         }
-        throw new NotImplementedException("coming soon?");
+        throw new IllegalStateException("unable to deserialize type " + input.getNodeType());
     }
 
     public static AttributeValue<Boolean> fromJson(BooleanNode booleanAsJson) {

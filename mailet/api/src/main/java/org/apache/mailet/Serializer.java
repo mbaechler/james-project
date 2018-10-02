@@ -19,12 +19,20 @@
 
 package org.apache.mailet;
 
+import java.io.IOException;
+import java.io.Serializable;
+import java.io.UncheckedIOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.nustaq.serialization.FSTConfiguration;
+
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.IntNode;
@@ -105,6 +113,24 @@ public interface Serializer<T> {
             Map<String, JsonNode> jsonMap = object.entrySet().stream()
                 .collect(ImmutableMap.toImmutableMap(Entry::getKey, entry -> entry.getValue().toJson()));
             return new ObjectNode(JsonNodeFactory.instance, jsonMap);
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            return this.getClass() == other.getClass();
+        }
+    }
+
+    class FSTSerializer implements Serializer<Serializable> {
+        @Override
+        public JsonNode serialize(Serializable object) {
+            FSTConfiguration conf = FSTConfiguration.createJsonConfiguration();
+            String json = conf.asJsonString(object);
+            try {
+                return new ObjectMapper().reader().readTree(json);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
 
         @Override

@@ -638,7 +638,7 @@ public class MailImpl implements Disposable, Mail {
         // the following is under try/catch to be backwards compatible
         // with messages created with James version <= 2.2.0a8
         try {
-            attributes = (HashMap<AttributeName, AttributeValue<?>>) in.readObject();
+            setAttributesRaw((Map<String, Object>) in.readObject());
         } catch (OptionalDataException ode) {
             if (ode.eof) {
                 attributes = new HashMap<>();
@@ -664,7 +664,8 @@ public class MailImpl implements Disposable, Mail {
         out.writeObject(remoteHost);
         out.writeObject(remoteAddr);
         out.writeObject(lastUpdated);
-        out.writeObject(attributes);
+        //FIXME: are we supposed to serialize the new map ? (required by FileMailRepository for now)
+        out.writeObject(getAttributesRaw());
         out.writeObject(perRecipientSpecificHeaders);
     }
 
@@ -708,7 +709,7 @@ public class MailImpl implements Disposable, Mail {
      * @param attr Serializable of the entire attributes collection
      * @since 2.2.0
      */
-    public void setAttributesRaw(HashMap<String, Object> attr) {
+    public void setAttributesRaw(Map<String, Object> attr) {
         this.attributes = Optional.ofNullable(attr)
             .map(this::toStronglyTypedMap)
             .orElse(new HashMap<>());
