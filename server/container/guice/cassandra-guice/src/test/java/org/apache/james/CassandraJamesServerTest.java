@@ -23,15 +23,10 @@ import static org.apache.james.CassandraJamesServerMain.ALL_BUT_JMX_CASSANDRA_MO
 
 import org.apache.james.mailbox.extractor.TextExtractor;
 import org.apache.james.mailbox.store.search.PDFTextExtractor;
-import org.apache.james.modules.TestESMetricReporterModule;
 import org.apache.james.modules.TestJMAPServerModule;
-import org.apache.james.server.core.configuration.Configuration;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-import com.google.inject.util.Modules;
-
 class CassandraJamesServerTest implements JamesServerContract {
-
     private static final int LIMIT_TO_10_MESSAGES = 10;
 
     @RegisterExtension
@@ -40,10 +35,8 @@ class CassandraJamesServerTest implements JamesServerContract {
         .extension(CassandraExtension::new)
         .server(configuration -> GuiceJamesServer.forConfiguration(configuration)
             .combineWith(ALL_BUT_JMX_CASSANDRA_MODULE)
-            .overrideWith(Modules.combine(
-                binder -> binder.bind(TextExtractor .class).to(PDFTextExtractor .class),
-                new TestJMAPServerModule(LIMIT_TO_10_MESSAGES),
-                new TestESMetricReporterModule()))
+            .overrideWith(binder -> binder.bind(TextExtractor .class).to(PDFTextExtractor.class))
+            .overrideWith(new TestJMAPServerModule(LIMIT_TO_10_MESSAGES))
             .overrideWith(DOMAIN_LIST_CONFIGURATION_MODULE))
         .build();
 }

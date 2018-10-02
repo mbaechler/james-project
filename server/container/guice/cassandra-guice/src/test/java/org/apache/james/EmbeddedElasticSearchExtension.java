@@ -24,28 +24,23 @@ import java.io.File;
 import org.apache.james.backends.es.EmbeddedElasticSearch;
 import org.apache.james.modules.TestElasticSearchModule;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.rules.TemporaryFolder;
 
 import com.google.inject.Module;
 
-
 public class EmbeddedElasticSearchExtension implements GuiceModuleTestExtension {
-
-    private final File temporaryFolder;
     private final EmbeddedElasticSearch embeddedElasticSearch;
 
     public EmbeddedElasticSearchExtension(File temporaryFolder) {
-        this.temporaryFolder = temporaryFolder;
         this.embeddedElasticSearch = new EmbeddedElasticSearch(temporaryFolder.toPath());
     }
 
     @Override
-    public void beforeAll(ExtensionContext extensionContext) throws Exception {
+    public void beforeEach(ExtensionContext extensionContext) {
         embeddedElasticSearch.before();
     }
 
     @Override
-    public void afterAll(ExtensionContext extensionContext) throws Exception {
+    public void afterEach(ExtensionContext extensionContext) {
         embeddedElasticSearch.after();
     }
 
