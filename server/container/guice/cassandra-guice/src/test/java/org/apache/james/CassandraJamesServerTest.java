@@ -35,7 +35,7 @@ class CassandraJamesServerTest implements JamesServerContract {
         .extension(new CassandraExtension())
         .server(configuration -> GuiceJamesServer.forConfiguration(configuration)
             .combineWith(ALL_BUT_JMX_CASSANDRA_MODULE)
-            .overrideWith(binder -> binder.bind(TextExtractor .class).to(PDFTextExtractor.class))
+            .overrideWith(binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class))
             .overrideWith(new TestJMAPServerModule(LIMIT_TO_10_MESSAGES))
             .overrideWith(DOMAIN_LIST_CONFIGURATION_MODULE))
         .build();
