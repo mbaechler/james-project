@@ -34,16 +34,16 @@ import org.junit.jupiter.api.extension.ParameterResolver;
 
 public class JamesServerExtension implements BeforeAllCallback, BeforeEachCallback, AfterEachCallback, AfterAllCallback, ParameterResolver {
 
-    interface ThrowingSupplier<T> {
-        T get(File file) throws Exception;
+    interface ThrowingFunction<P, T> {
+        T apply(P parameter) throws Exception;
     }
 
     private final TemporaryFolderRegistrableExtension folderRegistrableExtension;
-    private final ThrowingSupplier<GuiceJamesServer> serverSupplier;
+    private final ThrowingFunction<File, GuiceJamesServer> serverSupplier;
     private final RegistrableExtension registrableExtension;
     private GuiceJamesServer guiceJamesServer;
 
-    JamesServerExtension(RegistrableExtension registrableExtension, ThrowingSupplier<GuiceJamesServer> serverSupplier) {
+    JamesServerExtension(RegistrableExtension registrableExtension, ThrowingFunction<File, GuiceJamesServer> serverSupplier) {
         this.registrableExtension = registrableExtension;
         this.serverSupplier = serverSupplier;
         this.folderRegistrableExtension = new TemporaryFolderRegistrableExtension();
@@ -58,7 +58,7 @@ public class JamesServerExtension implements BeforeAllCallback, BeforeEachCallba
     public void beforeEach(ExtensionContext extensionContext) throws Exception {
         folderRegistrableExtension.beforeEach(extensionContext);
         registrableExtension.beforeEach(extensionContext);
-        guiceJamesServer = serverSupplier.get(createTmpDir());
+        guiceJamesServer = serverSupplier.apply(createTmpDir());
         guiceJamesServer.start();
     }
 
