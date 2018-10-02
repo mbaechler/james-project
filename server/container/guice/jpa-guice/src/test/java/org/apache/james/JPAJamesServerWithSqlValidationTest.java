@@ -19,7 +19,6 @@
 
 package org.apache.james;
 
-import org.apache.james.server.core.configuration.Configuration;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.extension.RegisterExtension;
 

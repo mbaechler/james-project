@@ -22,12 +22,10 @@ package org.apache.james;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.apache.james.core.quota.QuotaSize;
-import org.apache.james.mailbox.extractor.TextExtractor;
 import org.apache.james.mailbox.model.SerializableQuotaValue;
 import org.apache.james.modules.QuotaProbesImpl;
 import org.apache.james.modules.protocols.ImapGuiceProbe;
 import org.apache.james.modules.protocols.SmtpGuiceProbe;
-import org.apache.james.server.core.configuration.Configuration;
 import org.apache.james.utils.DataProbeImpl;
 import org.apache.james.utils.IMAPMessageReader;
 import org.apache.james.utils.SMTPMessageSender;
@@ -39,7 +37,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import com.google.common.base.Strings;
-import com.google.inject.util.Modules;
 
 class JPAJamesServerTest implements JamesServerContract {
 
