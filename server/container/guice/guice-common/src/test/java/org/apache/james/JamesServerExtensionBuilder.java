@@ -50,7 +50,6 @@ public class JamesServerExtensionBuilder {
     }
 
     private final ImmutableList.Builder<GuiceModuleTestExtension> extensions;
-    private final ImmutableList.Builder<Module> addedModules;
     private final TemporaryFolderRegistrableExtension folderRegistrableExtension;
     private ServerProvider server;
     private Optional<ConfigurationProvider> configuration;
@@ -58,7 +57,6 @@ public class JamesServerExtensionBuilder {
     JamesServerExtensionBuilder() {
         configuration = Optional.empty();
         extensions = ImmutableList.builder();
-        addedModules = ImmutableList.builder();
         folderRegistrableExtension = new TemporaryFolderRegistrableExtension();
     }
 
