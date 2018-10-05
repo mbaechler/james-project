@@ -28,7 +28,11 @@ import org.apache.james.imap.api.ImapConfiguration;
 import org.apache.james.imap.api.process.ImapProcessor;
 import org.apache.james.imap.decode.ImapDecoder;
 import org.apache.james.imap.decode.main.ImapRequestStreamHandler;
+import org.apache.james.imap.encode.FakeImapSession;
 import org.apache.james.imap.encode.ImapEncoder;
+import org.apache.james.mailbox.MailboxManager;
+import org.apache.james.mailbox.MailboxSession;
+import org.apache.james.mailbox.model.MailboxACL;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.Authenticator;
 import org.apache.james.mailbox.store.Authorizator;
@@ -36,12 +40,10 @@ import org.apache.james.mpt.api.Continuation;
 import org.apache.james.mpt.api.ImapHostSystem;
 import org.apache.james.mpt.helper.ByteBufferInputStream;
 import org.apache.james.mpt.helper.ByteBufferOutputStream;
-import org.apache.james.mpt.session.ImapSessionImpl;
+import org.apache.james.mpt.imapmailbox.GrantRightsOnHost;
 import org.apache.james.user.memory.MemoryUsersRepository;
 
-import com.google.common.base.Throwables;
-
-public abstract class JamesImapHostSystem implements ImapHostSystem {
+public abstract class JamesImapHostSystem implements ImapHostSystem, GrantRightsOnHost {
 
     private MemoryUsersRepository memoryUsersRepository;
     protected Authorizator authorizator;
@@ -58,7 +60,7 @@ public abstract class JamesImapHostSystem implements ImapHostSystem {
         try {
             memoryUsersRepository.configure(userRepositoryConfiguration());
         } catch (ConfigurationException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
         authenticator = new UserRepositoryAuthenticator(memoryUsersRepository);
         authorizator = new UserRepositoryAuthorizator(memoryUsersRepository);
@@ -82,12 +84,38 @@ public abstract class JamesImapHostSystem implements ImapHostSystem {
         return true;
     }
 
+    @Override
     public Session newSession(Continuation continuation)
             throws Exception {
         return new Session(continuation);
     }
+
+    protected abstract MailboxManager getMailboxManager();
     
-    public abstract void createMailbox(MailboxPath mailboxPath) throws Exception;
+    @Override
+    public void createMailbox(MailboxPath mailboxPath) throws Exception {
+        MailboxManager mailboxManager = getMailboxManager();
+        MailboxSession mailboxSession = mailboxManager.createSystemSession(mailboxPath.getUser());
+        mailboxManager.startProcessingRequest(mailboxSession);
+        mailboxManager.createMailbox(mailboxPath, mailboxSession);
+        mailboxManager.logout(mailboxSession, true);
+        mailboxManager.endProcessingRequest(mailboxSession);
+    }
+
+    @Override
+    public void grantRights(MailboxPath mailboxPath, String userName, MailboxACL.Rfc4314Rights rights) throws Exception {
+        MailboxManager mailboxManager = getMailboxManager();
+        MailboxSession mailboxSession = mailboxManager.createSystemSession(mailboxPath.getUser());
+        mailboxManager.startProcessingRequest(mailboxSession);
+        mailboxManager.setRights(mailboxPath,
+            MailboxACL.EMPTY.apply(MailboxACL.command()
+                .forUser(userName)
+                .rights(rights)
+                .asAddition()),
+            mailboxManager.createSystemSession(userName));
+        mailboxManager.logout(mailboxSession, true);
+        mailboxManager.endProcessingRequest(mailboxSession);
+    }
 
     class Session implements org.apache.james.mpt.api.Session {
         ByteBufferOutputStream out;
@@ -96,7 +124,7 @@ public abstract class JamesImapHostSystem implements ImapHostSystem {
 
         ImapRequestStreamHandler handler;
 
-        ImapSessionImpl session;
+        FakeImapSession session;
 
         boolean isReadLast = true;
 
@@ -104,9 +132,10 @@ public abstract class JamesImapHostSystem implements ImapHostSystem {
             out = new ByteBufferOutputStream(continuation);
             in = new ByteBufferInputStream();
             handler = new ImapRequestStreamHandler(decoder, processor, encoder);
-            session = new ImapSessionImpl();
+            session = new FakeImapSession();
         }
 
+        @Override
         public String readLine() throws Exception {
             if (!isReadLast) {
                 handler.handleRequest(in, out, session);
@@ -115,19 +144,23 @@ public abstract class JamesImapHostSystem implements ImapHostSystem {
             return out.nextLine();
         }
 
+        @Override
         public void start() throws Exception {
             // Welcome message handled in the server
             out.write("* OK IMAP4rev1 Server ready\r\n");
         }
 
+        @Override
         public void restart() throws Exception {
-            session = new ImapSessionImpl();
+            session = new FakeImapSession();
         }
 
+        @Override
         public void stop() throws Exception {
             session.deselect();
         }
 
+        @Override
         public void writeLine(String line) throws Exception {
             isReadLast = false;
             in.nextLine(line);

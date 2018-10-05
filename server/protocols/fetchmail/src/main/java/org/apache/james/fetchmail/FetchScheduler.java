@@ -63,12 +63,12 @@ public class FetchScheduler implements FetchSchedulerMBean, Configurable {
 
     private UsersRepository urepos;
 
-    private MailQueueFactory queueFactory;
+    private MailQueueFactory<?> queueFactory;
 
     private DomainList domainList;
 
     @Inject
-    public void setMailQueueFactory(MailQueueFactory queueFactory) {
+    public void setMailQueueFactory(MailQueueFactory<?> queueFactory) {
         this.queueFactory = queueFactory;
     }
 
@@ -87,10 +87,7 @@ public class FetchScheduler implements FetchSchedulerMBean, Configurable {
         this.domainList = domainList;
     }
 
-    /**
-     * @see
-     * org.apache.james.lifecycle.api.Configurable#configure(org.apache.commons.configuration.HierarchicalConfiguration)
-     */
+    @Override
     public final void configure(HierarchicalConfiguration config) throws ConfigurationException {
         this.conf = config;
     }
@@ -107,7 +104,7 @@ public class FetchScheduler implements FetchSchedulerMBean, Configurable {
       The scheduler service that is used to trigger fetch tasks.
      */
             ScheduledExecutorService scheduler = new JMXEnabledScheduledThreadPoolExecutor(numThreads, jmxPath, "scheduler");
-            MailQueue queue = queueFactory.getQueue(MailQueueFactory.SPOOL);
+            MailQueue queue = queueFactory.createQueue(MailQueueFactory.SPOOL);
 
             List<HierarchicalConfiguration> fetchConfs = conf.configurationsAt("fetch");
             for (HierarchicalConfiguration fetchConf : fetchConfs) {
@@ -127,11 +124,9 @@ public class FetchScheduler implements FetchSchedulerMBean, Configurable {
                 schedulers.add(scheduler.scheduleWithFixedDelay(fetcher, 0, interval, TimeUnit.MILLISECONDS));
             }
 
-            if (LOGGER.isInfoEnabled())
-                LOGGER.info("FetchMail Started");
+            LOGGER.info("FetchMail Started");
         } else {
-            if (LOGGER.isInfoEnabled())
-                LOGGER.info("FetchMail Disabled");
+            LOGGER.info("FetchMail Disabled");
         }
     }
 
@@ -151,6 +146,7 @@ public class FetchScheduler implements FetchSchedulerMBean, Configurable {
      *
      * @return is the service enabled.
      */
+    @Override
     public final boolean isEnabled() {
         return enabled;
     }

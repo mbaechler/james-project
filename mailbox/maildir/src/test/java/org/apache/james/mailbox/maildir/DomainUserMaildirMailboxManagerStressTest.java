@@ -25,12 +25,11 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 
-import com.google.common.base.Throwables;
-
 public class DomainUserMaildirMailboxManagerStressTest extends MailboxManagerStressTest {
     @Rule
     public TemporaryFolder tmpFolder = new TemporaryFolder();
     
+    @Override
     @Before
     public void setUp() throws Exception {
         super.setUp();
@@ -41,9 +40,8 @@ public class DomainUserMaildirMailboxManagerStressTest extends MailboxManagerStr
         try {
             return MaildirMailboxManagerProvider.createMailboxManager("/%domain/%user", tmpFolder);
         } catch (Exception e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
     }
-
 
 }

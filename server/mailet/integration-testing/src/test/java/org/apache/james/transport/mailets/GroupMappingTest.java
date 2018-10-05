@@ -19,154 +19,107 @@
 
 package org.apache.james.transport.mailets;
 
-import static com.jayway.restassured.RestAssured.with;
+import static io.restassured.RestAssured.given;
+import static org.apache.james.mailets.configuration.Constants.DEFAULT_DOMAIN;
+import static org.apache.james.mailets.configuration.Constants.LOCALHOST_IP;
+import static org.apache.james.mailets.configuration.Constants.PASSWORD;
+import static org.apache.james.mailets.configuration.Constants.awaitAtMostOneMinute;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-
-import java.net.InetAddress;
-import java.util.concurrent.TimeUnit;
 
 import javax.mail.internet.MimeMessage;
 
-import org.apache.james.core.MailAddress;
-import org.apache.james.dnsservice.api.DNSService;
-import org.apache.james.dnsservice.api.InMemoryDNSService;
+import org.apache.james.core.builder.MimeMessageBuilder;
 import org.apache.james.jmap.mailet.VacationMailet;
+import org.apache.james.jmap.mailet.filter.JMAPFiltering;
 import org.apache.james.mailbox.model.MailboxConstants;
 import org.apache.james.mailets.TemporaryJamesServer;
 import org.apache.james.mailets.configuration.CommonProcessors;
 import org.apache.james.mailets.configuration.MailetConfiguration;
 import org.apache.james.mailets.configuration.MailetContainer;
 import org.apache.james.mailets.configuration.ProcessorConfiguration;
+import org.apache.james.mailrepository.api.MailRepositoryUrl;
 import org.apache.james.modules.MailboxProbeImpl;
+import org.apache.james.modules.protocols.ImapGuiceProbe;
+import org.apache.james.modules.protocols.SmtpGuiceProbe;
 import org.apache.james.probe.DataProbe;
 import org.apache.james.transport.matchers.All;
+import org.apache.james.transport.matchers.IsSenderInRRTLoop;
 import org.apache.james.transport.matchers.RecipientIsLocal;
-import org.apache.james.transport.matchers.RelayLimit;
-import org.apache.james.transport.matchers.SMTPAuthSuccessful;
-import org.apache.james.util.streams.SwarmGenericContainer;
 import org.apache.james.utils.DataProbeImpl;
 import org.apache.james.utils.IMAPMessageReader;
+import org.apache.james.utils.MailRepositoryProbeImpl;
 import org.apache.james.utils.SMTPMessageSender;
 import org.apache.james.utils.WebAdminGuiceProbe;
+import org.apache.james.webadmin.WebAdminUtils;
 import org.apache.james.webadmin.routes.GroupsRoutes;
-import org.apache.mailet.Mail;
 import org.apache.mailet.base.test.FakeMail;
-import org.apache.mailet.base.test.MimeMessageBuilder;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import com.jayway.awaitility.Awaitility;
-import com.jayway.awaitility.Duration;
-import com.jayway.awaitility.core.ConditionFactory;
-import com.jayway.restassured.RestAssured;
-import com.jayway.restassured.specification.RequestSpecification;
+import io.restassured.specification.RequestSpecification;
 
 public class GroupMappingTest {
-    private static final String LOCALHOST_IP = "127.0.0.1";
-    private static final int IMAP_PORT = 1143;
-    private static final int SMTP_PORT = 1025;
-    private static final String PASSWORD = "secret";
-
     private static final String DOMAIN1 = "domain1.com";
     private static final String DOMAIN2 = "domain2.com";
 
-    private static final String SENDER = "fromUser@" + DOMAIN1;
+    public static final String SENDER_LOCAL_PART = "fromuser";
+    private static final String SENDER = SENDER_LOCAL_PART + "@" + DOMAIN1;
     private static final String GROUP_ON_DOMAIN1 = "group@" + DOMAIN1;
     private static final String GROUP_ON_DOMAIN2 = "group@" + DOMAIN2;
 
     private static final String USER_DOMAIN1 = "user@" + DOMAIN1;
     private static final String USER_DOMAIN2 = "user@" + DOMAIN2;
     private static final String MESSAGE_CONTENT = "any text";
+    public static final String RRT_ERROR = "rrt-error";
+    public static final MailRepositoryUrl RRT_ERROR_REPOSITORY = MailRepositoryUrl.from("file://var/mail/rrt-error/");
 
     private TemporaryJamesServer jamesServer;
-    private ConditionFactory calmlyAwait;
     private MimeMessage message;
     private DataProbe dataProbe;
-    private RequestSpecification restApiRequest;
+    private RequestSpecification webAdminApi;
 
-    @Rule
-    public final SwarmGenericContainer fakeSmtp = new SwarmGenericContainer("weave/rest-smtp-sink:latest")
-        .withExposedPorts(25);
-
-    private final InMemoryDNSService inMemoryDNSService = new InMemoryDNSService();
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @Rule
+    public IMAPMessageReader imapMessageReader = new IMAPMessageReader();
+    @Rule
+    public SMTPMessageSender messageSender = new SMTPMessageSender(DEFAULT_DOMAIN);
 
-    private InetAddress containerIp;
     @Before
     public void setup() throws Exception {
-
-        containerIp = InetAddress.getByName(fakeSmtp.getContainerIp());
-        inMemoryDNSService.registerRecord("yopmail.com", containerIp, "yopmail.com");
-
-        MailetContainer mailetContainer = MailetContainer.builder()
-            .postmaster("postmaster@" + DOMAIN1)
-            .threads(5)
-            .addProcessor(ProcessorConfiguration.builder()
-                .state("root")
-                .enableJmx(true)
-                .addMailet(MailetConfiguration.builder()
-                    .matcher(All.class)
-                    .mailet(PostmasterAlias.class)
-                    .build())
-                .addMailet(MailetConfiguration.builder()
-                    .matcher(RelayLimit.class)
-                    .matcherCondition("30")
-                    .mailet(Null.class)
-                    .build())
-                .addMailet(MailetConfiguration.builder()
-                    .matcher(SMTPAuthSuccessful.class)
-                    .mailet(ToProcessor.class)
-                    .addProperty("processor", "transport")
-                    .build())
-                .addMailet(MailetConfiguration.builder()
-                    .matcher(All.class)
-                    .mailet(ToProcessor.class)
-                    .addProperty("processor", "transport")
-                    .build())
-                .build())
-            .addProcessor(CommonProcessors.error())
-            .addProcessor(ProcessorConfiguration.transport()
-                .enableJmx(true)
-                .addMailet(MailetConfiguration.builder()
-                    .matcher(All.class)
-                    .mailet(RemoveMimeHeader.class)
-                    .addProperty("name", "bcc")
-                    .build())
+        MailetContainer.Builder mailetContainer = TemporaryJamesServer.SIMPLE_MAILET_CONTAINER_CONFIGURATION
+            .putProcessor(ProcessorConfiguration.transport()
                 .addMailet(MailetConfiguration.builder()
                     .matcher(All.class)
                     .mailet(RecipientRewriteTable.class)
-                    .build())
+                    .addProperty("errorProcessor", RRT_ERROR))
                 .addMailet(MailetConfiguration.builder()
                     .matcher(RecipientIsLocal.class)
-                    .mailet(VacationMailet.class)
-                    .build())
+                    .mailet(VacationMailet.class))
                 .addMailet(MailetConfiguration.builder()
                     .matcher(RecipientIsLocal.class)
-                    .mailet(LocalDelivery.class)
-                    .build())
+                    .mailet(JMAPFiltering.class))
+                .addMailetsFrom(CommonProcessors.deliverOnlyTransport()))
+            .putProcessor(ProcessorConfiguration.builder()
+                .state(RRT_ERROR)
                 .addMailet(MailetConfiguration.builder()
                     .matcher(All.class)
-                    .mailet(RemoteDelivery.class)
-                    .addProperty("outgoingQueue", "outgoing")
-                    .addProperty("delayTime", "5000, 100000, 500000")
-                    .addProperty("maxRetries", "25")
-                    .addProperty("maxDnsProblemRetries", "0")
-                    .addProperty("deliveryThreads", "10")
-                    .addProperty("sendpartial", "true")
-                    .addProperty("bounceProcessor", "bounces")
-                    .build())
-                .build())
-            .build();
+                    .mailet(ToRepository.class)
+                    .addProperty("passThrough", "true")
+                    .addProperty("repositoryPath", RRT_ERROR_REPOSITORY.asString()))
+                .addMailet(MailetConfiguration.builder()
+                    .matcher(IsSenderInRRTLoop.class)
+                    .mailet(Null.class))
+                .addMailet(MailetConfiguration.builder()
+                    .matcher(All.class)
+                    .mailet(Bounce.class)));
 
-        jamesServer = new TemporaryJamesServer(temporaryFolder, mailetContainer, (binder) -> binder.bind(DNSService.class).toInstance(inMemoryDNSService));
-
-        Duration slowPacedPollInterval = Duration.FIVE_HUNDRED_MILLISECONDS;
-        calmlyAwait = Awaitility.with().pollInterval(slowPacedPollInterval).and().with().pollDelay(slowPacedPollInterval).await();
+        jamesServer = TemporaryJamesServer.builder()
+            .withMailetContainer(mailetContainer)
+            .build(temporaryFolder);
 
         dataProbe = jamesServer.getProbe(DataProbeImpl.class);
         dataProbe.addDomain(DOMAIN1);
@@ -180,8 +133,10 @@ public class GroupMappingTest {
         jamesServer.getProbe(MailboxProbeImpl.class).createMailbox(MailboxConstants.USER_NAMESPACE, USER_DOMAIN1, "INBOX");
         jamesServer.getProbe(MailboxProbeImpl.class).createMailbox(MailboxConstants.USER_NAMESPACE, USER_DOMAIN2, "INBOX");
 
-        restApiRequest = RestAssured.given()
-            .port(jamesServer.getProbe(WebAdminGuiceProbe.class).getWebAdminPort());
+        WebAdminGuiceProbe webAdminGuiceProbe = jamesServer.getProbe(WebAdminGuiceProbe.class);
+        webAdminGuiceProbe.await();
+        webAdminApi = given()
+            .spec(WebAdminUtils.buildRequestSpecification(webAdminGuiceProbe.getWebAdminPort()).build());
 
         message = MimeMessageBuilder.mimeMessageBuilder()
             .setSubject("test")
@@ -196,276 +151,338 @@ public class GroupMappingTest {
 
     @Test
     public void messageShouldRedirectToUserWhenBelongingToGroup() throws Exception {
-        restApiRequest.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + USER_DOMAIN1);
+        webAdminApi.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + USER_DOMAIN1);
 
-        Mail mail = FakeMail.builder()
-            .mimeMessage(message)
-            .sender(new MailAddress(SENDER))
-            .recipient(new MailAddress(GROUP_ON_DOMAIN1))
-            .build();
+        messageSender.connect(LOCALHOST_IP, jamesServer.getProbe(SmtpGuiceProbe.class).getSmtpPort())
+            .sendMessage(FakeMail.builder()
+                .mimeMessage(message)
+                .sender(SENDER)
+                .recipient(GROUP_ON_DOMAIN1));
 
-        try (SMTPMessageSender messageSender = SMTPMessageSender.noAuthentication(LOCALHOST_IP, SMTP_PORT, DOMAIN1);
-             IMAPMessageReader imapMessageReader = new IMAPMessageReader(LOCALHOST_IP, IMAP_PORT)) {
-            messageSender.sendMessage(mail);
-            calmlyAwait.atMost(Duration.ONE_MINUTE).until(messageSender::messageHasBeenSent);
-            calmlyAwait.atMost(Duration.ONE_MINUTE).until(() -> imapMessageReader.userReceivedMessage(USER_DOMAIN1, PASSWORD));
-
-            String processedMessage = imapMessageReader.readFirstMessageInInbox(USER_DOMAIN1, PASSWORD);
-
-            assertThat(processedMessage).contains(MESSAGE_CONTENT);
-        }
-
+        imapMessageReader.connect(LOCALHOST_IP, jamesServer.getProbe(ImapGuiceProbe.class).getImapPort())
+            .login(USER_DOMAIN1, PASSWORD)
+            .select(IMAPMessageReader.INBOX)
+            .awaitMessage(awaitAtMostOneMinute);
+        assertThat(imapMessageReader.readFirstMessage()).contains(MESSAGE_CONTENT);
     }
 
     @Test
     public void messageShouldRedirectToUserDoesNotHaveSameDomainWhenBelongingToGroup() throws Exception {
-        restApiRequest.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + USER_DOMAIN2);
+        webAdminApi.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + USER_DOMAIN2);
 
-        Mail mail = FakeMail.builder()
-            .mimeMessage(message)
-            .sender(new MailAddress(SENDER))
-            .recipient(new MailAddress(GROUP_ON_DOMAIN1))
-            .build();
+        messageSender.connect(LOCALHOST_IP, jamesServer.getProbe(SmtpGuiceProbe.class).getSmtpPort())
+            .sendMessage(FakeMail.builder()
+                .mimeMessage(message)
+                .sender(SENDER)
+                .recipient(GROUP_ON_DOMAIN1));
 
-        try (SMTPMessageSender messageSender = SMTPMessageSender.noAuthentication(LOCALHOST_IP, SMTP_PORT, DOMAIN1);
-             IMAPMessageReader imapMessageReader = new IMAPMessageReader(LOCALHOST_IP, IMAP_PORT)) {
-            messageSender.sendMessage(mail);
-            calmlyAwait.atMost(Duration.ONE_MINUTE).until(messageSender::messageHasBeenSent);
-            calmlyAwait.atMost(Duration.ONE_MINUTE).until(() -> imapMessageReader.userReceivedMessage(USER_DOMAIN2, PASSWORD));
-
-            String processedMessage = imapMessageReader.readFirstMessageInInbox(USER_DOMAIN2, PASSWORD);
-
-            assertThat(processedMessage).contains(MESSAGE_CONTENT);
-        }
+        imapMessageReader.connect(LOCALHOST_IP, jamesServer.getProbe(ImapGuiceProbe.class).getImapPort())
+            .login(USER_DOMAIN2, PASSWORD)
+            .select(IMAPMessageReader.INBOX)
+            .awaitMessage(awaitAtMostOneMinute);
+        assertThat(imapMessageReader.readFirstMessage()).contains(MESSAGE_CONTENT);
     }
 
     @Test
     public void messageShouldRedirectToAllUsersBelongingToGroup() throws Exception {
-        restApiRequest.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + USER_DOMAIN1);
+        webAdminApi.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + USER_DOMAIN1);
 
-        restApiRequest.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + USER_DOMAIN2);
+        webAdminApi.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + USER_DOMAIN2);
 
-        Mail mail = FakeMail.builder()
-            .mimeMessage(message)
-            .sender(new MailAddress(SENDER))
-            .recipient(new MailAddress(GROUP_ON_DOMAIN1))
-            .build();
+        messageSender.connect(LOCALHOST_IP, jamesServer.getProbe(SmtpGuiceProbe.class).getSmtpPort())
+            .sendMessage(FakeMail.builder()
+                .mimeMessage(message)
+                .sender(SENDER)
+                .recipient(GROUP_ON_DOMAIN1));
 
-        try (SMTPMessageSender messageSender = SMTPMessageSender.noAuthentication(LOCALHOST_IP, SMTP_PORT, DOMAIN1);
-             IMAPMessageReader imapMessageReader = new IMAPMessageReader(LOCALHOST_IP, IMAP_PORT)) {
-            messageSender.sendMessage(mail);
-            calmlyAwait.atMost(Duration.ONE_MINUTE).until(messageSender::messageHasBeenSent);
-            calmlyAwait.atMost(Duration.ONE_MINUTE).until(() -> imapMessageReader.countReceivedMessage(USER_DOMAIN1, PASSWORD, 1));
-            calmlyAwait.atMost(Duration.ONE_MINUTE).until(() -> imapMessageReader.countReceivedMessage(USER_DOMAIN2, PASSWORD, 1));
-        }
+        imapMessageReader.connect(LOCALHOST_IP, jamesServer.getProbe(ImapGuiceProbe.class).getImapPort())
+            .login(USER_DOMAIN1, PASSWORD)
+            .select(IMAPMessageReader.INBOX)
+            .awaitMessage(awaitAtMostOneMinute);
+        imapMessageReader.connect(LOCALHOST_IP, jamesServer.getProbe(ImapGuiceProbe.class).getImapPort())
+            .login(USER_DOMAIN2, PASSWORD)
+            .select(IMAPMessageReader.INBOX)
+            .awaitMessage(awaitAtMostOneMinute);
     }
 
     @Test
     public void messageShouldRedirectWhenGroupBelongingToAnotherGroup() throws Exception {
-        restApiRequest.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN2 + "/" + USER_DOMAIN2);
+        webAdminApi.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN2 + "/" + USER_DOMAIN2);
 
-        restApiRequest.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + GROUP_ON_DOMAIN2);
+        webAdminApi.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + GROUP_ON_DOMAIN2);
 
-        Mail mail = FakeMail.builder()
-            .mimeMessage(message)
-            .sender(new MailAddress(SENDER))
-            .recipient(new MailAddress(GROUP_ON_DOMAIN1))
-            .build();
+        messageSender.connect(LOCALHOST_IP, jamesServer.getProbe(SmtpGuiceProbe.class).getSmtpPort())
+            .sendMessage(FakeMail.builder()
+                .mimeMessage(message)
+                .sender(SENDER)
+                .recipient(GROUP_ON_DOMAIN1));
 
-        try (SMTPMessageSender messageSender = SMTPMessageSender.noAuthentication(LOCALHOST_IP, SMTP_PORT, DOMAIN1);
-             IMAPMessageReader imapMessageReader = new IMAPMessageReader(LOCALHOST_IP, IMAP_PORT)) {
-            messageSender.sendMessage(mail);
-            calmlyAwait.atMost(Duration.ONE_MINUTE).until(messageSender::messageHasBeenSent);
-            calmlyAwait.atMost(Duration.ONE_MINUTE).until(() -> imapMessageReader.userReceivedMessage(USER_DOMAIN2, PASSWORD));
-
-            String processedMessage = imapMessageReader.readFirstMessageInInbox(USER_DOMAIN2, PASSWORD);
-
-            assertThat(processedMessage).contains(MESSAGE_CONTENT);
-        }
+        imapMessageReader.connect(LOCALHOST_IP, jamesServer.getProbe(ImapGuiceProbe.class).getImapPort())
+            .login(USER_DOMAIN2, PASSWORD)
+            .select(IMAPMessageReader.INBOX);
+        awaitAtMostOneMinute.until(imapMessageReader::hasAMessage);
+        assertThat(imapMessageReader.readFirstMessage()).contains(MESSAGE_CONTENT);
     }
 
     @Test
     public void messageShouldNotBeDuplicatedWhenUserBelongingToTwoGroups() throws Exception {
-        restApiRequest.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + USER_DOMAIN1);
+        webAdminApi.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + USER_DOMAIN1);
 
-        restApiRequest.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN2 + "/" + USER_DOMAIN1);
+        webAdminApi.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN2 + "/" + USER_DOMAIN1);
 
-        restApiRequest.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + GROUP_ON_DOMAIN2);
+        webAdminApi.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + GROUP_ON_DOMAIN2);
 
-        Mail mail = FakeMail.builder()
-            .mimeMessage(message)
-            .sender(new MailAddress(SENDER))
-            .recipient(new MailAddress(GROUP_ON_DOMAIN1))
-            .build();
+        messageSender.connect(LOCALHOST_IP, jamesServer.getProbe(SmtpGuiceProbe.class).getSmtpPort())
+            .sendMessage(FakeMail.builder()
+                .mimeMessage(message)
+                .sender(SENDER)
+                .recipient(GROUP_ON_DOMAIN1));
 
-        try (SMTPMessageSender messageSender = SMTPMessageSender.noAuthentication(LOCALHOST_IP, SMTP_PORT, DOMAIN1);
-             IMAPMessageReader imapMessageReader = new IMAPMessageReader(LOCALHOST_IP, IMAP_PORT)) {
-            messageSender.sendMessage(mail);
-            calmlyAwait.atMost(Duration.ONE_MINUTE).until(messageSender::messageHasBeenSent);
-            calmlyAwait.atMost(Duration.ONE_MINUTE).until(() -> imapMessageReader.countReceivedMessage(USER_DOMAIN1, PASSWORD, 1));
-        }
+        imapMessageReader.connect(LOCALHOST_IP, jamesServer.getProbe(ImapGuiceProbe.class).getImapPort())
+            .login(USER_DOMAIN1, PASSWORD)
+            .select(IMAPMessageReader.INBOX)
+            .awaitMessage(awaitAtMostOneMinute);
     }
 
     @Test
     public void messageShouldNotBeDuplicatedWhenRecipientIsAlsoPartOfGroup() throws Exception {
-        restApiRequest.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + USER_DOMAIN1);
+        webAdminApi.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + USER_DOMAIN1);
 
-        Mail mail = FakeMail.builder()
-            .mimeMessage(message)
-            .sender(new MailAddress(SENDER))
-            .recipients(new MailAddress(GROUP_ON_DOMAIN1), new MailAddress(USER_DOMAIN1))
-            .build();
+        messageSender.connect(LOCALHOST_IP, jamesServer.getProbe(SmtpGuiceProbe.class).getSmtpPort())
+            .sendMessage(FakeMail.builder()
+                .mimeMessage(message)
+                .sender(SENDER)
+                .recipients(GROUP_ON_DOMAIN1, USER_DOMAIN1));
 
-        try (SMTPMessageSender messageSender = SMTPMessageSender.noAuthentication(LOCALHOST_IP, SMTP_PORT, DOMAIN1);
-             IMAPMessageReader imapMessageReader = new IMAPMessageReader(LOCALHOST_IP, IMAP_PORT)) {
-            messageSender.sendMessage(mail);
-            calmlyAwait.atMost(Duration.ONE_MINUTE).until(messageSender::messageHasBeenSent);
-            calmlyAwait.atMost(Duration.ONE_MINUTE).until(() -> imapMessageReader.countReceivedMessage(USER_DOMAIN1, PASSWORD, 1));
-        }
+        imapMessageReader.connect(LOCALHOST_IP, jamesServer.getProbe(ImapGuiceProbe.class).getImapPort())
+            .login(USER_DOMAIN1, PASSWORD)
+            .select(IMAPMessageReader.INBOX)
+            .awaitMessage(awaitAtMostOneMinute);
     }
 
     @Test
     public void groupMappingShouldSupportTreeStructure() throws Exception {
-        restApiRequest.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + USER_DOMAIN1);
+        webAdminApi.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + USER_DOMAIN1);
 
-        restApiRequest.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN2 + "/" + USER_DOMAIN2);
+        webAdminApi.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN2 + "/" + USER_DOMAIN2);
 
-        restApiRequest.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + GROUP_ON_DOMAIN2);
+        webAdminApi.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + GROUP_ON_DOMAIN2);
 
-        Mail mail = FakeMail.builder()
-            .mimeMessage(message)
-            .sender(new MailAddress(SENDER))
-            .recipient(new MailAddress(GROUP_ON_DOMAIN2))
-            .build();
+        messageSender.connect(LOCALHOST_IP, jamesServer.getProbe(SmtpGuiceProbe.class).getSmtpPort())
+            .sendMessage(FakeMail.builder()
+                .mimeMessage(message)
+                .sender(SENDER)
+                .recipient(GROUP_ON_DOMAIN1));
 
-        try (SMTPMessageSender messageSender = SMTPMessageSender.noAuthentication(LOCALHOST_IP, SMTP_PORT, DOMAIN1);
-             IMAPMessageReader imapMessageReader = new IMAPMessageReader(LOCALHOST_IP, IMAP_PORT)) {
-            messageSender.sendMessage(mail);
-            calmlyAwait.atMost(Duration.ONE_MINUTE).until(messageSender::messageHasBeenSent);
-            calmlyAwait.atMost(Duration.ONE_MINUTE).until(() -> imapMessageReader.userReceivedMessage(USER_DOMAIN2, PASSWORD));
-            calmlyAwait.atMost(Duration.ONE_MINUTE).until(() -> imapMessageReader.userReceivedMessage(USER_DOMAIN1, PASSWORD));
-        }
+        imapMessageReader.connect(LOCALHOST_IP, jamesServer.getProbe(ImapGuiceProbe.class).getImapPort())
+            .login(USER_DOMAIN2, PASSWORD)
+            .select(IMAPMessageReader.INBOX)
+            .awaitMessage(awaitAtMostOneMinute);
+
+        imapMessageReader.connect(LOCALHOST_IP, jamesServer.getProbe(ImapGuiceProbe.class).getImapPort())
+            .login(USER_DOMAIN1, PASSWORD)
+            .select(IMAPMessageReader.INBOX)
+            .awaitMessage(awaitAtMostOneMinute);
     }
 
     @Test
-    public void messageShouldNotBeSentWhenGroupLoopMapping() throws Exception {
-        restApiRequest.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + USER_DOMAIN1);
+    public void messageShouldBeStoredInRepositoryWhenGroupLoopMapping() throws Exception {
+        webAdminApi.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + USER_DOMAIN1);
 
-        restApiRequest.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN2 + "/" + USER_DOMAIN2);
+        webAdminApi.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN2 + "/" + USER_DOMAIN2);
 
-        restApiRequest.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + GROUP_ON_DOMAIN2);
+        webAdminApi.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + GROUP_ON_DOMAIN2);
 
-        restApiRequest.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN2 + "/" + GROUP_ON_DOMAIN1);
+        webAdminApi.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN2 + "/" + GROUP_ON_DOMAIN1);
 
-        Mail mail = FakeMail.builder()
-            .mimeMessage(message)
-            .sender(new MailAddress(SENDER))
-            .recipient(new MailAddress(GROUP_ON_DOMAIN1))
-            .build();
+        messageSender.connect(LOCALHOST_IP, jamesServer.getProbe(SmtpGuiceProbe.class).getSmtpPort())
+            .sendMessage(FakeMail.builder()
+                .mimeMessage(message)
+                .sender(SENDER)
+                .recipient(GROUP_ON_DOMAIN1));
 
-        try (SMTPMessageSender messageSender = SMTPMessageSender.noAuthentication(LOCALHOST_IP, SMTP_PORT, DOMAIN1);
-            IMAPMessageReader imapMessageReader = new IMAPMessageReader(LOCALHOST_IP, IMAP_PORT)) {
-            messageSender.sendMessage(mail);
+        awaitAtMostOneMinute.until(
+            () -> jamesServer.getProbe(MailRepositoryProbeImpl.class)
+                .getRepositoryMailCount(RRT_ERROR_REPOSITORY) == 1);
+    }
 
-            calmlyAwait.atMost(Duration.ONE_MINUTE).until(messageSender::messageHaveNotBeenSent);
-            calmlyAwait.atMost(Duration.ONE_MINUTE).until(() -> imapMessageReader.userDoesNotReceiveMessage(USER_DOMAIN1, PASSWORD));
-            calmlyAwait.atMost(Duration.ONE_MINUTE).until(() -> imapMessageReader.userDoesNotReceiveMessage(USER_DOMAIN2, PASSWORD));
-        }
+    @Test
+    public void messageShouldBeWellDeliveredToRecipientNotPartOfTheLoop() throws Exception {
+        webAdminApi.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + GROUP_ON_DOMAIN2);
+
+        webAdminApi.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN2 + "/" + GROUP_ON_DOMAIN1);
+
+        messageSender.connect(LOCALHOST_IP, jamesServer.getProbe(SmtpGuiceProbe.class).getSmtpPort())
+            .sendMessage(FakeMail.builder()
+                .mimeMessage(message)
+                .sender(SENDER)
+                .recipients(GROUP_ON_DOMAIN1, USER_DOMAIN2));
+
+        imapMessageReader.connect(LOCALHOST_IP, jamesServer.getProbe(ImapGuiceProbe.class).getImapPort())
+            .login(USER_DOMAIN2, PASSWORD)
+            .select(IMAPMessageReader.INBOX)
+            .awaitMessage(awaitAtMostOneMinute);
+    }
+
+    @Test
+    public void senderShouldReceiveABounceUponRRTFailure() throws Exception {
+        webAdminApi.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + GROUP_ON_DOMAIN2);
+
+        webAdminApi.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN2 + "/" + GROUP_ON_DOMAIN1);
+
+        messageSender.connect(LOCALHOST_IP, jamesServer.getProbe(SmtpGuiceProbe.class).getSmtpPort())
+            .sendMessage(FakeMail.builder()
+                .mimeMessage(message)
+                .sender(SENDER)
+                .recipients(GROUP_ON_DOMAIN1, USER_DOMAIN2));
+
+        imapMessageReader.connect(LOCALHOST_IP, jamesServer.getProbe(ImapGuiceProbe.class).getImapPort())
+            .login(SENDER, PASSWORD)
+            .select(IMAPMessageReader.INBOX)
+            .awaitMessage(awaitAtMostOneMinute);
+    }
+
+    @Test
+    public void senderShouldNotReceiveABounceUponRRTFailureWhenPartOfTheLoop() throws Exception {
+        webAdminApi.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + SENDER);
+
+        jamesServer.getProbe(DataProbeImpl.class).addAddressMapping(SENDER_LOCAL_PART, DOMAIN1, GROUP_ON_DOMAIN1);
+
+        messageSender.connect(LOCALHOST_IP, jamesServer.getProbe(SmtpGuiceProbe.class).getSmtpPort())
+            .sendMessage(FakeMail.builder()
+                .mimeMessage(message)
+                .sender(SENDER)
+                .recipients(GROUP_ON_DOMAIN1, USER_DOMAIN2));
+
+        imapMessageReader.connect(LOCALHOST_IP, jamesServer.getProbe(ImapGuiceProbe.class).getImapPort())
+            .login(SENDER, PASSWORD)
+            .select(IMAPMessageReader.INBOX)
+            .awaitNoMessage(awaitAtMostOneMinute);
+    }
+
+    @Test
+    public void avoidInfiniteBouncingLoopWhenSenderIsPartOfRRTLoop() throws Exception {
+        webAdminApi.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + SENDER);
+
+        jamesServer.getProbe(DataProbeImpl.class).addAddressMapping(SENDER_LOCAL_PART, DOMAIN1, GROUP_ON_DOMAIN1);
+
+        messageSender.connect(LOCALHOST_IP, jamesServer.getProbe(SmtpGuiceProbe.class).getSmtpPort())
+            .sendMessage(FakeMail.builder()
+                .mimeMessage(message)
+                .sender(SENDER)
+                .recipients(GROUP_ON_DOMAIN1, USER_DOMAIN2));
+
+        awaitAtMostOneMinute.until(
+            () -> jamesServer.getProbe(MailRepositoryProbeImpl.class)
+                .getRepositoryMailCount(RRT_ERROR_REPOSITORY) == 1);
     }
 
     @Test
     public void messageShouldRedirectToUserWhenDomainMapping() throws Exception {
         dataProbe.addDomainAliasMapping(DOMAIN1, DOMAIN2);
 
-        restApiRequest.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + USER_DOMAIN1);
+        webAdminApi.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + USER_DOMAIN1);
 
-        Mail mail = FakeMail.builder()
-            .mimeMessage(message)
-            .sender(new MailAddress(SENDER))
-            .recipient(new MailAddress(GROUP_ON_DOMAIN1))
-            .build();
+        messageSender.connect(LOCALHOST_IP, jamesServer.getProbe(SmtpGuiceProbe.class).getSmtpPort())
+            .sendMessage(FakeMail.builder()
+                .mimeMessage(message)
+                .sender(SENDER)
+                .recipient(GROUP_ON_DOMAIN1));
 
-        try (SMTPMessageSender messageSender = SMTPMessageSender.noAuthentication(LOCALHOST_IP, SMTP_PORT, DOMAIN1);
-             IMAPMessageReader imapMessageReader = new IMAPMessageReader(LOCALHOST_IP, IMAP_PORT)) {
-            messageSender.sendMessage(mail);
-            calmlyAwait.atMost(Duration.ONE_MINUTE).until(messageSender::messageHasBeenSent);
-            calmlyAwait.atMost(Duration.ONE_MINUTE).until(() -> imapMessageReader.userReceivedMessage(USER_DOMAIN2, PASSWORD));
-        }
+        imapMessageReader.connect(LOCALHOST_IP, jamesServer.getProbe(ImapGuiceProbe.class).getImapPort())
+            .login(USER_DOMAIN2, PASSWORD)
+            .select(IMAPMessageReader.INBOX)
+            .awaitMessage(awaitAtMostOneMinute);
     }
 
     @Test
     public void messageShouldNotSendToUserBelongingToGroupWhenDomainMapping() throws Exception {
         dataProbe.addDomainAliasMapping(DOMAIN1, DOMAIN2);
 
-        restApiRequest.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + USER_DOMAIN1);
+        webAdminApi.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + USER_DOMAIN1);
 
-        Mail mail = FakeMail.builder()
-            .mimeMessage(message)
-            .sender(new MailAddress(SENDER))
-            .recipient(new MailAddress(GROUP_ON_DOMAIN1))
-            .build();
+        messageSender.connect(LOCALHOST_IP, jamesServer.getProbe(SmtpGuiceProbe.class).getSmtpPort())
+            .sendMessage(FakeMail.builder()
+                .mimeMessage(message)
+                .sender(SENDER)
+                .recipient(GROUP_ON_DOMAIN1));
 
-        try (SMTPMessageSender messageSender = SMTPMessageSender.noAuthentication(LOCALHOST_IP, SMTP_PORT, DOMAIN1);
-             IMAPMessageReader imapMessageReader = new IMAPMessageReader(LOCALHOST_IP, IMAP_PORT)) {
-            messageSender.sendMessage(mail);
-            calmlyAwait.atMost(Duration.ONE_MINUTE).until(messageSender::messageHasBeenSent);
-            calmlyAwait.atMost(Duration.ONE_MINUTE).until(() -> imapMessageReader.userDoesNotReceiveMessage(USER_DOMAIN1, PASSWORD));
-        }
+        imapMessageReader.connect(LOCALHOST_IP, jamesServer.getProbe(ImapGuiceProbe.class).getImapPort())
+            .login(USER_DOMAIN1, PASSWORD)
+            .select(IMAPMessageReader.INBOX)
+            .awaitNoMessage(awaitAtMostOneMinute);
     }
 
     @Test
     public void messageShouldRedirectToGroupWhenDomainMapping() throws Exception {
         dataProbe.addDomainAliasMapping(DOMAIN1, DOMAIN2);
 
-        restApiRequest.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN2 + "/" + USER_DOMAIN2);
+        webAdminApi.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN2 + "/" + USER_DOMAIN2);
 
-        Mail mail = FakeMail.builder()
-            .mimeMessage(message)
-            .sender(new MailAddress(SENDER))
-            .recipient(new MailAddress(GROUP_ON_DOMAIN1))
-            .build();
+        messageSender.connect(LOCALHOST_IP, jamesServer.getProbe(SmtpGuiceProbe.class).getSmtpPort())
+            .sendMessage(FakeMail.builder()
+                .mimeMessage(message)
+                .sender(SENDER)
+                .recipient((GROUP_ON_DOMAIN1)));
 
-        try (SMTPMessageSender messageSender = SMTPMessageSender.noAuthentication(LOCALHOST_IP, SMTP_PORT, DOMAIN1);
-             IMAPMessageReader imapMessageReader = new IMAPMessageReader(LOCALHOST_IP, IMAP_PORT)) {
-            messageSender.sendMessage(mail);
-            calmlyAwait.atMost(Duration.ONE_MINUTE).until(messageSender::messageHasBeenSent);
-            calmlyAwait.atMost(Duration.ONE_MINUTE).until(() -> imapMessageReader.userReceivedMessage(USER_DOMAIN2, PASSWORD));
-        }
+        imapMessageReader.connect(LOCALHOST_IP, jamesServer.getProbe(ImapGuiceProbe.class).getImapPort())
+            .login(USER_DOMAIN2, PASSWORD)
+            .select(IMAPMessageReader.INBOX)
+            .awaitMessage(awaitAtMostOneMinute);
     }
 
     @Test
-    public void externalGroupMemberAreNotSupported() throws Exception {
-        String externalMail = "ray@yopmail.com";
-        restApiRequest.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + externalMail);
+    public void messageShouldRedirectToGroupContainingSlash() throws Exception {
+        String groupWithSlash = "a/a@" + DOMAIN1;
+        String groupWithEncodedSlash = "a%2Fa@" + DOMAIN1;
+        webAdminApi.put(GroupsRoutes.ROOT_PATH + "/" + groupWithEncodedSlash + "/" + USER_DOMAIN1);
 
-        Mail mail = FakeMail.builder()
-            .mimeMessage(message)
-            .sender(new MailAddress(SENDER))
-            .recipient(new MailAddress(GROUP_ON_DOMAIN1))
-            .build();
+        messageSender.connect(LOCALHOST_IP, jamesServer.getProbe(SmtpGuiceProbe.class).getSmtpPort())
+            .sendMessage(FakeMail.builder()
+                .mimeMessage(message)
+                .sender(SENDER)
+                .recipient(groupWithSlash));
 
-        try (SMTPMessageSender messageSender = SMTPMessageSender.noAuthentication(LOCALHOST_IP, SMTP_PORT, DOMAIN1);) {
-            messageSender.sendMessage(mail);
-            calmlyAwait.atMost(Duration.ONE_MINUTE).until(messageSender::messageHasBeenSent);
+        imapMessageReader.connect(LOCALHOST_IP, jamesServer.getProbe(ImapGuiceProbe.class).getImapPort())
+            .login(USER_DOMAIN1, PASSWORD)
+            .select(IMAPMessageReader.INBOX)
+            .awaitMessage(awaitAtMostOneMinute);
+    }
 
-            calmlyAwait.atMost(1, TimeUnit.MINUTES)
-                .until(() -> {
-                    try {
-                        with()
-                            .baseUri("http://" + containerIp.getHostAddress())
-                            .port(80)
-                            .get("/api/email")
-                        .then()
-                            .statusCode(200)
-                            .body("[0].from", equalTo(SENDER))
-                            .body("[0].to[0]", equalTo(externalMail))
-                            .body("[0].text", equalTo(MESSAGE_CONTENT));
+    @Test
+    public void messageShouldRedirectToUserContainingSlash() throws Exception {
+        String userWithSlash = "a/a@" + DOMAIN1;
+        dataProbe.addUser(userWithSlash, PASSWORD);
+        String userWithEncodedSlash = "a%2Fa@" + DOMAIN1;
+        webAdminApi.put(GroupsRoutes.ROOT_PATH + "/" + GROUP_ON_DOMAIN1 + "/" + userWithEncodedSlash);
 
-                        return true;
-                    } catch(AssertionError e) {
-                        return false;
-                    }
-                });
-        }
+        messageSender.connect(LOCALHOST_IP, jamesServer.getProbe(SmtpGuiceProbe.class).getSmtpPort())
+            .sendMessage(FakeMail.builder()
+                .mimeMessage(message)
+                .sender(SENDER)
+                .recipient(GROUP_ON_DOMAIN1));
+
+        imapMessageReader.connect(LOCALHOST_IP, jamesServer.getProbe(ImapGuiceProbe.class).getImapPort())
+            .login(userWithSlash, PASSWORD)
+            .select(IMAPMessageReader.INBOX)
+            .awaitMessage(awaitAtMostOneMinute);
+    }
+
+    @Test
+    public void messageShouldRedirectToUserWhenEncodingAt() throws Exception {
+        String userWithEncodedAt = "user%40" + DOMAIN1;
+        String groupWithEncodedAt = "group%40" + DOMAIN1;
+        webAdminApi.put(GroupsRoutes.ROOT_PATH + "/" + groupWithEncodedAt + "/" + userWithEncodedAt);
+
+        messageSender.connect(LOCALHOST_IP, jamesServer.getProbe(SmtpGuiceProbe.class).getSmtpPort())
+            .sendMessage(FakeMail.builder()
+                .mimeMessage(message)
+                .sender(SENDER)
+                .recipient(GROUP_ON_DOMAIN1));
+
+        imapMessageReader.connect(LOCALHOST_IP, jamesServer.getProbe(ImapGuiceProbe.class).getImapPort())
+            .login(USER_DOMAIN1, PASSWORD)
+            .select(IMAPMessageReader.INBOX)
+            .awaitMessage(awaitAtMostOneMinute);
     }
 }

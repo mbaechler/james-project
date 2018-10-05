@@ -20,9 +20,7 @@
 package org.apache.james.backends.es;
 
 import java.util.concurrent.ExecutorService;
-
-import javax.inject.Inject;
-import javax.inject.Named;
+import java.util.concurrent.Future;
 
 import org.apache.james.backends.es.search.ScrollIterable;
 import org.elasticsearch.action.ListenableActionFuture;
@@ -37,50 +35,46 @@ import org.elasticsearch.search.SearchHit;
 import com.google.common.annotations.VisibleForTesting;
 
 public class DeleteByQueryPerformer {
-    public static final int DEFAULT_BATCH_SIZE = 100;
     public static final TimeValue TIMEOUT = new TimeValue(60000);
 
     private final Client client;
     private final ExecutorService executor;
     private final int batchSize;
-    private final IndexName indexName;
+    private final WriteAliasName aliasName;
     private final TypeName typeName;
 
-    @Inject
-    public DeleteByQueryPerformer(Client client, @Named("AsyncExecutor") ExecutorService executor, IndexName indexName, TypeName typeName) {
-        this(client, executor, DEFAULT_BATCH_SIZE, indexName, typeName);
-    }
-
     @VisibleForTesting
-    public DeleteByQueryPerformer(Client client, @Named("AsyncExecutor") ExecutorService executor, int batchSize, IndexName indexName, TypeName typeName) {
+    public DeleteByQueryPerformer(Client client, ExecutorService executor, int batchSize, WriteAliasName aliasName, TypeName typeName) {
         this.client = client;
         this.executor = executor;
         this.batchSize = batchSize;
-        this.indexName = indexName;
+        this.aliasName = aliasName;
         this.typeName = typeName;
     }
 
-    public void perform(QueryBuilder queryBuilder) {
-        executor.execute(() -> doDeleteByQuery(queryBuilder));
+    public Future<Void> perform(QueryBuilder queryBuilder) {
+        return executor.submit(() -> doDeleteByQuery(queryBuilder));
     }
 
-    protected void doDeleteByQuery(QueryBuilder queryBuilder) {
+    protected Void doDeleteByQuery(QueryBuilder queryBuilder) {
         new ScrollIterable(client,
-            client.prepareSearch(indexName.getValue())
+            client.prepareSearch(aliasName.getValue())
                 .setTypes(typeName.getValue())
                 .setScroll(TIMEOUT)
                 .setNoFields()
                 .setQuery(queryBuilder)
                 .setSize(batchSize))
             .stream()
-            .forEach(searchResponse -> deleteRetrievedIds(client, searchResponse));
+            .map(searchResponse -> deleteRetrievedIds(client, searchResponse))
+            .forEach(ListenableActionFuture::actionGet);
+        return null;
     }
 
     private ListenableActionFuture<BulkResponse> deleteRetrievedIds(Client client, SearchResponse searchResponse) {
         BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
         for (SearchHit hit : searchResponse.getHits()) {
             bulkRequestBuilder.add(client.prepareDelete()
-                .setIndex(indexName.getValue())
+                .setIndex(aliasName.getValue())
                 .setType(typeName.getValue())
                 .setId(hit.getId()));
         }

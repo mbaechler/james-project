@@ -19,13 +19,14 @@
 package org.apache.james.user.ldap;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.configuration.plist.PropertyListConfiguration;
 import org.apache.james.core.MailAddress;
-import org.junit.After;
+import org.apache.james.domainlist.api.DomainList;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,29 +42,27 @@ public class ReadOnlyUsersLDAPRepositoryTest {
     private static final String PASSWORD = "secret";
     private static final String BAD_PASSWORD = "badpassword";
 
-    private LdapGenericContainer ldapContainer;
+    @ClassRule
+    public static LdapGenericContainer ldapContainer = LdapGenericContainer.builder()
+        .domain(DOMAIN)
+        .password(ADMIN_PASSWORD)
+        .build();
+
     private ReadOnlyUsersLDAPRepository ldapRepository;
+    private DomainList domainList;
 
     @Before
-    public void setup() throws Exception {
-        startLdapContainer();
+    public void setup() {
+        domainList = mock(DomainList.class);
     }
 
-    private void startLdapContainer() {
-        ldapContainer = LdapGenericContainer.builder()
-                .domain(DOMAIN)
-                .password(ADMIN_PASSWORD)
-                .build();
-        ldapContainer.start();
-    }
-
-    private void startUsersRepository(HierarchicalConfiguration ldapRepositoryConfiguration) throws ConfigurationException, Exception {
-        ldapRepository = new ReadOnlyUsersLDAPRepository();
+    private void startUsersRepository(HierarchicalConfiguration ldapRepositoryConfiguration) throws Exception {
+        ldapRepository = new ReadOnlyUsersLDAPRepository(domainList);
         ldapRepository.configure(ldapRepositoryConfiguration);
         ldapRepository.init();
     }
 
-    private HierarchicalConfiguration ldapRepositoryConfiguration() throws ConfigurationException {
+    private HierarchicalConfiguration ldapRepositoryConfiguration() {
         PropertyListConfiguration configuration = new PropertyListConfiguration();
         configuration.addProperty("[@ldapHost]", ldapContainer.getLdapHost());
         configuration.addProperty("[@principal]", "cn=admin\\,dc=james\\,dc=org");
@@ -78,7 +77,7 @@ public class ReadOnlyUsersLDAPRepositoryTest {
         return configuration;
     }
 
-    private HierarchicalConfiguration ldapRepositoryConfigurationWithVirtualHosting() throws ConfigurationException {
+    private HierarchicalConfiguration ldapRepositoryConfigurationWithVirtualHosting() {
         PropertyListConfiguration configuration = new PropertyListConfiguration();
         configuration.addProperty("[@ldapHost]", ldapContainer.getLdapHost());
         configuration.addProperty("[@principal]", "cn=admin\\,dc=james\\,dc=org");
@@ -92,13 +91,6 @@ public class ReadOnlyUsersLDAPRepositoryTest {
         configuration.addProperty("[@retryIntervalScale]", "1000");
         configuration.addProperty("supportsVirtualHosting", true);
         return configuration;
-    }
-
-    @After
-    public void tearDown() {
-        if (ldapContainer != null) {
-            ldapContainer.stop();
-        }
     }
 
     @Test
@@ -176,5 +168,13 @@ public class ReadOnlyUsersLDAPRepositoryTest {
     public void containsWithGetUserShouldBeTrueWithVirtualHosting() throws Exception {
         startUsersRepository(ldapRepositoryConfigurationWithVirtualHosting());
         assertThat(ldapRepository.contains(ldapRepository.getUser(new MailAddress(JAMES_USER_MAIL)))).isTrue();
+    }
+
+    @Test
+    public void specialCharacterInUserInputShouldBeSanitized() throws Exception {
+        String patternMatchingMultipleUsers = "j*";
+
+        startUsersRepository(ldapRepositoryConfigurationWithVirtualHosting());
+        assertThat(ldapRepository.test(patternMatchingMultipleUsers, PASSWORD)).isFalse();
     }
 }

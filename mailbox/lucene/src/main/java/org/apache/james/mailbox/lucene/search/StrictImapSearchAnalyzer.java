@@ -44,6 +44,7 @@ public final class StrictImapSearchAnalyzer extends Analyzer {
     public StrictImapSearchAnalyzer() {
         this(3, 40);
     }
+    
     public StrictImapSearchAnalyzer(int minTokenLength, int maxTokenLength) {
         this.minTokenLength = minTokenLength;
         this.maxTokenLength = maxTokenLength;
@@ -52,6 +53,7 @@ public final class StrictImapSearchAnalyzer extends Analyzer {
    /**
     * @see org.apache.lucene.analysis.Analyzer#tokenStream(java.lang.String, java.io.Reader)
     */
+   @Override
    public TokenStream tokenStream(String fieldName, Reader reader) {
        return new NGramTokenFilter(new UpperCaseFilter(new SentenceTokenizer(reader)), minTokenLength, maxTokenLength);
    }

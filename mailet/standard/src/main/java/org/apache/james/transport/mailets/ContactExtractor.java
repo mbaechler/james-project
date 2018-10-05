@@ -18,13 +18,21 @@
  ****************************************************************/
 package org.apache.james.transport.mailets;
 
-import java.util.Arrays;
+import java.io.IOException;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 import javax.mail.Address;
+import javax.mail.Message;
+import javax.mail.Message.RecipientType;
 import javax.mail.MessagingException;
+import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
+import org.apache.james.core.MailAddress;
+import org.apache.james.mime4j.util.MimeUtil;
+import org.apache.james.util.StreamUtils;
 import org.apache.mailet.Mail;
 import org.apache.mailet.Mailet;
 import org.apache.mailet.MailetException;
@@ -78,13 +86,13 @@ public class ContactExtractor extends GenericMailet implements Mailet {
 
     @Override
     public String getMailetInfo() {
-        return "ContactExtractor Mailet" ;
+        return "ContactExtractor Mailet";
     }
 
     @Override
     public void service(Mail mail) throws MessagingException {
         try {
-            Optional<String> payload = extractContacts(mail.getMessage());
+            Optional<String> payload = extractContacts(mail);
             LOGGER.debug("payload : {}", payload);
             payload.ifPresent(x -> mail.setAttribute(extractAttributeTo, x));
         } catch (Exception e) {
@@ -92,22 +100,44 @@ public class ContactExtractor extends GenericMailet implements Mailet {
         }
     }
 
-    private Optional<String> extractContacts(MimeMessage mimeMessage) throws MessagingException {
-        return Optional.ofNullable(mimeMessage.getSender())
-                .map(Address::toString)
-                .filter(Throwing.predicate(sender -> hasRecipients(mimeMessage)))
-                .map(Throwing.function(sender -> new ExtractedContacts(sender, recipients(mimeMessage))))
-                .map(Throwing.function(message -> objectMapper.writeValueAsString(message)));
+    @VisibleForTesting
+    Optional<String> extractContacts(Mail mail) throws MessagingException, IOException {
+        ImmutableList<String> allRecipients = getAllRecipients(mail.getMessage());
+
+        if (hasRecipient(allRecipients)) {
+            return Optional.of(mail.getSender())
+                .map(MailAddress::asString)
+                .map(sender -> new ExtractedContacts(sender, allRecipients))
+                .map(Throwing.function(extractedContacts -> objectMapper.writeValueAsString(extractedContacts)));
+        }
+
+        return Optional.empty();
     }
 
-    private boolean hasRecipients(MimeMessage mimeMessage) throws MessagingException {
-        return mimeMessage.getAllRecipients().length > 0;
+    private boolean hasRecipient(ImmutableList<String> allRecipients) {
+        return !allRecipients.isEmpty();
     }
 
-    private ImmutableList<String> recipients(MimeMessage mimeMessage) throws MessagingException {
-        return Arrays.stream(mimeMessage.getAllRecipients())
-                .map(Address::toString)
-                .collect(Guavate.toImmutableList());
+    private ImmutableList<String> getAllRecipients(MimeMessage mimeMessage) throws MessagingException {
+        return StreamUtils
+            .flatten(
+                getRecipients(mimeMessage, Message.RecipientType.TO),
+                getRecipients(mimeMessage, Message.RecipientType.CC),
+                getRecipients(mimeMessage, Message.RecipientType.BCC))
+            .collect(Guavate.toImmutableList());
+    }
+
+    private Stream<String> getRecipients(MimeMessage mimeMessage, RecipientType recipientType) throws MessagingException {
+        boolean notStrict = false;
+        Function<String, InternetAddress[]> parseRecipient =
+            Throwing.function((String header) -> InternetAddress.parseHeader(header, notStrict))
+                .sneakyThrow();
+
+        return StreamUtils.ofOptional(
+            Optional.ofNullable(mimeMessage.getHeader(recipientType.toString(), ","))
+                .map(parseRecipient))
+            .map(Address::toString)
+            .map(MimeUtil::unscrambleHeaderValue);
     }
 
     public static class ExtractedContacts {

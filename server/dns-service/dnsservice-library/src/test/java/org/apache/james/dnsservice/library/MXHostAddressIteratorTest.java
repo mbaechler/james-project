@@ -18,17 +18,13 @@
  ****************************************************************/
 package org.apache.james.dnsservice.library;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.Arrays;
-import java.util.Collection;
 
 import org.apache.james.dnsservice.api.DNSService;
-import org.apache.james.dnsservice.api.TemporaryResolutionException;
+import org.apache.james.dnsservice.api.InMemoryDNSService;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
@@ -39,98 +35,35 @@ public class MXHostAddressIteratorTest {
      * Test case for JAMES-1251
      */
     @Test
-    public void testIteratorContainMultipleMX() {
-        DNSService dns = new DNSService() {
+    public void testIteratorContainMultipleMX() throws Exception {
+        InetAddress address = InetAddress.getLocalHost();
+        ImmutableList<String> mxs = ImmutableList.of(address.getHostAddress());
+        ImmutableList<String> noTxtRecord = ImmutableList.of();
+        ImmutableList<InetAddress> addresses = ImmutableList.of(address, address);
+        DNSService dns = new InMemoryDNSService()
+            .registerRecord("localhost", addresses, mxs, noTxtRecord)
+            .registerRecord("localhost2", addresses, mxs, noTxtRecord);
 
-            @Override
-            public InetAddress getLocalHost() throws UnknownHostException {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public String getHostName(InetAddress addr) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public InetAddress getByName(String host) throws UnknownHostException {
-                return InetAddress.getLocalHost();
-            }
-
-            /**
-             * Every time this method is called it will return two InetAddress instances
-             */
-            @Override
-            public Collection<InetAddress> getAllByName(String host) throws UnknownHostException {
-                InetAddress addr = InetAddress.getLocalHost();
-                return ImmutableList.of(addr, addr);
-            }
-
-            @Override
-            public Collection<String> findTXTRecords(String hostname) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public Collection<String> findMXRecords(String hostname) throws TemporaryResolutionException {
-                throw new UnsupportedOperationException();
-            }
-        };
         MXHostAddressIterator it = new MXHostAddressIterator(Arrays.asList("localhost", "localhost2").iterator(), dns, false);
         for (int i = 0; i < 4; i++) {
-            assertTrue(it.hasNext());
-            assertNotNull(it.next());
+            assertThat(it.hasNext()).isTrue();
+            assertThat(it.next()).isNotNull();
         }
-        assertFalse(it.hasNext());
+        assertThat(it.hasNext()).isFalse();
 
         it = new MXHostAddressIterator(Arrays.asList("localhost", "localhost2").iterator(), dns, true);
         for (int i = 0; i < 2; i++) {
-            assertTrue(it.hasNext());
-            assertNotNull(it.next());
+            assertThat(it.hasNext()).isTrue();
+            assertThat(it.next()).isNotNull();
         }
-        assertFalse(it.hasNext());
+        assertThat(it.hasNext()).isFalse();
     }
 
     @Test
     public void testIteratorWithInvalidMX() {
-        DNSService dns = new DNSService() {
-
-            @Override
-            public InetAddress getLocalHost() throws UnknownHostException {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public String getHostName(InetAddress addr) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public InetAddress getByName(String host) throws UnknownHostException {
-                throw new UnknownHostException();
-            }
-
-            /**
-             * Every time this method is called it will return two InetAddress instances
-             */
-            @Override
-            public Collection<InetAddress> getAllByName(String host) throws UnknownHostException {
-                throw new UnknownHostException();
-            }
-
-            @Override
-            public Collection<String> findTXTRecords(String hostname) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public Collection<String> findMXRecords(String hostname) throws TemporaryResolutionException {
-                throw new UnsupportedOperationException();
-            }
-        };
 
         // See JAMES-1271
-        MXHostAddressIterator it = new MXHostAddressIterator(Arrays.asList("localhost").iterator(), dns, false);
-        assertFalse(it.hasNext());
+        MXHostAddressIterator it = new MXHostAddressIterator(Arrays.asList("localhost").iterator(), new InMemoryDNSService(), false);
+        assertThat(it.hasNext()).isFalse();
     }
 }

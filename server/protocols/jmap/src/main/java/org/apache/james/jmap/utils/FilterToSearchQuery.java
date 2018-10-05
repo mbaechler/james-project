@@ -60,7 +60,8 @@ public class FilterToSearchQuery {
                         SearchQuery.address(AddressType.Bcc, text),
                         SearchQuery.headerContains("Subject", text),
                         SearchQuery.attachmentContains(text),
-                        SearchQuery.bodyContains(text)))
+                        SearchQuery.bodyContains(text),
+                        SearchQuery.attachmentFileName(text)))
                 ));
         filter.getFrom().ifPresent(from -> searchQuery.andCriteria(SearchQuery.address(AddressType.From, from)));
         filter.getTo().ifPresent(to -> searchQuery.andCriteria(SearchQuery.address(AddressType.To, to)));
@@ -76,17 +77,13 @@ public class FilterToSearchQuery {
         filter.getIsDraft().ifPresent(isDraft -> searchQuery.andCriteria(SearchQuery.flag(Flag.DRAFT, isDraft)));
         filter.getIsFlagged().ifPresent(isFlagged -> searchQuery.andCriteria(SearchQuery.flag(Flag.FLAGGED, isFlagged)));
         filter.getIsUnread().ifPresent(isUnread -> searchQuery.andCriteria(SearchQuery.flag(Flag.SEEN, !isUnread)));
-        filter.getMaxSize().ifPresent(maxSize -> searchQuery.andCriteria(SearchQuery.sizeLessThan(maxSize)));
-        filter.getMinSize().ifPresent(minSize -> searchQuery.andCriteria(SearchQuery.sizeGreaterThan(minSize)));
+        filter.getIsForwarded().ifPresent(isForwarded -> searchQuery.andCriteria(SearchQuery.flagSet(Keyword.FORWARDED.getFlagName(), isForwarded)));
+        filter.getMaxSize().ifPresent(maxSize -> searchQuery.andCriteria(SearchQuery.sizeLessThan(maxSize.asLong())));
+        filter.getMinSize().ifPresent(minSize -> searchQuery.andCriteria(SearchQuery.sizeGreaterThan(minSize.asLong())));
         filter.getHasAttachment().ifPresent(hasAttachment -> searchQuery.andCriteria(SearchQuery.hasAttachment(hasAttachment)));
-        filter.getHasKeyword().ifPresent(hasKeyword -> {
-            keywordQuery(hasKeyword, true).ifPresent(hasKeywordCriterion
-                -> searchQuery.andCriteria(hasKeywordCriterion));
-        });
-        filter.getNotKeyword().ifPresent(notKeyword -> {
-            keywordQuery(notKeyword, false).ifPresent(notKeywordCriterion
-                -> searchQuery.andCriteria(notKeywordCriterion));
-        });
+        filter.getHasKeyword().ifPresent(hasKeyword -> keywordQuery(hasKeyword, true).ifPresent(searchQuery::andCriteria));
+        filter.getNotKeyword().ifPresent(notKeyword -> keywordQuery(notKeyword, false).ifPresent(searchQuery::andCriteria));
+        filter.getAttachmentFileName().ifPresent(attachmentFileName -> searchQuery.andCriteria(SearchQuery.attachmentFileName(attachmentFileName)));
 
         return searchQuery;
     }

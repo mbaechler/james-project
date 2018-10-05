@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Locale;
 import java.util.Scanner;
 
 import javax.inject.Inject;
@@ -123,11 +122,11 @@ public class ManageSieveMailet extends GenericMailet implements MessageToCoreToM
     @Override
     public void service(Mail mail) throws MessagingException {
         // Sanity checks
-        if (mail.getSender() == null) {
+        if (mail.getSender() == null || mail.getSender().isNullSender()) {
             LOGGER.error("Sender is null");
             return;
         }
-        if (!getMailetContext().isLocalServer(mail.getSender().getDomain().toLowerCase(Locale.US))) {
+        if (!getMailetContext().isLocalServer(mail.getSender().getDomain())) {
             LOGGER.error("Sender not local");
             return;
         }
@@ -139,7 +138,7 @@ public class ManageSieveMailet extends GenericMailet implements MessageToCoreToM
         } else {
             session.setState(Session.State.UNAUTHENTICATED);
         }
-        session.setUser(mail.getSender().getLocalPart() + '@' + (mail.getSender().getDomain() == null ? "localhost" : mail.getSender().getDomain()));
+        session.setUser(mail.getSender().asString());
         getMailetContext().sendMail(mail.getRecipients().iterator().next(), Lists.newArrayList(mail.getSender()),transcoder.execute(session, mail.getMessage()));
         mail.setState(Mail.GHOST);
         
@@ -181,6 +180,7 @@ public class ManageSieveMailet extends GenericMailet implements MessageToCoreToM
         }
     }
 
+    @Override
     @VisibleForTesting
     public String getHelp() throws MessagingException {
         if (null == help) {
@@ -198,8 +198,7 @@ public class ManageSieveMailet extends GenericMailet implements MessageToCoreToM
             return scanner.useDelimiter("\\A").next();
         } catch (IOException ex) {
             throw new MessagingException("Unable to access help URL: " + helpURL.toExternalForm(), ex);
-        }
-        finally {
+        } finally {
             if (scanner != null) {
                 scanner.close();
             }

@@ -20,6 +20,9 @@ package org.apache.james.rrt.api;
 
 import java.util.Map;
 
+import org.apache.james.core.Domain;
+import org.apache.james.rrt.lib.Mapping;
+import org.apache.james.rrt.lib.MappingSource;
 import org.apache.james.rrt.lib.Mappings;
 
 /**
@@ -27,152 +30,72 @@ import org.apache.james.rrt.lib.Mappings;
  */
 public interface RecipientRewriteTable {
 
-    /**
-     * The prefix which is used for error mappings
-     */
-    String ERROR_PREFIX = "error:";
+    interface Domains {
 
-    /**
-     * The prefix which is used for regex mappings
-     */
-    String REGEX_PREFIX = "regex:";
+        Domain WILDCARD = new Domain(RecipientRewriteTable.WILDCARD) {
 
-    /**
-     * The prefix which is used for alias domain mappings
-     */
-    String ALIASDOMAIN_PREFIX = "domain:";
+            @Override
+            public String name() {
+                throw new IllegalStateException();
+            }
+
+            @Override
+            public String toString() {
+                return "Domain : * (Wildcard)";
+            }
+        };
+    }
 
     /**
      * The wildcard used for alias domain mappings
      */
     String WILDCARD = "*";
 
+    void addMapping(MappingSource source, Mapping mapping) throws RecipientRewriteTableException;
+
+    void removeMapping(MappingSource source, Mapping mapping) throws RecipientRewriteTableException;
+
+    void addRegexMapping(MappingSource source, String regex) throws RecipientRewriteTableException;
+
+    void removeRegexMapping(MappingSource source, String regex) throws RecipientRewriteTableException;
+
+    void addAddressMapping(MappingSource source, String address) throws RecipientRewriteTableException;
+
+    void removeAddressMapping(MappingSource source, String address) throws RecipientRewriteTableException;
+
+    void addErrorMapping(MappingSource source, String error) throws RecipientRewriteTableException;
+
+    void removeErrorMapping(MappingSource source, String error) throws RecipientRewriteTableException;
+
+    void addAliasDomainMapping(MappingSource source, Domain realDomain) throws RecipientRewriteTableException;
+
+    void removeAliasDomainMapping(MappingSource source, Domain realDomain) throws RecipientRewriteTableException;
+
+    void addForwardMapping(MappingSource source, String address) throws RecipientRewriteTableException;
+
+    void removeForwardMapping(MappingSource source, String address) throws RecipientRewriteTableException;
+
+    void addGroupMapping(MappingSource source, String address) throws RecipientRewriteTableException;
+
+    void removeGroupMapping(MappingSource source, String address) throws RecipientRewriteTableException;
+
     /**
-     * Return the mapped MailAddress for the given address. Return null if no
+     * Return the Mappings for the given source. Return null if no
      * matched mapping was found
-     * 
-     * @param user
-     *            the MailAddress
-     * @return the mapped mailAddress
+     *
      * @throws ErrorMappingException
      *             get thrown if an error mapping was found
-     * @throws RecipientRewriteTableException
      */
-    Mappings getMappings(String user, String domain) throws ErrorMappingException, RecipientRewriteTableException;
-
-    /**
-     * Add regex mapping
-     * 
-     * @param user
-     *            the username. Null if no username should be used
-     * @param domain
-     *            the domain. Null if no domain should be used
-     * @param regex
-     *            the regex.
-     * @throws RecipientRewriteTableException
-     */
-    void addRegexMapping(String user, String domain, String regex) throws RecipientRewriteTableException;
-
-    /**
-     * Remove regex mapping
-     * 
-     * @param user
-     *            the username. Null if no username should be used
-     * @param domain
-     *            the domain. Null if no domain should be used
-     * @param regex
-     *            the regex.
-     * @throws RecipientRewriteTableException
-     */
-    void removeRegexMapping(String user, String domain, String regex) throws RecipientRewriteTableException;
-
-    /***
-     * Add address mapping
-     * 
-     * @param user
-     *            the username. Null if no username should be used
-     * @param domain
-     *            the domain. Null if no domain should be used
-     * @param address
-     * @throws RecipientRewriteTableException
-     */
-    void addAddressMapping(String user, String domain, String address) throws RecipientRewriteTableException;
-
-    /**
-     * Remove address mapping
-     * 
-     * @param user
-     *            the username. Null if no username should be used
-     * @param domain
-     *            the domain. Null if no domain should be used
-     * @param address
-     * @throws RecipientRewriteTableException
-     */
-    void removeAddressMapping(String user, String domain, String address) throws RecipientRewriteTableException;
-
-    /**
-     * Add error mapping
-     * 
-     * @param user
-     *            the username. Null if no username should be used
-     * @param domain
-     *            the domain. Null if no domain should be used
-     * @param error
-     *            the regex.
-     * @throws RecipientRewriteTableException
-     */
-    void addErrorMapping(String user, String domain, String error) throws RecipientRewriteTableException;
-
-    /**
-     * Remove error mapping
-     * 
-     * @param user
-     *            the username. Null if no username should be used
-     * @param domain
-     *            the domain. Null if no domain should be used
-     * @param error
-     * @throws RecipientRewriteTableException
-     */
-    void removeErrorMapping(String user, String domain, String error) throws RecipientRewriteTableException;
+    Mappings getMappings(String user, Domain domain) throws ErrorMappingException, RecipientRewriteTableException;
 
     /**
      * Return the explicit mapping stored for the given user and domain. Return
      * null if no mapping was found
      * 
-     * @param user
-     *            the username
-     * @param domain
-     *            the domain
      * @return the collection which holds the mappings.
      * @throws RecipientRewriteTableException
      */
-    Mappings getUserDomainMappings(String user, String domain) throws RecipientRewriteTableException;
-
-    /**
-     * Add mapping
-     * 
-     * @param user
-     *            the username. Null if no username should be used
-     * @param domain
-     *            the domain. Null if no domain should be used
-     * @param mapping
-     *            the mapping
-     * @throws RecipientRewriteTableException
-     */
-    void addMapping(String user, String domain, String mapping) throws RecipientRewriteTableException;
-
-    /**
-     * Remove mapping
-     * 
-     * @param user
-     *            the username. Null if no username should be used
-     * @param domain
-     *            the domain. Null if no domain should be used
-     * @param mapping
-     *            the mapping
-     * @throws RecipientRewriteTableException
-     */
-    void removeMapping(String user, String domain, String mapping) throws RecipientRewriteTableException;
+    Mappings getUserDomainMappings(MappingSource source) throws RecipientRewriteTableException;
 
     /**
      * Return a Map which holds all mappings. The key is the user@domain and the
@@ -181,35 +104,21 @@ public interface RecipientRewriteTable {
      * @return Map which holds all mappings
      * @throws RecipientRewriteTableException
      */
-    Map<String, Mappings> getAllMappings() throws RecipientRewriteTableException;
-
-    /**
-     * Add aliasDomain mapping
-     * 
-     * @param aliasDomain
-     *            the aliasdomain which should be mapped to the realDomain
-     * @param realDomain
-     *            the realDomain
-     * @throws RecipientRewriteTableException
-     */
-    void addAliasDomainMapping(String aliasDomain, String realDomain) throws RecipientRewriteTableException;
-
-    /**
-     * Remove aliasDomain mapping
-     * 
-     * @param aliasDomain
-     *            the aliasdomain which should be mapped to the realDomain
-     * @param realDomain
-     *            the realDomain
-     * @throws RecipientRewriteTableException
-     */
-    void removeAliasDomainMapping(String aliasDomain, String realDomain) throws RecipientRewriteTableException;
+    Map<MappingSource, Mappings> getAllMappings() throws RecipientRewriteTableException;
 
     class ErrorMappingException extends Exception {
 
         private static final long serialVersionUID = 2348752938798L;
 
         public ErrorMappingException(String string) {
+            super(string);
+        }
+
+    }
+
+    class TooManyMappingException extends ErrorMappingException {
+        
+        public TooManyMappingException(String string) {
             super(string);
         }
 

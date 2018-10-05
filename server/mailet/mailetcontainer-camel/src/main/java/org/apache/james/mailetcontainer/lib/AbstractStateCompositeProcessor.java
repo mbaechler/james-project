@@ -65,28 +65,21 @@ public abstract class AbstractStateCompositeProcessor implements MailProcessor, 
         listeners.remove(listener);
     }
 
-    /**
-     * @see
-     * org.apache.james.lifecycle.api.Configurable#configure(org.apache.commons.configuration.HierarchicalConfiguration)
-     */
+    @Override
     public void configure(HierarchicalConfiguration config) throws ConfigurationException {
         this.config = config;
         this.enableJmx = config.getBoolean("[@enableJmx]", true);
 
     }
 
-    /**
-     * Service the given {@link Mail} by hand the {@link Mail} over the
-     * {@link MailProcessor} which is responsible for the
-     * {@link Mail#getState()}
-     */
+    @Override
     public void service(Mail mail) throws MessagingException {
         long start = System.currentTimeMillis();
         MessagingException ex = null;
         MailProcessor processor = getProcessor(mail.getState());
 
         if (processor != null) {
-            LOGGER.debug("Call MailProcessor " + mail.getState());
+            LOGGER.debug("Call MailProcessor {}", mail.getState());
             try {
                 processor.service(mail);
 
@@ -178,7 +171,7 @@ public abstract class AbstractStateCompositeProcessor implements MailProcessor, 
 
     @PreDestroy
     public void dispose() {
-        String names[] = getProcessorStates();
+        String[] names = getProcessorStates();
         for (String name : names) {
             MailProcessor processor = getProcessor(name);
             if (processor instanceof AbstractStateMailetProcessor) {

@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+
 import javax.mail.Flags;
 
 import org.apache.james.jmap.methods.ValidationResult;
@@ -30,6 +31,8 @@ import org.apache.james.jmap.methods.ValidationResult;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.MoreObjects;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -45,9 +48,7 @@ public class UpdateMessagePatch {
     @JsonPOJOBuilder(withPrefix = "")
     public static class Builder {
         private Optional<List<String>> mailboxIds = Optional.empty();
-        private Optional<Boolean> isFlagged = Optional.empty();
-        private Optional<Boolean> isUnread = Optional.empty();
-        private Optional<Boolean> isAnswered = Optional.empty();
+        private OldKeyword.Builder oldKeyworkBuilder = OldKeyword.builder();
         private Optional<Map<String, Boolean>> keywords = Optional.empty();
         private Set<ValidationResult> validationResult = Sets.newHashSet();
 
@@ -62,17 +63,27 @@ public class UpdateMessagePatch {
         }
 
         public Builder isFlagged(Boolean isFlagged) {
-            this.isFlagged = Optional.of(isFlagged);
+            oldKeyworkBuilder.isFlagged(isFlagged);
             return this;
         }
 
         public Builder isUnread(Boolean isUnread) {
-            this.isUnread = Optional.of(isUnread);
+            oldKeyworkBuilder.isUnread(isUnread);
             return this;
         }
 
         public Builder isAnswered(Boolean isAnswered) {
-            this.isAnswered = Optional.of(isAnswered);
+            oldKeyworkBuilder.isAnswered(isAnswered);
+            return this;
+        }
+
+        public Builder isDraft(Boolean isDraft) {
+            oldKeyworkBuilder.isDraft(isDraft);
+            return this;
+        }
+
+        public Builder isForwarded(Boolean isForwarded) {
+            oldKeyworkBuilder.isForwarded(isForwarded);
             return this;
         }
 
@@ -89,35 +100,35 @@ public class UpdateMessagePatch {
                     .build()));
             }
 
-            Optional<Keywords> updateKeywords = Keywords.factory()
-                .throwOnImapNonExposedKeywords()
-                .fromMapOrOldKeyword(keywords, getOldKeywords());
+            Optional<Keywords> mayBeKeywords = creationKeywords();
+            Optional<OldKeyword> oldKeywords = oldKeyworkBuilder.computeOldKeyword();
+            Preconditions.checkArgument(!(mayBeKeywords.isPresent() && oldKeywords.isPresent()), "Does not support keyword and is* at the same time");
 
-            return new UpdateMessagePatch(mailboxIds, updateKeywords, ImmutableList.copyOf(validationResult));
+            return new UpdateMessagePatch(mailboxIds, mayBeKeywords, oldKeywords, ImmutableList.copyOf(validationResult));
         }
 
-        private Optional<OldKeyword> getOldKeywords() {
-            if (isAnswered.isPresent() || isFlagged.isPresent() || isUnread.isPresent()) {
-                Optional<Boolean> isDraft = Optional.empty();
-                return Optional.of(new OldKeyword(isUnread, isFlagged, isAnswered, isDraft));
-            }
-            return Optional.empty();
+        private Optional<Keywords> creationKeywords() {
+            return keywords.map(map -> Keywords.factory()
+                    .throwOnImapNonExposedKeywords()
+                    .fromMap(map));
         }
 
     }
 
     private final Optional<List<String>> mailboxIds;
     private final Optional<Keywords> keywords;
-
+    private final Optional<OldKeyword> oldKeywords;
     private final ImmutableList<ValidationResult> validationErrors;
 
     @VisibleForTesting
     UpdateMessagePatch(Optional<List<String>> mailboxIds,
                        Optional<Keywords> keywords,
+                       Optional<OldKeyword> oldKeywords,
                        ImmutableList<ValidationResult> validationResults) {
 
         this.mailboxIds = mailboxIds;
         this.keywords = keywords;
+        this.oldKeywords = oldKeywords;
         this.validationErrors = validationResults;
     }
 
@@ -125,12 +136,8 @@ public class UpdateMessagePatch {
         return mailboxIds;
     }
 
-    public Optional<Keywords> getKeywords() {
-        return keywords;
-    }
-
     public boolean isFlagsIdentity() {
-        return !keywords.isPresent();
+        return !oldKeywords.isPresent() && !keywords.isPresent();
     }
 
     public ImmutableList<ValidationResult> getValidationErrors() {
@@ -142,12 +149,20 @@ public class UpdateMessagePatch {
     }
 
     public Flags applyToState(Flags currentFlags) {
-        return keywords.map(keyword -> {
-            if (currentFlags.contains(Flags.Flag.DRAFT) != keyword.getKeywords().contains(Keyword.DRAFT)) {
-                throw new IllegalArgumentException("Cannot add or remove draft flag");
-            }
-            return keyword.asFlagsWithRecentAndDeletedFrom(currentFlags);
-        }).orElse(new Flags());
+        return oldKeywords
+            .map(oldKeyword -> oldKeyword.applyToState(currentFlags))
+            .orElse(keywords
+                .map(keyword -> keyword.asFlagsWithRecentAndDeletedFrom(currentFlags))
+                .orElse(currentFlags));
     }
 
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+            .add("mailboxIds", mailboxIds)
+            .add("keywords", keywords)
+            .add("oldKeywords", oldKeywords)
+            .add("validationErrors", validationErrors)
+            .toString();
+    }
 }

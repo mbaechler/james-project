@@ -61,7 +61,7 @@ import org.bouncycastle.operator.OperatorCreationException;
  * @version CVS $Revision$ $Date$
  * @since 3.0
  */
-public class SMIMEKeyHolder implements KeyHolder{
+public class SMIMEKeyHolder implements KeyHolder {
 
     private final JcaCertStore jcaCertStore;
 
@@ -131,7 +131,7 @@ public class SMIMEKeyHolder implements KeyHolder{
         
         Enumeration<String> aliases = keyStore.aliases();
         if (keyAlias == null) {
-            if(aliases.hasMoreElements()) {
+            if (aliases.hasMoreElements()) {
                 keyAlias = aliases.nextElement();
             } else {
                 throw new KeyStoreException("No alias was found in keystore.");
@@ -226,6 +226,7 @@ public class SMIMEKeyHolder implements KeyHolder{
      * @param message The message to sign.
      * @return The signed <CODE>MimeMultipart</CODE>.
      */    
+    @Override
     public MimeMultipart generate(MimeMessage message) throws CertStoreException, NoSuchAlgorithmException, NoSuchProviderException,
         SMIMEException, OperatorCreationException, CertificateEncodingException {
         
@@ -242,6 +243,7 @@ public class SMIMEKeyHolder implements KeyHolder{
      * @param content The content to sign.
      * @return The signed <CODE>MimeMultipart</CODE>.
      */
+    @Override
     public MimeMultipart generate(MimeBodyPart content) throws CertStoreException, NoSuchAlgorithmException, NoSuchProviderException,
         SMIMEException, OperatorCreationException, CertificateEncodingException {
         
@@ -275,7 +277,7 @@ public class SMIMEKeyHolder implements KeyHolder{
         return extractAttribute(certificate.getSubjectDN().toString(), "CN=");
         
     }
-    
+
     /**
      * Extracts the signer <I>email address</I> (EMAILADDRESS=) from an <CODE>X509Certificate</CODE> <I>distinguished name</I>.
      * @param certificate The certificate to extract the information from.
@@ -293,24 +295,27 @@ public class SMIMEKeyHolder implements KeyHolder{
      * @return Value of property signerDistinguishedName.
      * @see #getSignerDistinguishedName(X509Certificate)
      */
+    @Override
     public String getSignerDistinguishedName() {
         return getSignerDistinguishedName(getCertificate());
     }
-    
+
     /**
      * Getter for property signerCN.
      * @return Value of property signerCN.
      * @see #getSignerCN(X509Certificate)
      */
+    @Override
     public String getSignerCN() {
         return getSignerCN(getCertificate());
     }
-    
-     /**
+
+    /**
      * Getter for property signerAddress.
      * @return Value of property signerMailAddress.
      * @see #getSignerAddress(X509Certificate)
      */
+    @Override
     public String getSignerAddress() {
         return getSignerAddress(getCertificate());
     }

@@ -35,9 +35,9 @@ import javax.mail.Multipart;
 import javax.mail.Part;
 import javax.mail.internet.MimeMessage;
 
+import org.apache.james.core.MailAddress;
 import org.apache.mailet.Experimental;
 import org.apache.mailet.Mail;
-import org.apache.james.core.MailAddress;
 import org.apache.mailet.base.GenericMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,10 +93,7 @@ public class AttachmentFileNameIs extends GenericMatcher {
     protected boolean unzipIsRequested;
     
 
-    /*
-     * (non-Javadoc)
-     * @see org.apache.mailet.base.GenericMatcher#init()
-     */
+    @Override
     public void init() throws MessagingException {
         /* sets up fileNameMasks variable by parsing the condition */
         
@@ -135,6 +132,7 @@ public class AttachmentFileNameIs extends GenericMatcher {
      * @param mail
      * @throws MessagingException if no matching attachment is found and at least one exception was thrown
      */
+    @Override
     public Collection<MailAddress> match(Mail mail) throws MessagingException {
         
         try {
@@ -201,11 +199,11 @@ public class AttachmentFileNameIs extends GenericMatcher {
                 // check the file name
                 if (matchFound(fileName)) {
                     if (isDebug) {
-                        LOGGER.debug("matched " + fileName);
+                        LOGGER.debug("matched {}", fileName);
                     }
                     return true;
                 }
-                if (unzipIsRequested && fileName.endsWith(ZIP_SUFFIX) && matchFoundInZip(part)){
+                if (unzipIsRequested && fileName.endsWith(ZIP_SUFFIX) && matchFoundInZip(part)) {
                     return true;
                 }
             }
@@ -257,7 +255,7 @@ public class AttachmentFileNameIs extends GenericMatcher {
                 String fileName = zipEntry.getName();
                 if (matchFound(fileName)) {
                     if (isDebug) {
-                        LOGGER.debug("matched " + part.getFileName() + "(" + fileName + ")");
+                        LOGGER.debug("matched {}({})", part.getFileName(), fileName);
                     }
                     return true;
                 }

@@ -26,7 +26,7 @@
     <parent>
         <groupId>org.apache.james</groupId>
         <artifactId>james-project</artifactId>
-        <version>3.1.0-SNAPSHOT</version>
+        <version>3.2.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>james-server</artifactId>
@@ -40,6 +40,8 @@
     <modules>
         <module>app</module>
 
+        <module>blob</module>
+
         <module>container/cli</module>
         <module>container/cli-integration</module>
         <module>container/core</module>
@@ -48,10 +50,10 @@
         <module>container/jetty</module>
         <module>container/lifecycle-api</module>
         <module>container/mailbox-adapter</module>
+        <module>container/mailbox-jmx</module>
         <module>container/metrics/metrics-es-reporter</module>
         <module>container/spring</module>
         <module>container/util</module>
-        <module>container/util-java8</module>
 
         <module>data/data-api</module>
         <module>data/data-cassandra</module>
@@ -70,15 +72,17 @@
         <module>dns-service/dnsservice-api</module>
         <module>dns-service/dnsservice-dnsjava</module>
         <module>dns-service/dnsservice-library</module>
+        <module>dns-service/dnsservice-test</module>
 
-        <module>karaf/distribution</module>
-        <module>karaf/features</module>
-        <module>karaf/integration</module>
         <module>mailet/integration-testing</module>
 
         <module>mailet/mailetcontainer-api</module>
         <module>mailet/mailetcontainer-camel</module>
         <module>mailet/mailets</module>
+
+        <module>mailrepository/mailrepository-api</module>
+        <module>mailrepository/mailrepository-memory</module>
+        <module>mailrepository/mailrepository-cassandra</module>
 
         <module>protocols/fetchmail</module>
         <module>protocols/jmap</module>
@@ -91,17 +95,16 @@
         <module>protocols/protocols-pop3</module>
         <module>protocols/protocols-smtp</module>
         <module>protocols/webadmin-integration-test</module>
-        <module>protocols/webadmin/webadmin-cassandra</module>
-        <module>protocols/webadmin/webadmin-core</module>
-        <module>protocols/webadmin/webadmin-data</module>
-        <module>protocols/webadmin/webadmin-mailbox</module>
-        <module>protocols/webadmin/webadmin-swagger</module>
-        <module>queue/queue-activemq</module>
+        <module>protocols/webadmin</module>
 
+        <module>queue/queue-activemq</module>
         <module>queue/queue-api</module>
         <module>queue/queue-file</module>
         <module>queue/queue-jms</module>
+        <module>queue/queue-memory</module>
+        <module>queue/queue-rabbitmq</module>
 
+        <module>task</module>
         <module>testing</module>
     </modules>
 
@@ -170,24 +173,4 @@
         </plugins>
     </build>
 
-    <profiles>
-        <profile>
-            <!-- run live tests, ie. ones that do not run stably enough in
-            a CI environment (for example, karaf integration tests accessing external network
-            resources) -->
-            <id>livetests</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <includes>
-                                <include>**/*TestLive.java</include>
-                            </includes>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>

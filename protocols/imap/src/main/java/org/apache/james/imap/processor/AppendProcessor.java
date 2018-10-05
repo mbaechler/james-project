@@ -19,6 +19,8 @@
 
 package org.apache.james.imap.processor;
 
+import static org.apache.commons.io.output.NullOutputStream.NULL_OUTPUT_STREAM;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,6 +28,7 @@ import java.util.Date;
 
 import javax.mail.Flags;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.james.imap.api.ImapCommand;
 import org.apache.james.imap.api.ImapSessionUtils;
 import org.apache.james.imap.api.display.HumanReadableText;
@@ -59,13 +62,7 @@ public class AppendProcessor extends AbstractMailboxProcessor<AppendRequest> {
         super(AppendRequest.class, next, mailboxManager, statusResponseFactory, metricFactory);
     }
 
-    /**
-     * @see
-     * org.apache.james.imap.processor.AbstractMailboxProcessor#doProcess(org.apache.james.imap.api.message.request.ImapRequest,
-     * org.apache.james.imap.api.process.ImapSession, java.lang.String,
-     * org.apache.james.imap.api.ImapCommand,
-     * org.apache.james.imap.api.process.ImapProcessor.Responder)
-     */
+    @Override
     protected void doProcess(AppendRequest request, ImapSession session, String tag, ImapCommand command, Responder responder) {
         final String mailboxName = request.getMailboxName();
         final InputStream messageIn = request.getMessage();
@@ -82,7 +79,7 @@ public class AppendProcessor extends AbstractMailboxProcessor<AppendRequest> {
             // consume message on exception
             consume(messageIn);
 
-            LOGGER.debug("Append failed for mailbox " + mailboxPath, e);
+            LOGGER.debug("Append failed for mailbox {}", mailboxPath, e);
             
             // Indicates that the mailbox does not exist
             // So TRY CREATE
@@ -92,7 +89,7 @@ public class AppendProcessor extends AbstractMailboxProcessor<AppendRequest> {
             // consume message on exception
             consume(messageIn);
             
-            LOGGER.error("Append failed for mailbox " + mailboxPath, e);
+            LOGGER.error("Append failed for mailbox {}", mailboxPath, e);
             
             // Some other issue
             no(command, tag, responder, HumanReadableText.GENERIC_FAILURE_DURING_PROCESSING);
@@ -103,8 +100,9 @@ public class AppendProcessor extends AbstractMailboxProcessor<AppendRequest> {
 
     private void consume(InputStream in) {
         try {
-            while (in.read() != -1)
-                ; // NOPMD false positive
+            // IOUtils.copy() buffers the input internally, so there is no need
+            // to use a BufferedInputStream.
+            IOUtils.copy(in, NULL_OUTPUT_STREAM);
         } catch (IOException e1) { // NOPMD false positive
             // just consume
         }
@@ -153,7 +151,7 @@ public class AppendProcessor extends AbstractMailboxProcessor<AppendRequest> {
             // So TRY CREATE
             tryCreate(session, tag, command, responder, e);
         } catch (MailboxException e) {
-            LOGGER.error("Unable to append message to mailbox " + mailboxPath, e);
+            LOGGER.error("Unable to append message to mailbox {}", mailboxPath, e);
             // Some other issue
             no(command, tag, responder, HumanReadableText.SAVE_FAILED);
         }

@@ -23,12 +23,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
 import javax.mail.MessagingException;
-import javax.mail.internet.AddressException;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
@@ -53,10 +51,11 @@ import org.apache.james.server.core.MailImpl;
 import org.apache.james.server.core.MimeMessageCopyOnWriteProxy;
 import org.apache.james.server.core.MimeMessageInputStream;
 import org.apache.james.server.core.MimeMessageInputStreamSource;
-import org.apache.james.smtpserver.model.MailetMailAddressAdapter;
 import org.apache.mailet.Mail;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.ImmutableList;
 
 /**
  * Handles the calling of JamesMessageHooks
@@ -80,6 +79,7 @@ public class DataLineJamesMessageHookHandler implements DataLineFilter, Extensib
 
     }
 
+    @Override
     public Response onLine(SMTPSession session, ByteBuffer lineByteBuffer, LineHandler<SMTPSession> next) {
 
         byte[] line = new byte[lineByteBuffer.remaining()];
@@ -100,17 +100,7 @@ public class DataLineJamesMessageHookHandler implements DataLineFilter, Extensib
                 List<MailAddress> recipientCollection = (List<MailAddress>) session.getAttachment(SMTPSession.RCPT_LIST, State.Transaction);
                 MailAddress mailAddress = (MailAddress) session.getAttachment(SMTPSession.SENDER, State.Transaction);
 
-                List<MailAddress> rcpts = new ArrayList<>();
-                for (MailAddress address : recipientCollection) {
-                    rcpts.add(new MailetMailAddressAdapter(address));
-                }
-
-                MailetMailAddressAdapter mailetMailAddressAdapter = null;
-                if (mailAddress != MailAddress.nullSender()) {
-                    mailetMailAddressAdapter = new MailetMailAddressAdapter(mailAddress);
-                }
-
-                MailImpl mail = new MailImpl(MailImpl.getId(), mailetMailAddressAdapter, rcpts);
+                MailImpl mail = new MailImpl(MailImpl.getId(), mailAddress, recipientCollection);
 
                 // store mail in the session so we can be sure it get disposed later
                 session.setAttachment(SMTPConstants.MAIL, mail, State.Transaction);
@@ -150,11 +140,6 @@ public class DataLineJamesMessageHookHandler implements DataLineFilter, Extensib
             SMTPResponse response = new SMTPResponse(SMTPRetCode.LOCAL_ERROR, DSNStatus.getStatus(DSNStatus.TRANSIENT, DSNStatus.UNDEFINED_STATUS) + " Error processing message: " + e.getMessage());
             LOGGER.error("Unknown error occurred while processing DATA.", e);
             return response;
-        } catch (AddressException e) {
-            LifecycleUtil.dispose(mmiss);
-            SMTPResponse response = new SMTPResponse(SMTPRetCode.LOCAL_ERROR, DSNStatus.getStatus(DSNStatus.TRANSIENT, DSNStatus.UNDEFINED_STATUS) + " Error processing message: " + e.getMessage());
-            LOGGER.error("Invalid email address while processing DATA.", e);
-            return response;
         }
         return null;
     }
@@ -166,7 +151,7 @@ public class DataLineJamesMessageHookHandler implements DataLineFilter, Extensib
                 OutputStream out;
                 out = mmiss.getWritableOutputStream();
                 for (MessageHook rawHandler : mHandlers) {
-                    LOGGER.debug("executing james message handler " + rawHandler);
+                    LOGGER.debug("executing james message handler {}", rawHandler);
                     long start = System.currentTimeMillis();
 
                     HookResult hRes = rawHandler.onMessage(session, new MailToMailEnvelopeWrapper(mail, out));
@@ -174,7 +159,7 @@ public class DataLineJamesMessageHookHandler implements DataLineFilter, Extensib
 
                     if (rHooks != null) {
                         for (HookResultHook rHook : rHooks) {
-                            LOGGER.debug("executing hook " + rHook);
+                            LOGGER.debug("executing hook {}", rHook);
                             hRes = rHook.onHookResult(session, hRes, executionTime, rawHandler);
                         }
                     }
@@ -189,13 +174,13 @@ public class DataLineJamesMessageHookHandler implements DataLineFilter, Extensib
                 }
 
                 for (JamesMessageHook messageHandler : messageHandlers) {
-                    LOGGER.debug("executing james message handler " + messageHandler);
+                    LOGGER.debug("executing james message handler {}", messageHandler);
                     long start = System.currentTimeMillis();
                     HookResult hRes = messageHandler.onMessage(session, mail);
                     long executionTime = System.currentTimeMillis() - start;
                     if (rHooks != null) {
                         for (HookResultHook rHook : rHooks) {
-                            LOGGER.debug("executing hook " + rHook);
+                            LOGGER.debug("executing hook {}", rHook);
                             hRes = rHook.onHookResult(session, hRes, executionTime, messageHandler);
                         }
                     }
@@ -271,16 +256,7 @@ public class DataLineJamesMessageHookHandler implements DataLineFilter, Extensib
 
         @Override
         public List<MailAddress> getRecipients() {
-            //TODO: not sure this MailAddress transformation code does the right thing
-            List<MailAddress> mailAddressList = new ArrayList<>();
-            for (MailAddress address : mail.getRecipients()) {
-                try {
-                    mailAddressList.add(new MailAddress(address.getLocalPart(), address.getDomain()));
-                } catch (AddressException ex) {
-                    throw new RuntimeException(ex);
-                }
-            }
-            return mailAddressList;
+            return ImmutableList.copyOf(mail.getRecipients());
         }
 
         @Override

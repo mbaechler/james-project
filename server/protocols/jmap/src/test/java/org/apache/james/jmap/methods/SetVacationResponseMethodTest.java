@@ -20,8 +20,8 @@
 package org.apache.james.jmap.methods;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -235,7 +235,7 @@ public class SetVacationResponseMethodTest {
             .responseName(SetVacationResponseMethod.RESPONSE_NAME)
             .response(SetVacationResponse.builder()
                 .notUpdated(Vacation.ID, SetError.builder()
-                    .type(SetVacationResponseMethod.INVALID_ARGUMENTS)
+                    .type(SetError.Type.INVALID_ARGUMENTS)
                     .description(SetVacationResponseMethod.ERROR_MESSAGE_BASE + WRONG_ID)
                     .build())
                 .build())

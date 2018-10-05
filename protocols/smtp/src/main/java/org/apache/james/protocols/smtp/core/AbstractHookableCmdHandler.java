@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 import javax.inject.Inject;
 
@@ -40,20 +41,19 @@ import org.apache.james.protocols.smtp.hook.HookResult;
 import org.apache.james.protocols.smtp.hook.HookResultHook;
 import org.apache.james.protocols.smtp.hook.HookReturnCode;
 import org.apache.james.util.MDCBuilder;
+import org.apache.james.util.OptionalUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Throwables;
 
 /**
  * Abstract class which Handle hook-aware CommanHandler.
  * 
  */
-public abstract class AbstractHookableCmdHandler<Hook extends org.apache.james.protocols.smtp.hook.Hook> implements CommandHandler<SMTPSession>, ExtensibleHandler {
+public abstract class AbstractHookableCmdHandler<HookT extends org.apache.james.protocols.smtp.hook.Hook> implements CommandHandler<SMTPSession>, ExtensibleHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractHookableCmdHandler.class);
 
     private final MetricFactory metricFactory;
-    private List<Hook> hooks;
+    private List<HookT> hooks;
     private List<HookResultHook> rHooks;
 
     @Inject
@@ -61,22 +61,17 @@ public abstract class AbstractHookableCmdHandler<Hook extends org.apache.james.p
         this.metricFactory = metricFactory;
     }
 
-    /**
-     * Handle command processing
-     * 
-     * @see org.apache.james.protocols.api.handler.CommandHandler
-     * #onCommand(org.apache.james.protocols.api.ProtocolSession, Request)
-     */
+    @Override
     public Response onCommand(SMTPSession session, Request request) {
         TimeMetric timeMetric = metricFactory.timer("SMTP-" + request.getCommand().toLowerCase(Locale.US));
         String command = request.getCommand();
         String parameters = request.getArgument();
-        Response response = doFilterChecks(session, command, parameters);
 
         try (Closeable closeable =
                  MDCBuilder.create()
                      .addContext(MDCBuilder.ACTION, command)
                      .build()) {
+            Response response = doFilterChecks(session, command, parameters);
             if (response == null) {
 
                 response = processHooks(session, command, parameters);
@@ -89,7 +84,7 @@ public abstract class AbstractHookableCmdHandler<Hook extends org.apache.james.p
                 return response;
             }
         } catch (IOException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         } finally {
             timeMetric.stopAndPublish();
         }
@@ -109,13 +104,13 @@ public abstract class AbstractHookableCmdHandler<Hook extends org.apache.james.p
      */
     private Response processHooks(SMTPSession session, String command,
             String parameters) {
-        List<Hook> hooks = getHooks();
+        List<HookT> hooks = getHooks();
         if (hooks != null) {
             int count = hooks.size();
             int i = 0;
             while (i < count) {
-                Hook rawHook = hooks.get(i);
-                LOGGER.debug("executing hook " + rawHook.getClass().getName());
+                HookT rawHook = hooks.get(i);
+                LOGGER.debug("executing hook {}", rawHook.getClass().getName());
                 long start = System.currentTimeMillis();
 
                 HookResult hRes = callHook(rawHook, session, parameters);
@@ -123,37 +118,28 @@ public abstract class AbstractHookableCmdHandler<Hook extends org.apache.james.p
 
                 if (rHooks != null) {
                     for (HookResultHook rHook : rHooks) {
-                        LOGGER.debug("executing hook " + rHook);
+                        LOGGER.debug("executing hook {}", rHook);
                         hRes = rHook.onHookResult(session, hRes, executionTime, rawHook);
                     }
                 }
 
                 // call the core cmd if we receive a ok return code of the hook so no other hooks are executed
-                if ((hRes.getResult() & HookReturnCode.OK) == HookReturnCode.OK) {
+                if (hRes.getResult().getAction() == HookReturnCode.Action.OK) {
                     final Response response = doCoreCmd(session, command, parameters);
-                    if ((hRes.getResult() & HookReturnCode.DISCONNECT) == HookReturnCode.DISCONNECT) {
+                    if (hRes.getResult().isDisconnected()) {
                         return new Response() {
 
-                            /*
-                             * (non-Javadoc)
-                             * @see org.apache.james.protocols.api.Response#isEndSession()
-                             */
+                            @Override
                             public boolean isEndSession() {
                                 return true;
                             }
 
-                            /*
-                             * (non-Javadoc)
-                             * @see org.apache.james.protocols.api.Response#getRetCode()
-                             */
+                            @Override
                             public String getRetCode() {
                                 return response.getRetCode();
                             }
 
-                            /*
-                             * (non-Javadoc)
-                             * @see org.apache.james.protocols.api.Response#getLines()
-                             */
+                            @Override
                             public List<CharSequence> getLines() {
                                 return response.getLines();
                             }
@@ -180,7 +166,7 @@ public abstract class AbstractHookableCmdHandler<Hook extends org.apache.james.p
      * @param parameters the parameters
      * @return the HookResult, will be calculated using HookResultToSMTPResponse.
      */
-    protected abstract HookResult callHook(Hook rawHook, SMTPSession session, String parameters);
+    protected abstract HookResult callHook(HookT rawHook, SMTPSession session, String parameters);
 
     /**
      * Convert the HookResult to SMTPResponse using default values. Should be override for using own values
@@ -190,59 +176,69 @@ public abstract class AbstractHookableCmdHandler<Hook extends org.apache.james.p
      */
     public static SMTPResponse calcDefaultSMTPResponse(HookResult result) {
         if (result != null) {
-            int rCode = result.getResult();
-            String smtpRetCode = result.getSmtpRetCode();
-            String smtpDesc = result.getSmtpDescription();
-    
-            if ((rCode &HookReturnCode.DENY) == HookReturnCode.DENY) {
-                if (smtpRetCode == null)
-                    smtpRetCode = SMTPRetCode.TRANSACTION_FAILED;
-                if (smtpDesc == null)
-                    smtpDesc = "Email rejected";
-    
-                SMTPResponse response =  new SMTPResponse(smtpRetCode, smtpDesc);
-                if ((rCode & HookReturnCode.DISCONNECT) == HookReturnCode.DISCONNECT) {
-                    response.setEndSession(true);
-                }
-                return response;
-            } else if ((rCode & HookReturnCode.DENYSOFT) == HookReturnCode.DENYSOFT) {
-                if (smtpRetCode == null)
-                    smtpRetCode = SMTPRetCode.LOCAL_ERROR;
-                if (smtpDesc == null)
-                    smtpDesc = "Temporary problem. Please try again later";
-    
-                SMTPResponse response = new SMTPResponse(smtpRetCode, smtpDesc);
-                if ((rCode & HookReturnCode.DISCONNECT) == HookReturnCode.DISCONNECT) {
-                    response.setEndSession(true);
-                }
-                return response;
-            } else if ((rCode & HookReturnCode.OK) == HookReturnCode.OK) {
-                if (smtpRetCode == null)
-                    smtpRetCode = SMTPRetCode.MAIL_OK;
-                if (smtpDesc == null)
-                    smtpDesc = "Command accepted";
-    
-                SMTPResponse response = new SMTPResponse(smtpRetCode, smtpDesc);
-                if ((rCode & HookReturnCode.DISCONNECT) == HookReturnCode.DISCONNECT) {
-                    response.setEndSession(true);
-                }
-                return response;
-            } else if ((rCode & HookReturnCode.DISCONNECT) == HookReturnCode.DISCONNECT) {
-                if (smtpRetCode == null)
-                    smtpRetCode = SMTPRetCode.TRANSACTION_FAILED;
-                if (smtpDesc == null)
-                    smtpDesc = "Server disconnected";
+            HookReturnCode returnCode = result.getResult();
 
-                SMTPResponse response =  new SMTPResponse(smtpRetCode, smtpDesc);
-                response.setEndSession(true);
+            String smtpReturnCode = OptionalUtils.or(
+                    Optional.ofNullable(result.getSmtpRetCode()),
+                    retrieveDefaultSmtpReturnCode(returnCode))
+                .orElse(null);
+
+            String smtpDescription = OptionalUtils.or(
+                    Optional.ofNullable(result.getSmtpDescription()),
+                    retrieveDefaultSmtpDescription(returnCode))
+                .orElse(null);
+
+            if (canBeConvertedToSmtpAnswer(returnCode)) {
+
+                SMTPResponse response = new SMTPResponse(smtpReturnCode, smtpDescription);
+                if (returnCode.isDisconnected()) {
+                    response.setEndSession(true);
+                }
                 return response;
-            } else {
-                // Return null as default
-                return null;
             }
-        } else {
-            return null;
         }
+        return null;
+    }
+
+    public static boolean canBeConvertedToSmtpAnswer(HookReturnCode returnCode) {
+        return HookReturnCode.Action.ACTIVE_ACTIONS
+            .contains(returnCode.getAction()) || returnCode.isDisconnected();
+    }
+
+    private static Optional<String> retrieveDefaultSmtpDescription(HookReturnCode returnCode) {
+        switch (returnCode.getAction()) {
+            case DENY:
+                return Optional.of("Email rejected");
+            case DENYSOFT:
+                return Optional.of("Temporary problem. Please try again later");
+            case OK:
+                return Optional.of("Command accepted");
+            case DECLINED:
+            case NONE:
+                break;
+        }
+        if (returnCode.isDisconnected()) {
+            return Optional.of("Server disconnected");
+        }
+        return Optional.empty();
+    }
+
+    private static Optional<String> retrieveDefaultSmtpReturnCode(HookReturnCode returnCode) {
+        switch (returnCode.getAction()) {
+            case DENY:
+                return Optional.of(SMTPRetCode.TRANSACTION_FAILED);
+            case DENYSOFT:
+                return Optional.of(SMTPRetCode.LOCAL_ERROR);
+            case OK:
+                return Optional.of(SMTPRetCode.MAIL_OK);
+            case DECLINED:
+            case NONE:
+                break;
+        }
+        if (returnCode.isDisconnected()) {
+            return Optional.of(SMTPRetCode.TRANSACTION_FAILED);
+        }
+        return Optional.empty();
     }
 
     /**
@@ -269,9 +265,7 @@ public abstract class AbstractHookableCmdHandler<Hook extends org.apache.james.p
             String command, String parameters);
     
 
-    /**
-     * @see org.apache.james.protocols.api.handler.ExtensibleHandler#getMarkerInterfaces()
-     */
+    @Override
     public List<Class<?>> getMarkerInterfaces() {
         List<Class<?>> classes = new ArrayList<>(2);
         classes.add(getHookInterface());
@@ -284,16 +278,13 @@ public abstract class AbstractHookableCmdHandler<Hook extends org.apache.james.p
      * 
      * @return interface
      */
-    protected abstract Class<Hook> getHookInterface();
+    protected abstract Class<HookT> getHookInterface();
 
-    /**
-     * @see org.apache.james.protocols.api.handler.ExtensibleHandler#wireExtensions(java.lang.Class,
-     *      java.util.List)
-     */
+    @Override
     @SuppressWarnings("unchecked")
-	public void wireExtensions(Class<?> interfaceName, List<?> extension) {
+    public void wireExtensions(Class<?> interfaceName, List<?> extension) {
         if (getHookInterface().equals(interfaceName)) {
-            this.hooks = (List<Hook>) extension;
+            this.hooks = (List<HookT>) extension;
         } else if (HookResultHook.class.equals(interfaceName)) {
             this.rHooks = (List<HookResultHook>) extension;
         }
@@ -305,7 +296,7 @@ public abstract class AbstractHookableCmdHandler<Hook extends org.apache.james.p
      * 
      * @return list containing all hooks for the cmd handler
      */
-    protected List<Hook> getHooks() {
+    protected List<HookT> getHooks() {
         return hooks;
     }
 

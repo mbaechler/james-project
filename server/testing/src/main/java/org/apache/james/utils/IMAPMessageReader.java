@@ -24,80 +24,125 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.commons.net.imap.IMAPClient;
+import org.awaitility.core.ConditionFactory;
+import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.rules.ExternalResource;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 
-public class IMAPMessageReader implements Closeable {
+public class IMAPMessageReader extends ExternalResource implements Closeable, AfterEachCallback {
 
-    private static final String INBOX = "INBOX";
+    public static final String INBOX = "INBOX";
 
     private final IMAPClient imapClient;
 
-    public IMAPMessageReader(String host, int port) throws IOException {
-        imapClient = new IMAPClient();
+    @VisibleForTesting
+    IMAPMessageReader(IMAPClient imapClient) {
+        this.imapClient = imapClient;
+    }
+
+    public IMAPMessageReader() {
+        this(new IMAPClient());
+    }
+
+    public IMAPMessageReader connect(String host, int port) throws IOException {
         imapClient.connect(host, port);
+        return this;
     }
 
-    public void connectAndSelect(String user, String password, String mailbox) throws IOException{
+    public IMAPMessageReader disconnect() throws IOException {
+        imapClient.disconnect();
+        return this;
+    }
+
+    public IMAPMessageReader login(String user, String password) throws IOException {
         imapClient.login(user, password);
+        return this;
+    }
+
+    public IMAPMessageReader select(String mailbox) throws IOException {
         imapClient.select(mailbox);
+        return this;
     }
 
-    public boolean countReceivedMessage(String user, String password, int numberOfMessages) throws IOException {
-        return countReceivedMessageInMailbox(user, password, INBOX, numberOfMessages);
-    }
-
-    public boolean countReceivedMessageInMailbox(String user, String password, String mailbox, int numberOfMessages) throws IOException {
-        connectAndSelect(user, password, mailbox);
-
-        return imapClient.getReplyString()
-            .contains(numberOfMessages + " EXISTS");
-    }
-
-    public boolean userReceivedMessage(String user, String password) throws IOException {
-        return userReceivedMessageInMailbox(user, password, INBOX);
-    }
-
-    public boolean userReceivedMessageInMailbox(String user, String password, String mailbox) throws IOException {
-        connectAndSelect(user, password, mailbox);
+    public boolean hasAMessage() throws IOException {
         imapClient.fetch("1:1", "ALL");
         return imapClient.getReplyString()
             .contains("OK FETCH completed");
     }
 
-    public boolean userGetNotifiedForNewMessagesWhenSelectingMailbox(String user, String password, int numOfNewMessage, String mailboxName) throws IOException {
-        connectAndSelect(user, password, mailboxName);
-
-        return imapClient.getReplyString().contains("OK [UNSEEN " + numOfNewMessage +"]");
+    public IMAPMessageReader awaitMessage(ConditionFactory conditionFactory) throws IOException {
+        conditionFactory.until(this::hasAMessage);
+        return this;
     }
 
-    public boolean userDoesNotReceiveMessage(String user, String password) throws IOException {
-        return userDoesNotReceiveMessageInMailbox(user, password, INBOX);
+    public IMAPMessageReader awaitMessageCount(ConditionFactory conditionFactory, int messageCount) {
+        conditionFactory.until(() -> {
+            try {
+                imapClient.fetch("1:*", "ALL");
+                return countFetchedEntries() == messageCount;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+        return this;
     }
 
-    public boolean userDoesNotReceiveMessageInMailbox(String user, String password, String mailboxName) throws IOException {
-        connectAndSelect(user, password, mailboxName);
+    private long countFetchedEntries() {
+        return Splitter.on("\n")
+            .trimResults()
+            .splitToList(imapClient.getReplyString())
+            .stream()
+            .filter(s -> s.startsWith("*"))
+            .count();
+    }
+
+    public IMAPMessageReader awaitNoMessage(ConditionFactory conditionFactory) throws IOException {
+        conditionFactory.until(this::userDoesNotReceiveMessage);
+        return this;
+    }
+
+    public boolean hasAMessageWithFlags(String flags) throws IOException {
+        imapClient.fetch("1:1", "ALL");
+        String replyString = imapClient.getReplyString();
+        return isCompletedWithFlags(flags, replyString);
+    }
+
+    @VisibleForTesting
+    boolean isCompletedWithFlags(String flags, String replyString) {
+        return replyString.contains("OK FETCH completed")
+            && Splitter.on(" ")
+                .splitToList(flags)
+                .stream()
+                .allMatch(s -> replyString.contains(s));
+    }
+
+    public boolean userGetNotifiedForNewMessagesWhenSelectingMailbox(int numOfNewMessage) throws IOException {
+        return imapClient.getReplyString().contains("OK [UNSEEN " + numOfNewMessage + "]");
+    }
+
+    public boolean userDoesNotReceiveMessage() throws IOException {
         imapClient.fetch("1:1", "ALL");
         return imapClient.getReplyString()
              .contains("BAD FETCH failed. Invalid messageset");
     }
 
-    public String readFirstMessageInInbox(String user, String password) throws IOException {
-
-        return readFirstMessageInMailbox(user, password, "(BODY[])", INBOX);
+    public String readFirstMessage() throws IOException {
+        return readFirstMessageInMailbox("(BODY[])");
     }
 
-    public String readFirstMessageHeadersInMailbox(String user, String password, String mailboxName) throws IOException {
-        return readFirstMessageInMailbox(user, password, "(RFC822.HEADER)", mailboxName);
+    public String readFirstMessageHeaders() throws IOException {
+        return readFirstMessageInMailbox("(RFC822.HEADER)");
     }
 
-    public String readFirstMessageHeadersInInbox(String user, String password) throws IOException {
-        return readFirstMessageInMailbox(user, password, "(RFC822.HEADER)", INBOX);
+    public String setFlagsForAllMessagesInMailbox(String flag) throws IOException {
+        imapClient.store("1:*", "+FLAGS", flag);
+        return imapClient.getReplyString();
     }
 
-    private String readFirstMessageInMailbox(String user, String password, String parameters, String mailboxName) throws IOException {
-        imapClient.login(user, password);
-        imapClient.select(mailboxName);
+    private String readFirstMessageInMailbox(String parameters) throws IOException {
         imapClient.fetch("1:1", parameters);
         return imapClient.getReplyString();
     }
@@ -132,10 +177,39 @@ public class IMAPMessageReader implements Closeable {
 
     @Override
     public void close() throws IOException {
-        imapClient.close();
+        if (imapClient.isConnected()) {
+            imapClient.close();
+        }
+    }
+
+    @Override
+    protected void after() {
+        try {
+            this.close();
+        } catch (IOException e) {
+            //ignore exception during close
+        }
+    }
+
+    @Override
+    public void afterEach(ExtensionContext extensionContext) {
+        after();
     }
 
     public void copyFirstMessage(String destMailbox) throws IOException {
         imapClient.copy("1", destMailbox);
+    }
+
+    public void moveFirstMessage(String destMailbox) throws IOException {
+        imapClient.sendCommand("MOVE 1 " + destMailbox);
+    }
+
+    public void expunge() throws IOException {
+        imapClient.expunge();
+    }
+
+    public String getQuotaRoot(String mailbox) throws IOException {
+        imapClient.sendCommand("GETQUOTAROOT " + mailbox);
+        return imapClient.getReplyString();
     }
 }

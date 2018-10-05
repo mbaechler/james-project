@@ -19,22 +19,20 @@
 
 package org.apache.james.webadmin.routes;
 
-import static com.jayway.restassured.RestAssured.given;
-import static com.jayway.restassured.RestAssured.when;
-import static com.jayway.restassured.RestAssured.with;
-import static com.jayway.restassured.config.EncoderConfig.encoderConfig;
-import static com.jayway.restassured.config.RestAssuredConfig.newConfig;
+import static io.restassured.RestAssured.given;
+import static io.restassured.RestAssured.when;
+import static io.restassured.RestAssured.with;
 import static org.apache.james.webadmin.WebAdminServer.NO_CONFIGURATION;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.james.core.Domain;
 import org.apache.james.domainlist.api.DomainList;
 import org.apache.james.metrics.logger.DefaultMetricFactory;
 import org.apache.james.user.api.UsersRepository;
@@ -45,23 +43,21 @@ import org.apache.james.webadmin.WebAdminServer;
 import org.apache.james.webadmin.WebAdminUtils;
 import org.apache.james.webadmin.service.UserService;
 import org.apache.james.webadmin.utils.JsonTransformer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.eclipse.jetty.http.HttpStatus;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableMap;
-import com.jayway.restassured.RestAssured;
-import com.jayway.restassured.builder.RequestSpecBuilder;
-import com.jayway.restassured.http.ContentType;
 
-import de.bechte.junit.runners.context.HierarchicalContextRunner;
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
 
-@RunWith(HierarchicalContextRunner.class)
-public class UsersRoutesTest {
+class UsersRoutesTest {
 
-    public static final String DOMAIN = "domain";
-    public static final String USERNAME = "username@" + DOMAIN;
+    private static final Domain DOMAIN = Domain.of("domain");
+    private static final String USERNAME = "username@" + DOMAIN.name();
     private WebAdminServer webAdminServer;
 
     private void createServer(UsersRepository usersRepository) throws Exception {
@@ -71,24 +67,21 @@ public class UsersRoutesTest {
         webAdminServer.configure(NO_CONFIGURATION);
         webAdminServer.await();
 
-        RestAssured.requestSpecification = new RequestSpecBuilder()
-        		.setContentType(ContentType.JSON)
-        		.setAccept(ContentType.JSON)
-        		.setConfig(newConfig().encoderConfig(encoderConfig().defaultContentCharset(StandardCharsets.UTF_8)))
-        		.setPort(webAdminServer.getPort().toInt())
-        		.setBasePath(UserRoutes.USERS)
-        		.build();
+        RestAssured.requestSpecification = WebAdminUtils.buildRequestSpecification(webAdminServer)
+            .setBasePath(UserRoutes.USERS)
+            .build();
     }
 
-    @After
-    public void stop() {
+    @AfterEach
+    void stop() {
         webAdminServer.destroy();
     }
 
-    public class NormalBehaviour {
+    @Nested
+    class NormalBehaviour {
 
-        @Before
-        public void setUp() throws Exception {
+        @BeforeEach
+        void setUp() throws Exception {
             DomainList domainList = mock(DomainList.class);
             when(domainList.containsDomain(DOMAIN)).thenReturn(true);
 
@@ -99,12 +92,12 @@ public class UsersRoutesTest {
         }
 
         @Test
-        public void getUsersShouldBeEmptyByDefault() {
+        void getUsersShouldBeEmptyByDefault() {
             List<Map<String, String>> users =
                 when()
                     .get()
                 .then()
-                    .statusCode(200)
+                    .statusCode(HttpStatus.OK_200)
                     .contentType(ContentType.JSON)
                     .extract()
                     .body()
@@ -115,55 +108,55 @@ public class UsersRoutesTest {
         }
 
         @Test
-        public void putShouldReturnUserErrorWhenNoBody() {
+        void putShouldReturnUserErrorWhenNoBody() {
             when()
                 .put(USERNAME)
             .then()
-                .statusCode(400);
+                .statusCode(HttpStatus.BAD_REQUEST_400);
         }
 
         @Test
-        public void postShouldReturnUserErrorWhenEmptyJsonBody() {
+        void postShouldReturnUserErrorWhenEmptyJsonBody() {
             given()
                 .body("{}")
             .when()
                 .put(USERNAME)
             .then()
-                .statusCode(400);
+                .statusCode(HttpStatus.BAD_REQUEST_400);
         }
 
         @Test
-        public void postShouldReturnUserErrorWhenWrongJsonBody() {
+        void postShouldReturnUserErrorWhenWrongJsonBody() {
             given()
                 .body("{\"bad\":\"any\"}")
             .when()
                 .put(USERNAME)
             .then()
-                .statusCode(400);
+                .statusCode(HttpStatus.BAD_REQUEST_400);
         }
 
         @Test
-        public void postShouldReturnOkWhenValidJsonBody() {
+        void postShouldReturnOkWhenValidJsonBody() {
             given()
                 .body("{\"password\":\"password\"}")
             .when()
                 .put(USERNAME)
             .then()
-                .statusCode(204);
+                .statusCode(HttpStatus.NO_CONTENT_204);
         }
 
         @Test
-        public void postShouldReturnRequireNonNullPassword() {
+        void postShouldReturnRequireNonNullPassword() {
             given()
                 .body("{\"password\":null}")
             .when()
                 .put(USERNAME)
             .then()
-                .statusCode(400);
+                .statusCode(HttpStatus.BAD_REQUEST_400);
         }
 
         @Test
-        public void postShouldAddTheUser() {
+        void postShouldAddTheUser() {
             with()
                 .body("{\"password\":\"password\"}")
                 .put(USERNAME);
@@ -172,7 +165,7 @@ public class UsersRoutesTest {
                 when()
                     .get()
                 .then()
-                    .statusCode(200)
+                    .statusCode(HttpStatus.OK_200)
                     .contentType(ContentType.JSON)
                     .extract()
                     .body()
@@ -183,7 +176,7 @@ public class UsersRoutesTest {
         }
 
         @Test
-        public void postingTwoTimesShouldBeAllowed() {
+        void postingTwoTimesShouldBeAllowed() {
             // Given
             with()
                 .body("{\"password\":\"password\"}")
@@ -195,14 +188,14 @@ public class UsersRoutesTest {
             .when()
                 .put(USERNAME)
             .then()
-                .statusCode(204);
+                .statusCode(HttpStatus.NO_CONTENT_204);
 
             // Then
             List<Map<String, String>> users =
                 when()
                     .get()
                 .then()
-                    .statusCode(200)
+                    .statusCode(HttpStatus.OK_200)
                     .contentType(ContentType.JSON)
                     .extract()
                     .body()
@@ -213,53 +206,53 @@ public class UsersRoutesTest {
         }
 
         @Test
-        public void deleteShouldReturnOk() {
+        void deleteShouldReturnOk() {
             when()
                 .delete(USERNAME)
             .then()
-                .statusCode(204);
+                .statusCode(HttpStatus.NO_CONTENT_204);
         }
 
         @Test
-        public void deleteShouldReturnBadRequestWhenEmptyUserName() {
+        void deleteShouldReturnBadRequestWhenEmptyUserName() {
             when()
                 .delete("/")
             .then()
-                .statusCode(404);
+                .statusCode(HttpStatus.NOT_FOUND_404);
         }
 
         @Test
-        public void deleteShouldReturnBadRequestWhenUsernameIsTooLong() {
+        void deleteShouldReturnBadRequestWhenUsernameIsTooLong() {
             when()
                 .delete(USERNAME + "0123456789.0123456789.0123456789.0123456789.0123456789.0123456789.0123456789.0123456789.0123456789.0123456789." +
                     "0123456789.0123456789.0123456789.0123456789.0123456789.0123456789.0123456789.0123456789.0123456789.0123456789." +
                     "0123456789.0123456789.0123456789.")
             .then()
-                .statusCode(400);
+                .statusCode(HttpStatus.BAD_REQUEST_400);
         }
 
         @Test
-        public void deleteShouldReturnNotFoundWhenUsernameContainsSlash() {
+        void deleteShouldReturnNotFoundWhenUsernameContainsSlash() {
             given()
                 .body("{\"password\":\"password\"}")
             .when()
                 .put(USERNAME + "/" + USERNAME)
             .then()
-                .statusCode(404);
+                .statusCode(HttpStatus.NOT_FOUND_404);
         }
 
         @Test
-        public void putShouldReturnBadRequestWhenEmptyUserName() {
+        void putShouldReturnBadRequestWhenEmptyUserName() {
             given()
                 .body("{\"password\":\"password\"}")
             .when()
                 .put("/")
             .then()
-                .statusCode(404);
+                .statusCode(HttpStatus.NOT_FOUND_404);
         }
 
         @Test
-        public void putShouldReturnBadRequestWhenUsernameIsTooLong() {
+        void putShouldReturnBadRequestWhenUsernameIsTooLong() {
             given()
                 .body("{\"password\":\"password\"}")
             .when()
@@ -267,21 +260,21 @@ public class UsersRoutesTest {
                     "0123456789.0123456789.0123456789.0123456789.0123456789.0123456789.0123456789.0123456789.0123456789.0123456789." +
                     "0123456789.0123456789.0123456789.")
             .then()
-                .statusCode(400);
+                .statusCode(HttpStatus.BAD_REQUEST_400);
         }
 
         @Test
-        public void putShouldReturnNotFoundWhenUsernameContainsSlash() {
+        void putShouldReturnNotFoundWhenUsernameContainsSlash() {
             given()
                 .body("{\"password\":\"password\"}")
             .when()
                 .put(USERNAME + "/" + USERNAME)
             .then()
-                .statusCode(404);
+                .statusCode(HttpStatus.NOT_FOUND_404);
         }
 
         @Test
-        public void deleteShouldRemoveAssociatedUser() {
+        void deleteShouldRemoveAssociatedUser() {
             // Given
             with()
                 .body("{\"password\":\"password\"}")
@@ -291,14 +284,14 @@ public class UsersRoutesTest {
             when()
                 .delete(USERNAME)
             .then()
-                .statusCode(204);
+                .statusCode(HttpStatus.NO_CONTENT_204);
 
             // Then
             List<Map<String, String>> users =
                 when()
                     .get()
                 .then()
-                    .statusCode(200)
+                    .statusCode(HttpStatus.OK_200)
                     .contentType(ContentType.JSON)
                     .extract()
                     .body()
@@ -309,24 +302,25 @@ public class UsersRoutesTest {
         }
 
         @Test
-        public void deleteShouldStillBeValidWithExtraBody() {
+        void deleteShouldStillBeValidWithExtraBody() {
             given()
                 .body("{\"bad\":\"any\"}")
             .when()
                 .delete(USERNAME)
             .then()
-                .statusCode(204);
+                .statusCode(HttpStatus.NO_CONTENT_204);
         }
     }
 
-    public class ErrorHandling {
+    @Nested
+    class ErrorHandling {
 
         private UsersRepository usersRepository;
         private String username;
         private String password;
 
-        @Before
-        public void setUp() throws Exception {
+        @BeforeEach
+        void setUp() throws Exception {
             usersRepository = mock(UsersRepository.class);
             createServer(usersRepository);
             username = "username@domain";
@@ -334,27 +328,27 @@ public class UsersRoutesTest {
         }
 
         @Test
-        public void deleteShouldStillBeOkWhenNoUser() throws Exception {
+        void deleteShouldStillBeOkWhenNoUser() throws Exception {
             doThrow(new UsersRepositoryException("message")).when(usersRepository).removeUser(username);
 
             when()
                 .delete(USERNAME)
             .then()
-                .statusCode(204);
+                .statusCode(HttpStatus.NO_CONTENT_204);
         }
 
         @Test
-        public void getShouldFailOnRepositoryException() throws Exception {
+        void getShouldFailOnRepositoryException() throws Exception {
             when(usersRepository.list()).thenThrow(new UsersRepositoryException("message"));
 
             when()
                 .get()
             .then()
-                .statusCode(500);
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
-        public void postShouldFailOnRepositoryExceptionOnGetUserByName() throws Exception {
+        void postShouldFailOnRepositoryExceptionOnGetUserByName() throws Exception {
             when(usersRepository.getUserByName(username)).thenThrow(new UsersRepositoryException("message"));
 
             given()
@@ -362,11 +356,11 @@ public class UsersRoutesTest {
             .when()
                 .put(USERNAME)
             .then()
-                .statusCode(500);
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
-        public void postShouldNotFailOnRepositoryExceptionOnAddUser() throws Exception {
+        void postShouldNotFailOnRepositoryExceptionOnAddUser() throws Exception {
             when(usersRepository.getUserByName(username)).thenReturn(null);
             doThrow(new UsersRepositoryException("message")).when(usersRepository).addUser(username, password);
 
@@ -375,11 +369,11 @@ public class UsersRoutesTest {
             .when()
                 .put(USERNAME)
             .then()
-                .statusCode(409);
+                .statusCode(HttpStatus.CONFLICT_409);
         }
 
         @Test
-        public void postShouldFailOnRepositoryExceptionOnUpdateUser() throws Exception {
+        void postShouldFailOnRepositoryExceptionOnUpdateUser() throws Exception {
             when(usersRepository.getUserByName(username)).thenReturn(mock(User.class));
             doThrow(new UsersRepositoryException("message")).when(usersRepository).updateUser(any());
 
@@ -388,32 +382,32 @@ public class UsersRoutesTest {
             .when()
                 .put(USERNAME)
             .then()
-                .statusCode(409);
+                .statusCode(HttpStatus.CONFLICT_409);
         }
 
 
         @Test
-        public void deleteShouldFailOnUnknownException() throws Exception {
+        void deleteShouldFailOnUnknownException() throws Exception {
             doThrow(new RuntimeException()).when(usersRepository).removeUser(username);
 
             when()
                 .delete(USERNAME)
             .then()
-                .statusCode(500);
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
-        public void getShouldFailOnUnknownException() throws Exception {
+        void getShouldFailOnUnknownException() throws Exception {
             when(usersRepository.list()).thenThrow(new RuntimeException());
 
             when()
                 .get()
             .then()
-                .statusCode(500);
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
-        public void postShouldFailOnUnknownExceptionOnGetUserByName() throws Exception {
+        void postShouldFailOnUnknownExceptionOnGetUserByName() throws Exception {
             when(usersRepository.getUserByName(username)).thenThrow(new RuntimeException());
 
             given()
@@ -421,11 +415,11 @@ public class UsersRoutesTest {
             .when()
                 .put(USERNAME)
             .then()
-                .statusCode(500);
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
-        public void postShouldFailOnUnknownExceptionOnAddUser() throws Exception {
+        void postShouldFailOnUnknownExceptionOnAddUser() throws Exception {
             when(usersRepository.getUserByName(username)).thenReturn(null);
             doThrow(new RuntimeException()).when(usersRepository).addUser(username, password);
 
@@ -434,11 +428,11 @@ public class UsersRoutesTest {
             .when()
                 .put(USERNAME)
             .then()
-                .statusCode(500);
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
-        public void postShouldFailOnUnknownExceptionOnGetUpdateUser() throws Exception {
+        void postShouldFailOnUnknownExceptionOnGetUpdateUser() throws Exception {
             when(usersRepository.getUserByName(username)).thenReturn(mock(User.class));
             doThrow(new RuntimeException()).when(usersRepository).updateUser(any());
 
@@ -447,7 +441,7 @@ public class UsersRoutesTest {
             .when()
                 .put(USERNAME)
             .then()
-                .statusCode(500);
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
     }
 

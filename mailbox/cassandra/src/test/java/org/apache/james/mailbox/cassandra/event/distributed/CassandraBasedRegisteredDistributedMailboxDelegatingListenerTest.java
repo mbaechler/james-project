@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.TreeMap;
 
 import org.apache.james.backends.cassandra.CassandraCluster;
-import org.apache.james.backends.cassandra.DockerCassandraRule;
+import org.apache.james.backends.cassandra.CassandraClusterExtension;
 import org.apache.james.backends.cassandra.utils.CassandraUtils;
 import org.apache.james.mailbox.MailboxListener;
 import org.apache.james.mailbox.MailboxSession;
@@ -40,16 +40,15 @@ import org.apache.james.mailbox.store.event.EventFactory;
 import org.apache.james.mailbox.store.event.distributed.DistantMailboxPathRegister;
 import org.apache.james.mailbox.store.event.distributed.PublisherReceiver;
 import org.apache.james.mailbox.store.event.distributed.RegisteredDelegatingMailboxListener;
-import org.apache.james.mailbox.store.json.MessagePackEventSerializer;
+import org.apache.james.mailbox.store.json.JsonEventSerializer;
 import org.apache.james.mailbox.store.json.event.EventConverter;
 import org.apache.james.mailbox.store.json.event.MailboxConverter;
 import org.apache.james.mailbox.store.mail.model.MailboxMessage;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
 import org.apache.james.mailbox.util.EventCollector;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -58,7 +57,7 @@ import com.google.common.collect.ImmutableMap;
 
  We simulate communications using message queues in memory and check the Listener works as intended.
  */
-public class CassandraBasedRegisteredDistributedMailboxDelegatingListenerTest {
+class CassandraBasedRegisteredDistributedMailboxDelegatingListenerTest {
 
     public static final MailboxPath MAILBOX_PATH_1 = MailboxPath.forUser("user", "mbx");
     public static final MailboxPath MAILBOX_PATH_2 = MailboxPath.forUser("user", "mbx.other");
@@ -66,9 +65,9 @@ public class CassandraBasedRegisteredDistributedMailboxDelegatingListenerTest {
     public static final int SCHEDULER_PERIOD_IN_S = 20;
     public static final ImmutableMap<MessageUid, MailboxMessage> EMPTY_MESSAGE_CACHE = ImmutableMap.of();
 
-    @ClassRule public static DockerCassandraRule cassandraServer = new DockerCassandraRule();
-    
-    private CassandraCluster cassandra = CassandraCluster.create(new CassandraRegistrationModule(), cassandraServer.getIp(), cassandraServer.getBindingPort());
+    @RegisterExtension
+    static CassandraClusterExtension cassandraCluster = new CassandraClusterExtension(CassandraRegistrationModule.MODULE);
+
     private RegisteredDelegatingMailboxListener registeredDelegatingMailboxListener1;
     private RegisteredDelegatingMailboxListener registeredDelegatingMailboxListener2;
     private RegisteredDelegatingMailboxListener registeredDelegatingMailboxListener3;
@@ -80,8 +79,8 @@ public class CassandraBasedRegisteredDistributedMailboxDelegatingListenerTest {
     private EventCollector eventCollectorOnce3;
     private MailboxSession mailboxSession;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp(CassandraCluster cassandra) throws Exception {
         PublisherReceiver publisherReceiver = new PublisherReceiver();
         DistantMailboxPathRegister mailboxPathRegister1 = new DistantMailboxPathRegister(
             new CassandraMailboxPathRegisterMapper(
@@ -90,11 +89,11 @@ public class CassandraBasedRegisteredDistributedMailboxDelegatingListenerTest {
                 CassandraUtils.WITH_DEFAULT_CONFIGURATION,
                 CASSANDRA_TIME_OUT_IN_S),
             SCHEDULER_PERIOD_IN_S);
+        JsonEventSerializer eventSerializer = new JsonEventSerializer(
+            new EventConverter(new MailboxConverter(new TestIdDeserializer())),
+            new TestMessageId.Factory());
         registeredDelegatingMailboxListener1 = new RegisteredDelegatingMailboxListener(
-            new MessagePackEventSerializer(
-                new EventConverter(new MailboxConverter(new TestIdDeserializer())),
-                new TestMessageId.Factory()
-            ),
+            eventSerializer,
             publisherReceiver,
             publisherReceiver,
             mailboxPathRegister1);
@@ -106,10 +105,7 @@ public class CassandraBasedRegisteredDistributedMailboxDelegatingListenerTest {
                 CASSANDRA_TIME_OUT_IN_S),
             SCHEDULER_PERIOD_IN_S);
         registeredDelegatingMailboxListener2 = new RegisteredDelegatingMailboxListener(
-            new MessagePackEventSerializer(
-                new EventConverter(new MailboxConverter(new TestIdDeserializer())),
-                new TestMessageId.Factory()
-            ),
+            eventSerializer,
             publisherReceiver,
             publisherReceiver,
             mailboxPathRegister2);
@@ -121,10 +117,7 @@ public class CassandraBasedRegisteredDistributedMailboxDelegatingListenerTest {
                 CASSANDRA_TIME_OUT_IN_S),
             SCHEDULER_PERIOD_IN_S);
         registeredDelegatingMailboxListener3 = new RegisteredDelegatingMailboxListener(
-            new MessagePackEventSerializer(
-                new EventConverter(new MailboxConverter(new TestIdDeserializer())),
-                new TestMessageId.Factory()
-            ),
+            eventSerializer,
             publisherReceiver,
             publisherReceiver,
             mailboxPathRegister3);
@@ -143,17 +136,12 @@ public class CassandraBasedRegisteredDistributedMailboxDelegatingListenerTest {
         registeredDelegatingMailboxListener3.addListener(MAILBOX_PATH_2, eventCollectorMailbox3, mailboxSession);
     }
 
-    @After
-    public void tearDown() {
-        cassandra.close();
-    }
-
     @Test
-    public void mailboxEventListenersShouldBeTriggeredIfRegistered() throws Exception {
+    void mailboxEventListenersShouldBeTriggeredIfRegistered() {
         SimpleMailbox simpleMailbox = new SimpleMailbox(MAILBOX_PATH_1, 42);
         simpleMailbox.setMailboxId(TestId.of(52));
         TreeMap<MessageUid, MessageMetaData> uids = new TreeMap<>();
-        final MailboxListener.Event event = new EventFactory().added(mailboxSession, uids, simpleMailbox, EMPTY_MESSAGE_CACHE);
+        final MailboxListener.MailboxEvent event = new EventFactory().added(mailboxSession, uids, simpleMailbox, EMPTY_MESSAGE_CACHE);
 
         registeredDelegatingMailboxListener1.event(event);
 
@@ -163,11 +151,11 @@ public class CassandraBasedRegisteredDistributedMailboxDelegatingListenerTest {
     }
 
     @Test
-    public void onceEventListenersShouldBeTriggeredOnceAcrossTheCluster() {
+    void onceEventListenersShouldBeTriggeredOnceAcrossTheCluster() {
         SimpleMailbox simpleMailbox = new SimpleMailbox(MAILBOX_PATH_1, 42);
         simpleMailbox.setMailboxId(TestId.of(52));
         TreeMap<MessageUid, MessageMetaData> uids = new TreeMap<>();
-        final MailboxListener.Event event = new EventFactory().added(mailboxSession, uids, simpleMailbox, EMPTY_MESSAGE_CACHE);
+        final MailboxListener.MailboxEvent event = new EventFactory().added(mailboxSession, uids, simpleMailbox, EMPTY_MESSAGE_CACHE);
 
         registeredDelegatingMailboxListener1.event(event);
 

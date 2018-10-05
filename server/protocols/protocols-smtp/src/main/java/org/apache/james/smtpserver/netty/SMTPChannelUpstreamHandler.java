@@ -63,7 +63,7 @@ public class SMTPChannelUpstreamHandler extends BasicChannelUpstreamHandler {
 
     @Override
     public void channelDisconnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-        super.channelClosed(ctx, e);
+        super.channelDisconnected(ctx, e);
         smtpMetrics.getConnectionMetric().decrement();
     }
 
@@ -72,6 +72,7 @@ public class SMTPChannelUpstreamHandler extends BasicChannelUpstreamHandler {
      * 
      * @param ctx
      */
+    @Override
     protected void cleanup(ChannelHandlerContext ctx) {
         // Make sure we dispose everything on exit on session close
         SMTPSession smtpSession = (SMTPSession) ctx.getAttachment();

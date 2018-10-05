@@ -28,8 +28,8 @@ import java.util.Map;
 
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MessageResult;
-import org.apache.james.mailbox.model.MimeDescriptor;
 import org.apache.james.mailbox.model.MessageResult.Header;
+import org.apache.james.mailbox.model.MimeDescriptor;
 import org.apache.james.mailbox.store.mail.model.Message;
 import org.apache.james.mailbox.store.mail.model.impl.PropertyBuilder;
 
@@ -39,7 +39,7 @@ import org.apache.james.mailbox.store.mail.model.impl.PropertyBuilder;
  * 
  *
  */
-public class LazyMimeDescriptor implements MimeDescriptor{
+public class LazyMimeDescriptor implements MimeDescriptor {
 
     private final Message message;
     private final MessageResult result;
@@ -142,9 +142,6 @@ public class LazyMimeDescriptor implements MimeDescriptor{
         return Collections.EMPTY_LIST.iterator();
     }
 
-    /**
-     * Return null
-     */
     @Override
     public MimeDescriptor embeddedMessage() {
         return null;

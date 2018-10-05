@@ -27,6 +27,7 @@ import javax.persistence.NoResultException;
 import javax.persistence.PersistenceException;
 import javax.persistence.RollbackException;
 
+import org.apache.james.mailbox.acl.ACLDiff;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.exception.MailboxExistsException;
 import org.apache.james.mailbox.exception.MailboxNotFoundException;
@@ -34,12 +35,14 @@ import org.apache.james.mailbox.jpa.JPAId;
 import org.apache.james.mailbox.jpa.JPATransactionalMapper;
 import org.apache.james.mailbox.jpa.mail.model.JPAMailbox;
 import org.apache.james.mailbox.model.MailboxACL;
+import org.apache.james.mailbox.model.MailboxACL.Right;
 import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.mail.MailboxMapper;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 
 import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableList;
 
 /**
  * Data access management for mailbox.
@@ -62,20 +65,20 @@ public class JPAMailboxMapper extends JPATransactionalMapper implements MailboxM
         try {
             getEntityManager().getTransaction().commit();
         } catch (PersistenceException e) {
-            if (e instanceof EntityExistsException)
+            if (e instanceof EntityExistsException) {
                 throw new MailboxExistsException(lastMailboxName);
+            }
             if (e instanceof RollbackException) {
                 Throwable t = e.getCause();
-                if (t != null && t instanceof EntityExistsException)
+                if (t != null && t instanceof EntityExistsException) {
                     throw new MailboxExistsException(lastMailboxName);
+                }
             }
             throw new MailboxException("Commit of transaction failed", e);
         }
     }
     
-    /**
-     * @see org.apache.james.mailbox.store.mail.MailboxMapper#save(Mailbox)
-     */
+    @Override
     public MailboxId save(Mailbox mailbox) throws MailboxException {
         try {
             if (isPathAlreadyUsedByAnotherMailbox(mailbox)) {
@@ -91,7 +94,7 @@ public class JPAMailboxMapper extends JPATransactionalMapper implements MailboxM
             }
             return mailbox.getMailboxId();
         } catch (PersistenceException e) {
-            throw new MailboxException("Save of mailbox " + mailbox.getName() +" failed", e);
+            throw new MailboxException("Save of mailbox " + mailbox.getName() + " failed", e);
         } 
     }
 
@@ -104,9 +107,7 @@ public class JPAMailboxMapper extends JPATransactionalMapper implements MailboxM
         }
     }
 
-    /**
-     * @see org.apache.james.mailbox.store.mail.MailboxMapper#findMailboxByPath(MailboxPath)
-     */
+    @Override
     public Mailbox findMailboxByPath(MailboxPath mailboxPath) throws MailboxException, MailboxNotFoundException {
         try {
             if (mailboxPath.getUser() == null) {
@@ -136,15 +137,13 @@ public class JPAMailboxMapper extends JPATransactionalMapper implements MailboxM
                 .setParameter("idParam", mailboxId.getRawId())
                 .getSingleResult();
         } catch (NoResultException e) {
-            throw new MailboxNotFoundException(mailboxId.serialize());
+            throw new MailboxNotFoundException(mailboxId);
         } catch (PersistenceException e) {
             throw new MailboxException("Search of mailbox " + mailboxId.serialize() + " failed", e);
         } 
     }
 
-    /**
-     * @see org.apache.james.mailbox.store.mail.MailboxMapper#delete(Mailbox)
-     */
+    @Override
     public void delete(Mailbox mailbox) throws MailboxException {
         try {  
             JPAId mailboxId = (JPAId) mailbox.getMailboxId();
@@ -156,9 +155,7 @@ public class JPAMailboxMapper extends JPATransactionalMapper implements MailboxM
         } 
     }
 
-    /**
-     * @see org.apache.james.mailbox.store.mail.MailboxMapper#findMailboxWithPathLike(MailboxPath)
-     */
+    @Override
     public List<Mailbox> findMailboxWithPathLike(MailboxPath path) throws MailboxException {
         try {
             if (path.getUser() == null) {
@@ -194,9 +191,7 @@ public class JPAMailboxMapper extends JPATransactionalMapper implements MailboxM
         } 
     }
     
-    /**
-     * @see org.apache.james.mailbox.store.mail.MailboxMapper#hasChildren(Mailbox, char)
-     */
+    @Override
     public boolean hasChildren(Mailbox mailbox, char delimiter) throws MailboxException,
             MailboxNotFoundException {
         final String name = mailbox.getName() + delimiter + SQL_WILDCARD_CHAR; 
@@ -209,10 +204,8 @@ public class JPAMailboxMapper extends JPATransactionalMapper implements MailboxM
         return numberOfChildMailboxes != null && numberOfChildMailboxes > 0;
     }
 
-	/**
-     * @see org.apache.james.mailbox.store.mail.MailboxMapper#list()
-     */
-    public List<Mailbox> list() throws MailboxException{
+    @Override
+    public List<Mailbox> list() throws MailboxException {
         try {
             return getEntityManager().createNamedQuery("listMailboxes", Mailbox.class).getResultList();
         } catch (PersistenceException e) {
@@ -221,12 +214,22 @@ public class JPAMailboxMapper extends JPATransactionalMapper implements MailboxM
     }
 
     @Override
-    public void updateACL(Mailbox mailbox, MailboxACL.ACLCommand mailboxACLCommand) throws MailboxException {
-        mailbox.setACL(mailbox.getACL().apply(mailboxACLCommand));
+    public ACLDiff updateACL(Mailbox mailbox, MailboxACL.ACLCommand mailboxACLCommand) throws MailboxException {
+        MailboxACL oldACL = mailbox.getACL();
+        MailboxACL newACL = mailbox.getACL().apply(mailboxACLCommand);
+        mailbox.setACL(newACL);
+        return ACLDiff.computeDiff(oldACL, newACL);
     }
 
     @Override
-    public void setACL(Mailbox mailbox, MailboxACL mailboxACL) throws MailboxException {
+    public ACLDiff setACL(Mailbox mailbox, MailboxACL mailboxACL) throws MailboxException {
+        MailboxACL oldMailboxAcl = mailbox.getACL();
         mailbox.setACL(mailboxACL);
+        return ACLDiff.computeDiff(oldMailboxAcl, mailboxACL);
+    }
+
+    @Override
+    public List<Mailbox> findNonPersonalMailboxes(String userName, Right right) throws MailboxException {
+        return ImmutableList.of();
     }
 }

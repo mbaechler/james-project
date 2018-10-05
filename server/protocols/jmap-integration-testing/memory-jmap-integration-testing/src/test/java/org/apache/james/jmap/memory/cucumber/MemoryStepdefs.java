@@ -25,10 +25,12 @@ import org.apache.activemq.store.PersistenceAdapter;
 import org.apache.activemq.store.memory.MemoryPersistenceAdapter;
 import org.apache.james.GuiceJamesServer;
 import org.apache.james.MemoryJamesServerMain;
+import org.apache.james.jmap.methods.integration.cucumber.ImapStepdefs;
 import org.apache.james.jmap.methods.integration.cucumber.MainStepdefs;
-import org.apache.james.jmap.servers.MemoryJmapServerModule;
 import org.apache.james.mailbox.inmemory.InMemoryMessageId;
 import org.apache.james.mailbox.model.MessageId;
+import org.apache.james.modules.TestJMAPServerModule;
+import org.apache.james.server.core.configuration.Configuration;
 import org.junit.rules.TemporaryFolder;
 
 import cucumber.api.java.After;
@@ -38,29 +40,38 @@ import cucumber.runtime.java.guice.ScenarioScoped;
 @ScenarioScoped
 public class MemoryStepdefs {
 
+    private static final long LIMIT_TO_3_MESSAGES = 3;
     private final MainStepdefs mainStepdefs;
+    private final ImapStepdefs imapStepdefs;
     private final TemporaryFolder temporaryFolder;
 
     @Inject
-    private MemoryStepdefs(MainStepdefs mainStepdefs) {
+    private MemoryStepdefs(MainStepdefs mainStepdefs, ImapStepdefs imapStepdefs) {
         this.mainStepdefs = mainStepdefs;
+        this.imapStepdefs = imapStepdefs;
         this.temporaryFolder = new TemporaryFolder();
     }
 
     @Before
     public void init() throws Exception {
         temporaryFolder.create();
+        Configuration configuration = Configuration.builder()
+            .workingDirectory(temporaryFolder.newFolder())
+            .configurationFromClasspath()
+            .build();
+
         mainStepdefs.messageIdFactory = new InMemoryMessageId.Factory();
-        mainStepdefs.jmapServer = new GuiceJamesServer()
-                .combineWith(MemoryJamesServerMain.inMemoryServerModule)
-                .overrideWith(new MemoryJmapServerModule(temporaryFolder),
-                		(binder) -> binder.bind(MessageId.Factory.class).toInstance(mainStepdefs.messageIdFactory))
+        mainStepdefs.jmapServer = GuiceJamesServer.forConfiguration(configuration)
+                .combineWith(MemoryJamesServerMain.IN_MEMORY_SERVER_AGGREGATE_MODULE)
+                .overrideWith(new TestJMAPServerModule(LIMIT_TO_3_MESSAGES),
+                        (binder) -> binder.bind(MessageId.Factory.class).toInstance(mainStepdefs.messageIdFactory))
                 .overrideWith((binder) -> binder.bind(PersistenceAdapter.class).to(MemoryPersistenceAdapter.class));
         mainStepdefs.init();
     }
 
     @After
     public void tearDown() {
+        imapStepdefs.closeConnections();
         mainStepdefs.tearDown();
         temporaryFolder.delete();
     }

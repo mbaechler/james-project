@@ -29,7 +29,7 @@ import javax.mail.Flags;
 import javax.mail.Flags.Flag;
 
 import org.apache.james.backends.cassandra.CassandraCluster;
-import org.apache.james.backends.cassandra.DockerCassandraRule;
+import org.apache.james.backends.cassandra.CassandraClusterExtension;
 import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.cassandra.ids.CassandraId;
 import org.apache.james.mailbox.cassandra.ids.CassandraMessageId;
@@ -37,41 +37,31 @@ import org.apache.james.mailbox.cassandra.modules.CassandraMessageModule;
 import org.apache.james.mailbox.model.ComposedMessageId;
 import org.apache.james.mailbox.model.ComposedMessageIdWithMetaData;
 import org.apache.james.mailbox.model.MessageRange;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-public class CassandraMessageIdDAOTest {
-
-    @ClassRule public static DockerCassandraRule cassandraServer = new DockerCassandraRule();
-    
-    private CassandraCluster cassandra;
+class CassandraMessageIdDAOTest {
+    @RegisterExtension
+    static CassandraClusterExtension cassandraCluster = new CassandraClusterExtension(CassandraMessageModule.MODULE);
 
     private CassandraMessageId.Factory messageIdFactory;
     private CassandraMessageIdDAO testee;
 
-
-    @Before
-    public void setUp() {
-        cassandra = CassandraCluster.create(new CassandraMessageModule(), cassandraServer.getIp(), cassandraServer.getBindingPort());
+    @BeforeEach
+    void setUp(CassandraCluster cassandra) {
         messageIdFactory = new CassandraMessageId.Factory();
         testee = new CassandraMessageIdDAO(cassandra.getConf(), messageIdFactory);
     }
 
-    @After
-    public void tearDown() {
-        cassandra.close();
-    }
-
     @Test
-    public void deleteShouldNotThrowWhenRowDoesntExist() {
+    void deleteShouldNotThrowWhenRowDoesntExist() {
         testee.delete(CassandraId.timeBased(), MessageUid.of(1))
             .join();
     }
 
     @Test
-    public void deleteShouldDeleteWhenRowExists() {
+    void deleteShouldDeleteWhenRowExists() {
         CassandraId mailboxId = CassandraId.timeBased();
         MessageUid messageUid = MessageUid.of(1);
         CassandraMessageId messageId = messageIdFactory.generate();
@@ -89,7 +79,7 @@ public class CassandraMessageIdDAOTest {
     }
 
     @Test
-    public void deleteShouldDeleteOnlyConcernedRowWhenMultipleRowExists() {
+    void deleteShouldDeleteOnlyConcernedRowWhenMultipleRowExists() {
         CassandraId mailboxId = CassandraId.timeBased();
         MessageUid messageUid = MessageUid.of(1);
         MessageUid messageUid2 = MessageUid.of(2);
@@ -117,7 +107,7 @@ public class CassandraMessageIdDAOTest {
     }
 
     @Test
-    public void insertShouldWork() {
+    void insertShouldWork() {
         CassandraMessageId messageId = messageIdFactory.generate();
         CassandraId mailboxId = CassandraId.timeBased();
         MessageUid messageUid = MessageUid.of(1);
@@ -134,7 +124,7 @@ public class CassandraMessageIdDAOTest {
     }
 
     @Test
-    public void updateShouldUpdateModSeq() {
+    void updateShouldUpdateModSeq() {
         CassandraMessageId messageId = messageIdFactory.generate();
         CassandraId mailboxId = CassandraId.timeBased();
         MessageUid messageUid = MessageUid.of(1);
@@ -159,7 +149,7 @@ public class CassandraMessageIdDAOTest {
     }
 
     @Test
-    public void updateShouldUpdateAnsweredFlag() {
+    void updateShouldUpdateAnsweredFlag() {
         CassandraMessageId messageId = messageIdFactory.generate();
         CassandraId mailboxId = CassandraId.timeBased();
         MessageUid messageUid = MessageUid.of(1);
@@ -184,7 +174,7 @@ public class CassandraMessageIdDAOTest {
     }
 
     @Test
-    public void updateShouldUpdateDeletedFlag() {
+    void updateShouldUpdateDeletedFlag() {
         CassandraMessageId messageId = messageIdFactory.generate();
         CassandraId mailboxId = CassandraId.timeBased();
         MessageUid messageUid = MessageUid.of(1);
@@ -209,7 +199,7 @@ public class CassandraMessageIdDAOTest {
     }
 
     @Test
-    public void updateShouldUpdateDraftFlag() {
+    void updateShouldUpdateDraftFlag() {
         CassandraMessageId messageId = messageIdFactory.generate();
         CassandraId mailboxId = CassandraId.timeBased();
         MessageUid messageUid = MessageUid.of(1);
@@ -234,7 +224,7 @@ public class CassandraMessageIdDAOTest {
     }
 
     @Test
-    public void updateShouldUpdateFlaggedFlag() {
+    void updateShouldUpdateFlaggedFlag() {
         CassandraMessageId messageId = messageIdFactory.generate();
         CassandraId mailboxId = CassandraId.timeBased();
         MessageUid messageUid = MessageUid.of(1);
@@ -259,7 +249,7 @@ public class CassandraMessageIdDAOTest {
     }
 
     @Test
-    public void updateShouldUpdateRecentFlag() {
+    void updateShouldUpdateRecentFlag() {
         CassandraMessageId messageId = messageIdFactory.generate();
         CassandraId mailboxId = CassandraId.timeBased();
         MessageUid messageUid = MessageUid.of(1);
@@ -284,7 +274,7 @@ public class CassandraMessageIdDAOTest {
     }
 
     @Test
-    public void updateShouldUpdateSeenFlag() {
+    void updateShouldUpdateSeenFlag() {
         CassandraMessageId messageId = messageIdFactory.generate();
         CassandraId mailboxId = CassandraId.timeBased();
         MessageUid messageUid = MessageUid.of(1);
@@ -309,7 +299,7 @@ public class CassandraMessageIdDAOTest {
     }
 
     @Test
-    public void updateShouldUpdateUserFlag() {
+    void updateShouldUpdateUserFlag() {
         CassandraMessageId messageId = messageIdFactory.generate();
         CassandraId mailboxId = CassandraId.timeBased();
         MessageUid messageUid = MessageUid.of(1);
@@ -334,7 +324,7 @@ public class CassandraMessageIdDAOTest {
     }
 
     @Test
-    public void updateShouldUpdateUserFlags() {
+    void updateShouldUpdateUserFlags() {
         CassandraMessageId messageId = messageIdFactory.generate();
         CassandraId mailboxId = CassandraId.timeBased();
         MessageUid messageUid = MessageUid.of(1);
@@ -361,7 +351,7 @@ public class CassandraMessageIdDAOTest {
     }
 
     @Test
-    public void retrieveShouldRetrieveWhenKeyMatches() {
+    void retrieveShouldRetrieveWhenKeyMatches() {
         CassandraMessageId messageId = messageIdFactory.generate();
         CassandraId mailboxId = CassandraId.timeBased();
         MessageUid messageUid = MessageUid.of(1);
@@ -378,7 +368,7 @@ public class CassandraMessageIdDAOTest {
     }
 
     @Test
-    public void retrieveMessagesShouldRetrieveAllWhenRangeAll() {
+    void retrieveMessagesShouldRetrieveAllWhenRangeAll() {
         CassandraMessageId messageId = messageIdFactory.generate();
         CassandraMessageId messageId2 = messageIdFactory.generate();
         CassandraId mailboxId = CassandraId.timeBased();
@@ -406,7 +396,7 @@ public class CassandraMessageIdDAOTest {
     }
 
     @Test
-    public void retrieveMessagesShouldRetrieveSomeWhenRangeFrom() {
+    void retrieveMessagesShouldRetrieveSomeWhenRangeFrom() {
         CassandraMessageId messageId = messageIdFactory.generate();
         CassandraMessageId messageId2 = messageIdFactory.generate();
         CassandraMessageId messageId3 = messageIdFactory.generate();
@@ -442,7 +432,7 @@ public class CassandraMessageIdDAOTest {
     }
 
     @Test
-    public void retrieveMessagesShouldRetrieveSomeWhenRange() {
+    void retrieveMessagesShouldRetrieveSomeWhenRange() {
         CassandraMessageId messageId = messageIdFactory.generate();
         CassandraMessageId messageId2 = messageIdFactory.generate();
         CassandraMessageId messageId3 = messageIdFactory.generate();
@@ -487,7 +477,7 @@ public class CassandraMessageIdDAOTest {
     }
 
     @Test
-    public void retrieveMessagesShouldRetrieveOneWhenRangeOne() {
+    void retrieveMessagesShouldRetrieveOneWhenRangeOne() {
         CassandraMessageId messageId = messageIdFactory.generate();
         CassandraMessageId messageId2 = messageIdFactory.generate();
         CassandraMessageId messageId3 = messageIdFactory.generate();

@@ -66,11 +66,7 @@ public class RecoverAttachment extends GenericMailet {
 
     private String attributeName = null;
 
-    /**
-     * Checks if the mandatory parameters are present
-     * 
-     * @throws MailetException
-     */
+    @Override
     public void init() throws MailetException {
         attributeName = getInitParameter(ATTRIBUTE_PARAMETER_NAME);
 
@@ -79,8 +75,7 @@ public class RecoverAttachment extends GenericMailet {
                     + " is a mandatory parameter");
         }
 
-        LOGGER.debug("RecoverAttachment is initialised with attribute [" + attributeName
-                + "]");
+        LOGGER.debug("RecoverAttachment is initialised with attribute [{}]", attributeName);
     }
 
     /**
@@ -92,6 +87,7 @@ public class RecoverAttachment extends GenericMailet {
      * @throws MailetException
      *             Thrown when an error situation is encountered.
      */
+    @Override
     public void service(Mail mail) throws MailetException {
         @SuppressWarnings("unchecked")
         Map<String, byte[]> attachments = (Map<String, byte[]>) mail.getAttribute(attributeName);
@@ -138,11 +134,7 @@ public class RecoverAttachment extends GenericMailet {
         }
     }
 
-    /**
-     * returns a String describing this mailet.
-     * 
-     * @return A desciption of this mailet
-     */
+    @Override
     public String getMailetInfo() {
         return "RecoverAttachment Mailet";
     }

@@ -36,13 +36,14 @@ public class GrantRightsOnCyrusHost implements GrantRightsOnHost {
         this.system = system;
     }
 
+    @Override
     public void grantRights(MailboxPath mailboxPath, String userName, MailboxACL.Rfc4314Rights rights) throws Exception {
         ProtocolSession protocolSession = system.logAndGetAdminProtocolSession(new ProtocolSession());
-        protocolSession.CL(String.format("A1 SETACL %s %s %s",
+        protocolSession.cl(String.format("A1 SETACL %s %s %s",
             system.createMailboxStringFromMailboxPath(mailboxPath),
             userName,
             rights.serialize()));
-        protocolSession.SL("A1 OK .*", GRANT_RIGHTS_LOCATION);
+        protocolSession.sl("A1 OK .*", GRANT_RIGHTS_LOCATION);
         system.executeProtocolSession(system.logoutAndGetProtocolSession(protocolSession));
     }
 }

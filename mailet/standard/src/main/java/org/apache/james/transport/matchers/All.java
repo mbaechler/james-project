@@ -18,11 +18,11 @@
  ****************************************************************/
 package org.apache.james.transport.matchers;
 
-import org.apache.mailet.base.GenericMatcher;
-import org.apache.mailet.Mail;
-import org.apache.james.core.MailAddress;
-
 import java.util.Collection;
+
+import org.apache.james.core.MailAddress;
+import org.apache.mailet.Mail;
+import org.apache.mailet.base.GenericMatcher;
 
 /**
  * Matches all mail.
@@ -31,10 +31,7 @@ import java.util.Collection;
 public class All extends GenericMatcher {
     
 
-    /*
-     * (non-Javadoc)
-     * @see org.apache.mailet.base.GenericMatcher#match(org.apache.mailet.Mail)
-     */
+    @Override
     public Collection<MailAddress> match(Mail mail) {
         return mail.getRecipients();
     }

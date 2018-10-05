@@ -22,10 +22,11 @@ package org.apache.james.mailetcontainer.impl.matchers;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Optional;
+
 import javax.mail.MessagingException;
 
-import org.apache.mailet.Mail;
 import org.apache.james.core.MailAddress;
+import org.apache.mailet.Mail;
 import org.apache.mailet.Matcher;
 
 import com.google.common.collect.ImmutableSet;
@@ -41,6 +42,7 @@ import com.google.common.collect.Sets;
  */
 public class Xor extends GenericCompositeMatcher {
 
+    @Override
     public Collection<MailAddress> match(Mail mail) throws MessagingException {
         Collection<MailAddress> finalResult = null;
         boolean first = true;

@@ -21,36 +21,19 @@ package org.apache.james.mpt.imapmailbox.cassandra;
 
 import org.apache.james.backends.cassandra.DockerCassandraRule;
 import org.apache.james.mpt.api.ImapHostSystem;
+import org.apache.james.mpt.imapmailbox.cassandra.host.CassandraHostSystemRule;
 import org.apache.james.mpt.imapmailbox.suite.QuotaTest;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.ClassRule;
-
-import com.google.inject.Guice;
-import com.google.inject.Injector;
+import org.junit.Rule;
 
 public class CassandraQuotaTest extends QuotaTest {
+    @ClassRule
+    public static DockerCassandraRule cassandraServer = new DockerCassandraRule();
+    @Rule
+    public CassandraHostSystemRule cassandraHostSystemRule = new CassandraHostSystemRule(cassandraServer);
 
-    @ClassRule public static DockerCassandraRule cassandraServer = new DockerCassandraRule();
-
-    private ImapHostSystem system;
-    
-    @Before
-    public void setUp() throws Exception {
-        Injector injector = Guice.createInjector(new CassandraMailboxTestModule(cassandraServer.getIp(), cassandraServer.getBindingPort()));
-        system = injector.getInstance(ImapHostSystem.class);
-        system.beforeTest();
-        super.setUp();
-    }
-    
     @Override
     protected ImapHostSystem createImapHostSystem() {
-        return system;
+        return cassandraHostSystemRule.getImapHostSystem();
     }
-
-    @After
-    public void tearDown() throws Exception {
-        system.afterTest();
-    }
-    
 }

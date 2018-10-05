@@ -19,34 +19,38 @@
 
 package org.apache.james.modules.mailbox;
 
+import static org.apache.james.mailbox.elasticsearch.search.ElasticSearchSearcher.DEFAULT_SEARCH_SIZE;
+
 import java.io.FileNotFoundException;
 import java.time.LocalDateTime;
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 
+import javax.inject.Named;
 import javax.inject.Singleton;
 
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.james.backends.es.ClientProviderImpl;
-import org.apache.james.backends.es.IndexCreationFactory;
-import org.apache.james.backends.es.IndexName;
-import org.apache.james.backends.es.NodeMappingFactory;
-import org.apache.james.backends.es.TypeName;
+import org.apache.james.backends.es.ElasticSearchIndexer;
 import org.apache.james.mailbox.elasticsearch.IndexAttachments;
-import org.apache.james.mailbox.elasticsearch.MailboxElasticsearchConstants;
-import org.apache.james.mailbox.elasticsearch.MailboxMappingFactory;
+import org.apache.james.mailbox.elasticsearch.MailboxElasticSearchConstants;
+import org.apache.james.mailbox.elasticsearch.MailboxIndexCreationUtil;
 import org.apache.james.mailbox.elasticsearch.events.ElasticSearchListeningMessageSearchIndex;
+import org.apache.james.mailbox.elasticsearch.query.QueryConverter;
+import org.apache.james.mailbox.elasticsearch.search.ElasticSearchSearcher;
+import org.apache.james.mailbox.model.MailboxId;
+import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.mailbox.store.search.ListeningMessageSearchIndex;
 import org.apache.james.mailbox.store.search.MessageSearchIndex;
+import org.apache.james.quota.search.elasticsearch.QuotaSearchIndexCreationUtil;
+import org.apache.james.util.retry.RetryExecutorUtil;
 import org.apache.james.utils.PropertiesProvider;
-import org.apache.james.utils.RetryExecutorUtil;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
@@ -56,20 +60,11 @@ public class ElasticSearchMailboxModule extends AbstractModule {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchMailboxModule.class);
 
     public static final String ELASTICSEARCH_CONFIGURATION_NAME = "elasticsearch";
-    public static final String ELASTICSEARCH_HOSTS = "elasticsearch.hosts";
-    public static final String ELASTICSEARCH_MASTER_HOST = "elasticsearch.masterHost";
-    public static final String ELASTICSEARCH_PORT = "elasticsearch.port";
-    private static final int DEFAULT_CONNECTION_MAX_RETRIES = 7;
-    private static final int DEFAULT_CONNECTION_MIN_DELAY = 3000;
-    private static final boolean DEFAULT_INDEX_ATTACHMENTS = true;
-    private static final int DEFAULT_NB_SHARDS = 1;
-    private static final int DEFAULT_NB_REPLICA = 0;
-    private static final String LOCALHOST = "127.0.0.1";
 
     @Override
     protected void configure() {
-        bind(IndexName.class).toInstance(MailboxElasticsearchConstants.MAILBOX_INDEX);
-        bind(TypeName.class).toInstance(MailboxElasticsearchConstants.MESSAGE_TYPE);
+        install(new ElasticSearchQuotaSearcherModule());
+
         bind(ElasticSearchListeningMessageSearchIndex.class).in(Scopes.SINGLETON);
         bind(MessageSearchIndex.class).to(ElasticSearchListeningMessageSearchIndex.class);
         bind(ListeningMessageSearchIndex.class).to(ElasticSearchListeningMessageSearchIndex.class);
@@ -77,84 +72,78 @@ public class ElasticSearchMailboxModule extends AbstractModule {
 
     @Provides
     @Singleton
-    protected Client provideClientProvider(ElasticSearchConfiguration elasticSearchConfiguration, AsyncRetryExecutor executor) throws ConfigurationException, FileNotFoundException, ExecutionException, InterruptedException {
-        PropertiesConfiguration propertiesReader = elasticSearchConfiguration.getConfiguration();
-        int maxRetries = propertiesReader.getInt("elasticsearch.retryConnection.maxRetries", DEFAULT_CONNECTION_MAX_RETRIES);
-        int minDelay = propertiesReader.getInt("elasticsearch.retryConnection.minDelay", DEFAULT_CONNECTION_MIN_DELAY);
-
-        return RetryExecutorUtil.retryOnExceptions(executor, maxRetries, minDelay, NoNodeAvailableException.class)
-            .getWithRetry(context -> connectToCluster(propertiesReader))
-            .get();
+    @Named(MailboxElasticSearchConstants.InjectionNames.MAILBOX)
+    private ElasticSearchIndexer createMailboxElasticSearchIndexer(Client client,
+                                               @Named("AsyncExecutor") ExecutorService executor,
+                                               ElasticSearchConfiguration configuration) {
+        return new ElasticSearchIndexer(
+            client,
+            executor,
+            configuration.getWriteAliasMailboxName(),
+            MailboxElasticSearchConstants.MESSAGE_TYPE);
     }
 
-    private Client createIndexAndMapping(Client client, PropertiesConfiguration propertiesReader) {
-        IndexCreationFactory.createIndex(client,
-            MailboxElasticsearchConstants.MAILBOX_INDEX,
-            propertiesReader.getInt(ELASTICSEARCH_CONFIGURATION_NAME + ".nb.shards", DEFAULT_NB_SHARDS),
-            propertiesReader.getInt(ELASTICSEARCH_CONFIGURATION_NAME + ".nb.replica", DEFAULT_NB_REPLICA));
-        NodeMappingFactory.applyMapping(client,
-            MailboxElasticsearchConstants.MAILBOX_INDEX,
-            MailboxElasticsearchConstants.MESSAGE_TYPE,
-            MailboxMappingFactory.getMappingContent());
-        return client;
-    }
-
-    private Client connectToCluster(PropertiesConfiguration propertiesReader) throws ConfigurationException {
-        LOGGER.info("Trying to connect to ElasticSearch service at {}", LocalDateTime.now());
-
-        return createIndexAndMapping(createClient(propertiesReader), propertiesReader);
+    @Provides
+    @Singleton
+    private ElasticSearchSearcher createMailboxElasticSearchSearcher(Client client,
+                                                                     QueryConverter queryConverter,
+                                                                     MailboxId.Factory mailboxIdFactory,
+                                                                     MessageId.Factory messageIdFactory,
+                                                                     ElasticSearchConfiguration configuration) {
+        return new ElasticSearchSearcher(
+            client,
+            queryConverter,
+            DEFAULT_SEARCH_SIZE,
+            mailboxIdFactory,
+            messageIdFactory,
+            configuration.getReadAliasMailboxName(),
+            MailboxElasticSearchConstants.MESSAGE_TYPE);
     }
 
     @Provides
     @Singleton
     private ElasticSearchConfiguration getElasticSearchConfiguration(PropertiesProvider propertiesProvider) throws ConfigurationException {
         try {
-            PropertiesConfiguration configuration = propertiesProvider.getConfiguration(ELASTICSEARCH_CONFIGURATION_NAME);
-            return () -> configuration;
+            Configuration configuration = propertiesProvider.getConfiguration(ELASTICSEARCH_CONFIGURATION_NAME);
+            return ElasticSearchConfiguration.fromProperties(configuration);
         } catch (FileNotFoundException e) {
             LOGGER.warn("Could not find " + ELASTICSEARCH_CONFIGURATION_NAME + " configuration file. Using 127.0.0.1:9300 as contact point");
-            PropertiesConfiguration propertiesConfiguration = new PropertiesConfiguration();
-            propertiesConfiguration.addProperty(ELASTICSEARCH_HOSTS, LOCALHOST);
-            return () -> propertiesConfiguration;
-        }
-    }
-
-    private Client createClient(PropertiesConfiguration propertiesReader) throws ConfigurationException {
-        Optional<String> monoHostAddress = Optional.ofNullable(propertiesReader.getString(ELASTICSEARCH_MASTER_HOST, null));
-        Optional<Integer> monoHostPort = Optional.ofNullable(propertiesReader.getInteger(ELASTICSEARCH_PORT, null));
-        Optional<String> multiHosts = Optional.ofNullable(propertiesReader.getString(ELASTICSEARCH_HOSTS, null));
-
-        validateHostsConfigurationOptions(monoHostAddress, monoHostPort, multiHosts);
-
-        if (monoHostAddress.isPresent()) {
-            return ClientProviderImpl.forHost(monoHostAddress.get(), monoHostPort.get()).get();
-        } else {
-            return ClientProviderImpl.fromHostsString(multiHosts.get()).get();
-        }
-    }
-
-    @VisibleForTesting
-    static void validateHostsConfigurationOptions(Optional<String> monoHostAddress,
-                                                          Optional<Integer> monoHostPort,
-                                                          Optional<String> multiHosts) throws ConfigurationException {
-        if (monoHostAddress.isPresent() != monoHostPort.isPresent()) {
-            throw new ConfigurationException(ELASTICSEARCH_MASTER_HOST + " and " + ELASTICSEARCH_PORT + " should be specified together");
-        }
-        if (multiHosts.isPresent() && monoHostAddress.isPresent()) {
-            throw new ConfigurationException("You should choose between mono host set up and " + ELASTICSEARCH_HOSTS);
-        }
-        if (!multiHosts.isPresent() && !monoHostAddress.isPresent()) {
-            throw new ConfigurationException("You should specify either (" + ELASTICSEARCH_MASTER_HOST + " and " + ELASTICSEARCH_PORT + ") or " + ELASTICSEARCH_HOSTS);
+            return ElasticSearchConfiguration.DEFAULT_CONFIGURATION;
         }
     }
 
     @Provides
     @Singleton
-    public IndexAttachments provideIndexAttachments(PropertiesConfiguration configuration) {
-        if (configuration.getBoolean(ELASTICSEARCH_CONFIGURATION_NAME + ".indexAttachments", DEFAULT_INDEX_ATTACHMENTS)) {
-            return IndexAttachments.YES;
-        }
-        return IndexAttachments.NO;
+    protected Client provideClient(ElasticSearchConfiguration configuration,
+                                   AsyncRetryExecutor executor) throws ExecutionException, InterruptedException {
+
+        return RetryExecutorUtil.retryOnExceptions(executor, configuration.getMaxRetries(), configuration.getMinDelay(), NoNodeAvailableException.class)
+            .getWithRetry(context -> connectToCluster(configuration))
+            .get();
+    }
+
+    private Client connectToCluster(ElasticSearchConfiguration configuration) {
+        LOGGER.info("Trying to connect to ElasticSearch service at {}", LocalDateTime.now());
+
+        Client client = ClientProviderImpl.fromHosts(configuration.getHosts()).get();
+
+        MailboxIndexCreationUtil.prepareClient(client,
+            configuration.getReadAliasMailboxName(),
+            configuration.getWriteAliasMailboxName(),
+            configuration.getIndexMailboxName());
+
+        QuotaSearchIndexCreationUtil.prepareClient(client,
+            configuration.getReadAliasQuotaRatioName(),
+            configuration.getWriteAliasMailboxName(),
+            configuration.getIndexQuotaRatioName());
+
+        return client;
+    }
+
+    @Provides
+    @Singleton
+    public IndexAttachments provideIndexAttachments(ElasticSearchConfiguration configuration) {
+        return configuration.getIndexAttachment();
     }
 
 }

@@ -20,62 +20,59 @@
 package org.apache.james.transport.mailets;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import javax.mail.MessagingException;
 
+import org.apache.james.core.builder.MimeMessageBuilder;
 import org.apache.mailet.Mailet;
 import org.apache.mailet.base.test.FakeMail;
 import org.apache.mailet.base.test.FakeMailetConfig;
 import org.apache.mailet.base.test.MailUtil;
-import org.apache.mailet.base.test.MimeMessageBuilder;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-public class MailAttributesToMimeHeadersTest {
+class MailAttributesToMimeHeadersTest {
 
-    @Rule public ExpectedException expectedException = ExpectedException.none();
-    
     private Mailet mailet;
 
-    private final String HEADER_NAME1 = "JUNIT";
-    private final String HEADER_NAME2 = "JUNIT2";
+    private static final String HEADER_NAME1 = "JUNIT";
+    private static final String HEADER_NAME2 = "JUNIT2";
 
-    private final String MAIL_ATTRIBUTE_VALUE1 = "test1";
-    private final String MAIL_ATTRIBUTE_VALUE2 = "test2";
+    private static final String MAIL_ATTRIBUTE_VALUE1 = "test1";
+    private static final String MAIL_ATTRIBUTE_VALUE2 = "test2";
 
-    private final String MAIL_ATTRIBUTE_NAME1 = "org.apache.james.test";
-    private final String MAIL_ATTRIBUTE_NAME2 = "org.apache.james.test2";
+    private static final String MAIL_ATTRIBUTE_NAME1 = "org.apache.james.test";
+    private static final String MAIL_ATTRIBUTE_NAME2 = "org.apache.james.test2";
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         mailet = new MailAttributesToMimeHeaders();
     }
 
     @Test
-    public void shouldThrowMessagingExceptionIfMappingIsNotGiven() throws MessagingException {
-        expectedException.expect(MessagingException.class);
+    void shouldThrowMessagingExceptionIfMappingIsNotGiven() {
         FakeMailetConfig mailetConfig = FakeMailetConfig.builder()
             .mailetName("Test")
             .build();
 
-        mailet.init(mailetConfig);
+        assertThatThrownBy(() -> mailet.init(mailetConfig))
+            .isInstanceOf(MessagingException.class);
     }
 
     @Test
-    public void shouldThrowMessagingExceptionIfMappingIsEmpty() throws MessagingException {
-        expectedException.expect(MessagingException.class);
+    void shouldThrowMessagingExceptionIfMappingIsEmpty() {
         FakeMailetConfig mailetConfig = FakeMailetConfig.builder()
             .mailetName("Test")
             .setProperty("simplemmapping", "")
             .build();
 
-        mailet.init(mailetConfig);
+        assertThatThrownBy(() -> mailet.init(mailetConfig))
+            .isInstanceOf(MessagingException.class);
     }
 
     @Test
-    public void shouldIgnoreAttributeOfMappingThatDoesNotExistOnTheMessage() throws MessagingException {
+    void shouldIgnoreAttributeOfMappingThatDoesNotExistOnTheMessage() throws MessagingException {
         FakeMailetConfig mailetConfig = FakeMailetConfig.builder()
             .mailetName("Test")
             .setProperty("simplemapping",
@@ -95,7 +92,7 @@ public class MailAttributesToMimeHeadersTest {
     }
 
     @Test
-    public void shouldWorkWithMappingWithASingleBinding() throws MessagingException {
+    void shouldWorkWithMappingWithASingleBinding() throws MessagingException {
         FakeMailetConfig mailetConfig = FakeMailetConfig.builder()
             .mailetName("Test")
             .setProperty("simplemapping",
@@ -112,7 +109,7 @@ public class MailAttributesToMimeHeadersTest {
     }
 
     @Test
-    public void shouldPutAttributesIntoHeadersWhenMappingDefined() throws MessagingException {
+    void shouldPutAttributesIntoHeadersWhenMappingDefined() throws MessagingException {
         FakeMailetConfig mailetConfig = FakeMailetConfig.builder()
                 .mailetName("Test")
                 .setProperty("simplemapping", 
@@ -134,7 +131,7 @@ public class MailAttributesToMimeHeadersTest {
     }
 
     @Test
-    public void shouldAddAttributeIntoHeadersWhenHeaderAlreadyPresent() throws MessagingException {
+    void shouldAddAttributeIntoHeadersWhenHeaderAlreadyPresent() throws MessagingException {
         FakeMailetConfig mailetConfig = FakeMailetConfig.builder()
                 .mailetName("Test")
                 .setProperty("simplemapping", MAIL_ATTRIBUTE_NAME1 + "; " + HEADER_NAME1)
@@ -153,31 +150,31 @@ public class MailAttributesToMimeHeadersTest {
 
     
     @Test
-    public void shouldThrowAtInitWhenNoSemicolumnInConfigurationEntry() throws MessagingException {
+    void shouldThrowAtInitWhenNoSemicolumnInConfigurationEntry() {
         FakeMailetConfig mailetConfig = FakeMailetConfig.builder()
                 .mailetName("Test")
                 .setProperty("simplemapping", "invalidConfigEntry")
                 .build();
-        expectedException.expect(IllegalArgumentException.class);
-        mailet.init(mailetConfig);
+        assertThatThrownBy(() -> mailet.init(mailetConfig))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    public void shouldThrowAtInitWhenTwoSemicolumnsInConfigurationEntry() throws MessagingException {
+    void shouldThrowAtInitWhenTwoSemicolumnsInConfigurationEntry() {
         FakeMailetConfig mailetConfig = FakeMailetConfig.builder()
                 .mailetName("Test")
                 .setProperty("simplemapping", "first;second;third")
                 .build();
-        expectedException.expect(IllegalArgumentException.class);
-        mailet.init(mailetConfig);
+        assertThatThrownBy(() -> mailet.init(mailetConfig))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    public void shouldThrowAtInitWhenNoConfigurationEntry() throws MessagingException {
+    void shouldThrowAtInitWhenNoConfigurationEntry() {
         FakeMailetConfig mailetConfig = FakeMailetConfig.builder()
                 .mailetName("Test")
                 .build();
-        expectedException.expect(MessagingException.class);
-        mailet.init(mailetConfig);
+        assertThatThrownBy(() -> mailet.init(mailetConfig))
+            .isInstanceOf(MessagingException.class);
     }
 }

@@ -37,14 +37,12 @@ import static org.apache.james.mailbox.hbase.HBaseNames.MARKER_MISSING;
 import static org.apache.james.mailbox.hbase.HBaseNames.MARKER_PRESENT;
 import static org.apache.james.mailbox.hbase.HBaseNames.MESSAGES_META_CF;
 import static org.apache.james.mailbox.hbase.HBaseNames.SUBSCRIPTION_CF;
-import static org.apache.james.mailbox.hbase.HBaseUtils.HBaseIdFromRowKey;
 import static org.apache.james.mailbox.hbase.HBaseUtils.flagsToPut;
+import static org.apache.james.mailbox.hbase.HBaseUtils.hBaseIdFromRowKey;
 import static org.apache.james.mailbox.hbase.HBaseUtils.toPut;
 import static org.apache.james.mailbox.hbase.PropertyConvertor.getProperty;
 import static org.apache.james.mailbox.hbase.PropertyConvertor.getValue;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Date;
 import java.util.UUID;
@@ -63,6 +61,7 @@ import org.apache.james.mailbox.store.mail.model.impl.SimpleMailboxMessage;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleProperty;
 import org.apache.james.mailbox.store.user.model.Subscription;
 import org.apache.james.mailbox.store.user.model.impl.SimpleSubscription;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -75,18 +74,17 @@ public class HBaseUtilsTest {
      */
     @Test
     public void testRowKey_All() {
-        System.out.println("getRowKey and UUIDFromRowKey");
         final HBaseMailbox mailbox = new HBaseMailbox(new MailboxPath("gsoc", "ieugen", "INBOX"), 1234);
         HBaseId uuid = mailbox.getMailboxId();
         byte[] expResult = uuid.toBytes();
         byte[] result = mailbox.getMailboxId().toBytes();
-        assertArrayEquals(expResult, result);
+        assertThat(result).isEqualTo(expResult);
 
-        HBaseId newUUID = HBaseIdFromRowKey(result);
-        assertEquals(uuid, newUUID);
+        HBaseId newUUID = hBaseIdFromRowKey(result);
+        assertThat(newUUID).isEqualTo(uuid);
 
-        newUUID = HBaseIdFromRowKey(expResult);
-        assertEquals(uuid, newUUID);
+        newUUID = hBaseIdFromRowKey(expResult);
+        assertThat(newUUID).isEqualTo(uuid);
     }
 
     /**
@@ -94,26 +92,25 @@ public class HBaseUtilsTest {
      */
     @Test
     public void testMailboxToPut() {
-        System.out.println("mailboxToPut");
         final HBaseMailbox instance = new HBaseMailbox(new MailboxPath("gsoc", "ieugen", "INBOX"), 1234);
 
         Put result = toPut(instance);
-        assertArrayEquals(instance.getMailboxId().toBytes(), result.getRow());
-        assertTrue(result.has(MAILBOX_CF, MAILBOX_USER, Bytes.toBytes(instance.getUser())));
-        assertTrue(result.has(MAILBOX_CF, MAILBOX_NAME, Bytes.toBytes(instance.getName())));
-        assertTrue(result.has(MAILBOX_CF, MAILBOX_NAMESPACE, Bytes.toBytes(instance.getNamespace())));
-        assertTrue(result.has(MAILBOX_CF, MAILBOX_UIDVALIDITY, Bytes.toBytes(instance.getUidValidity())));
-        assertTrue(result.has(MAILBOX_CF, MAILBOX_LASTUID, Bytes.toBytes(instance.getLastUid())));
-        assertTrue(result.has(MAILBOX_CF, MAILBOX_HIGHEST_MODSEQ, Bytes.toBytes(instance.getHighestModSeq())));
-        assertTrue(result.has(MAILBOX_CF, MAILBOX_MESSAGE_COUNT, Bytes.toBytes(0L)));
+        assertThat(result.getRow()).isEqualTo(instance.getMailboxId().toBytes());
+        assertThat(result.has(MAILBOX_CF, MAILBOX_USER, Bytes.toBytes(instance.getUser()))).isTrue();
+        assertThat(result.has(MAILBOX_CF, MAILBOX_NAME, Bytes.toBytes(instance.getName()))).isTrue();
+        assertThat(result.has(MAILBOX_CF, MAILBOX_NAMESPACE, Bytes.toBytes(instance.getNamespace()))).isTrue();
+        assertThat(result.has(MAILBOX_CF, MAILBOX_UIDVALIDITY, Bytes.toBytes(instance.getUidValidity()))).isTrue();
+        assertThat(result.has(MAILBOX_CF, MAILBOX_LASTUID, Bytes.toBytes(instance.getLastUid()))).isTrue();
+        assertThat(result.has(MAILBOX_CF, MAILBOX_HIGHEST_MODSEQ, Bytes.toBytes(instance.getHighestModSeq()))).isTrue();
+        assertThat(result.has(MAILBOX_CF, MAILBOX_MESSAGE_COUNT, Bytes.toBytes(0L))).isTrue();
     }
 
     /**
      * Test of metadataToPut method for message.
      */
-//    @Test
+    @Ignore
+    @Test
     public void testMessageToPut() {
-        System.out.println("messageToPut");
         // left to implement
     }
 
@@ -122,24 +119,21 @@ public class HBaseUtilsTest {
         final Property prop1 = new SimpleProperty("nspace", "localName", "test");
         byte[] value = getValue(prop1);
         final Property prop2 = getProperty(value);
-        assertEquals(prop1.getNamespace(), prop2.getNamespace());
-        assertEquals(prop1.getLocalName(), prop2.getLocalName());
-        assertEquals(prop1.getValue(), prop2.getValue());
+        assertThat(prop2.getNamespace()).isEqualTo(prop1.getNamespace());
+        assertThat(prop2.getLocalName()).isEqualTo(prop1.getLocalName());
+        assertThat(prop2.getValue()).isEqualTo(prop1.getValue());
     }
 
     @Test
     public void testSubscriptionToPut() {
-        System.out.println("subscription toPut");
         Subscription subscription = new SimpleSubscription("ieugen", "INBOX");
         Put put = toPut(subscription);
-        assertArrayEquals(Bytes.toBytes(subscription.getUser()), put.getRow());
-        assertTrue(put.has(SUBSCRIPTION_CF, Bytes.toBytes(subscription.getMailbox()), MARKER_PRESENT));
+        assertThat(put.getRow()).isEqualTo(Bytes.toBytes(subscription.getUser()));
+        assertThat(put.has(SUBSCRIPTION_CF, Bytes.toBytes(subscription.getMailbox()), MARKER_PRESENT)).isTrue();
     }
 
     @Test
     public void testFlagsToPut() {
-        System.out.println("flagsToPut");
-
         final Flags flags = new Flags();
         flags.add(Flags.Flag.SEEN);
         flags.add(Flags.Flag.DRAFT);
@@ -153,13 +147,13 @@ public class HBaseUtilsTest {
         message.setUid(MessageUid.of(1));
         Put put = flagsToPut(message, flags);
         //test for the system flags
-        assertTrue(put.has(MESSAGES_META_CF, FLAGS_SEEN, MARKER_PRESENT));
-        assertTrue(put.has(MESSAGES_META_CF, FLAGS_DRAFT, MARKER_PRESENT));
-        assertTrue(put.has(MESSAGES_META_CF, FLAGS_RECENT, MARKER_PRESENT));
-        assertTrue(put.has(MESSAGES_META_CF, FLAGS_FLAGGED, MARKER_PRESENT));
-        assertTrue(put.has(MESSAGES_META_CF, FLAGS_ANSWERED, MARKER_MISSING));
-        assertTrue(put.has(MESSAGES_META_CF, FLAGS_DELETED, MARKER_MISSING));
-        assertTrue(put.has(MESSAGES_META_CF, userFlagToBytes("userFlag1"), MARKER_PRESENT));
-        assertTrue(put.has(MESSAGES_META_CF, userFlagToBytes("userFlag2"), MARKER_PRESENT));
+        assertThat(put.has(MESSAGES_META_CF, FLAGS_SEEN, MARKER_PRESENT)).isTrue();
+        assertThat(put.has(MESSAGES_META_CF, FLAGS_DRAFT, MARKER_PRESENT)).isTrue();
+        assertThat(put.has(MESSAGES_META_CF, FLAGS_RECENT, MARKER_PRESENT)).isTrue();
+        assertThat(put.has(MESSAGES_META_CF, FLAGS_FLAGGED, MARKER_PRESENT)).isTrue();
+        assertThat(put.has(MESSAGES_META_CF, FLAGS_ANSWERED, MARKER_MISSING)).isTrue();
+        assertThat(put.has(MESSAGES_META_CF, FLAGS_DELETED, MARKER_MISSING)).isTrue();
+        assertThat(put.has(MESSAGES_META_CF, userFlagToBytes("userFlag1"), MARKER_PRESENT)).isTrue();
+        assertThat(put.has(MESSAGES_META_CF, userFlagToBytes("userFlag2"), MARKER_PRESENT)).isTrue();
     }
 }

@@ -23,8 +23,8 @@ package org.apache.james.transport.mailets;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
-import java.util.Enumeration;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
@@ -35,7 +35,6 @@ import org.apache.mailet.base.GenericMailet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Charsets;
 import com.google.common.io.ByteStreams;
 
 /**
@@ -87,7 +86,7 @@ public class LogMessage extends GenericMailet {
 
     @Override
     public void service(Mail mail) {
-        logger.info("Logging mail " + mail.getName());
+        logger.info("Logging mail {}", mail.getName());
         logComment();
         try {
             MimeMessage message = mail.getMessage();
@@ -107,24 +106,32 @@ public class LogMessage extends GenericMailet {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private void logHeaders(MimeMessage message) throws MessagingException {
-        if (headers) {
+        if (headers && logger.isInfoEnabled()) {
             logger.info("\n");
-            for (String header : Collections.list((Enumeration<String>) message.getAllHeaderLines())) {
+            for (String header : Collections.list(message.getAllHeaderLines())) {
                 logger.info(header + "\n");
             }
         }
     }
 
     private void logBody(MimeMessage message) throws MessagingException, IOException {
-        if (body) {
-            InputStream inputStream = ByteStreams.limit(message.getRawInputStream(), lengthToLog(message));
-            logger.info(IOUtils.toString(inputStream, Charsets.UTF_8));
+        if (body && logger.isInfoEnabled()) {
+            try (InputStream inputStream = ByteStreams.limit(message.getDataHandler().getInputStream(), lengthToLog(message))) {
+                logger.info(IOUtils.toString(inputStream, StandardCharsets.UTF_8));
+            }
         }
     }
 
     private int lengthToLog(MimeMessage message) throws MessagingException {
-        return bodyMax > 0 ? bodyMax : message.getSize();
+        return bodyMax > 0 ? bodyMax : messageSizeOrUnlimited(message);
+    }
+
+    private int messageSizeOrUnlimited(MimeMessage message) throws MessagingException {
+        int computedSize = message.getSize();
+        if (computedSize > 0) {
+            return computedSize;
+        }
+        return Integer.MAX_VALUE;
     }
 }

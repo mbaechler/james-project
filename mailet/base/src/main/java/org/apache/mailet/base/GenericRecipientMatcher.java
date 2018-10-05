@@ -25,8 +25,8 @@ import java.util.Collection;
 
 import javax.mail.MessagingException;
 
-import org.apache.mailet.Mail;
 import org.apache.james.core.MailAddress;
+import org.apache.mailet.Mail;
 
 import com.google.common.collect.ImmutableList;
 
@@ -48,6 +48,7 @@ public abstract class GenericRecipientMatcher extends GenericMatcher {
      * @param mail - the message and routing information to determine whether to match
      * @return Collection the Collection of MailAddress objects that have been matched
      */
+    @Override
     public final Collection<MailAddress> match(Mail mail) throws MessagingException {
         Collection<MailAddress> matching = new ArrayList<>();
         for (MailAddress recipient : mail.getRecipients()) {

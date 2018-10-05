@@ -33,6 +33,8 @@ import org.apache.james.mailbox.model.UpdatedFlags;
 import org.apache.james.mailbox.store.mail.MessageMapper.FetchType;
 import org.apache.james.mailbox.store.mail.model.MailboxMessage;
 
+import com.google.common.collect.Multimap;
+
 public interface MessageIdMapper {
 
     List<MailboxMessage> find(Collection<MessageId> messageIds, FetchType fetchType);
@@ -45,7 +47,12 @@ public interface MessageIdMapper {
 
     void delete(MessageId messageId);
 
-    void delete(MessageId messageId, List<MailboxId> mailboxIds);
+    void delete(MessageId messageId, Collection<MailboxId> mailboxIds);
+
+    default void delete(Multimap<MessageId, MailboxId> ids) {
+        ids.asMap()
+            .forEach(this::delete);
+    }
 
     Map<MailboxId, UpdatedFlags> setFlags(MessageId messageId, List<MailboxId> mailboxIds, Flags newState, MessageManager.FlagsUpdateMode updateMode) throws MailboxException;
 }

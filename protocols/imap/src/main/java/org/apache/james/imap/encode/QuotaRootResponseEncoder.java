@@ -19,13 +19,13 @@
 
 package org.apache.james.imap.encode;
 
+import java.io.IOException;
+
 import org.apache.james.imap.api.ImapConstants;
 import org.apache.james.imap.api.ImapMessage;
 import org.apache.james.imap.api.process.ImapSession;
 import org.apache.james.imap.encode.base.AbstractChainedImapEncoder;
 import org.apache.james.imap.message.response.QuotaRootResponse;
-
-import java.io.IOException;
 
 /**
  * QUOTAROOT response encoder
@@ -36,6 +36,7 @@ public class QuotaRootResponseEncoder extends AbstractChainedImapEncoder {
         super(next);
     }
 
+    @Override
     protected void doEncode(ImapMessage acceptableMessage, ImapResponseComposer composer, ImapSession session) throws IOException {
 
         QuotaRootResponse quotaRootResponse = (QuotaRootResponse) acceptableMessage;
@@ -51,13 +52,7 @@ public class QuotaRootResponseEncoder extends AbstractChainedImapEncoder {
         composer.end();
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see
-     * org.apache.james.imap.encode.base.AbstractChainedImapEncoder#isAcceptable
-     * (org.apache.james.imap.api.ImapMessage)
-     */
+    @Override
     public boolean isAcceptable(ImapMessage message) {
         return message instanceof QuotaRootResponse;
     }

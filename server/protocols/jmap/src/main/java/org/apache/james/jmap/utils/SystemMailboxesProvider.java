@@ -22,9 +22,9 @@ package org.apache.james.jmap.utils;
 import java.util.stream.Stream;
 
 import org.apache.james.jmap.exceptions.MailboxRoleNotFoundException;
-import org.apache.james.jmap.model.mailbox.Role;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MessageManager;
+import org.apache.james.mailbox.Role;
 import org.apache.james.mailbox.exception.MailboxException;
 
 public interface SystemMailboxesProvider {

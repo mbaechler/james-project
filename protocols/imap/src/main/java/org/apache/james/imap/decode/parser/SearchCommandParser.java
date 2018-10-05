@@ -142,10 +142,6 @@ public class SearchCommandParser extends AbstractUidCommandParser {
             // Just consume the [<entry-name> <entry-type-req>] and ignore it
             // See RFC4551 3.4. MODSEQ Search Criterion in SEARCH
             request.consumeQuoted();
-            /*
-             * (non-Javadoc)
-             * @see org.apache.james.imap.decode.ImapRequestLineReader.CharacterValidator#isValid(char)
-             */
             request.consumeWord(chr -> true);
             return SearchKey.buildModSeq(request.number());
         }
@@ -347,7 +343,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         final int next = consumeAndCap(request);
         switch (next) {
         case 'E':
-            return _new(request);
+            return newOperator(request);
         case 'O':
             return not(session, request, charset);
         default:
@@ -522,6 +518,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         result = SearchKey.buildUnanswered();
         return result;
     }
+    
     private SearchKey younger(ImapRequestLineReader request) throws DecodingException {
         final SearchKey result;
         nextIsO(request);
@@ -534,6 +531,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         result = SearchKey.buildYounger(request.nzNumber());
         return result;
     }
+    
     private SearchKey older(ImapRequestLineReader request) throws DecodingException {
         final SearchKey result;
         nextIsR(request);
@@ -562,7 +560,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         return result;
     }
 
-    private SearchKey _new(ImapRequestLineReader request) throws DecodingException {
+    private SearchKey newOperator(ImapRequestLineReader request) throws DecodingException {
         final SearchKey result;
         nextIsW(request);
         result = SearchKey.buildNew();
@@ -819,9 +817,11 @@ public class SearchCommandParser extends AbstractUidCommandParser {
     private void nextIsX(ImapRequestLineReader request) throws DecodingException {
         nextIs(request, 'X', 'x');
     }
+    
     private void nextIsU(ImapRequestLineReader request) throws DecodingException {
         nextIs(request, 'U', 'u');
     }
+    
     private void nextIsO(ImapRequestLineReader request) throws DecodingException {
         nextIs(request, 'O', 'o');
     }
@@ -967,12 +967,8 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         }
         return options;
     }
-    /**
-     * @see
-     * org.apache.james.imap.decode.parser.AbstractUidCommandParser#decode(org.apache.james.imap.api.ImapCommand,
-     * org.apache.james.imap.decode.ImapRequestLineReader, java.lang.String,
-     * boolean, org.apache.james.imap.api.process.ImapSession)
-     */
+    
+    @Override
     protected ImapMessage decode(ImapCommand command, ImapRequestLineReader request, String tag, boolean useUids, ImapSession session) throws DecodingException {
         try {
             SearchKey recent = null;

@@ -34,14 +34,11 @@ import org.apache.james.protocols.api.Response;
  *
  * @param <S>
  */
-public abstract class MultiLineHandler<S extends ProtocolSession> implements LineHandler<S>{
+public abstract class MultiLineHandler<S extends ProtocolSession> implements LineHandler<S> {
 
     private static final String BUFFERED_LINES = "BUFFERED_LINES";
     
-    /*
-     * (non-Javadoc)
-     * @see org.apache.james.protocols.api.handler.LineHandler#onLine(org.apache.james.protocols.api.ProtocolSession, byte[])
-     */
+    @Override
     @SuppressWarnings("unchecked")
     public Response onLine(S session, ByteBuffer line) {
         Collection<ByteBuffer> lines = (List<ByteBuffer>) session.getAttachment(BUFFERED_LINES, State.Transaction);

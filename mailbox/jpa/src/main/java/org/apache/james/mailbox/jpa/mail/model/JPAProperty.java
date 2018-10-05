@@ -36,9 +36,6 @@ public class JPAProperty implements Property {
     @Id
     @GeneratedValue
     @Column(name = "PROPERTY_ID", nullable = true)
-    // TODO The columnNames are not interpreted, see OPENJPA-223 to fix
-    // MAILBOX-186
-    @Index(name = "INDEX_PROPERTY_MSG_ID", columnNames = { "MAILBOX_ID", "MAIL_UID" })
     private long id;
 
     /** Order within the list of properties */
@@ -120,6 +117,7 @@ public class JPAProperty implements Property {
      * 
      * @return not null
      */
+    @Override
     public String getLocalName() {
         return localName;
     }
@@ -129,6 +127,7 @@ public class JPAProperty implements Property {
      * 
      * @return not null
      */
+    @Override
     public String getNamespace() {
         return namespace;
     }
@@ -138,6 +137,7 @@ public class JPAProperty implements Property {
      * 
      * @return not null
      */
+    @Override
     public String getValue() {
         return value;
     }
@@ -152,15 +152,19 @@ public class JPAProperty implements Property {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         final JPAProperty other = (JPAProperty) obj;
-        if (id != other.id)
+        if (id != other.id) {
             return false;
+        }
         return true;
     }
 

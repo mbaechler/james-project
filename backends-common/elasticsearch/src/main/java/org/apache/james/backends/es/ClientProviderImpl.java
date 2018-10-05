@@ -33,7 +33,6 @@ import com.google.common.collect.ImmutableList;
 public class ClientProviderImpl implements ClientProvider {
 
     public static ClientProviderImpl forHost(String address, Integer port) {
-        isValidPort(port);
         return new ClientProviderImpl(ImmutableList.of(Host.from(address, port)));
     }
 
@@ -42,8 +41,9 @@ public class ClientProviderImpl implements ClientProvider {
         return new ClientProviderImpl(Host.parseHosts(hostsString));
     }
 
-    private static boolean isValidPort(Integer port) {
-        return port > 0 && port <= 65535;
+    public static ClientProviderImpl fromHosts(ImmutableList<Host> hosts) {
+        Preconditions.checkNotNull(hosts, "Hosts should not be null");
+        return new ClientProviderImpl(hosts);
     }
 
     private final ImmutableList<Host> hosts;
@@ -54,6 +54,7 @@ public class ClientProviderImpl implements ClientProvider {
     }
 
 
+    @Override
     public Client get() {
         TransportClient transportClient = TransportClient.builder().build();
         ConsumerChainer<Host> consumer = Throwing.consumer(host -> transportClient

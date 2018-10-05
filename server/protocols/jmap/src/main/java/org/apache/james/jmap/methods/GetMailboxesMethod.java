@@ -19,13 +19,12 @@
 
 package org.apache.james.jmap.methods;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
+
 import javax.inject.Inject;
 
 import org.apache.james.jmap.model.ClientId;
@@ -39,16 +38,14 @@ import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MailboxMetaData;
-import org.apache.james.mailbox.model.MailboxQuery;
+import org.apache.james.mailbox.model.search.MailboxQuery;
 import org.apache.james.metrics.api.MetricFactory;
-import org.apache.james.metrics.api.TimeMetric;
 import org.apache.james.util.MDCBuilder;
 import org.apache.james.util.OptionalUtils;
 
 import com.github.fge.lambdas.Throwing;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -79,28 +76,26 @@ public class GetMailboxesMethod implements Method {
         return GetMailboxesRequest.class;
     }
 
+    @Override
     public Stream<JmapResponse> process(JmapRequest request, ClientId clientId, MailboxSession mailboxSession) {
         Preconditions.checkArgument(request instanceof GetMailboxesRequest);
         GetMailboxesRequest mailboxesRequest = (GetMailboxesRequest) request;
-        TimeMetric timeMetric = metricFactory.timer(JMAP_PREFIX + METHOD_NAME.getName());
-        try (Closeable closeable =
-                 MDCBuilder.create()
-                     .addContext(MDCBuilder.ACTION, "GET_MAILBOXES")
-                     .addContext("accountId", mailboxesRequest.getAccountId())
-                     .addContext("mailboxIds", mailboxesRequest.getIds())
-                     .addContext("properties", mailboxesRequest.getProperties())
-                     .build()) {
-            return Stream.of(
-                    JmapResponse.builder().clientId(clientId)
-                    .response(getMailboxesResponse(mailboxesRequest, mailboxSession))
-                    .properties(mailboxesRequest.getProperties().map(this::ensureContainsId))
-                    .responseName(RESPONSE_NAME)
-                    .build());
-        } catch (IOException e) {
-            throw Throwables.propagate(e);
-        } finally {
-            timeMetric.stopAndPublish();
-        }
+        return metricFactory.runPublishingTimerMetric(JMAP_PREFIX + METHOD_NAME.getName(),
+            MDCBuilder.create()
+                .addContext(MDCBuilder.ACTION, "GET_MAILBOXES")
+                .addContext("accountId", mailboxesRequest.getAccountId())
+                .addContext("mailboxIds", mailboxesRequest.getIds())
+                .addContext("properties", mailboxesRequest.getProperties())
+                .wrapArround(() -> process(clientId, mailboxSession, mailboxesRequest)));
+    }
+
+    private Stream<JmapResponse> process(ClientId clientId, MailboxSession mailboxSession, GetMailboxesRequest mailboxesRequest) {
+        return Stream.of(
+            JmapResponse.builder().clientId(clientId)
+                .response(getMailboxesResponse(mailboxesRequest, mailboxSession))
+                .properties(mailboxesRequest.getProperties().map(this::ensureContainsId))
+                .responseName(RESPONSE_NAME)
+                .build());
     }
 
     private Set<MailboxProperty> ensureContainsId(Set<MailboxProperty> input) {
@@ -116,7 +111,7 @@ public class GetMailboxesMethod implements Method {
                 .forEach(builder::add);
             return builder.build();
         } catch (MailboxException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -138,16 +133,18 @@ public class GetMailboxesMethod implements Method {
 
     private Stream<Mailbox> retrieveAllMailboxes(MailboxSession mailboxSession) throws MailboxException {
         List<MailboxMetaData> userMailboxes = mailboxManager.search(
-            MailboxQuery.builder(mailboxSession).privateUserMailboxes().build(),
+            MailboxQuery.builder()
+                .matchesAllMailboxNames()
+                .build(),
             mailboxSession);
         return userMailboxes
             .stream()
             .map(MailboxMetaData::getId)
             .map(mailboxId -> mailboxFactory.builder()
-                    .id(mailboxId)
-                    .session(mailboxSession)
-                    .usingPreloadedMailboxesMetadata(userMailboxes)
-                    .build())
+                .id(mailboxId)
+                .session(mailboxSession)
+                .usingPreloadedMailboxesMetadata(userMailboxes)
+                .build())
             .flatMap(OptionalUtils::toStream);
     }
 

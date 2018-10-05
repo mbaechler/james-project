@@ -19,11 +19,11 @@
 
 package org.apache.james.user.lib.model;
 
-import org.apache.james.user.api.model.User;
-import org.apache.james.user.lib.util.DigestUtil;
-
 import java.io.Serializable;
 import java.security.NoSuchAlgorithmException;
+
+import org.apache.james.user.api.model.User;
+import org.apache.james.user.lib.util.DigestUtil;
 
 /**
  * Implementation of User Interface. Instances of this class do not allow the
@@ -67,16 +67,12 @@ public class DefaultUser implements User, Serializable {
         algorithm = hashAlg;
     }
 
-    /**
-     * @see org.apache.james.user.api.model.User#getUserName()
-     */
+    @Override
     public String getUserName() {
         return userName;
     }
 
-    /**
-     * @see org.apache.james.user.api.model.User#verifyPassword(java.lang.String)
-     */
+    @Override
     public boolean verifyPassword(String pass) {
         try {
             String hashGuess = DigestUtil.digestString(pass, algorithm);
@@ -86,9 +82,7 @@ public class DefaultUser implements User, Serializable {
         }
     }
 
-    /**
-     * @see org.apache.james.user.api.model.User#setPassword(java.lang.String)
-     */
+    @Override
     public boolean setPassword(String newPass) {
         try {
             hashedPassword = DigestUtil.digestString(newPass, algorithm);

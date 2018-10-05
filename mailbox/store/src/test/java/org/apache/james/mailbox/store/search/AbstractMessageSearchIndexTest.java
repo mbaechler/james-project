@@ -8,6 +8,7 @@
  * with the License.  You may obtain a copy of the License at   *
  *                                                              *
  *   http://www.apache.org/licenses/LICENSE-2.0                 *
+ m10 = otherInboxMessageManager.appendMessage(
  *                                                              *
  * Unless required by applicable law or agreed to in writing,   *
  * software distributed under the License is distributed on an  *
@@ -21,15 +22,15 @@ package org.apache.james.mailbox.store.search;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 
 import javax.mail.Flags;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MessageIdManager;
@@ -38,7 +39,6 @@ import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.ComposedMessageId;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.model.MessageId;
-import org.apache.james.mailbox.model.MultimailboxesSearchQuery;
 import org.apache.james.mailbox.model.SearchQuery;
 import org.apache.james.mailbox.model.SearchQuery.AddressType;
 import org.apache.james.mailbox.model.SearchQuery.DateResolution;
@@ -49,17 +49,15 @@ import org.apache.james.mailbox.store.StoreMailboxManager;
 import org.apache.james.mailbox.store.StoreMessageManager;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mime4j.dom.Message;
-import org.apache.james.mime4j.dom.MessageWriter;
 import org.apache.james.mime4j.dom.Multipart;
-import org.apache.james.mime4j.message.BodyPart;
 import org.apache.james.mime4j.message.BodyPartBuilder;
-import org.apache.james.mime4j.message.DefaultMessageWriter;
 import org.apache.james.mime4j.message.MultipartBuilder;
+import org.apache.james.mime4j.message.SingleBodyBuilder;
+import org.apache.james.util.ClassLoaderUtils;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 
 public abstract class AbstractMessageSearchIndexTest {
@@ -95,6 +93,9 @@ public abstract class AbstractMessageSearchIndexTest {
     private ComposedMessageId mailWithInlinedAttachment;
     private ComposedMessageId m10;
     private StoreMessageManager myFolderMessageManager;
+    private MailboxPath inboxPath;
+    private MailboxPath otherInboxPath;
+    private StoreMessageManager inboxMessageManager;
 
 
     @Before
@@ -104,13 +105,13 @@ public abstract class AbstractMessageSearchIndexTest {
         session = storeMailboxManager.createSystemSession(USERNAME);
         otherSession = storeMailboxManager.createSystemSession(OTHERUSER);
 
-        MailboxPath inboxPath = MailboxPath.forUser(USERNAME, INBOX);
-        MailboxPath otherInboxPath = MailboxPath.forUser(OTHERUSER, INBOX);
+        inboxPath = MailboxPath.forUser(USERNAME, INBOX);
+        otherInboxPath = MailboxPath.forUser(OTHERUSER, INBOX);
 
         storeMailboxManager.createMailbox(inboxPath, session);
         storeMailboxManager.createMailbox(otherInboxPath, otherSession);
 
-        StoreMessageManager inboxMessageManager = (StoreMessageManager) storeMailboxManager.getMailbox(inboxPath, session);
+        inboxMessageManager = (StoreMessageManager) storeMailboxManager.getMailbox(inboxPath, session);
         StoreMessageManager otherInboxMessageManager = (StoreMessageManager) storeMailboxManager.getMailbox(otherInboxPath, otherSession);
 
         MailboxPath myFolderPath = MailboxPath.forUser(USERNAME, "MyFolder");
@@ -222,6 +223,7 @@ public abstract class AbstractMessageSearchIndexTest {
     }
 
     protected abstract void await();
+    
     protected abstract void initializeMailboxManager() throws Exception;
 
     @Test
@@ -236,10 +238,12 @@ public abstract class AbstractMessageSearchIndexTest {
 
         SearchQuery searchQuery = new SearchQuery();
 
-        assertThat(messageSearchIndex.search(session,
-            MultimailboxesSearchQuery.from(searchQuery)
-                .inMailboxes(mailbox.getMailboxId(), mailbox2.getMailboxId())
-                .build(), 20))
+        List<MessageId> result = messageSearchIndex.search(session,
+            ImmutableList.of(mailbox.getMailboxId(), mailbox2.getMailboxId()),
+            searchQuery,
+            LIMIT);
+
+        assertThat(result)
             .hasSize(12)
             .containsOnly(m1.getMessageId(),
                 m2.getMessageId(),
@@ -266,10 +270,12 @@ public abstract class AbstractMessageSearchIndexTest {
 
         SearchQuery searchQuery = new SearchQuery();
 
-        assertThat(messageSearchIndex.search(session,
-            MultimailboxesSearchQuery.from(searchQuery)
-                .inMailboxes(mailbox.getMailboxId(), mailbox2.getMailboxId())
-                .build(), 20))
+        List<MessageId> result = messageSearchIndex.search(session,
+            ImmutableList.of(mailbox.getMailboxId(), mailbox2.getMailboxId()),
+            searchQuery,
+            LIMIT);
+
+        assertThat(result)
             .containsOnly(m1.getMessageId(),
                 m2.getMessageId(),
                 m3.getMessageId(),
@@ -299,11 +305,27 @@ public abstract class AbstractMessageSearchIndexTest {
 
         SearchQuery searchQuery = new SearchQuery();
 
-        assertThat(messageSearchIndex.search(session,
-            MultimailboxesSearchQuery.from(searchQuery)
-                .inMailboxes(mailbox2.getMailboxId(), mailbox.getMailboxId())
-                .build(), 10))
-            .hasSize(10);
+        int limit = 10;
+        List<MessageId> result = messageSearchIndex.search(session,
+            ImmutableList.of(mailbox2.getMailboxId(), mailbox.getMailboxId()),
+            searchQuery,
+            limit);
+
+        assertThat(result)
+            .hasSize(limit);
+    }
+
+    @Test
+    public void whenEmptyListOfMailboxGivenSearchShouldReturnEmpty() throws MailboxException {
+        SearchQuery searchQuery = new SearchQuery();
+
+        List<MessageId> result = messageSearchIndex.search(session,
+            ImmutableList.of(),
+            searchQuery,
+            LIMIT);
+
+        assertThat(result)
+            .isEmpty();
     }
 
     @Test
@@ -313,20 +335,21 @@ public abstract class AbstractMessageSearchIndexTest {
 
         SearchQuery searchQuery = new SearchQuery();
 
-        myFolderMessageManager.appendMessage(
-                ClassLoader.getSystemResourceAsStream("eml/mail.eml"),
-                new Date(1406930400000L),
-                session,
-                true,
-                new Flags(Flags.Flag.SEEN));
+        myFolderMessageManager.appendMessage(MessageManager.AppendCommand.builder()
+            .withFlags(new Flags(Flags.Flag.SEEN))
+            .build(ClassLoader.getSystemResourceAsStream("eml/mail.eml")),
+            session);
 
         await();
 
-        assertThat(messageSearchIndex.search(session,
-                MultimailboxesSearchQuery.from(searchQuery)
-                        .inMailboxes(mailbox2.getMailboxId(), mailbox.getMailboxId())
-                        .build(), 13))
-                .hasSize(13);
+        int limit = 13;
+        List<MessageId> result = messageSearchIndex.search(session,
+            ImmutableList.of(mailbox2.getMailboxId(), mailbox.getMailboxId()),
+            searchQuery,
+            limit);
+
+        assertThat(result)
+                .hasSize(limit);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -334,15 +357,6 @@ public abstract class AbstractMessageSearchIndexTest {
         SearchQuery searchQuery = new SearchQuery();
         MailboxSession session = null;
         assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
-            .isEmpty();
-    }
-
-    @Test
-    public void searchShouldReturnEmptyWhenUserDontMatch() throws MailboxException {
-        Assume.assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.MultimailboxSearch));
-        MailboxSession otherUserSession = storeMailboxManager.createSystemSession("otherUser");
-        SearchQuery searchQuery = new SearchQuery();
-        assertThat(messageSearchIndex.search(otherUserSession, mailbox, searchQuery))
             .isEmpty();
     }
 
@@ -386,6 +400,47 @@ public abstract class AbstractMessageSearchIndexTest {
 
         assertThat(messageSearchIndex.search(session, mailbox2, searchQuery))
             .containsOnly(mailWithAttachment.getUid());
+    }
+
+    @Test
+    public void messageWithDotsInHeaderShouldBeIndexed() throws MailboxException {
+
+        ComposedMessageId mailWithDotsInHeader = myFolderMessageManager.appendMessage(
+            MessageManager.AppendCommand.builder()
+                .build(ClassLoader.getSystemResourceAsStream("eml/headerWithDot.eml")),
+            session);
+        await();
+        
+        SearchQuery searchQuery = new SearchQuery(SearchQuery.all());
+
+        assertThat(messageSearchIndex.search(session, mailbox2, searchQuery))
+            .contains(mailWithDotsInHeader.getUid());
+    }
+
+    @Test
+    public void searchShouldBeExactOnEmailAddresses() throws MailboxException {
+        Assume.assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
+
+        ComposedMessageId m11 = inboxMessageManager.appendMessage(
+            MessageManager.AppendCommand.builder()
+            .build(ClassLoader.getSystemResourceAsStream("eml/mail5.eml")),
+            session);
+
+        String emailToSearch = "luc.duzan@james.apache.org";
+
+        await();
+
+        SearchQuery searchQuery = new SearchQuery(SearchQuery.or(ImmutableList.of(
+            SearchQuery.address(AddressType.From, emailToSearch),
+            SearchQuery.address(AddressType.To, emailToSearch),
+            SearchQuery.address(AddressType.Cc, emailToSearch),
+            SearchQuery.address(AddressType.Bcc, emailToSearch),
+            SearchQuery.headerContains("Subject", emailToSearch),
+            SearchQuery.attachmentContains(emailToSearch),
+            SearchQuery.bodyContains(emailToSearch))));
+
+        assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
+            .containsOnly(m11.getUid());
     }
 
     @Test
@@ -450,7 +505,11 @@ public abstract class AbstractMessageSearchIndexTest {
     public void multimailboxSearchShouldReturnUidOfMessageMarkedAsSeenInAllMailboxes() throws MailboxException {
         SearchQuery searchQuery = new SearchQuery(SearchQuery.flagIsSet(Flags.Flag.SEEN));
 
-        List<MessageId> actual = messageSearchIndex.search(session, MultimailboxesSearchQuery.from(searchQuery).build(), LIMIT);
+        List<MessageId> actual = messageSearchIndex.search(
+            session,
+            ImmutableList.of(mailbox.getMailboxId(), mailbox2.getMailboxId()),
+            searchQuery,
+            LIMIT);
 
         assertThat(actual).containsOnly(mOther.getMessageId(), m6.getMessageId());
     }
@@ -458,13 +517,8 @@ public abstract class AbstractMessageSearchIndexTest {
     @Test
     public void multimailboxSearchShouldReturnUidOfMessageMarkedAsSeenInOneMailbox() throws MailboxException {
         SearchQuery searchQuery = new SearchQuery(SearchQuery.flagIsSet(Flags.Flag.SEEN));
-        MultimailboxesSearchQuery query = 
-                MultimailboxesSearchQuery
-                    .from(searchQuery)
-                    .inMailboxes(mailbox.getMailboxId())
-                    .build();
 
-        List<MessageId> actual = messageSearchIndex.search(session, query, LIMIT);
+        List<MessageId> actual = messageSearchIndex.search(session, ImmutableList.of(mailbox.getMailboxId()), searchQuery, LIMIT);
 
         assertThat(actual).containsOnly(m6.getMessageId());
     }
@@ -472,25 +526,12 @@ public abstract class AbstractMessageSearchIndexTest {
     @Test
     public void multimailboxSearchShouldReturnUidOfMessageWithExpectedFromInTwoMailboxes() throws MailboxException {
         SearchQuery searchQuery = new SearchQuery(SearchQuery.address(AddressType.From, "murari"));
-        MultimailboxesSearchQuery query = 
-                MultimailboxesSearchQuery
-                    .from(searchQuery)
-                    .inMailboxes(mailbox.getMailboxId(), mailbox2.getMailboxId())
-                    .build();
-        List<MessageId> actual = messageSearchIndex.search(session, query, LIMIT);
 
-        assertThat(actual).containsOnly(mOther.getMessageId(), m8.getMessageId());
-    }
-
-    @Test
-    public void multimailboxSearchShouldReturnUidOfMessageWithExpectedFromInAllMailboxes() throws MailboxException {
-        SearchQuery searchQuery = new SearchQuery(SearchQuery.address(AddressType.From, "murari"));
-        MultimailboxesSearchQuery query = 
-                MultimailboxesSearchQuery
-                    .from(searchQuery)
-                    .build();
-
-        List<MessageId> actual = messageSearchIndex.search(session, query, LIMIT);
+        List<MessageId> actual = messageSearchIndex.search(
+            session,
+            ImmutableList.of(mailbox.getMailboxId(), mailbox2.getMailboxId()),
+            searchQuery,
+            LIMIT);
 
         assertThat(actual).containsOnly(mOther.getMessageId(), m8.getMessageId());
     }
@@ -498,13 +539,12 @@ public abstract class AbstractMessageSearchIndexTest {
     @Test
     public void multimailboxSearchShouldReturnUidOfMessageMarkedAsSeenInTwoMailboxes() throws MailboxException {
         SearchQuery searchQuery = new SearchQuery(SearchQuery.flagIsSet(Flags.Flag.SEEN));
-        MultimailboxesSearchQuery query = 
-                MultimailboxesSearchQuery
-                    .from(searchQuery)
-                    .inMailboxes(mailbox.getMailboxId(), mailbox2.getMailboxId())
-                    .build();
 
-        List<MessageId> actual = messageSearchIndex.search(session, query, LIMIT);
+        List<MessageId> actual = messageSearchIndex.search(
+            session,
+            ImmutableList.of(mailbox.getMailboxId(), mailbox2.getMailboxId()),
+            searchQuery,
+            LIMIT);
 
         assertThat(actual).containsOnly(mOther.getMessageId(), m6.getMessageId());
     }
@@ -512,17 +552,31 @@ public abstract class AbstractMessageSearchIndexTest {
     @Test
     public void multimailboxSearchShouldLimitTheSize() throws MailboxException {
         SearchQuery searchQuery = new SearchQuery(SearchQuery.flagIsSet(Flags.Flag.SEEN));
-        MultimailboxesSearchQuery query =
-            MultimailboxesSearchQuery
-                .from(searchQuery)
-                .inMailboxes(mailbox.getMailboxId(), mailbox2.getMailboxId())
-                .build();
 
         long limit = 1;
-        List<MessageId> actual = messageSearchIndex.search(session, query, limit);
+        List<MessageId> actual = messageSearchIndex.search(
+            session,
+            ImmutableList.of(mailbox.getMailboxId(), mailbox2.getMailboxId()),
+            searchQuery,
+            limit);
         // Two messages matches this query : mOther and m6
 
         assertThat(actual).hasSize(1);
+    }
+
+    @Test
+    public void multimailboxSearchShouldWorkWithOtherUserMailbox() throws  MailboxException {
+        Assume.assumeTrue(storeMailboxManager.hasCapability(MailboxManager.MailboxCapabilities.ACL));
+        SearchQuery searchQuery = new SearchQuery();
+
+        long limit = 256;
+        List<MessageId> actual = messageSearchIndex.search(
+            session,
+            ImmutableList.of(otherMailbox.getMailboxId()),
+            searchQuery,
+            limit);
+
+        assertThat(actual).contains(m10.getMessageId());
     }
 
 
@@ -736,6 +790,30 @@ public abstract class AbstractMessageSearchIndexTest {
     }
 
     @Test
+    public void addressShouldReturnUidHavingRightExpeditorWhenFromIsSpecifiedWithOnlyUserPartOfEmail() throws Exception {
+        Assume.assumeTrue(storeMailboxManager
+            .getSupportedSearchCapabilities()
+            .contains(MailboxManager.SearchCapabilities.PartialEmailMatch));
+
+        SearchQuery searchQuery = new SearchQuery(SearchQuery.address(AddressType.From, "murari"));
+
+        assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
+            .containsOnly(m8.getUid());
+    }
+
+    @Test
+    public void addressShouldReturnUidHavingRightExpeditorWhenFromIsSpecifiedWithDomainPartOfEmail() throws Exception {
+        Assume.assumeTrue(storeMailboxManager
+            .getSupportedSearchCapabilities()
+            .contains(MailboxManager.SearchCapabilities.PartialEmailMatch));
+
+        SearchQuery searchQuery = new SearchQuery(SearchQuery.address(AddressType.From, "gmail.com"));
+
+        assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
+            .containsOnly(m8.getUid());
+    }
+
+    @Test
     public void addressShouldReturnUidHavingRightRecipientWhenToIsSpecified() throws Exception {
         SearchQuery searchQuery = new SearchQuery(SearchQuery.address(AddressType.To, "root@listes.minet.net"));
 
@@ -744,14 +822,91 @@ public abstract class AbstractMessageSearchIndexTest {
     }
 
     @Test
+    public void addressShouldReturnUidHavingRightRecipientWhenToIsSpecifiedWithOnlyEmailUserPart() throws Exception {
+        Assume.assumeTrue(storeMailboxManager
+            .getSupportedSearchCapabilities()
+            .contains(MailboxManager.SearchCapabilities.PartialEmailMatch));
+
+        SearchQuery searchQuery = new SearchQuery(SearchQuery.address(AddressType.To, "root"));
+
+        assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
+            .containsOnly(m1.getUid());
+    }
+
+    @Test
+    public void addressShouldReturnUidHavingRightRecipientWhenToIsSpecifiedWithOnlyDomainPartSpecified() throws Exception {
+        Assume.assumeTrue(storeMailboxManager
+            .getSupportedSearchCapabilities()
+            .contains(MailboxManager.SearchCapabilities.PartialEmailMatch));
+
+        SearchQuery searchQuery = new SearchQuery(SearchQuery.address(AddressType.To, "listes.minet.net"));
+
+        assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
+            .containsOnly(m1.getUid());
+    }
+
+    @Test
     public void addressShouldReturnUidHavingRightRecipientWhenCcIsSpecified() throws Exception {
-        SearchQuery searchQuery = new SearchQuery(SearchQuery.address(AddressType.Cc, "any@any.com"));
+        Assume.assumeTrue(storeMailboxManager
+            .getSupportedSearchCapabilities()
+            .contains(MailboxManager.SearchCapabilities.PartialEmailMatch));
+
+        SearchQuery searchQuery = new SearchQuery(SearchQuery.address(AddressType.Cc, "monkey@any.com"));
+        assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
+            .containsOnly(m5.getUid());
+    }
+
+    @Test
+    public void addressShouldReturnUidHavingRightRecipientWhenCcIsSpecifiedWithOnlyUserPartOfTheEmail() throws Exception {
+        Assume.assumeTrue(storeMailboxManager
+            .getSupportedSearchCapabilities()
+            .contains(MailboxManager.SearchCapabilities.PartialEmailMatch));
+
+        SearchQuery searchQuery = new SearchQuery(SearchQuery.address(AddressType.Cc, "monkey"));
+        assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
+            .containsOnly(m5.getUid());
+    }
+
+    @Test
+    public void addressShouldReturnUidHavingRightRecipientWhenCcIsSpecifiedWithOnlyDomainPartOfTheEmail() throws Exception {
+        Assume.assumeTrue(storeMailboxManager
+            .getSupportedSearchCapabilities()
+            .contains(MailboxManager.SearchCapabilities.PartialEmailMatch));
+
+        SearchQuery searchQuery = new SearchQuery(SearchQuery.address(AddressType.Cc, "any.com"));
+        assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
+            .containsOnly(m5.getUid());
+    }
+
+    @Test
+    public void addressShouldReturnUidHavingRightRecipientWhenBccIsSpecifiedWithOnlyUserPartOfTheEmail() throws Exception {
+        Assume.assumeTrue(storeMailboxManager
+            .getSupportedSearchCapabilities()
+            .contains(MailboxManager.SearchCapabilities.PartialEmailMatch));
+
+        SearchQuery searchQuery = new SearchQuery(SearchQuery.address(AddressType.Bcc, "monkey"));
+
+        assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
+            .containsOnly(m5.getUid());
+    }
+
+    @Test
+    public void addressShouldReturnUidHavingRightRecipientWhenBccIsSpecifiedWithOnlyDomainPartOfTheEmail() throws Exception {
+        Assume.assumeTrue(storeMailboxManager
+            .getSupportedSearchCapabilities()
+            .contains(MailboxManager.SearchCapabilities.PartialEmailMatch));
+
+        SearchQuery searchQuery = new SearchQuery(SearchQuery.address(AddressType.Bcc, "any.com"));
         assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
             .containsOnly(m5.getUid());
     }
 
     @Test
     public void addressShouldReturnUidHavingRightRecipientWhenBccIsSpecified() throws Exception {
+        Assume.assumeTrue(storeMailboxManager
+            .getSupportedSearchCapabilities()
+            .contains(MailboxManager.SearchCapabilities.PartialEmailMatch));
+
         SearchQuery searchQuery = new SearchQuery(SearchQuery.address(AddressType.Bcc, "no@no.com"));
 
         assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
@@ -886,7 +1041,7 @@ public abstract class AbstractMessageSearchIndexTest {
         // 2 : No cc
         // 3 : Cc : abc@abc.org
         // 4 : zzz@bcd.org
-        // 5 : any@any.com
+        // 5 : monkey@any.com
     }
 
     @Test
@@ -896,7 +1051,7 @@ public abstract class AbstractMessageSearchIndexTest {
         searchQuery.setSorts(ImmutableList.of(new Sort(SortClause.MailboxFrom)));
 
         assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
-            .containsExactly(m3.getUid(), m2.getUid(), m4.getUid(), m5.getUid());
+            .containsExactly(m2.getUid(), m3.getUid(), m4.getUid(), m5.getUid());
         // 2 : jira2@apache.org
         // 3 : jira1@apache.org
         // 4 : jira@apache.org
@@ -1016,9 +1171,18 @@ public abstract class AbstractMessageSearchIndexTest {
     }
 
     @Test
-    public void searchWithTextShouldReturnMailsWhenToMatches() throws Exception {
+    public void searchWithTextShouldReturnMailsWhenMatches() throws Exception {
         Assume.assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
-        SearchQuery searchQuery = new SearchQuery(SearchQuery.textContains("listes.minet.net"));
+        SearchQuery searchQuery = new SearchQuery(SearchQuery.textContains("root@listes.minet.net"));
+
+        assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
+            .containsExactly(m1.getUid());
+    }
+
+    @Test
+    public void searchWithTextShouldReturnMailsWhenToIsNotAnExactMatches() throws Exception {
+        Assume.assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
+        SearchQuery searchQuery = new SearchQuery(SearchQuery.textContains("root"));
 
         assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
             .containsExactly(m1.getUid());
@@ -1027,16 +1191,34 @@ public abstract class AbstractMessageSearchIndexTest {
     @Test
     public void searchWithTextShouldReturnMailsWhenCcMatches() throws Exception {
         Assume.assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
-        SearchQuery searchQuery = new SearchQuery(SearchQuery.textContains("abc.org"));
+        SearchQuery searchQuery = new SearchQuery(SearchQuery.textContains("abc@abc.org"));
 
         assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
             .containsExactly(m3.getUid());
     }
 
     @Test
+    public void searchWithTextShouldReturnMailsWhenCcIsNotAExactMatch() throws Exception {
+        Assume.assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
+        SearchQuery searchQuery = new SearchQuery(SearchQuery.textContains("monkey"));
+
+        assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
+            .containsExactly(m5.getUid());
+    }
+
+    @Test
     public void searchWithTextShouldReturnMailsWhenBccMatches() throws Exception {
         Assume.assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
-        SearchQuery searchQuery = new SearchQuery(SearchQuery.textContains("any.com"));
+        SearchQuery searchQuery = new SearchQuery(SearchQuery.textContains("monkey@any.com"));
+
+        assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
+            .containsExactly(m5.getUid());
+    }
+
+    @Test
+    public void searchWithTextShouldReturnMailsWhenBccIsNotAExactMatch() throws Exception {
+        Assume.assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Text));
+        SearchQuery searchQuery = new SearchQuery(SearchQuery.textContains("monkey"));
 
         assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
             .containsExactly(m5.getUid());
@@ -1115,11 +1297,9 @@ public abstract class AbstractMessageSearchIndexTest {
     public void searchWithFullTextShouldReturnMailsWhenNotAPerfectMatch() throws Exception {
         Assume.assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.FullText));
         ComposedMessageId messageWithBeautifulBananaAsTextAttachment = myFolderMessageManager.appendMessage(
-                ClassLoader.getSystemResourceAsStream("eml/emailWithTextAttachment.eml"),
-                new Date(1404252000000L),
-                session,
-                RECENT,
-                new Flags());
+            MessageManager.AppendCommand.builder()
+            .build(ClassLoader.getSystemResourceAsStream("eml/emailWithTextAttachment.eml")),
+            session);
         await();
 
         SearchQuery searchQuery = new SearchQuery(SearchQuery.mailContains("User message banana"));
@@ -1132,11 +1312,9 @@ public abstract class AbstractMessageSearchIndexTest {
     public void searchWithTextAttachmentShouldReturnMailsWhenAttachmentContentMatches() throws Exception {
         Assume.assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Attachment));
         ComposedMessageId messageWithBeautifulBananaAsTextAttachment = myFolderMessageManager.appendMessage(
-                ClassLoader.getSystemResourceAsStream("eml/emailWithTextAttachment.eml"),
-                new Date(1404252000000L),
-                session,
-                RECENT,
-                new Flags());
+            MessageManager.AppendCommand.builder()
+                .build(ClassLoader.getSystemResourceAsStream("eml/emailWithTextAttachment.eml")),
+            session);
         await();
 
         SearchQuery searchQuery = new SearchQuery(SearchQuery.attachmentContains("beautiful banana"));
@@ -1148,28 +1326,19 @@ public abstract class AbstractMessageSearchIndexTest {
     @Test
     public void searchWithPDFAttachmentShouldReturnMailsWhenAttachmentContentMatches() throws Exception {
         Assume.assumeTrue(storeMailboxManager.getSupportedSearchCapabilities().contains(MailboxManager.SearchCapabilities.Attachment));
-        byte[] attachmentContent = IOUtils.toByteArray(ClassLoader.getSystemResourceAsStream("eml/attachment.pdf"));
-        BodyPart attachment = BodyPartBuilder.create()
-                .setBody(attachmentContent, "application/pdf")
-                .setContentDisposition("attachment")
-                .build();
-        BodyPart textPart = BodyPartBuilder.create().setBody("The message has a PDF attachment.", "plain", Charsets.UTF_8).build();
+        byte[] attachmentContent = ClassLoaderUtils.getSystemResourceAsByteArray("eml/attachment.pdf");
         Multipart multipart = MultipartBuilder.create("mixed")
-                .addBodyPart(attachment)
-                .addBodyPart(textPart)
+                .addBodyPart(BodyPartBuilder.create()
+                    .setBody(attachmentContent, "application/pdf")
+                    .setContentDisposition("attachment"))
+                .addBodyPart(BodyPartBuilder.create()
+                    .setBody("The message has a PDF attachment.", "plain", StandardCharsets.UTF_8))
                 .build();
         Message message = Message.Builder.of()
                 .setBody(multipart)
                 .build();
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        MessageWriter writer = new DefaultMessageWriter();
-        writer.writeMessage(message, outputStream);
-        ComposedMessageId messageWithBeautifulBananaAsPDFAttachment = myFolderMessageManager.appendMessage(
-                new ByteArrayInputStream(outputStream.toByteArray()),
-                new Date(1404252000000L),
-                session,
-                RECENT,
-                new Flags());
+        ComposedMessageId messageWithBeautifulBananaAsPDFAttachment = myFolderMessageManager
+            .appendMessage(MessageManager.AppendCommand.from(message), session);
         await();
 
         SearchQuery searchQuery = new SearchQuery(SearchQuery.attachmentContains("beautiful banana"));
@@ -1183,45 +1352,14 @@ public abstract class AbstractMessageSearchIndexTest {
         SearchQuery searchQuery = new SearchQuery(SearchQuery.all());
         searchQuery.setSorts(ImmutableList.of(new Sort(SortClause.Arrival)));
 
-        List<MessageId> actual = messageSearchIndex.search(session, MultimailboxesSearchQuery.from(searchQuery).build(), LIMIT);
+        List<MessageId> actual = messageSearchIndex.search(
+            session,
+            ImmutableList.of(mailbox.getMailboxId(), mailbox2.getMailboxId()),
+            searchQuery,
+            LIMIT);
 
         assertThat(actual).containsOnly(m1.getMessageId(), m2.getMessageId(), m3.getMessageId(), m4.getMessageId(), m5.getMessageId(),
             m6.getMessageId(), m7.getMessageId(), m8.getMessageId(), m9.getMessageId(), mOther.getMessageId(), mailWithAttachment.getMessageId(), mailWithInlinedAttachment.getMessageId());
-    }
-
-    @Test
-    public void searchInMultiMailboxShouldReturnMessagesBelongingToUserSession() throws Exception {
-        SearchQuery query = new SearchQuery(SearchQuery.all());
-
-        MultimailboxesSearchQuery multiMailboxesQuery = MultimailboxesSearchQuery.from(query).build();
-
-        assertThat(messageSearchIndex.search(otherSession, multiMailboxesQuery, LIMIT))
-            .hasSize(1)
-            .containsOnly(m10.getMessageId());
-    }
-
-    @Test
-    public void searchInMultiMailboxShouldNotReturnMessagesBelongingToAnotherUserSession() throws Exception {
-        SearchQuery query = new SearchQuery(SearchQuery.all());
-
-        MultimailboxesSearchQuery multiMailboxesQuery = MultimailboxesSearchQuery.from(query).build();
-
-        assertThat(messageSearchIndex.search(session, multiMailboxesQuery, LIMIT))
-            .doesNotContain(m10.getMessageId());
-    }
-
-    @Test
-    public void searchShouldFilterMailboxBelongingToMailboxSession() throws Exception {
-        SearchQuery searchQuery = new SearchQuery();
-
-        assertThat(messageSearchIndex.search(otherSession, otherMailbox, searchQuery)).containsOnly(m10.getUid());
-    }
-
-    @Test
-    public void searchShouldReturnEmptyWhenMailboxBelongingToAnotherMailboxSession() throws Exception {
-        SearchQuery searchQuery = new SearchQuery();
-
-        assertThat(messageSearchIndex.search(otherSession, mailbox, searchQuery)).isEmpty();
     }
 
     @Test
@@ -1230,14 +1368,28 @@ public abstract class AbstractMessageSearchIndexTest {
         storeMailboxManager.createMailbox(mailboxPath, session);
 
         MessageManager messageManager = storeMailboxManager.getMailbox(mailboxPath, session);
-        boolean isRecent = false;
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
         Date date1 = simpleDateFormat.parse("2017-08-24");
         Date date2 = simpleDateFormat.parse("2017-08-23");
         Date date3 = simpleDateFormat.parse("2017-08-25");
-        ComposedMessageId message1 = messageManager.appendMessage(new ByteArrayInputStream("Subject: test\r\n\r\ntestmail".getBytes()), date1, session, isRecent, new Flags());
-        ComposedMessageId message2 = messageManager.appendMessage(new ByteArrayInputStream("Subject: test\r\n\r\ntestmail".getBytes()), date2, session, isRecent, new Flags());
-        ComposedMessageId message3 = messageManager.appendMessage(new ByteArrayInputStream("Subject: test\r\n\r\ntestmail".getBytes()), date3, session, isRecent, new Flags());
+        ComposedMessageId message1 = messageManager.appendMessage(MessageManager.AppendCommand.builder()
+            .withInternalDate(date1)
+            .build(Message.Builder.of()
+                .setSubject("test")
+                .setBody("testmail", StandardCharsets.UTF_8)),
+            session);
+        ComposedMessageId message2 = messageManager.appendMessage(MessageManager.AppendCommand.builder()
+            .withInternalDate(date2)
+            .build(Message.Builder.of()
+                .setSubject("test")
+                .setBody("testmail", StandardCharsets.UTF_8)),
+            session);
+        ComposedMessageId message3 = messageManager.appendMessage(MessageManager.AppendCommand.builder()
+            .withInternalDate(date3)
+            .build(Message.Builder.of()
+                .setSubject("test")
+                .setBody("testmail", StandardCharsets.UTF_8)),
+            session);
 
         await();
 
@@ -1256,14 +1408,28 @@ public abstract class AbstractMessageSearchIndexTest {
         storeMailboxManager.createMailbox(mailboxPath, session);
 
         MessageManager messageManager = storeMailboxManager.getMailbox(mailboxPath, session);
-        boolean isRecent = false;
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
         Date date1 = simpleDateFormat.parse("2017-08-24");
         Date date2 = simpleDateFormat.parse("2017-08-26");
         Date date3 = simpleDateFormat.parse("2017-08-25");
-        ComposedMessageId message1 = messageManager.appendMessage(new ByteArrayInputStream("Subject: test\r\n\r\ntestmail".getBytes()), date1, session, isRecent, new Flags());
-        ComposedMessageId message2 = messageManager.appendMessage(new ByteArrayInputStream("Date: Wed, 23 Aug 2017 00:00:00 +0200\r\nSubject: test\r\n\r\ntestmail".getBytes()), date2, session, isRecent, new Flags());
-        ComposedMessageId message3 = messageManager.appendMessage(new ByteArrayInputStream("Subject: test\r\n\r\ntestmail".getBytes()), date3, session, isRecent, new Flags());
+        ComposedMessageId message1 = messageManager.appendMessage(MessageManager.AppendCommand.builder()
+            .withInternalDate(date1)
+            .build(Message.Builder.of()
+                .setSubject("test")
+                .setBody("testmail", StandardCharsets.UTF_8)), session);
+        ComposedMessageId message2 = messageManager.appendMessage(MessageManager.AppendCommand.builder()
+            .withInternalDate(date2)
+            .build(Message.Builder.of()
+                .setSubject("test")
+                .setDate(new SimpleDateFormat("yyyy/MM/dd HH:mm:ss")
+                    .parse("2017/08/23 00:00:00 "), TimeZone.getTimeZone(ZoneId.of("+0200")))
+                .setBody("testmail", StandardCharsets.UTF_8)),
+            session);
+        ComposedMessageId message3 = messageManager.appendMessage(MessageManager.AppendCommand.builder()
+            .withInternalDate(date3)
+            .build(Message.Builder.of()
+                .setSubject("test")
+                .setBody("testmail", StandardCharsets.UTF_8)), session);
 
         await();
 
@@ -1274,5 +1440,43 @@ public abstract class AbstractMessageSearchIndexTest {
             .containsExactly(message2.getUid(),
                 message1.getUid(),
                 message3.getUid());
+    }
+
+    @Test
+    public void searchShouldRetrieveExactlyMatchingMimeMessageID() throws Exception {
+        SearchQuery searchQuery = new SearchQuery();
+        searchQuery.andCriteria(SearchQuery.mimeMessageID("<JIRA.12781874.1426269127000.9353.1433410057953@Atlassian.JIRA>"));
+        // Correspond to mail.eml
+
+        assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
+            .containsOnly(m3.getUid());
+    }
+
+    @Test
+    public void searchShouldRetrieveMailByAttachmentFileName() throws Exception {
+        Assume.assumeTrue(messageSearchIndex.getSupportedCapabilities(storeMailboxManager.getSupportedMessageCapabilities())
+            .contains(MailboxManager.SearchCapabilities.AttachmentFileName));
+
+        String fileName = "matchme.txt";
+        ComposedMessageId mWithFileName = inboxMessageManager.appendMessage(MessageManager.AppendCommand.builder()
+                .build(Message.Builder.of()
+                    .setBody(
+                        MultipartBuilder.create("alternative")
+                            .addBodyPart(BodyPartBuilder.create()
+                                .setContentDisposition("attachment", fileName)
+                                .setBody(SingleBodyBuilder.create()
+                                    .setText("this is the file content...")
+                                    .setCharset(StandardCharsets.UTF_8)
+                                    .build())
+                                .build())
+                            .build())),
+            session);
+
+        await();
+
+        SearchQuery searchQuery = new SearchQuery(SearchQuery.attachmentFileName(fileName));
+
+        assertThat(messageSearchIndex.search(session, mailbox, searchQuery))
+            .containsOnly(mWithFileName.getUid());
     }
 }

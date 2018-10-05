@@ -26,19 +26,15 @@ import javax.inject.Inject;
 import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.MailboxPathLocker;
 import org.apache.james.mailbox.MailboxSession;
-import org.apache.james.mailbox.acl.GroupMembershipResolver;
-import org.apache.james.mailbox.acl.MailboxACLResolver;
-import org.apache.james.mailbox.acl.SimpleGroupMembershipResolver;
-import org.apache.james.mailbox.acl.UnionMailboxACLResolver;
-import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MailboxACL;
-import org.apache.james.mailbox.model.MailboxConstants;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.mailbox.store.Authenticator;
 import org.apache.james.mailbox.store.Authorizator;
+import org.apache.james.mailbox.store.StoreMailboxAnnotationManager;
 import org.apache.james.mailbox.store.StoreMailboxManager;
 import org.apache.james.mailbox.store.StoreMessageManager;
+import org.apache.james.mailbox.store.StoreRightManager;
 import org.apache.james.mailbox.store.event.DelegatingMailboxListener;
 import org.apache.james.mailbox.store.event.MailboxEventDispatcher;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
@@ -50,55 +46,34 @@ import org.apache.james.mailbox.store.search.MessageSearchIndex;
  * Cassandra implementation of {@link StoreMailboxManager}
  */
 public class CassandraMailboxManager extends StoreMailboxManager {
+    public static final EnumSet<MailboxCapabilities> MAILBOX_CAPABILITIES = EnumSet.of(
+        MailboxCapabilities.Move,
+        MailboxCapabilities.UserFlag,
+        MailboxCapabilities.Namespace,
+        MailboxCapabilities.Annotation,
+        MailboxCapabilities.ACL,
+        MailboxCapabilities.Quota);
+    public static final EnumSet<MessageCapabilities> MESSAGE_CAPABILITIES = EnumSet.of(MessageCapabilities.UniqueID);
+
     private final MailboxPathLocker locker;
     private final CassandraMailboxSessionMapperFactory mapperFactory;
 
     @Inject
     public CassandraMailboxManager(CassandraMailboxSessionMapperFactory mapperFactory, Authenticator authenticator, Authorizator authorizator,
-                                   MailboxPathLocker locker, MessageParser messageParser, MessageId.Factory messageIdFactory,
-                                   MailboxEventDispatcher mailboxEventDispatcher, DelegatingMailboxListener delegatingMailboxListener) {
+                                   MailboxPathLocker locker, MessageParser messageParser,
+                                   MessageId.Factory messageIdFactory,
+                                   MailboxEventDispatcher mailboxEventDispatcher, DelegatingMailboxListener delegatingMailboxListener,
+                                   StoreMailboxAnnotationManager annotationManager, StoreRightManager storeRightManager) {
         super(mapperFactory,
             authenticator,
             authorizator,
             locker,
-            new UnionMailboxACLResolver(),
-            new SimpleGroupMembershipResolver(),
             messageParser,
             messageIdFactory,
-            MailboxConstants.DEFAULT_LIMIT_ANNOTATIONS_ON_MAILBOX,
-            MailboxConstants.DEFAULT_LIMIT_ANNOTATION_SIZE,
+            annotationManager,
             mailboxEventDispatcher,
-            delegatingMailboxListener);
-        this.locker = locker;
-        this.mapperFactory = mapperFactory;
-    }
-
-    public CassandraMailboxManager(CassandraMailboxSessionMapperFactory mapperFactory, Authenticator authenticator, Authorizator authorizator,
-                                   MailboxPathLocker locker, MessageParser messageParser, MessageId.Factory messageIdFactory) {
-        super(mapperFactory,
-            authenticator,
-            authorizator,
-            locker,
-            new UnionMailboxACLResolver(),
-            new SimpleGroupMembershipResolver(),
-            messageParser,
-            messageIdFactory);
-        this.locker = locker;
-        this.mapperFactory = mapperFactory;
-    }
-
-    public CassandraMailboxManager(CassandraMailboxSessionMapperFactory mapperFactory, Authenticator authenticator,  Authorizator authorizator,
-            MailboxPathLocker locker, MailboxACLResolver aclResolver, GroupMembershipResolver groupMembershipResolver, MessageParser messageParser,
-            MessageId.Factory messageIdFactory, int limitOfAnnotations, int limitAnnotationSize) {
-        super(mapperFactory,
-            authenticator,
-            authorizator,
-            aclResolver,
-            groupMembershipResolver,
-            messageParser,
-            messageIdFactory,
-            limitOfAnnotations,
-            limitAnnotationSize);
+            delegatingMailboxListener,
+            storeRightManager);
         this.locker = locker;
         this.mapperFactory = mapperFactory;
     }
@@ -111,23 +86,23 @@ public class CassandraMailboxManager extends StoreMailboxManager {
 
     @Override
     public EnumSet<MailboxManager.MailboxCapabilities> getSupportedMailboxCapabilities() {
-        return EnumSet.of(MailboxCapabilities.Move, MailboxCapabilities.UserFlag, MailboxCapabilities.Namespace, MailboxCapabilities.Annotation);
+        return MAILBOX_CAPABILITIES;
     }
 
     @Override
     public EnumSet<MessageCapabilities> getSupportedMessageCapabilities() {
-        return EnumSet.of(MessageCapabilities.Attachment, MessageCapabilities.UniqueID);
+        return MESSAGE_CAPABILITIES;
     }
     
     @Override
-    protected Mailbox doCreateMailbox(MailboxPath mailboxPath, MailboxSession session) throws MailboxException {
+    protected Mailbox doCreateMailbox(MailboxPath mailboxPath, MailboxSession session) {
         SimpleMailbox cassandraMailbox = new SimpleMailbox(mailboxPath, randomUidValidity());
         cassandraMailbox.setACL(MailboxACL.EMPTY);
         return cassandraMailbox;
     }
 
     @Override
-    protected StoreMessageManager createMessageManager(Mailbox mailboxRow, MailboxSession session) throws MailboxException {
+    protected StoreMessageManager createMessageManager(Mailbox mailboxRow, MailboxSession session) {
         return new CassandraMessageManager(mapperFactory,
             getMessageSearchIndex(),
             getEventDispatcher(),
@@ -138,7 +113,8 @@ public class CassandraMailboxManager extends StoreMailboxManager {
             getMessageParser(),
             getMessageIdFactory(),
             getBatchSizes(),
-            getImmutableMailboxMessageFactory());
+            getImmutableMailboxMessageFactory(),
+            getStoreRightManager());
     }
 
 }

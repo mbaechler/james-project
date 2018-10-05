@@ -22,77 +22,48 @@ import org.apache.commons.configuration.DefaultConfigurationBuilder;
 import org.apache.james.backends.cassandra.CassandraCluster;
 import org.apache.james.backends.cassandra.DockerCassandraRule;
 import org.apache.james.backends.cassandra.utils.CassandraUtils;
-import org.apache.james.rrt.api.RecipientRewriteTableException;
 import org.apache.james.rrt.lib.AbstractRecipientRewriteTable;
 import org.apache.james.rrt.lib.AbstractRecipientRewriteTableTest;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 
 public class CassandraRecipientRewriteTableTest extends AbstractRecipientRewriteTableTest {
 
     @ClassRule public static DockerCassandraRule cassandraServer = new DockerCassandraRule();
 
-    private CassandraCluster cassandra;
+    private static CassandraCluster cassandra;
 
+    @BeforeClass
+    public static void setUpClass() {
+        cassandra = CassandraCluster.create(CassandraRRTModule.MODULE, cassandraServer.getHost());
+    }
+
+    @Override
     @Before
     public void setUp() throws Exception {
-        cassandra = CassandraCluster.create(new CassandraRRTModule(), cassandraServer.getIp(), cassandraServer.getBindingPort());
         super.setUp();
     }
 
+    @Override
     @After
     public void tearDown() throws Exception {
         super.tearDown();
-        cassandra.close();
+        cassandra.clearTables();
     }
 
+    @AfterClass
+    public static void tearDownClass() {
+        cassandra.closeCluster();
+    }
 
     @Override
     protected AbstractRecipientRewriteTable getRecipientRewriteTable() throws Exception {
         CassandraRecipientRewriteTable rrt = new CassandraRecipientRewriteTable(cassandra.getConf(), CassandraUtils.WITH_DEFAULT_CONFIGURATION);
         rrt.configure(new DefaultConfigurationBuilder());
         return rrt;
-    }
-
-    @Override
-    protected void addMapping(String user, String domain, String mapping, int type) throws RecipientRewriteTableException {
-        switch (type) {
-        case ERROR_TYPE:
-            virtualUserTable.addErrorMapping(user, domain, mapping);
-            break;
-        case REGEX_TYPE:
-            virtualUserTable.addRegexMapping(user, domain, mapping);
-            break;
-        case ADDRESS_TYPE:
-            virtualUserTable.addAddressMapping(user, domain, mapping);
-            break;
-        case ALIASDOMAIN_TYPE:
-            virtualUserTable.addAliasDomainMapping(domain, mapping);
-            break;
-        default:
-            throw new RuntimeException("Invalid mapping type: " + type);
-        }
-    }
-
-    @Override
-    protected void removeMapping(String user, String domain, String mapping, int type) throws RecipientRewriteTableException {
-        switch (type) {
-        case ERROR_TYPE:
-            virtualUserTable.removeErrorMapping(user, domain, mapping);
-            break;
-        case REGEX_TYPE:
-            virtualUserTable.removeRegexMapping(user, domain, mapping);
-            break;
-        case ADDRESS_TYPE:
-            virtualUserTable.removeAddressMapping(user, domain, mapping);
-            break;
-        case ALIASDOMAIN_TYPE:
-            virtualUserTable.removeAliasDomainMapping(domain, mapping);
-            break;
-        default:
-            throw new RuntimeException("Invalid mapping type: " + type);
-        }
     }
 
 }

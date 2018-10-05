@@ -20,11 +20,12 @@ package org.apache.james.mailbox.hbase.io;
 
 import java.io.IOException;
 import java.io.InputStream;
-import org.apache.hadoop.hbase.client.HTable;
-import org.apache.hadoop.hbase.util.Bytes;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.client.Get;
+import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.util.Bytes;
 
 /**
  * Return an InputStream which retrieve columns from a row which stores chunk of
@@ -56,11 +57,6 @@ public class ChunkInputStream extends InputStream {
         this(conf, Bytes.toBytes(tableName), Bytes.toBytes(cf), key);
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see java.io.InputStream#read()
-     */
     @Override
     public int read() throws IOException {
         if (chunk == null || pos + 1 == chunk.length) {
@@ -78,10 +74,8 @@ public class ChunkInputStream extends InputStream {
      * @throws IOException
      */
     private boolean fetchChunk() throws IOException {
-        HTable messages = null;
-        try {
+        try (HTable messages = new HTable(conf, tableName)) {
             byte[] cp = Bytes.toBytes(chunkPos);
-            messages = new HTable(conf, tableName);
             Get get = new Get(key);
             get.addColumn(cf, cp);
             get.setMaxVersions(1);
@@ -96,17 +90,9 @@ public class ChunkInputStream extends InputStream {
             }
         } catch (IOException e) {
             throw new IOException("Unable to read data", e);
-        } finally {
-            if (messages != null) {
-                messages.close();
-
-            }
         }
     }
 
-    /**
-     * Not supported
-     */
     @Override
     public boolean markSupported() {
         return false;

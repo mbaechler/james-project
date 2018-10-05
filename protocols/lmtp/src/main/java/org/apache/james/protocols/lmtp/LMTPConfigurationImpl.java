@@ -18,7 +18,7 @@
  ****************************************************************/
 package org.apache.james.protocols.lmtp;
 
-public class LMTPConfigurationImpl extends LMTPConfiguration{
+public class LMTPConfigurationImpl extends LMTPConfiguration {
 
     private long maxMessageSize = 0;    
 
@@ -26,10 +26,7 @@ public class LMTPConfigurationImpl extends LMTPConfiguration{
         setSoftwareName("JAMES Protocols LMTP Server");
     }
     
-    /*
-     * (non-Javadoc)
-     * @see org.apache.james.protocols.smtp.SMTPConfiguration#getMaxMessageSize()
-     */
+    @Override
     public long getMaxMessageSize() {
         return maxMessageSize;
     }

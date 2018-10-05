@@ -26,7 +26,7 @@ import org.apache.james.protocols.api.ProtocolSession;
  * SMTPHandler object
  */
 
-public interface SMTPSession extends ProtocolSession{
+public interface SMTPSession extends ProtocolSession {
 
     // Keys used to store/lookup data in the internal state hash map
     /** Sender's email address */
@@ -42,6 +42,7 @@ public interface SMTPSession extends ProtocolSession{
      *
      * @return the configuration
      */
+    @Override
     SMTPConfiguration getConfiguration();
     
     

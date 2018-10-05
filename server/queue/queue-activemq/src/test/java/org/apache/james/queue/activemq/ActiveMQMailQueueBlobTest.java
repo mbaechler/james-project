@@ -18,55 +18,141 @@
  ****************************************************************/
 package org.apache.james.queue.activemq;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
+import org.apache.activemq.broker.BrokerService;
 import org.apache.commons.io.FileUtils;
 import org.apache.james.filesystem.api.FileSystem;
+import org.apache.james.metrics.api.GaugeRegistry;
+import org.apache.james.metrics.api.MetricFactory;
+import org.apache.james.queue.api.DelayedManageableMailQueueContract;
+import org.apache.james.queue.api.DelayedPriorityMailQueueContract;
+import org.apache.james.queue.api.MailQueue;
+import org.apache.james.queue.api.MailQueueMetricContract;
+import org.apache.james.queue.api.MailQueueMetricExtension;
+import org.apache.james.queue.api.ManageableMailQueue;
+import org.apache.james.queue.api.PriorityManageableMailQueueContract;
+import org.apache.james.queue.api.RawMailQueueItemDecoratorFactory;
+import org.apache.james.queue.jms.BrokerExtension;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Throwables;
+@ExtendWith(BrokerExtension.class)
+@Tag(BrokerExtension.STATISTICS)
+public class ActiveMQMailQueueBlobTest implements DelayedManageableMailQueueContract, DelayedPriorityMailQueueContract, PriorityManageableMailQueueContract,
+    MailQueueMetricContract {
 
-public class ActiveMQMailQueueBlobTest extends ActiveMQMailQueueTest {
+    static final String BASE_DIR = "file://target/james-test";
+    static final boolean USE_BLOB = true;
 
-    public final static String BASE_DIR = "file://target/james-test";
-    private MyFileSystem fs;
+    ActiveMQMailQueue mailQueue;
+    MyFileSystem fileSystem;
+
+    @BeforeEach
+    public void setUp(BrokerService broker, MailQueueMetricExtension.MailQueueMetricTestSystem metricTestSystem) {
+        fileSystem = new MyFileSystem();
+        ActiveMQConnectionFactory connectionFactory = createConnectionFactory();
+        FileSystemBlobTransferPolicy policy = new FileSystemBlobTransferPolicy();
+        policy.setFileSystem(fileSystem);
+        policy.setDefaultUploadUrl(BASE_DIR);
+        connectionFactory.setBlobTransferPolicy(policy);
+
+        RawMailQueueItemDecoratorFactory mailQueueItemDecoratorFactory = new RawMailQueueItemDecoratorFactory();
+        MetricFactory metricFactory = metricTestSystem.getSpyMetricFactory();
+        GaugeRegistry gaugeRegistry = metricTestSystem.getSpyGaugeRegistry();
+        String queueName = BrokerExtension.generateRandomQueueName(broker);
+        mailQueue = new ActiveMQMailQueue(connectionFactory, mailQueueItemDecoratorFactory, queueName, USE_BLOB, metricFactory, gaugeRegistry);
+    }
+
+    @AfterEach
+    public void tearDown() {
+        mailQueue.dispose();
+        fileSystem.destroy();
+    }
 
     @Override
+    public MailQueue getMailQueue() {
+        return mailQueue;
+    }
+
+    @Override
+    public ManageableMailQueue getManageableMailQueue() {
+        return mailQueue;
+    }
+
+    @Test
+    @Override
+    @Disabled("JAMES-2295 Disabled as test was dead-locking")
+    public void dequeueCanBeChainedBeforeAck() {
+
+    }
+
+    @Test
+    @Override
+    @Disabled("JAMES-2295 Disabled as test was dead-locking")
+    public void dequeueCouldBeInterleavingWithOutOfOrderAck() {
+
+    }
+
+    @Test
+    @Override
+    @Disabled("JAMES-2308 Flushing JMS mail queue randomly re-order them" +
+        "Random test failing around 1% of the time")
+    public void flushShouldPreserveBrowseOrder() {
+
+    }
+
+    @Test
+    @Override
+    @Disabled("JAMES-2312 JMS clear mailqueue can ommit some messages" +
+        "Random test failing around 1% of the time")
+    public void clearShouldRemoveAllElements() {
+
+    }
+
+    @Test
+    @Override
+    @Disabled("JAMES-2544 Mixing concurrent ack/nack might lead to a deadlock")
+    public void concurrentEnqueueDequeueWithAckNackShouldNotFail() {
+
+    }
+
+    @Test
+    void computeNextDeliveryTimestampShouldReturnLongMaxWhenOverflow() {
+        long deliveryTimestamp = mailQueue.computeNextDeliveryTimestamp(Long.MAX_VALUE, TimeUnit.DAYS);
+
+        assertThat(deliveryTimestamp).isEqualTo(Long.MAX_VALUE);
+    }
+
     protected ActiveMQConnectionFactory createConnectionFactory() {
-        ActiveMQConnectionFactory factory = super.createConnectionFactory();
+        ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory("vm://localhost?create=false");
 
         FileSystemBlobTransferPolicy policy = new FileSystemBlobTransferPolicy();
-        policy.setFileSystem(fs);
+        policy.setFileSystem(new MyFileSystem());
         policy.setDefaultUploadUrl(BASE_DIR);
         factory.setBlobTransferPolicy(policy);
 
         return factory;
     }
 
-    @Override
-    public void setUp() throws Exception {
-        fs = new MyFileSystem();
-        super.setUp();
-    }
-
-    public void tearDown() throws Exception {
-        if (fs != null) {
-            fs.destroy();
-        }
-    }
-
-    @Override
-    protected boolean useBlobMessages() {
-        return true;
-    }
-
-    private final class MyFileSystem implements FileSystem {
+    public static final class MyFileSystem implements FileSystem {
+        private static final Logger LOGGER = LoggerFactory.getLogger(MyFileSystem.class);
 
         @Override
-        public InputStream getResource(String url) throws IOException {
+        public InputStream getResource(String url) {
             return null;
         }
 
@@ -87,13 +173,13 @@ public class ActiveMQMailQueueBlobTest extends ActiveMQMailQueueTest {
             throw new FileNotFoundException();
         }
 
-        public void destroy() throws FileNotFoundException {
+        public void destroy() {
             try {
                 FileUtils.forceDelete(getFile(BASE_DIR));
             } catch (FileNotFoundException e) {
-                throw e;
+                LOGGER.info("No file specified");
             } catch (IOException e) {
-                Throwables.propagate(e);
+                throw new RuntimeException(e);
             }
         }
     }

@@ -21,52 +21,45 @@ package org.apache.james.transport.mailets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
 import javax.mail.Session;
 import javax.mail.internet.MimeMessage;
 
+import org.apache.james.core.builder.MimeMessageBuilder;
+import org.apache.james.util.MimeMessageUtil;
 import org.apache.mailet.Mail;
 import org.apache.mailet.base.test.FakeMail;
 import org.apache.mailet.base.test.FakeMailetConfig;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-
-import com.google.common.base.Charsets;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ReplaceContentTest {
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     private ReplaceContent mailet;
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         mailet = new ReplaceContent();
     }
 
     @Test
-    public void getMailetInfoShouldReturnValue() {
+    void getMailetInfoShouldReturnValue() {
         assertThat(mailet.getMailetInfo()).isEqualTo("ReplaceContent");
     }
 
     @Test
-    public void serviceShouldReplaceSubjectWhenMatching() throws Exception {
+    void serviceShouldReplaceSubjectWhenMatching() throws Exception {
         FakeMailetConfig mailetConfig = FakeMailetConfig.builder()
                 .mailetName("Test")
                 .setProperty("subjectPattern", "/test/TEST/i/,/o/a//,/s/s/i/")
                 .build();
         mailet.init(mailetConfig);
 
-        MimeMessage message = new MimeMessage(Session.getDefaultInstance(new Properties()));
-        message.setSubject("one test");
-
         Mail mail = FakeMail.builder()
-                .mimeMessage(message)
+                .mimeMessage(MimeMessageBuilder.mimeMessageBuilder()
+                    .setSubject("one test"))
                 .build();
         mailet.service(mail);
 
@@ -74,13 +67,13 @@ public class ReplaceContentTest {
     }
 
     @Test
-    public void serviceShouldReplaceBodyWhenMatching() throws Exception {
+    void serviceShouldReplaceBodyWhenMatching() throws Exception {
         FakeMailetConfig mailetConfig = FakeMailetConfig.builder()
                 .mailetName("Test")
                 .setProperty("bodyPattern", 
                         "/test/TEST/i/," +
                         "/o/a/r/," +
-                        "/S/s/r/,/\\u00E8/e'//," +
+                        "/S/s/r/,/è/e'//," +
                         "/test([^\\/]*?)bla/X$1Y/im/," +
                         "/X(.\\n)Y/P$1Q//," +
                         "/\\/\\/,//")
@@ -88,9 +81,8 @@ public class ReplaceContentTest {
         mailet.init(mailetConfig);
 
         MimeMessage message = new MimeMessage(Session.getDefaultInstance(new Properties()));
-        message.setText("This is one simple test/ \u00E8 one simple test.\n"
-                + "Blo blo blo blo.\n");
-
+        message.setText("This is one simple test/ è one simple test.\n"
+            + "Blo blo blo blo.\n");
         Mail mail = FakeMail.builder()
                 .mimeMessage(message)
                 .build();
@@ -101,18 +93,16 @@ public class ReplaceContentTest {
     }
 
     @Test
-    public void serviceShouldNotLoopWhenCaseInsensitiveAndRepeat() throws Exception {
+    void serviceShouldNotLoopWhenCaseInsensitiveAndRepeat() throws Exception {
         FakeMailetConfig mailetConfig = FakeMailetConfig.builder()
                 .mailetName("Test")
                 .setProperty("bodyPattern", "/a/a/ir/")
                 .build();
         mailet.init(mailetConfig);
 
-        MimeMessage message = new MimeMessage(Session.getDefaultInstance(new Properties()));
-        message.setText("aaa");
-
         Mail mail = FakeMail.builder()
-                .mimeMessage(message)
+                .mimeMessage(MimeMessageBuilder.mimeMessageBuilder()
+                    .setText("aaa"))
                 .build();
         mailet.service(mail);
 
@@ -120,18 +110,16 @@ public class ReplaceContentTest {
     }
 
     @Test
-    public void serviceShouldReplaceSubjectWhenConfigurationFromFile() throws Exception {
+    void serviceShouldReplaceSubjectWhenConfigurationFromFile() throws Exception {
         FakeMailetConfig mailetConfig = FakeMailetConfig.builder()
                 .mailetName("Test")
                 .setProperty("subjectPatternFile", "#/org/apache/james/mailet/standard/mailets/replaceSubject.patterns")
                 .build();
         mailet.init(mailetConfig);
 
-        MimeMessage message = new MimeMessage(Session.getDefaultInstance(new Properties()));
-        message.setSubject("re: r:ri:one test");
-
         Mail mail = FakeMail.builder()
-                .mimeMessage(message)
+                .mimeMessage(MimeMessageBuilder.mimeMessageBuilder()
+                    .setSubject("re: r:ri:one test"))
                 .build();
         mailet.service(mail);
 
@@ -139,7 +127,7 @@ public class ReplaceContentTest {
     }
 
     @Test
-    public void serviceShouldRemoveOrAddTextInBody() throws Exception {
+    void serviceShouldRemoveOrAddTextInBody() throws Exception {
         FakeMailetConfig mailetConfig = FakeMailetConfig.builder()
                 .mailetName("Test")
                 .setProperty("bodyPattern", "/--original message--/<quote>/i/,"
@@ -148,13 +136,11 @@ public class ReplaceContentTest {
                 .build();
         mailet.init(mailetConfig);
 
-        MimeMessage message = new MimeMessage(Session.getDefaultInstance(new Properties()));
-        message.setText("Test.\r\n" + "\r\n" + "--original message--\r\n"
-                + "part of\r\n" + "message\\ that\\0 must0 be\r\n"
-                + "quoted. Let's see if\r\n" + "he can do it.");
-
         Mail mail = FakeMail.builder()
-                .mimeMessage(message)
+                .mimeMessage(MimeMessageBuilder.mimeMessageBuilder()
+                    .setText("Test.\r\n" + "\r\n" + "--original message--\r\n"
+                        + "part of\r\n" + "message\\ that\\0 must0 be\r\n"
+                        + "quoted. Let's see if\r\n" + "he can do it."))
                 .build();
         mailet.service(mail);
 
@@ -165,19 +151,17 @@ public class ReplaceContentTest {
 
 
     @Test
-    public void serviceShouldReplaceBodyWhenMatchingASCIICharacter() throws Exception {
+    void serviceShouldReplaceBodyWhenMatchingASCIICharacter() throws Exception {
         FakeMailetConfig mailetConfig = FakeMailetConfig.builder()
                 .mailetName("Test")
                 .setProperty("bodyPattern", "/\\u2026/.../r/")
                 .build();
         mailet.init(mailetConfig);
 
-        MimeMessage message = new MimeMessage(Session.getDefaultInstance(new Properties()));
-        message.setSubject("one test");
-        message.setText("Replacement \u2026 one test \u2026");
-
         Mail mail = FakeMail.builder()
-                .mimeMessage(message)
+                .mimeMessage(MimeMessageBuilder.mimeMessageBuilder()
+                    .setSubject("one test")
+                    .setText("Replacement … one test …"))
                 .build();
         mailet.service(mail);
 
@@ -185,7 +169,7 @@ public class ReplaceContentTest {
     }
 
     @Test
-    public void serviceShouldReplaceBodyWhenMatchingCharset() throws Exception {
+    void serviceShouldReplaceBodyWhenMatchingCharset() throws Exception {
         String messageSource = "Content-Type: text/plain; charset=\"iso-8859-1\"\r\n"
                 + "Content-Transfer-Encoding: quoted-printable\r\n"
                 + "\r\n"
@@ -200,8 +184,7 @@ public class ReplaceContentTest {
                 .build();
         mailet.init(mailetConfig);
 
-        MimeMessage message = new MimeMessage(Session.getDefaultInstance(new Properties()),
-                new ByteArrayInputStream(messageSource.getBytes()));
+        MimeMessage message = MimeMessageUtil.mimeMessageFromString(messageSource);
 
         Mail mail = FakeMail.builder()
                 .mimeMessage(message)
@@ -212,21 +195,19 @@ public class ReplaceContentTest {
     }
 
     @Test
-    public void serviceShouldSetContenTypeWhenInitialized() throws Exception {
+    void serviceShouldSetContenTypeWhenInitialized() throws Exception {
         FakeMailetConfig mailetConfig = FakeMailetConfig.builder()
                 .mailetName("Test")
                 .setProperty("subjectPattern", "/test/TEST/i/,/o/a//,/s/s/i/")
-                .setProperty("charset", Charsets.UTF_8.name())
+                .setProperty("charset", StandardCharsets.UTF_8.name())
                 .build();
         mailet.init(mailetConfig);
 
-        MimeMessage message = new MimeMessage(Session.getDefaultInstance(new Properties()));
-        message.setSubject("one test");
-        message.setText("This is one simple test/ \u00E8 one simple test.\n"
-                + "Blo blo blo blo.\n");
-
         Mail mail = FakeMail.builder()
-                .mimeMessage(message)
+                .mimeMessage(MimeMessageBuilder.mimeMessageBuilder()
+                    .setSubject("one test")
+                    .setText("This is one simple test/ è one simple test.\n"
+                        + "Blo blo blo blo.\n"))
                 .build();
         mailet.service(mail);
 

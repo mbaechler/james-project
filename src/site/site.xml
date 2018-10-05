@@ -46,14 +46,6 @@
 
     <body>
 
-        <head>
-            <link
-                rel="meta"
-                title="DOAP"
-                href="${project.url}/doap_${project.artifactId}.rdf"
-                type="application/rdf+xml" />
-        </head>
-
         <!--
             Breadcrumbs are desactivated as they give strange results.
             <breadcrumbs>
@@ -131,6 +123,7 @@
                         <item name="SMTP LMTP" href="/server/config-smtp-lmtp.html" />
                         <item name="POP3" href="/server/config-pop3.html" />
                         <item name="IMAP4" href="/server/config-imap4.html" />
+                        <item name="JMAP" href="/server/config-jmap.html" />
                         <item name="Mailet Container" href="/server/config-mailetcontainer.html" />
                         <item name="FetchMail" href="/server/config-fetchmail.html" />
                         <item name="SSL/TLS" href="/server/config-ssl-tls.html" />
@@ -142,6 +135,7 @@
                         <item name="Spring JPA Postgres" href="/server/config-spring-jpa-postgres.html" />
                         <item name="Quota" href="/server/config-quota.html" />
                         <item name="Events" href="/server/config-events.html" />
+                        <item name="Additional mailbox listeners" href="/server/config-listeners.html" />
                     </item>
                     <item name="5. Manage" href="/server/manage.html" collapse="true" >
                         <item name="WebAdmin" href="/server/manage-webadmin.html" />
@@ -177,17 +171,17 @@
                 <item name="Issue Tracker" href="https://issues.apache.org/jira/browse/JAMES" />
                 <item name="Sources" href="https://github.com/apache/james-project" />
                 <item name="RFCs" href="/server/rfcs.html"/>
-                <item name="Other versions" href="other-versions.html"/>
+                <item name="Other versions" href="/server/other-versions.html"/>
                 <item name="Download releases" href="http://james.apache.org/download.cgi#Apache_James_Server" />
             </item>
             <item name="Mailets" href="/mailet/index.html" collapse="true">
                 <item name="Quick Start" href="/mailet/quickstart.html"/>
                 <item name="Mailet API" href="/mailet/api/index.html"/>
-                <item name="Mailet AI" href="/mailet/ai/index.html"/>
                 <item name="Basic Mailet Toolkit" href="/mailet/base/index.html"/>
-                <item name="Crypto Mailets" href="/mailet/crypto/index.html"/>
-                <item name="MailetDocs" href="/mailet/mailetdocs-maven-plugin/index.html"/>
                 <item name="Standard Mailets" href="/mailet/standard/index.html"/>
+                <item name="Crypto Mailets" href="/mailet/crypto/index.html"/>
+                <item name="Mailet AI" href="/mailet/ai/index.html"/>
+                <item name="MailetDocs" href="/mailet/mailetdocs-maven-plugin/index.html"/>
                 <item name="Mailing Lists" href="/mail.html#Mailet_API_List" />
                 <item name="Release Notes" href="/mailet/release-notes.html"/>
                 <item name="Java Docs" href="/mailet/apidocs"/>

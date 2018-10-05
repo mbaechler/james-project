@@ -32,23 +32,24 @@ import static org.mockito.Mockito.when;
 
 import javax.mail.MessagingException;
 
+import org.apache.james.core.Domain;
 import org.apache.mailet.Mail;
 import org.apache.mailet.MailetContext;
 import org.apache.mailet.Matcher;
 import org.apache.mailet.base.test.FakeMail;
 import org.apache.mailet.base.test.FakeMatcherConfig;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class HostIsLocalTest {
 
     private Matcher matcher;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         MailetContext mailContext = mock(MailetContext.class);
-        when(mailContext.isLocalServer(JAMES_APACHE_ORG)).thenReturn(true);
-        when(mailContext.isLocalServer(JAMES2_APACHE_ORG)).thenReturn(false);
+        when(mailContext.isLocalServer(Domain.of(JAMES_APACHE_ORG))).thenReturn(true);
+        when(mailContext.isLocalServer(Domain.of(JAMES2_APACHE_ORG))).thenReturn(false);
 
         matcher = new HostIsLocal();
         FakeMatcherConfig mci = FakeMatcherConfig.builder()
@@ -65,7 +66,7 @@ public class HostIsLocalTest {
             .recipients(ANY_AT_JAMES, OTHER_AT_JAMES)
             .build();
 
-        assertThat( matcher.match(mail)).containsExactly(ANY_AT_JAMES, OTHER_AT_JAMES);
+        assertThat(matcher.match(mail)).containsExactly(ANY_AT_JAMES, OTHER_AT_JAMES);
     }
 
     @Test
@@ -74,7 +75,7 @@ public class HostIsLocalTest {
             .recipients(ANY_AT_JAMES, ANY_AT_JAMES2)
             .build();
 
-        assertThat( matcher.match(mail)).containsExactly(ANY_AT_JAMES);
+        assertThat(matcher.match(mail)).containsExactly(ANY_AT_JAMES);
     }
 
     @Test

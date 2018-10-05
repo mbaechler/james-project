@@ -21,13 +21,13 @@ package org.apache.james.mailetcontainer.impl;
 
 import java.util.Collection;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Vector;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 import javax.mail.Address;
@@ -40,7 +40,8 @@ import javax.mail.internet.ParseException;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalConfiguration;
-import org.apache.james.server.core.MailImpl;
+import org.apache.james.core.Domain;
+import org.apache.james.core.MailAddress;
 import org.apache.james.dnsservice.api.DNSService;
 import org.apache.james.dnsservice.api.TemporaryResolutionException;
 import org.apache.james.dnsservice.library.MXHostAddressIterator;
@@ -50,12 +51,11 @@ import org.apache.james.lifecycle.api.Configurable;
 import org.apache.james.lifecycle.api.LifecycleUtil;
 import org.apache.james.queue.api.MailQueue;
 import org.apache.james.queue.api.MailQueueFactory;
+import org.apache.james.server.core.MailImpl;
 import org.apache.james.user.api.UsersRepository;
 import org.apache.james.user.api.UsersRepositoryException;
-import org.apache.mailet.HostAddress;
 import org.apache.mailet.LookupException;
 import org.apache.mailet.Mail;
-import org.apache.james.core.MailAddress;
 import org.apache.mailet.MailetContext;
 import org.apache.mailet.base.RFC2822Headers;
 import org.slf4j.Logger;
@@ -63,14 +63,13 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableSet;
 
-@SuppressWarnings("deprecation")
 public class JamesMailetContext implements MailetContext, Configurable {
     private static final Logger LOGGER = LoggerFactory.getLogger(JamesMailetContext.class);
 
     /**
      * A hash table of server attributes These are the MailetContext attributes
      */
-    private final Hashtable<String, Object> attributes = new Hashtable<>();
+    private final Map<String, Object> attributes = new ConcurrentHashMap<>();
     protected DNSService dns;
 
     private UsersRepository localusers;
@@ -82,8 +81,8 @@ public class JamesMailetContext implements MailetContext, Configurable {
     private MailAddress postmaster;
 
     @Inject
-    public void retrieveRootMailQueue(MailQueueFactory mailQueueFactory) {
-        this.rootMailQueue = mailQueueFactory.getQueue(MailQueueFactory.SPOOL);
+    public void retrieveRootMailQueue(MailQueueFactory<?> mailQueueFactory) {
+        this.rootMailQueue = mailQueueFactory.createQueue(MailQueueFactory.SPOOL);
     }
 
     @Inject
@@ -102,9 +101,9 @@ public class JamesMailetContext implements MailetContext, Configurable {
     }
 
     @Override
-    public Collection<String> getMailServers(String host) {
+    public Collection<String> getMailServers(Domain host) {
         try {
-            return dns.findMXRecords(host);
+            return dns.findMXRecords(host.asString());
         } catch (TemporaryResolutionException e) {
             // TODO: We only do this to not break backward compatiblity. Should
             // fixed later
@@ -129,11 +128,7 @@ public class JamesMailetContext implements MailetContext, Configurable {
 
     @Override
     public Iterator<String> getAttributeNames() {
-        Vector<String> names = new Vector<>();
-        for (Enumeration<String> e = attributes.keys(); e.hasMoreElements(); ) {
-            names.add(e.nextElement());
-        }
-        return names.iterator();
+        return attributes.keySet().iterator();
     }
 
     /**
@@ -142,8 +137,6 @@ public class JamesMailetContext implements MailetContext, Configurable {
      * is different than a mail-client's reply, which would use the Reply-To or
      * From header. This will send the bounce with the server's postmaster as
      * the sender.
-     *
-     * @see org.apache.mailet.MailetContext#bounce(Mail, String)
      */
     @Override
     public void bounce(Mail mail, String message) throws MessagingException {
@@ -176,25 +169,25 @@ public class JamesMailetContext implements MailetContext, Configurable {
      * multipart (mixed)/ contentPartRoot (body) = mpContent (alternative)/ part
      * (body) = message part (body) = original
      * </p>
-     *
-     * @see org.apache.mailet.MailetContext#bounce(Mail, String, MailAddress)
      */
     @Override
     public void bounce(Mail mail, String message, MailAddress bouncer) throws MessagingException {
         if (mail.getSender() == null) {
-            if (LOGGER.isInfoEnabled())
-                LOGGER.info("Mail to be bounced contains a null (<>) reverse path.  No bounce will be sent.");
+            LOGGER.info("Mail to be bounced contains a null (<>) reverse path.  No bounce will be sent.");
             return;
         } else {
             // Bounce message goes to the reverse path, not to the Reply-To
             // address
-            if (LOGGER.isInfoEnabled())
-                LOGGER.info("Processing a bounce request for a message with a reverse path of " + mail.getSender().toString());
+            LOGGER.info("Processing a bounce request for a message with a reverse path of {}", mail.getSender());
         }
 
         MailImpl reply = rawBounce(mail, message);
+
         // Change the sender...
-        reply.getMessage().setFrom(bouncer.toInternetAddress());
+        if (bouncer != null) {
+            reply.getMessage().setFrom(bouncer.toInternetAddress());
+        }
+
         reply.getMessage().saveChanges();
         // Send it off ... with null reverse-path
         reply.setSender(null);
@@ -224,7 +217,7 @@ public class JamesMailetContext implements MailetContext, Configurable {
         reply.setSentDate(new Date());
         Collection<MailAddress> recipients = new HashSet<>();
         recipients.add(mail.getSender());
-        InternetAddress addr[] = {new InternetAddress(mail.getSender().toString())};
+        InternetAddress[] addr = {new InternetAddress(mail.getSender().toString())};
         reply.setRecipients(Message.RecipientType.TO, addr);
         reply.setFrom(new InternetAddress(mail.getRecipients().iterator().next().toString()));
         reply.setText(bounceText);
@@ -240,7 +233,7 @@ public class JamesMailetContext implements MailetContext, Configurable {
         try {
             if (!name.contains("@")) {
                 try {
-                    return isLocalEmail(new MailAddress(name.toLowerCase(Locale.US), domains.getDefaultDomain()));
+                    return isLocalEmail(new MailAddress(name.toLowerCase(Locale.US), domains.getDefaultDomain().asString()));
                 } catch (DomainListException e) {
                     LOGGER.error("Unable to access DomainList", e);
                     return false;
@@ -249,7 +242,7 @@ public class JamesMailetContext implements MailetContext, Configurable {
                 return isLocalEmail(new MailAddress(name.toLowerCase(Locale.US)));
             }
         } catch (ParseException e) {
-            LOGGER.info("Error checking isLocalUser for user " + name, e);
+            LOGGER.info("Error checking isLocalUser for user {}", name, e);
             return false;
         }
     }
@@ -257,7 +250,7 @@ public class JamesMailetContext implements MailetContext, Configurable {
     @Override
     public boolean isLocalEmail(MailAddress mailAddress) {
         if (mailAddress != null) {
-            if (!isLocalServer(mailAddress.getDomain().toLowerCase(Locale.US))) {
+            if (!isLocalServer(mailAddress.getDomain())) {
                 return false;
             }
             try {
@@ -299,13 +292,14 @@ public class JamesMailetContext implements MailetContext, Configurable {
      * @since Mailet API v2.2.0a16-unstable
      */
     @Override
-    public Iterator<HostAddress> getSMTPHostAddresses(String domainName) {
+    @Deprecated
+    public Iterator<org.apache.mailet.HostAddress> getSMTPHostAddresses(Domain domainName) {
         try {
-            return new MXHostAddressIterator(dns.findMXRecords(domainName).iterator(), dns, false);
+            return new MXHostAddressIterator(dns.findMXRecords(domainName.asString()).iterator(), dns, false);
         } catch (TemporaryResolutionException e) {
             // TODO: We only do this to not break backward compatiblity. Should
             // fixed later
-            return ImmutableSet.<HostAddress>of().iterator();
+            return ImmutableSet.<org.apache.mailet.HostAddress>of().iterator();
         }
     }
 
@@ -315,9 +309,9 @@ public class JamesMailetContext implements MailetContext, Configurable {
     }
 
     @Override
-    public boolean isLocalServer(String name) {
+    public boolean isLocalServer(Domain domain) {
         try {
-            return domains.containsDomain(name);
+            return domains.containsDomain(domain);
         } catch (DomainListException e) {
             LOGGER.error("Unable to retrieve domains", e);
             return false;
@@ -337,6 +331,7 @@ public class JamesMailetContext implements MailetContext, Configurable {
     }
 
     @Override
+    @Deprecated
     public void log(LogLevel logLevel, String s) {
         switch (logLevel) {
             case INFO:
@@ -354,6 +349,7 @@ public class JamesMailetContext implements MailetContext, Configurable {
     }
 
     @Override
+    @Deprecated
     public void log(LogLevel logLevel, String s, Throwable throwable) {
         switch (logLevel) {
             case INFO:
@@ -380,7 +376,7 @@ public class JamesMailetContext implements MailetContext, Configurable {
     public void sendMail(MimeMessage message) throws MessagingException {
         MailAddress sender = new MailAddress((InternetAddress) message.getFrom()[0]);
         Collection<MailAddress> recipients = new HashSet<>();
-        Address addresses[] = message.getAllRecipients();
+        Address[] addresses = message.getAllRecipients();
         if (addresses != null) {
             for (Address address : addresses) {
                 // Javamail treats the "newsgroups:" header field as a
@@ -393,21 +389,40 @@ public class JamesMailetContext implements MailetContext, Configurable {
         sendMail(sender, recipients, message);
     }
 
+    @Override
     public void sendMail(MailAddress sender, Collection<MailAddress> recipients, MimeMessage message) throws MessagingException {
         sendMail(sender, recipients, message, Mail.DEFAULT);
     }
 
     @Override
     public void sendMail(Mail mail) throws MessagingException {
-        mail.setAttribute(Mail.SENT_BY_MAILET, "true");
-        rootMailQueue.enQueue(mail);
+        sendMail(mail, Mail.DEFAULT);
     }
 
+    @Override
+    public void sendMail(Mail mail, long delay, TimeUnit unit) throws MessagingException {
+        sendMail(mail, Mail.DEFAULT, delay, unit);
+    }
+
+    @Override
+    public void sendMail(Mail mail, String state) throws MessagingException {
+        mail.setAttribute(Mail.SENT_BY_MAILET, "true");
+        mail.setState(state);
+        rootMailQueue.enQueue(mail);
+    }
+    
+    @Override
+    public void sendMail(Mail mail, String state, long delay, TimeUnit unit) throws MessagingException {
+        mail.setAttribute(Mail.SENT_BY_MAILET, "true");
+        mail.setState(state);
+        rootMailQueue.enQueue(mail, delay, unit);
+    }
+
+    @Override
     public void sendMail(MailAddress sender, Collection<MailAddress> recipients, MimeMessage message, String state) throws MessagingException {
         MailImpl mail = new MailImpl(MailImpl.getId(), sender, recipients, message);
         try {
-            mail.setState(state);
-            sendMail(mail);
+            sendMail(mail, state);
         } finally {
             LifecycleUtil.dispose(mail);
         }
@@ -441,31 +456,20 @@ public class JamesMailetContext implements MailetContext, Configurable {
             // list of supported domains that isn't localhost. If that
             // doesn't work, use the hostname, even if it is localhost.
             if (postMasterAddress.indexOf('@') < 0) {
-                String domainName = null; // the domain to use
-                // loop through candidate domains until we find one or exhaust
-                // the
-                // list
-                for (String dom : domains.getDomains()) {
-                    String serverName = dom.toLowerCase(Locale.US);
-                    if (!("localhost".equals(serverName))) {
-                        domainName = serverName; // ok, not localhost, so
-                        // use it
-                    }
-                }
+                Domain domainName = domains.getDomains().stream()
+                    .filter(domain -> !Domain.LOCALHOST.equals(domain))
+                    .findFirst()
+                    .orElse(domains.getDefaultDomain());
 
-                // if we found a suitable domain, use it. Otherwise fallback to
-                // the
-                // host name.
-                postMasterAddress = postMasterAddress + "@" + (domainName != null ? domainName : domains.getDefaultDomain());
+                postMasterAddress = postMasterAddress + "@" + domainName.asString();
             }
             try {
                 this.postmaster = new MailAddress(postMasterAddress);
                 if (!domains.containsDomain(postmaster.getDomain())) {
-                    String warnBuffer = "The specified postmaster address ( " + postmaster + " ) is not a local " +
-                            "address.  This is not necessarily a problem, but it does mean that emails addressed to " +
-                            "the postmaster will be routed to another server.  For some configurations this may " +
-                            "cause problems.";
-                    LOGGER.warn(warnBuffer);
+                    LOGGER.warn("The specified postmaster address ( {} ) is not a local " +
+                        "address.  This is not necessarily a problem, but it does mean that emails addressed to " +
+                        "the postmaster will be routed to another server.  For some configurations this may " +
+                        "cause problems.", postmaster);
                 }
             } catch (AddressException e) {
                 throw new ConfigurationException("Postmaster address " + postMasterAddress + "is invalid", e);

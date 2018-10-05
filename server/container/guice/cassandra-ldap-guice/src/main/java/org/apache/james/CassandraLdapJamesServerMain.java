@@ -19,19 +19,26 @@
 
 package org.apache.james;
 
+import static org.apache.james.CassandraJamesServerMain.ALL_BUT_JMX_CASSANDRA_MODULE;
+
 import org.apache.james.data.LdapUsersRepositoryModule;
 import org.apache.james.modules.server.JMXServerModule;
+import org.apache.james.server.core.configuration.Configuration;
 
 import com.google.inject.Module;
 import com.google.inject.util.Modules;
 
 public class CassandraLdapJamesServerMain {
 
-    public static final Module cassandraLdapServerModule = Modules.override(CassandraJamesServerMain.cassandraServerModule, CassandraJamesServerMain.protocols)
+    public static final Module cassandraLdapServerModule = Modules.override(ALL_BUT_JMX_CASSANDRA_MODULE)
         .with(new LdapUsersRepositoryModule());
 
     public static void main(String[] args) throws Exception {
-        GuiceJamesServer server = new GuiceJamesServer()
+        Configuration configuration = Configuration.builder()
+            .useWorkingDirectoryEnvProperty()
+            .build();
+
+        GuiceJamesServer server = GuiceJamesServer.forConfiguration(configuration)
             .combineWith(cassandraLdapServerModule, new JMXServerModule());
 
         server.start();

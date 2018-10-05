@@ -20,6 +20,7 @@ package org.apache.james.mailbox.hbase.io;
 
 import java.io.IOException;
 import java.io.OutputStream;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
@@ -61,11 +62,6 @@ public class ChunkOutputStream extends OutputStream {
         this.chunk = new byte[chunkSize];
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see java.io.OutputStream#write(int)
-     */
     @Override
     public void write(int b) throws IOException {
         if (chunk.length - 1 == pos) {
@@ -97,9 +93,7 @@ public class ChunkOutputStream extends OutputStream {
      */
     private void writeData(boolean close) throws IOException {
         if (pos != 0 && (close || pos == chunk.length - 1)) {
-            HTable messages = null;
-            try {
-                messages = new HTable(conf, tableName);
+            try (HTable messages = new HTable(conf, tableName)) {
                 Put put = new Put(key);
                 put.add(cf, Bytes.toBytes(chunkPos), Bytes.head(chunk, (int) pos + 1));
                 messages.put(put);
@@ -108,10 +102,6 @@ public class ChunkOutputStream extends OutputStream {
 
             } catch (IOException e) {
                 throw new IOException("Unable to write data", e);
-            } finally {
-                if (messages != null) {
-                    messages.close();
-                }
             }
         }
     }

@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.james.mailbox.MailboxListener;
 import org.apache.james.mailbox.mock.MockMailboxSession;
+import org.apache.james.metrics.api.NoopMetricFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,7 +42,8 @@ public class AsynchronousEventDeliveryTest {
     @Before
     public void setUp() {
         mailboxListener = mock(MailboxListener.class);
-        asynchronousEventDelivery = new AsynchronousEventDelivery(2);
+        asynchronousEventDelivery = new AsynchronousEventDelivery(2,
+            new SynchronousEventDelivery(new NoopMetricFactory()));
     }
 
     @After
@@ -51,14 +53,14 @@ public class AsynchronousEventDeliveryTest {
 
     @Test
     public void deliverShouldWork() throws Exception {
-        MailboxListener.Event event = new MailboxListener.Event(null, null) {};
+        MailboxListener.MailboxEvent event = new MailboxListener.MailboxEvent(null, null) {};
         asynchronousEventDelivery.deliver(mailboxListener, event);
         verify(mailboxListener, timeout(ONE_MINUTE)).event(event);
     }
 
     @Test
     public void deliverShouldNotPropagateException() throws Exception {
-        MailboxListener.Event event = new MailboxListener.Event(new MockMailboxSession("test"), null) {};
+        MailboxListener.MailboxEvent event = new MailboxListener.MailboxEvent(new MockMailboxSession("test"), null) {};
         doThrow(new RuntimeException()).when(mailboxListener).event(event);
         asynchronousEventDelivery.deliver(mailboxListener, event);
         verify(mailboxListener, timeout(ONE_MINUTE)).event(event);
@@ -66,7 +68,7 @@ public class AsynchronousEventDeliveryTest {
 
     @Test
     public void deliverShouldWorkWhenThePoolIsFull() throws Exception {
-        MailboxListener.Event event = new MailboxListener.Event(new MockMailboxSession("test"), null) {};
+        MailboxListener.MailboxEvent event = new MailboxListener.MailboxEvent(new MockMailboxSession("test"), null) {};
         int operationCount = 10;
         for (int i = 0; i < operationCount; i++) {
             asynchronousEventDelivery.deliver(mailboxListener, event);

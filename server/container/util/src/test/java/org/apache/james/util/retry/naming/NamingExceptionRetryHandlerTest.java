@@ -19,111 +19,82 @@
  */
 package org.apache.james.util.retry.naming;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import javax.naming.Context;
 import javax.naming.NamingException;
+
 import org.apache.james.util.retry.api.ExceptionRetryingProxy;
 import org.apache.james.util.retry.api.RetryHandler;
 import org.apache.james.util.retry.api.RetrySchedule;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 
-/**
- * <code>ExceptionRetryHandlerTest</code>
- */
 public class NamingExceptionRetryHandlerTest {
 
-    private Class<?>[] _exceptionClasses = null;
-    private ExceptionRetryingProxy _proxy = null;
-    private RetrySchedule _schedule = null;
+    private static class TestRetryingProxy implements ExceptionRetryingProxy {
+        @Override
+        public Context getDelegate() {
+            return null;
+        }
 
-    /**
-     * @see junit.framework.TestCase#setUp()
-     */
+        @Override
+        public Context newDelegate() {
+            return null;
+        }
+
+        @Override
+        public void resetDelegate() {
+        }
+    }
+
+    private Class<?>[] exceptionClasses;
+    private ExceptionRetryingProxy proxy;
+    private RetrySchedule schedule;
+
     @Before
     public void setUp() throws Exception {
-	_exceptionClasses = new Class<?>[]{NamingException.class};
-	_proxy = new TestRetryingProxy();
-	_schedule = new TestRetrySchedule();
+        exceptionClasses = new Class<?>[]{NamingException.class};
+        proxy = new TestRetryingProxy();
+        schedule = i -> i;
     }
 
-    private class TestRetryingProxy implements ExceptionRetryingProxy {
-
-	/**
-     */
-	@Override
-	public Context getDelegate() {
-	    return null;
-	}
-
-	/**
-     */
-	@Override
-	public Context newDelegate() throws NamingException {
-	    return null;
-	}
-
-	/**
-     */
-	@Override
-	public void resetDelegate() throws NamingException {
-	}
-    }
-
-    private class TestRetrySchedule implements RetrySchedule {
-
-	/**
-     */
-	@Override
-	public long getInterval(int index) {
-	    return index;
-	}
-    }
-
-    /**
-     * Test method for .
-     */
     @Test
-    public final void testExceptionRetryHandler() {
-	assertTrue(RetryHandler.class.isAssignableFrom(new NamingExceptionRetryHandler(
-		_exceptionClasses, _proxy, _schedule, 0) {
+    public void testExceptionRetryHandler() {
+        assertThat(RetryHandler.class.isAssignableFrom(new NamingExceptionRetryHandler(
+            exceptionClasses, proxy, schedule, 0) {
 
-	    @Override
-	    public Object operation() throws Exception {
-		return null;
-	    }
-	}.getClass()));
+            @Override
+            public Object operation() {
+                return null;
+            }
+        }.getClass())).isTrue();
     }
 
-    /**
-     * Test method for .
-     * @throws Exception 
-     */
     @Test
-    public final void testPerform() throws NamingException {
-	Object result = new NamingExceptionRetryHandler(
-		_exceptionClasses, _proxy, _schedule, 0) {
+    public void testPerform() throws NamingException {
+        Object result = new NamingExceptionRetryHandler(
+            exceptionClasses, proxy, schedule, 0) {
 
-	    @Override
-	    public Object operation() throws NamingException {
-		return "Hi!";
-	    }
-	}.perform();
-	assertEquals("Hi!", result);
+            @Override
+            public Object operation() {
+                return "Hi!";
+            }
+        }.perform();
+        assertThat(result).isEqualTo("Hi!");
 
-	try {
-	    new NamingExceptionRetryHandler(
-		    _exceptionClasses, _proxy, _schedule, 0) {
+        try {
+            new NamingExceptionRetryHandler(
+                exceptionClasses, proxy, schedule, 0) {
 
-		@Override
-		public Object operation() throws Exception {
-		    throw new NamingException();
-		}
-	    }.perform();
-	} catch (NamingException ex) {
-	    // no-op
-	}
-	assertEquals("Hi!", result);
+                @Override
+                public Object operation() throws Exception {
+                    throw new NamingException();
+                }
+            }.perform();
+        } catch (NamingException ex) {
+            // no-op
+        }
+        assertThat(result).isEqualTo("Hi!");
     }
 }

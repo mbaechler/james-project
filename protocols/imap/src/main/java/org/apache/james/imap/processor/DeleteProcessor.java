@@ -49,13 +49,7 @@ public class DeleteProcessor extends AbstractMailboxProcessor<DeleteRequest> {
         super(DeleteRequest.class, next, mailboxManager, factory, metricFactory);
     }
 
-    /**
-     * @see
-     * org.apache.james.imap.processor.AbstractMailboxProcessor#doProcess(org.apache.james.imap.api.message.request.ImapRequest,
-     * org.apache.james.imap.api.process.ImapSession, java.lang.String,
-     * org.apache.james.imap.api.ImapCommand,
-     * org.apache.james.imap.api.process.ImapProcessor.Responder)
-     */
+    @Override
     protected void doProcess(DeleteRequest request, ImapSession session, String tag, ImapCommand command, Responder responder) {
         final MailboxPath mailboxPath = PathConverter.forSession(session).buildFullPath(request.getMailboxName());
         try {
@@ -68,17 +62,13 @@ public class DeleteProcessor extends AbstractMailboxProcessor<DeleteRequest> {
             unsolicitedResponses(session, responder, false);
             okComplete(command, tag, responder);
         } catch (MailboxNotFoundException e) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Delete failed for mailbox " + mailboxPath + " as it not exist", e);
-            }
+            LOGGER.debug("Delete failed for mailbox {} as it doesn't exist", mailboxPath, e);
             no(command, tag, responder, HumanReadableText.FAILURE_NO_SUCH_MAILBOX);
         } catch (TooLongMailboxNameException e) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("The mailbox name length is over limit: " + mailboxPath.getName(), e);
-            }
+            LOGGER.debug("The mailbox name length is over limit: {}", mailboxPath.getName(), e);
             taggedBad(command, tag, responder, HumanReadableText.FAILURE_MAILBOX_NAME);
         } catch (MailboxException e) {
-            LOGGER.error("Delete failed for mailbox " + mailboxPath, e);
+            LOGGER.error("Delete failed for mailbox {}", mailboxPath, e);
             no(command, tag, responder, HumanReadableText.GENERIC_FAILURE_DURING_PROCESSING);
         }
     }

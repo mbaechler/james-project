@@ -20,11 +20,11 @@
 package org.apache.james.app.spring;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 import org.apache.james.container.spring.context.JamesServerApplicationContext;
 import org.apache.james.mailbox.MailboxListener;
 import org.apache.james.mailbox.store.event.DefaultDelegatingMailboxListener;
 import org.apache.james.mailbox.store.quota.ListeningCurrentQuotaUpdater;
-
 import org.assertj.core.api.Condition;
 import org.junit.After;
 import org.junit.Before;
@@ -41,14 +41,14 @@ public class JamesSpringContextTest {
     private JamesServerApplicationContext context;
 
     @Before
-    public void setup() throws Exception {
+    public void setup() {
         context = new JamesServerApplicationContext(new String[] { "META-INF/org/apache/james/spring-server.xml" });
         context.registerShutdownHook();
         context.start();
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         context.stop();
         context.destroy();
     }

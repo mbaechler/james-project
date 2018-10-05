@@ -50,24 +50,26 @@ public class SupressDuplicateRcptHandler implements RcptHook {
 
     }
 
-    /**
-     * @see org.apache.james.protocols.smtp.hook.RcptHook#doRcpt(org.apache.james.protocols.smtp.SMTPSession, org.apache.mailet.MailAddress, org.apache.mailet.MailAddress)
-     */
+    @Override
     @SuppressWarnings("unchecked")
     public HookResult doRcpt(SMTPSession session, MailAddress sender, MailAddress rcpt) {
         Collection<MailAddress> rcptList = (Collection<MailAddress>) session.getAttachment(SMTPSession.RCPT_LIST, State.Transaction);
     
         // Check if the recipient is already in the rcpt list
-        if(rcptList != null && rcptList.contains(rcpt)) {
+        if (rcptList != null && rcptList.contains(rcpt)) {
             StringBuilder responseBuffer = new StringBuilder();
         
             responseBuffer.append(DSNStatus.getStatus(DSNStatus.SUCCESS, DSNStatus.ADDRESS_VALID))
                           .append(" Recipient <")
                           .append(rcpt.toString())
                           .append("> OK");
-            LOGGER.debug("Duplicate recipient not add to recipient list: " + rcpt.toString());
-            return new HookResult(HookReturnCode.OK,SMTPRetCode.MAIL_OK, responseBuffer.toString());
+            LOGGER.debug("Duplicate recipient not add to recipient list: {}", rcpt);
+            return HookResult.builder()
+                .hookReturnCode(HookReturnCode.ok())
+                .smtpReturnCode(SMTPRetCode.MAIL_OK)
+                .smtpDescription(responseBuffer.toString())
+                .build();
         }
-        return HookResult.declined();
+        return HookResult.DECLINED;
     }
 }

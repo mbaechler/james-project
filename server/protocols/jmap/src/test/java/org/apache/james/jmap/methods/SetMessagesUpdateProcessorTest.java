@@ -20,7 +20,7 @@
 package org.apache.james.jmap.methods;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -28,6 +28,9 @@ import org.apache.james.jmap.model.MessageProperties;
 import org.apache.james.jmap.model.SetMessagesRequest;
 import org.apache.james.jmap.model.SetMessagesResponse;
 import org.apache.james.jmap.model.UpdateMessagePatch;
+import org.apache.james.jmap.utils.SystemMailboxesProvider;
+import org.apache.james.mailbox.MessageIdManager;
+import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.mailbox.model.TestMessageId;
 import org.apache.james.metrics.api.NoopMetricFactory;
@@ -42,7 +45,19 @@ public class SetMessagesUpdateProcessorTest {
 
     @Test
     public void processShouldReturnEmptyUpdatedWhenRequestHasEmptyUpdate() {
-        SetMessagesUpdateProcessor sut = new SetMessagesUpdateProcessor(null, null, null, new NoopMetricFactory());
+        UpdateMessagePatchConverter updatePatchConverter = null;
+        MessageIdManager messageIdManager = null;
+        SystemMailboxesProvider systemMailboxesProvider = null;
+        MailboxId.Factory mailboxIdFactory = null;
+        MessageSender messageSender = null;
+        ReferenceUpdater referenceUpdater = null;
+        SetMessagesUpdateProcessor sut = new SetMessagesUpdateProcessor(updatePatchConverter,
+            messageIdManager,
+            systemMailboxesProvider,
+            mailboxIdFactory,
+            messageSender,
+            new NoopMetricFactory(),
+            referenceUpdater);
         SetMessagesRequest requestWithEmptyUpdate = SetMessagesRequest.builder().build();
 
         SetMessagesResponse result = sut.process(requestWithEmptyUpdate, null);
@@ -66,7 +81,18 @@ public class SetMessagesUpdateProcessorTest {
         when(mockConverter.fromJsonNode(any(ObjectNode.class)))
                 .thenReturn(mockInvalidPatch);
 
-        SetMessagesUpdateProcessor sut = new SetMessagesUpdateProcessor(mockConverter, null, null, new NoopMetricFactory());
+        MessageIdManager messageIdManager = null;
+        SystemMailboxesProvider systemMailboxesProvider = null;
+        MailboxId.Factory mailboxIdFactory = null;
+        MessageSender messageSender = null;
+        ReferenceUpdater referenceUpdater = null;
+        SetMessagesUpdateProcessor sut = new SetMessagesUpdateProcessor(mockConverter,
+            messageIdManager,
+            systemMailboxesProvider,
+            mailboxIdFactory,
+            messageSender,
+            new NoopMetricFactory(),
+            referenceUpdater);
         MessageId requestMessageId = TestMessageId.of(1);
         SetMessagesRequest requestWithInvalidUpdate = SetMessagesRequest.builder()
                 .update(ImmutableMap.of(requestMessageId, JsonNodeFactory.instance.objectNode()))

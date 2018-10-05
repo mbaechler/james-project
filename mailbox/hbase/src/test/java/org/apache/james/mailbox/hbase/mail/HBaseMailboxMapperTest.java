@@ -27,10 +27,7 @@ import static org.apache.james.mailbox.hbase.HBaseNames.SUBSCRIPTIONS;
 import static org.apache.james.mailbox.hbase.HBaseNames.SUBSCRIPTIONS_TABLE;
 import static org.apache.james.mailbox.hbase.HBaseNames.SUBSCRIPTION_CF;
 import static org.apache.james.mailbox.hbase.HBaseUtils.mailboxFromResult;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -117,7 +114,7 @@ public class HBaseMailboxMapperTest {
         testSave();
         testDelete();
         testHasChildren();
-//        testDeleteAllMemberships(); // Ignore this test
+        //testDeleteAllMemberships(); // Ignore this test
         testDeleteAllMailboxes();
         testChunkStream();
     }
@@ -129,9 +126,9 @@ public class HBaseMailboxMapperTest {
         LOG.info("findMailboxByPath");
         HBaseMailbox mailbox;
         for (MailboxPath path : pathsList) {
-            LOG.info("Searching for " + path);
+            LOG.info("Searching for {}", path);
             mailbox = (HBaseMailbox) mapper.findMailboxByPath(path);
-            assertEquals(path, new MailboxPath(mailbox.getNamespace(), mailbox.getUser(), mailbox.getName()));
+            assertThat(new MailboxPath(mailbox.getNamespace(), mailbox.getUser(), mailbox.getName())).isEqualTo(path);
         }
     }
 
@@ -139,9 +136,9 @@ public class HBaseMailboxMapperTest {
         LOG.info("findMailboxById");
         HBaseMailbox mailbox;
         for (MailboxId id : idsList) {
-            LOG.info("Searching for " + id.serialize());
+            LOG.info("Searching for {}", id.serialize());
             mailbox = (HBaseMailbox) mapper.findMailboxById(id);
-            assertEquals(mailbox.getMailboxId(), id);
+            assertThat(id).isEqualTo(mailbox.getMailboxId());
         }
     }
 
@@ -153,23 +150,31 @@ public class HBaseMailboxMapperTest {
         MailboxPath path = pathsList.get(pathsList.size() / 2);
 
         List<Mailbox> result = mapper.findMailboxWithPathLike(path);
-        assertEquals(1, result.size());
+        assertThat(result.size()).isEqualTo(1);
 
         int start = 3;
         int end = 7;
         MailboxPath newPath;
 
         for (int i = start; i < end; i++) {
-            newPath = new MailboxPath(path);
-            newPath.setName(i + newPath.getName() + " " + i);
-            // test for paths with null user
-            if (i % 2 == 0) {
-                newPath.setUser(null);
-            }
+            newPath = new MailboxPath(path.getNamespace(),
+                computeUserName(path.getUser(), i),
+                computeMailboxName(path.getName(), i));
             addMailbox(new HBaseMailbox(newPath, 1234));
         }
         result = mapper.findMailboxWithPathLike(path);
-        assertEquals(end - start + 1, result.size());
+        assertThat(result.size()).isEqualTo(end - start + 1);
+    }
+
+    private String computeUserName(String user, int i) {
+        if (i % 2 == 0) {
+            return null;
+        }
+        return user;
+    }
+
+    private String computeMailboxName(String name, int i) {
+        return i + name + " " + i;
     }
 
     /**
@@ -178,7 +183,7 @@ public class HBaseMailboxMapperTest {
     private void testList() throws Exception {
         LOG.info("list");
         List<Mailbox> result = mapper.list();
-        assertEquals(mailboxList.size(), result.size());
+        assertThat(result.size()).isEqualTo(mailboxList.size());
 
     }
 
@@ -198,15 +203,15 @@ public class HBaseMailboxMapperTest {
         
             final Result result = mailboxes.get(get);
             final HBaseMailbox newValue = (HBaseMailbox) mailboxFromResult(result);
-            assertEquals(mlbx, newValue);
-            assertEquals(mlbx.getUser(), newValue.getUser());
-            assertEquals(mlbx.getName(), newValue.getName());
-            assertEquals(mlbx.getNamespace(), newValue.getNamespace());
-            assertEquals(mlbx.getMailboxId(), newValue.getMailboxId());
-            assertEquals(mlbx.getLastUid(), newValue.getLastUid());
-            assertEquals(mlbx.getUidValidity(), newValue.getUidValidity());
-            assertEquals(mlbx.getHighestModSeq(), newValue.getHighestModSeq());
-            assertArrayEquals(mlbx.getMailboxId().toBytes(), newValue.getMailboxId().toBytes());
+            assertThat(newValue).isEqualTo(mlbx);
+            assertThat(newValue.getUser()).isEqualTo(mlbx.getUser());
+            assertThat(newValue.getName()).isEqualTo(mlbx.getName());
+            assertThat(newValue.getNamespace()).isEqualTo(mlbx.getNamespace());
+            assertThat(newValue.getMailboxId()).isEqualTo(mlbx.getMailboxId());
+            assertThat(newValue.getLastUid()).isEqualTo(mlbx.getLastUid());
+            assertThat(newValue.getUidValidity()).isEqualTo(mlbx.getUidValidity());
+            assertThat(newValue.getHighestModSeq()).isEqualTo(mlbx.getHighestModSeq());
+            assertThat(newValue.getMailboxId().toBytes()).isEqualTo(mlbx.getMailboxId().toBytes());
         } finally {
             mailboxes.close();
         }
@@ -237,8 +242,8 @@ public class HBaseMailboxMapperTest {
                 notFoundCount++;
             }
         }
-        assertEquals(offset, notFoundCount);
-        assertEquals(mailboxList.size(), mapper.list().size());
+        assertThat(notFoundCount).isEqualTo(offset);
+        assertThat(mapper.list().size()).isEqualTo(mailboxList.size());
     }
 
     /**
@@ -256,9 +261,9 @@ public class HBaseMailboxMapperTest {
             boolean result = mapper.hasChildren(mailbox, SEPARATOR);
             mailbox.setName(oldName);
             if (path.getUser().equals("user3")) {
-                assertTrue(result);
+                assertThat(result).isTrue();
             } else {
-                assertFalse(result);
+                assertThat(result).isFalse();
             }
 
         }
@@ -270,7 +275,7 @@ public class HBaseMailboxMapperTest {
     private void testDeleteAllMailboxes() throws MailboxException {
         LOG.info("deleteAllMailboxes");
         mapper.deleteAllMailboxes();
-        assertEquals(0, mapper.list().size());
+        assertThat(mapper.list().size()).isEqualTo(0);
         fillMailboxList();
     }
 
@@ -305,7 +310,7 @@ public class HBaseMailboxMapperTest {
                 bout.write(b);
             }
             String s = bout.toString();
-            assertTrue(original.equals(s));
+            assertThat(s).isEqualTo(original);
         } finally {
             in.close();
             out.close();

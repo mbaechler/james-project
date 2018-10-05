@@ -24,8 +24,8 @@ import java.util.HashSet;
 
 import javax.mail.MessagingException;
 
-import org.apache.mailet.Mail;
 import org.apache.james.core.MailAddress;
+import org.apache.mailet.Mail;
 import org.apache.mailet.Matcher;
 
 /**
@@ -37,6 +37,7 @@ import org.apache.mailet.Matcher;
  */
 public class Or extends GenericCompositeMatcher {
 
+    @Override
     public Collection<MailAddress> match(Mail mail) throws MessagingException {
         HashSet<MailAddress> result = new HashSet<>();
         for (Matcher matcher : getMatchers()) {

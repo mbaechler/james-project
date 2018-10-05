@@ -41,7 +41,6 @@ import org.apache.james.protocols.smtp.SMTPSession;
 import org.apache.james.protocols.smtp.dsn.DSNStatus;
 import org.apache.james.protocols.smtp.hook.HookResult;
 import org.apache.james.protocols.smtp.hook.HookResultHook;
-import org.apache.james.protocols.smtp.hook.HookReturnCode;
 import org.apache.james.protocols.smtp.hook.MessageHook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,10 +70,7 @@ public class DataLineMessageHookHandler implements DataLineFilter, ExtensibleHan
 
     }
 
-    /*
-     * (non-Javadoc)
-     * @see org.apache.james.protocols.smtp.core.DataLineFilter#onLine(org.apache.james.protocols.smtp.SMTPSession, java.nio.ByteBuffer, org.apache.james.protocols.api.handler.LineHandler)
-     */
+    @Override
     public Response onLine(SMTPSession session, ByteBuffer line, LineHandler<SMTPSession> next) {
         MailEnvelopeImpl env = (MailEnvelopeImpl) session.getAttachment(DataCmdHandler.MAILENV, ProtocolSession.State.Transaction);
         OutputStream out = env.getMessageOutputStream();
@@ -82,7 +78,7 @@ public class DataLineMessageHookHandler implements DataLineFilter, ExtensibleHan
             // 46 is "."
             // Stream terminated            
             int c = line.get();
-            if (line.remaining() == 2 && c== 46) {
+            if (line.remaining() == 2 && c == 46) {
                 out.flush();
                 out.close();
                 
@@ -94,7 +90,7 @@ public class DataLineMessageHookHandler implements DataLineFilter, ExtensibleHan
             // DotStuffing.
             } else if (c == 46 && line.get() == 46) {
                 byte[] bline = readBytes(line);
-                out.write(bline,1,bline.length-1);
+                out.write(bline,1,bline.length - 1);
             // Standard write
             } else {
                 // TODO: maybe we should handle the Header/Body recognition here
@@ -133,7 +129,7 @@ public class DataLineMessageHookHandler implements DataLineFilter, ExtensibleHan
         if (mail != null && messageHandlers != null) {
             for (Object messageHandler : messageHandlers) {
                 MessageHook rawHandler = (MessageHook) messageHandler;
-                LOGGER.debug("executing message handler " + rawHandler);
+                LOGGER.debug("executing message handler {}", rawHandler);
 
                 long start = System.currentTimeMillis();
                 HookResult hRes = rawHandler.onMessage(session, mail);
@@ -141,7 +137,7 @@ public class DataLineMessageHookHandler implements DataLineFilter, ExtensibleHan
 
                 if (rHooks != null) {
                     for (Object rHook : rHooks) {
-                        LOGGER.debug("executing hook " + rHook);
+                        LOGGER.debug("executing hook {}", rHook);
                         hRes = ((HookResultHook) rHook).onHookResult(session, hRes, executionTime, rawHandler);
                     }
                 }
@@ -156,15 +152,13 @@ public class DataLineMessageHookHandler implements DataLineFilter, ExtensibleHan
             }
 
             // Not queue the message!
-            return AbstractHookableCmdHandler.calcDefaultSMTPResponse(new HookResult(HookReturnCode.DENY));
+            return AbstractHookableCmdHandler.calcDefaultSMTPResponse(HookResult.DECLINED);
         }
         
         return null;
     }
 
-    /**
-     * @see org.apache.james.protocols.api.handler.ExtensibleHandler#wireExtensions(java.lang.Class, java.util.List)
-     */
+    @Override
     @SuppressWarnings("rawtypes")
     public void wireExtensions(Class interfaceName, List extension) throws WiringException {
         if (MessageHook.class.equals(interfaceName)) {
@@ -180,9 +174,8 @@ public class DataLineMessageHookHandler implements DataLineFilter, ExtensibleHan
             throw new WiringException("No messageHandler configured");
         }
     }
-    /**
-     * @see org.apache.james.protocols.api.handler.ExtensibleHandler#getMarkerInterfaces()
-     */
+    
+    @Override
     public List<Class<?>> getMarkerInterfaces() {
         List<Class<?>> classes = new LinkedList<>();
         classes.add(MessageHook.class);

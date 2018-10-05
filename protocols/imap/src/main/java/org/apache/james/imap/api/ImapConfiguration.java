@@ -22,7 +22,7 @@ package org.apache.james.imap.api;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.github.steveash.guavate.Guavate;
 import com.google.common.base.MoreObjects;
@@ -31,9 +31,9 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 
 public class ImapConfiguration {
-    public final static boolean DEFAULT_ENABLE_IDLE = true;
-    public final static long DEFAULT_HEARTBEAT_INTERVAL_IN_SECONDS = 2 * 60;
-    public final static TimeUnit DEFAULT_HEARTBEAT_INTERVAL_UNIT = TimeUnit.SECONDS;
+    public static final boolean DEFAULT_ENABLE_IDLE = true;
+    public static final long DEFAULT_HEARTBEAT_INTERVAL_IN_SECONDS = 2 * 60;
+    public static final TimeUnit DEFAULT_HEARTBEAT_INTERVAL_UNIT = TimeUnit.SECONDS;
 
     public static Builder builder() {
         return new Builder();

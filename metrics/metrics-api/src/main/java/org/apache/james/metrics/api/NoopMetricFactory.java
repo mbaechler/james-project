@@ -34,7 +34,14 @@ public class NoopMetricFactory implements MetricFactory {
         @Override
         public void decrement() {
         }
-        
+
+        @Override
+        public void add(int value) {
+        }
+
+        @Override
+        public void remove(int value) {
+        }
     }
 
     @Override
@@ -55,4 +62,5 @@ public class NoopMetricFactory implements MetricFactory {
             return 0;
         }
     }
+
 }

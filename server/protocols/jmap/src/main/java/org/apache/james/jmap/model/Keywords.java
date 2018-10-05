@@ -19,6 +19,7 @@
 
 package org.apache.james.jmap.model;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -73,30 +74,35 @@ public class Keywords {
         }
 
         public KeywordsFactory filterImapNonExposedKeywords() {
-            filter = Optional.of(keyword -> keyword.isExposedImapKeyword());
+            filter = Optional.of(Keyword::isExposedImapKeyword);
             return this;
         }
 
         public Keywords fromSet(Set<Keyword> setKeywords) {
-            validator.orElse(keywords -> {})
+            validator.orElse(keywords -> { })
                 .validate(setKeywords);
 
             return new Keywords(setKeywords.stream()
-                .filter(filter.orElse(keyword -> true))
-                .collect(Guavate.toImmutableSet()));
+                    .filter(filter.orElse(keyword -> true))
+                    .collect(Guavate.toImmutableSet()));
+        }
+
+        public Keywords from(Keyword... keywords) {
+            return fromSet(Arrays.stream(keywords)
+                    .collect(Guavate.toImmutableSet()));
         }
 
         public Keywords fromList(List<String> keywords) {
             return fromSet(keywords.stream()
-                .map(Keyword::new)
-                .collect(Guavate.toImmutableSet()));
+                    .map(Keyword::new)
+                    .collect(Guavate.toImmutableSet()));
         }
 
         @VisibleForTesting
         Keywords fromMap(Map<String, Boolean> mapKeywords) {
             Preconditions.checkArgument(mapKeywords.values()
                 .stream()
-                .noneMatch(keywordValue -> keywordValue == false), "Keyword must be true");
+                .allMatch(keywordValue -> keywordValue), "Keyword must be true");
             Set<Keyword> setKeywords = mapKeywords.keySet()
                 .stream()
                 .map(Keyword::new)
@@ -105,49 +111,22 @@ public class Keywords {
             return fromSet(setKeywords);
         }
 
-        @VisibleForTesting
-        Keywords fromOldKeyword(OldKeyword oldKeyword) {
-            ImmutableSet.Builder<Keyword> builder = ImmutableSet.builder();
-            if (oldKeyword.isAnswered().orElse(false)) {
-                builder.add(Keyword.ANSWERED);
-            }
-            if (oldKeyword.isDraft().orElse(false)) {
-                builder.add(Keyword.DRAFT);
-            }
-            if (oldKeyword.isFlagged().orElse(false)) {
-                builder.add(Keyword.FLAGGED);
-            }
-            if (oldKeyword.isUnread().isPresent() && oldKeyword.isUnread().get() == false) {
-                builder.add(Keyword.SEEN);
-            }
-            return fromSet(builder.build());
-        }
-
         public Keywords fromFlags(Flags flags) {
             return fromSet(Stream.concat(
-                    Stream.of(flags.getUserFlags())
-                        .flatMap(this::asKeyword),
-                    Stream.of(flags.getSystemFlags())
-                        .map(Keyword::fromFlag))
-                .collect(Guavate.toImmutableSet()));
+                        Stream.of(flags.getUserFlags())
+                            .flatMap(this::asKeyword),
+                        Stream.of(flags.getSystemFlags())
+                            .map(Keyword::fromFlag))
+                    .collect(Guavate.toImmutableSet()));
         }
 
         private Stream<Keyword> asKeyword(String flagName) {
             try {
                 return Stream.of(new Keyword(flagName));
             } catch (IllegalArgumentException e) {
-                LOGGER.warn("Fail to parse {} flag", flagName);
+                LOGGER.warn("Fail to parse {} flag", flagName, e);
                 return Stream.of();
             }
-        }
-
-        public Optional<Keywords> fromMapOrOldKeyword(Optional<Map<String, Boolean>> mapKeyword, Optional<OldKeyword> oldKeyword) {
-            Preconditions.checkArgument(!(mapKeyword.isPresent() && oldKeyword.isPresent()), "Does not support keyword and is* at the same time");
-
-            Keywords keywords = mapKeyword.map(this::fromMap)
-                .orElse(oldKeyword.map(this::fromOldKeyword)
-                    .orElse(null));
-            return Optional.ofNullable(keywords);
         }
     }
 

@@ -43,7 +43,7 @@ import com.google.common.collect.ImmutableSet;
 /**
   * Default command handler for handling unknown commands
   */
-public class UnknownCmdHandler extends AbstractHookableCmdHandler<UnknownHook>{
+public class UnknownCmdHandler extends AbstractHookableCmdHandler<UnknownHook> {
 
     /**
      * The name of the command handled by the command handler
@@ -65,9 +65,7 @@ public class UnknownCmdHandler extends AbstractHookableCmdHandler<UnknownHook>{
 
     }
 
-    /**
-     * @see org.apache.james.protocols.api.handler.CommandHandler#getImplCommands()
-     */
+    @Override
     public Collection<String> getImplCommands() {
         return COMMANDS;
     }

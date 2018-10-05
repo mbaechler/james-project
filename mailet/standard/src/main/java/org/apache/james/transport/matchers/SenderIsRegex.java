@@ -19,15 +19,15 @@
 
 package org.apache.james.transport.matchers;
 
-import org.apache.mailet.base.GenericMatcher;
-import org.apache.mailet.Mail;
-import org.apache.james.core.MailAddress;
-
 import java.util.Collection;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import javax.mail.MessagingException;
+
+import org.apache.james.core.MailAddress;
+import org.apache.mailet.Mail;
+import org.apache.mailet.base.GenericMatcher;
 
 import com.google.common.base.Strings;
 
@@ -57,6 +57,7 @@ public class SenderIsRegex extends GenericMatcher {
 
     private Pattern pattern;
 
+    @Override
     public void init() throws MessagingException {
         String patternString = getCondition();
         if (Strings.isNullOrEmpty(patternString)) {
@@ -66,11 +67,12 @@ public class SenderIsRegex extends GenericMatcher {
         patternString = patternString.trim();
         try {
             pattern = Pattern.compile(patternString);
-        } catch(PatternSyntaxException mpe) {
+        } catch (PatternSyntaxException mpe) {
             throw new MessagingException("Malformed pattern: " + patternString, mpe);
         }
     }
 
+    @Override
     public Collection<MailAddress> match(Mail mail) {
         MailAddress mailAddress = mail.getSender();
         if (mailAddress == null) {

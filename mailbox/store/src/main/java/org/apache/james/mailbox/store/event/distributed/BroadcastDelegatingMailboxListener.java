@@ -21,6 +21,7 @@ package org.apache.james.mailbox.store.event.distributed;
 
 import java.util.Collection;
 
+import org.apache.james.mailbox.Event;
 import org.apache.james.mailbox.MailboxListener;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.exception.MailboxException;
@@ -32,12 +33,15 @@ import org.apache.james.mailbox.store.event.SynchronousEventDelivery;
 import org.apache.james.mailbox.store.publisher.MessageConsumer;
 import org.apache.james.mailbox.store.publisher.Publisher;
 import org.apache.james.mailbox.store.publisher.Topic;
+import org.apache.james.metrics.api.NoopMetricFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.annotations.VisibleForTesting;
+
 public class BroadcastDelegatingMailboxListener implements DistributedDelegatingMailboxListener {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(BroadcastDelegatingMailboxListener.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BroadcastDelegatingMailboxListener.class);
 
     private final MailboxListenerRegistry mailboxListenerRegistry;
     private final Publisher publisher;
@@ -59,21 +63,17 @@ public class BroadcastDelegatingMailboxListener implements DistributedDelegating
         messageConsumer.init(this.globalTopic);
     }
 
+    @VisibleForTesting
     public BroadcastDelegatingMailboxListener(Publisher publisher,
                                               MessageConsumer messageConsumer,
                                               EventSerializer eventSerializer,
                                               String globalTopic) throws Exception {
-        this(publisher, messageConsumer, eventSerializer, new SynchronousEventDelivery(), globalTopic);
+        this(publisher, messageConsumer, eventSerializer, new SynchronousEventDelivery(new NoopMetricFactory()), globalTopic);
     }
 
     @Override
     public ListenerType getType() {
         return ListenerType.ONCE;
-    }
-
-    @Override
-    public ExecutionMode getExecutionMode() {
-        return ExecutionMode.SYNCHRONOUS;
     }
 
     @Override
@@ -99,6 +99,13 @@ public class BroadcastDelegatingMailboxListener implements DistributedDelegating
     @Override
     public void event(Event event) {
         deliverEventToGlobalListeners(event, ListenerType.ONCE);
+        if (event instanceof MailboxEvent) {
+            MailboxEvent mailboxEvent = (MailboxEvent) event;
+            publishMailboxEvent(mailboxEvent);
+        }
+    }
+
+    private void publishMailboxEvent(MailboxEvent event) {
         try {
             publisher.publish(globalTopic, eventSerializer.serializeEvent(event));
         } catch (Throwable t) {
@@ -106,9 +113,10 @@ public class BroadcastDelegatingMailboxListener implements DistributedDelegating
         }
     }
 
+    @Override
     public void receiveSerializedEvent(byte[] serializedEvent) {
         try {
-            Event event = eventSerializer.deSerializeEvent(serializedEvent);
+            MailboxEvent event = eventSerializer.deSerializeEvent(serializedEvent);
             deliverToMailboxPathRegisteredListeners(event);
             deliverEventToGlobalListeners(event, ListenerType.EACH_NODE);
         } catch (Exception e) {
@@ -116,7 +124,7 @@ public class BroadcastDelegatingMailboxListener implements DistributedDelegating
         }
     }
 
-    private void deliverToMailboxPathRegisteredListeners(Event event) {
+    private void deliverToMailboxPathRegisteredListeners(MailboxEvent event) {
         Collection<MailboxListener> listenerSnapshot = mailboxListenerRegistry.getLocalMailboxListeners(event.getMailboxPath());
         if (event instanceof MailboxDeletion) {
             mailboxListenerRegistry.deleteRegistryFor(event.getMailboxPath());

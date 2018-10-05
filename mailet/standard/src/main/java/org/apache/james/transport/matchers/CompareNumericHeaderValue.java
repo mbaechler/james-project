@@ -21,18 +21,16 @@
 
 package org.apache.james.transport.matchers;
 
-import org.apache.mailet.Experimental;
-import org.apache.mailet.base.GenericMatcher;
-import org.apache.mailet.Mail;
-import org.apache.james.core.MailAddress;
+import java.util.Collection;
+import java.util.StringTokenizer;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
-import java.lang.NumberFormatException;
-
-import java.util.Collection;
-import java.util.StringTokenizer;
+import org.apache.james.core.MailAddress;
+import org.apache.mailet.Experimental;
+import org.apache.mailet.Mail;
+import org.apache.mailet.base.GenericMatcher;
 
 /**
  * <P>Matches mails containing a header with a numeric value whose comparison with the specified value is true.
@@ -58,24 +56,20 @@ public class CompareNumericHeaderValue extends GenericMatcher {
     private String headerName = null;
     
     private int comparisonOperator;
-    private final static int LT = -2;
-    private final static int LE = -1;
-    private final static int EQ =  0;
-    private final static int GE = +1;
-    private final static int GT = +2;
+    private static final int LT = -2;
+    private static final int LE = -1;
+    private static final int EQ =  0;
+    private static final int GE = +1;
+    private static final int GT = +2;
     
     private Double headerValue;
 
-    /*
-     * (non-Javadoc)
-     * @see org.apache.mailet.base.GenericMatcher#init()
-     */
+    @Override
     public void init() throws MessagingException {
         StringTokenizer st = new StringTokenizer(getCondition(), " \t", false);
         if (st.hasMoreTokens()) {
             headerName = st.nextToken().trim();
-        }
-        else {
+        } else {
             throw new MessagingException("Missing headerName");
         }
         if (st.hasMoreTokens()) {
@@ -83,53 +77,42 @@ public class CompareNumericHeaderValue extends GenericMatcher {
             if (comparisonOperatorString.equals("<")
                 || comparisonOperatorString.equals("LT")) {
                 comparisonOperator = LT;
-            }
-            else if (comparisonOperatorString.equals("<=")
+            } else if (comparisonOperatorString.equals("<=")
                      || comparisonOperatorString.equals("=<")
                      || comparisonOperatorString.equals("LE")) {
                 comparisonOperator = LE;
-            }
-            else if (comparisonOperatorString.equals("==")
+            } else if (comparisonOperatorString.equals("==")
                      || comparisonOperatorString.equals("=")
                      || comparisonOperatorString.equals("EQ")) {
                 comparisonOperator = EQ;
-            }
-            else if (comparisonOperatorString.equals(">=")
+            } else if (comparisonOperatorString.equals(">=")
                      || comparisonOperatorString.equals("=>")
                      || comparisonOperatorString.equals("GE")) {
                 comparisonOperator = GE;
-            }
-            else if (comparisonOperatorString.equals(">")
+            } else if (comparisonOperatorString.equals(">")
                      || comparisonOperatorString.equals("GT")) {
                 comparisonOperator = GT;
-            }
-            else {
+            } else {
                 throw new MessagingException("Bad comparisonOperator: \"" + comparisonOperatorString + "\"");
             }
-        }
-        else {
+        } else {
             throw new MessagingException("Missing comparisonOperator");
         }
         if (st.hasMoreTokens()) {
             String headerValueString = st.nextToken().trim();
             try {
                 headerValue = Double.valueOf(headerValueString);
-            }
-            catch (NumberFormatException nfe) {
+            } catch (NumberFormatException nfe) {
                 throw new MessagingException("Bad header comparison value: \""
                                              + headerValueString + "\"", nfe);
             }
-        }
-        else {
+        } else {
             throw new MessagingException("Missing headerValue threshold");
         }
     }
 
 
-    /*
-     * (non-Javadoc)
-     * @see org.apache.mailet.base.GenericMatcher#match(org.apache.mailet.Mail)
-     */
+    @Override
     public Collection<MailAddress> match(Mail mail) throws MessagingException {
         if (headerName == null) {
             // should never get here
@@ -172,8 +155,7 @@ public class CompareNumericHeaderValue extends GenericMatcher {
                         // should never get here
                         throw new IllegalStateException("Unknown comparisonOperator" + comparisonOperator);
                 }
-            }
-            catch (NumberFormatException nfe) {
+            } catch (NumberFormatException nfe) {
                 throw new MessagingException("Bad header value found in message: \"" + headerArray[0] + "\"", nfe);
             }
         }

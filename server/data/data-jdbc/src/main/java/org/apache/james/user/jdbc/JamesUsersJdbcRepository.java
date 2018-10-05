@@ -19,14 +19,14 @@
 
 package org.apache.james.user.jdbc;
 
-import org.apache.james.user.api.model.User;
-import org.apache.james.user.lib.model.DefaultJamesUser;
-import org.apache.james.user.lib.model.DefaultUser;
-import org.apache.james.core.MailAddress;
-
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
+import org.apache.james.core.MailAddress;
+import org.apache.james.user.api.model.User;
+import org.apache.james.user.lib.model.DefaultJamesUser;
+import org.apache.james.user.lib.model.DefaultUser;
 
 /**
  * A Jdbc-backed UserRepository which handles User instances of the
@@ -35,9 +35,7 @@ import java.sql.SQLException;
 @Deprecated
 public class JamesUsersJdbcRepository extends AbstractJdbcUsersRepository {
 
-    /**
-     * @see org.apache.james.user.jdbc.AbstractJdbcUsersRepository#readUserFromResultSet(java.sql.ResultSet)
-     */
+    @Override
     protected User readUserFromResultSet(ResultSet rsUsers) throws SQLException {
         // Get the column values
         String username = rsUsers.getString(1);
@@ -68,18 +66,12 @@ public class JamesUsersJdbcRepository extends AbstractJdbcUsersRepository {
         return user;
     }
 
-    /**
-     * @see org.apache.james.user.jdbc.AbstractJdbcUsersRepository#setUserForInsertStatement(org.apache.james.user.api.model.User,
-     *      java.sql.PreparedStatement)
-     */
+    @Override
     protected void setUserForInsertStatement(User user, PreparedStatement userInsert) throws SQLException {
         setUserForStatement(user, userInsert, false);
     }
 
-    /**
-     * @see org.apache.james.user.jdbc.AbstractJdbcUsersRepository#setUserForUpdateStatement(org.apache.james.user.api.model.User,
-     *      java.sql.PreparedStatement)
-     */
+    @Override
     protected void setUserForUpdateStatement(User user, PreparedStatement userUpdate) throws SQLException {
         setUserForStatement(user, userUpdate, true);
     }
@@ -111,9 +103,8 @@ public class JamesUsersJdbcRepository extends AbstractJdbcUsersRepository {
         } else if (user instanceof DefaultUser) {
             DefaultUser aUser = (DefaultUser) user;
             jamesUser = new DefaultJamesUser(aUser.getUserName(), aUser.getHashedPassword(), aUser.getHashAlgorithm());
-        }
-        // Can't handle any other implementations.
-        else {
+        } else {
+            // Can't handle any other implementations.
             throw new RuntimeException("An unknown implementation of User was " + "found. This implementation cannot be " + "persisted to a UsersJDBCRepsitory.");
         }
 

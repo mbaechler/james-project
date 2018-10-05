@@ -20,21 +20,22 @@
 package org.apache.james.jmap.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 import java.util.Map;
-import java.util.Optional;
+
 import javax.mail.Flags;
 import javax.mail.Flags.Flag;
 
 import org.apache.james.mailbox.FlagsBuilder;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 public class KeywordsTest {
     public static final String ANY_KEYWORD = "AnyKeyword";
@@ -79,140 +80,6 @@ public class KeywordsTest {
 
         assertThat(keywords.getKeywords())
             .containsOnly(Keyword.ANSWERED);
-    }
-
-    @Test
-    public void fromOldKeywordsShouldReturnKeywordsFromIsAnswered() throws Exception {
-        Optional<Boolean> isAnswered = Optional.of(true);
-        Optional<Boolean> isUnread = Optional.empty();
-        Optional<Boolean> isFlagged = Optional.empty();
-        Optional<Boolean> isDraft = Optional.empty();
-        Keywords keywords = Keywords.factory()
-            .fromOldKeyword(new OldKeyword(isUnread, isFlagged, isAnswered, isDraft));
-
-        assertThat(keywords.getKeywords())
-            .containsOnly(Keyword.ANSWERED);
-    }
-
-    @Test
-    public void fromOldKeywordsShouldReturnKeywordsFromIsDraft() throws Exception {
-        Optional<Boolean> isAnswered = Optional.empty();
-        Optional<Boolean> isUnread = Optional.empty();
-        Optional<Boolean> isFlagged = Optional.empty();
-        Optional<Boolean> isDraft = Optional.of(true);
-        Keywords keywords = Keywords.factory()
-            .fromOldKeyword(new OldKeyword(isUnread, isFlagged, isAnswered, isDraft));
-
-        assertThat(keywords.getKeywords())
-            .containsOnly(Keyword.DRAFT);
-    }
-
-    @Test
-    public void fromOldKeywordsShouldReturnKeywordsFromIsFlagged() throws Exception {
-        Optional<Boolean> isAnswered = Optional.empty();
-        Optional<Boolean> isUnread = Optional.empty();
-        Optional<Boolean> isFlagged = Optional.of(true);
-        Optional<Boolean> isDraft = Optional.empty();
-        Keywords keywords = Keywords.factory()
-            .fromOldKeyword(new OldKeyword(isUnread, isFlagged, isAnswered, isDraft));
-
-        assertThat(keywords.getKeywords())
-            .containsOnly(Keyword.FLAGGED);
-    }
-
-    @Test
-    public void fromOldKeywordsShouldReturnKeywordsFromIsUnread() throws Exception {
-        Optional<Boolean> isAnswered = Optional.empty();
-        Optional<Boolean> isUnread = Optional.of(false);
-        Optional<Boolean> isFlagged = Optional.empty();
-        Optional<Boolean> isDraft = Optional.empty();
-        Keywords keywords = Keywords.factory()
-            .fromOldKeyword(new OldKeyword(isUnread, isFlagged, isAnswered, isDraft));
-
-        assertThat(keywords.getKeywords())
-            .containsOnly(Keyword.SEEN);
-    }
-
-    @Test
-    public void fromOldKeywordsShouldReturnKeywordsFromIsFlag() throws Exception {
-        Optional<Boolean> isAnswered = Optional.of(true);
-        Optional<Boolean> isUnread = Optional.of(true);
-        Optional<Boolean> isFlagged = Optional.of(true);
-        Optional<Boolean> isDraft = Optional.of(true);
-        Keywords keywords = Keywords.factory()
-            .fromOldKeyword(new OldKeyword(isUnread, isFlagged, isAnswered, isDraft));
-
-        assertThat(keywords.getKeywords())
-            .containsOnly(Keyword.ANSWERED, Keyword.DRAFT, Keyword.FLAGGED);
-    }
-
-    @Test
-    public void fromMapOrOldKeywordShouldReturnEmptyWhenBothAreEmpty() throws Exception {
-        assertThat(Keywords.factory()
-            .fromMapOrOldKeyword(Optional.empty(), Optional.empty()))
-            .isEmpty();
-    }
-
-    @Test
-    public void fromMapOrOldKeywordShouldReturnKeywordsWhenMap() throws Exception {
-        assertThat(Keywords.factory()
-            .fromMapOrOldKeyword(Optional.of(ImmutableMap.of()), Optional.empty()))
-            .isPresent();
-    }
-
-    @Test
-    public void fromMapOrOldKeywordShouldReturnKeywordsWhenOldKeyword() throws Exception {
-        Optional<Boolean> isAnswered = Optional.of(true);
-        Optional<Boolean> isUnread = Optional.of(true);
-        Optional<Boolean> isFlagged = Optional.of(true);
-        Optional<Boolean> isDraft = Optional.of(true);
-
-        OldKeyword oldKeyword = new OldKeyword(isUnread, isFlagged, isAnswered, isDraft);
-
-        assertThat(Keywords.factory()
-            .fromMapOrOldKeyword(Optional.empty(), Optional.of(oldKeyword)))
-            .isPresent();
-    }
-
-    @Test
-    public void fromMapOrOldKeywordShouldThrownWhenBothMapAndOldKeyword() throws Exception {
-        expectedException.expect(IllegalArgumentException.class);
-        Optional<Boolean> isAnswered = Optional.of(true);
-        Optional<Boolean> isUnread = Optional.of(true);
-        Optional<Boolean> isFlagged = Optional.of(true);
-        Optional<Boolean> isDraft = Optional.of(true);
-
-        OldKeyword oldKeyword = new OldKeyword(isUnread, isFlagged, isAnswered, isDraft);
-
-        Keywords.factory()
-            .fromMapOrOldKeyword(Optional.of(ImmutableMap.of()), Optional.of(oldKeyword));
-    }
-
-    @Test
-    public void fromMapOrOldKeywordShouldReturnKeywordsFromMap() throws Exception {
-        ImmutableMap<String, Boolean> mapKeywords = ImmutableMap.of(ANY_KEYWORD, Keyword.FLAG_VALUE);
-
-        assertThat(Keywords.factory()
-            .fromMapOrOldKeyword(Optional.of(mapKeywords), Optional.empty())
-            .get()
-            .getKeywords())
-            .containsOnly(new Keyword(ANY_KEYWORD));
-    }
-
-    @Test
-    public void fromMapOrOldKeywordShouldReturnKeywordsFromOldKeyword() throws Exception {
-        Optional<Boolean> isAnswered = Optional.of(true);
-        Optional<Boolean> isUnread = Optional.of(true);
-        Optional<Boolean> isFlagged = Optional.of(true);
-        Optional<Boolean> isDraft = Optional.of(true);
-
-        OldKeyword oldKeyword = new OldKeyword(isUnread, isFlagged, isAnswered, isDraft);
-
-        Keywords keywords = Keywords.factory()
-            .fromMapOrOldKeyword(Optional.empty(), Optional.of(oldKeyword))
-            .get();
-        assertThat(keywords.getKeywords())
-            .containsOnly(Keyword.ANSWERED, Keyword.DRAFT, Keyword.FLAGGED);
     }
 
     @Test

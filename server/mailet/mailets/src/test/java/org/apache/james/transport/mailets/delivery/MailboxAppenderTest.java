@@ -20,10 +20,14 @@
 package org.apache.james.transport.mailets.delivery;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.time.Duration;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
+import org.apache.james.core.builder.MimeMessageBuilder;
 import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.inmemory.manager.InMemoryIntegrationResources;
@@ -33,12 +37,11 @@ import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.model.MessageRange;
 import org.apache.james.mailbox.model.MessageResult;
 import org.apache.james.mailbox.model.MessageResultIterator;
-import org.apache.mailet.base.test.MimeMessageBuilder;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.apache.james.util.concurrency.ConcurrentTestRunner;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Test;
 
 public class MailboxAppenderTest {
 
@@ -46,38 +49,35 @@ public class MailboxAppenderTest {
     public static final String FOLDER = "folder";
     public static final String EMPTY_FOLDER = "";
 
-    @Rule public ExpectedException expectedException = ExpectedException.none();
-
     private MailboxAppender testee;
     private MailboxManager mailboxManager;
     private MimeMessage mimeMessage;
     private InMemoryIntegrationResources integrationResources;
     private MailboxSession session;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         mimeMessage = MimeMessageBuilder.mimeMessageBuilder()
             .setMultipartWithBodyParts(
                 MimeMessageBuilder.bodyPartBuilder()
-                    .data("toto")
-                    .build())
+                    .data("toto"))
             .build();
 
         integrationResources = new InMemoryIntegrationResources();
         integrationResources.init();
-        mailboxManager = new ManagerTestResources(integrationResources).getMailboxManager();
+        mailboxManager = new ManagerTestResources<>(integrationResources).getMailboxManager();
         testee = new MailboxAppender(mailboxManager);
 
         session = mailboxManager.createSystemSession("TEST");
     }
 
-    @After
-    public void cleanUp() throws Exception {
+    @AfterEach
+    void cleanUp() {
         integrationResources.clean();
     }
 
     @Test
-    public void appendShouldAddMessageToDesiredMailbox() throws Exception {
+    void appendShouldAddMessageToDesiredMailbox() throws Exception {
         testee.append(mimeMessage, USER, FOLDER);
 
         MessageResultIterator messages = mailboxManager.getMailbox(MailboxPath.forUser(USER, FOLDER), session)
@@ -87,7 +87,7 @@ public class MailboxAppenderTest {
     }
 
     @Test
-    public void appendShouldAddMessageToDesiredMailboxWhenMailboxExists() throws Exception {
+    void appendShouldAddMessageToDesiredMailboxWhenMailboxExists() throws Exception {
         MailboxPath mailboxPath = MailboxPath.forUser(USER, FOLDER);
         mailboxManager.createMailbox(mailboxPath, session);
 
@@ -100,14 +100,13 @@ public class MailboxAppenderTest {
     }
 
     @Test
-    public void appendShouldNotAppendToEmptyFolder() throws Exception {
-        expectedException.expect(MessagingException.class);
-
-        testee.append(mimeMessage, USER, EMPTY_FOLDER);
+    void appendShouldNotAppendToEmptyFolder() {
+        assertThatThrownBy(() -> testee.append(mimeMessage, USER, EMPTY_FOLDER))
+            .isInstanceOf(MessagingException.class);
     }
 
     @Test
-    public void appendShouldRemovePathSeparatorAsFirstChar() throws Exception {
+    void appendShouldRemovePathSeparatorAsFirstChar() throws Exception {
         testee.append(mimeMessage, USER, "." + FOLDER);
 
         MessageResultIterator messages = mailboxManager.getMailbox(MailboxPath.forUser(USER, FOLDER), session)
@@ -117,12 +116,20 @@ public class MailboxAppenderTest {
     }
 
     @Test
-    public void appendShouldReplaceSlashBySeparator() throws Exception {
+    void appendShouldReplaceSlashBySeparator() throws Exception {
         testee.append(mimeMessage, USER, FOLDER + "/any");
 
         MessageResultIterator messages = mailboxManager.getMailbox(MailboxPath.forUser(USER, FOLDER + ".any"), session)
             .getMessages(MessageRange.all(), new FetchGroupImpl(MessageResult.FetchGroup.FULL_CONTENT), session);
 
         assertThat(messages).hasSize(1);
+    }
+
+    @RepeatedTest(20)
+    void appendShouldNotFailInConcurrentEnvironment() throws Exception {
+        ConcurrentTestRunner.builder()
+            .operation((a, b) -> testee.append(mimeMessage, USER, FOLDER + "/any"))
+            .threadCount(100)
+            .runSuccessfullyWithin(Duration.ofMinutes(1));
     }
 }

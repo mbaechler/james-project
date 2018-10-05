@@ -25,40 +25,39 @@ import java.util.List;
 import java.util.Optional;
 
 import org.apache.james.backends.cassandra.CassandraCluster;
-import org.apache.james.backends.cassandra.DockerCassandraRule;
-import org.apache.james.backends.cassandra.init.CassandraModuleComposite;
+import org.apache.james.backends.cassandra.CassandraClusterExtension;
+import org.apache.james.backends.cassandra.components.CassandraModule;
 import org.apache.james.mailbox.cassandra.ids.CassandraId;
 import org.apache.james.mailbox.cassandra.modules.CassandraAclModule;
 import org.apache.james.mailbox.cassandra.modules.CassandraMailboxModule;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import com.github.steveash.guavate.Guavate;
 
-public class CassandraMailboxDAOTest {
+class CassandraMailboxDAOTest {
+    private static final int UID_VALIDITY_1 = 145;
+    private static final int UID_VALIDITY_2 = 147;
+    private static final MailboxPath NEW_MAILBOX_PATH = MailboxPath.forUser("user", "xyz");
+    private static CassandraId CASSANDRA_ID_1 = CassandraId.timeBased();
+    private static CassandraId CASSANDRA_ID_2 = CassandraId.timeBased();
 
-    public static final int UID_VALIDITY_1 = 145;
-    public static final int UID_VALIDITY_2 = 147;
-    public static final MailboxPath NEW_MAILBOX_PATH = MailboxPath.forUser("user", "xyz");
-    public static CassandraId CASSANDRA_ID_1 = CassandraId.timeBased();
-    public static CassandraId CASSANDRA_ID_2 = CassandraId.timeBased();
+    @RegisterExtension
+    static CassandraClusterExtension cassandraCluster = new CassandraClusterExtension(
+        CassandraModule.aggregateModules(
+            CassandraMailboxModule.MODULE,
+            CassandraAclModule.MODULE));
 
-    @ClassRule public static DockerCassandraRule cassandraServer = new DockerCassandraRule();
-    
-    private CassandraCluster cassandra;
+
     private CassandraMailboxDAO testee;
     private SimpleMailbox mailbox1;
     private SimpleMailbox mailbox2;
 
-    @Before
-    public void setUp() {
-        CassandraModuleComposite modules = new CassandraModuleComposite(new CassandraMailboxModule(), new CassandraAclModule());
-        cassandra = CassandraCluster.create(modules, cassandraServer.getIp(), cassandraServer.getBindingPort());
-
+    @BeforeEach
+    void setUp(CassandraCluster cassandra) {
         testee = new CassandraMailboxDAO(cassandra.getConf(), cassandra.getTypesProvider());
 
         mailbox1 = new SimpleMailbox(MailboxPath.forUser("user", "abcd"),
@@ -69,19 +68,14 @@ public class CassandraMailboxDAOTest {
             CASSANDRA_ID_2);
     }
 
-    @After
-    public void tearDown() {
-        cassandra.close();
-    }
-
     @Test
-    public void retrieveMailboxShouldReturnEmptyWhenNone() {
+    void retrieveMailboxShouldReturnEmptyWhenNone() {
         assertThat(testee.retrieveMailbox(CASSANDRA_ID_1).join())
             .isEmpty();
     }
 
     @Test
-    public void saveShouldAddAMailbox() {
+    void saveShouldAddAMailbox() {
         testee.save(mailbox1).join();
 
         Optional<SimpleMailbox> readMailbox = testee.retrieveMailbox(CASSANDRA_ID_1)
@@ -91,7 +85,7 @@ public class CassandraMailboxDAOTest {
     }
 
     @Test
-    public void saveShouldOverride() {
+    void saveShouldOverride() {
         testee.save(mailbox1).join();
 
         mailbox2.setMailboxId(CASSANDRA_ID_1);
@@ -105,7 +99,7 @@ public class CassandraMailboxDAOTest {
     }
 
     @Test
-    public void retrieveAllMailboxesShouldBeEmptyByDefault() {
+    void retrieveAllMailboxesShouldBeEmptyByDefault() {
         List<SimpleMailbox> mailboxes = testee.retrieveAllMailboxes()
             .join()
             .collect(Guavate.toImmutableList());
@@ -114,7 +108,7 @@ public class CassandraMailboxDAOTest {
     }
 
     @Test
-    public void retrieveAllMailboxesShouldReturnSingleMailbox() {
+    void retrieveAllMailboxesShouldReturnSingleMailbox() {
         testee.save(mailbox1).join();
 
         List<SimpleMailbox> mailboxes = testee.retrieveAllMailboxes()
@@ -125,7 +119,7 @@ public class CassandraMailboxDAOTest {
     }
 
     @Test
-    public void retrieveAllMailboxesShouldReturnMultiMailboxes() {
+    void retrieveAllMailboxesShouldReturnMultiMailboxes() {
         testee.save(mailbox1).join();
         testee.save(mailbox2).join();
 
@@ -137,12 +131,12 @@ public class CassandraMailboxDAOTest {
     }
 
     @Test
-    public void deleteShouldNotFailWhenMailboxIsAbsent() {
+    void deleteShouldNotFailWhenMailboxIsAbsent() {
         testee.delete(CASSANDRA_ID_1).join();
     }
 
     @Test
-    public void deleteShouldRemoveExistingMailbox() {
+    void deleteShouldRemoveExistingMailbox() {
         testee.save(mailbox1).join();
 
         testee.delete(CASSANDRA_ID_1).join();
@@ -152,12 +146,12 @@ public class CassandraMailboxDAOTest {
     }
 
     @Test
-    public void updateShouldNotFailWhenMailboxIsAbsent() {
+    void updateShouldNotFailWhenMailboxIsAbsent() {
         testee.updatePath(CASSANDRA_ID_1, NEW_MAILBOX_PATH).join();
     }
 
     @Test
-    public void updateShouldChangeMailboxPath() {
+    void updateShouldChangeMailboxPath() {
         testee.save(mailbox1).join();
 
         testee.updatePath(CASSANDRA_ID_1, NEW_MAILBOX_PATH).join();

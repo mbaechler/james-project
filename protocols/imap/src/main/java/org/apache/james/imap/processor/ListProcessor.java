@@ -43,9 +43,9 @@ import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MailboxConstants;
 import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MailboxMetaData;
-import org.apache.james.mailbox.model.MailboxMetaData.Children;
 import org.apache.james.mailbox.model.MailboxPath;
-import org.apache.james.mailbox.model.MailboxQuery;
+import org.apache.james.mailbox.model.search.MailboxQuery;
+import org.apache.james.mailbox.model.search.PrefixedRegex;
 import org.apache.james.metrics.api.MetricFactory;
 import org.apache.james.util.MDCBuilder;
 import org.slf4j.Logger;
@@ -59,22 +59,15 @@ public class ListProcessor extends AbstractMailboxProcessor<ListRequest> {
         super(ListRequest.class, next, mailboxManager, factory, metricFactory);
     }
 
-    /**
-     * @see
-     * org.apache.james.imap.processor.AbstractMailboxProcessor
-     * #doProcess(org.apache.james.imap.api.message.request.ImapRequest,
-     * org.apache.james.imap.api.process.ImapSession, java.lang.String,
-     * org.apache.james.imap.api.ImapCommand,
-     * org.apache.james.imap.api.process.ImapProcessor.Responder)
-     */
+    @Override
     protected void doProcess(ListRequest request, ImapSession session, String tag, ImapCommand command, Responder responder) {
         final String baseReferenceName = request.getBaseReferenceName();
         final String mailboxPatternString = request.getMailboxPattern();
         doProcess(baseReferenceName, mailboxPatternString, session, tag, command, responder, null);
     }
 
-    protected ImapResponseMessage createResponse(boolean noInferior, boolean noSelect, boolean marked, boolean unmarked, boolean hasChildren, boolean hasNoChildren, String mailboxName, char delimiter, MailboxType type) {
-        return new ListResponse(noInferior, noSelect, marked, unmarked, hasChildren, hasNoChildren, mailboxName, delimiter);
+    protected ImapResponseMessage createResponse(MailboxMetaData.Children children, MailboxMetaData.Selectability selectability, String name, char hierarchyDelimiter, MailboxType type) {
+        return new ListResponse(children, selectability, name, hierarchyDelimiter);
     }
 
     /**
@@ -130,18 +123,22 @@ public class ListProcessor extends AbstractMailboxProcessor<ListRequest> {
                 results = new ArrayList<>(1);
                 results.add(new MailboxMetaData() {
 
+                    @Override
                     public Children inferiors() {
                         return Children.CHILDREN_ALLOWED_BUT_UNKNOWN;
                     }
 
+                    @Override
                     public Selectability getSelectability() {
                         return Selectability.NOSELECT;
                     }
                     
+                    @Override
                     public char getHierarchyDelimiter() {
                         return mailboxSession.getPathDelimiter();
                     }
 
+                    @Override
                     public MailboxPath getPath() {
                         return rootPath;
                     }
@@ -171,7 +168,14 @@ public class ListProcessor extends AbstractMailboxProcessor<ListRequest> {
                     basePath = PathConverter.forSession(session).buildFullPath(finalReferencename);
                 }
 
-                results = getMailboxManager().search(new MailboxQuery(basePath, CharsetUtil.decodeModifiedUTF7(mailboxName), mailboxSession.getPathDelimiter()), mailboxSession);
+                results = getMailboxManager().search(
+                        MailboxQuery.builder()
+                            .userAndNamespaceFrom(basePath)
+                            .expression(new PrefixedRegex(
+                                basePath.getName(),
+                                CharsetUtil.decodeModifiedUTF7(mailboxName),
+                                mailboxSession.getPathDelimiter()))
+                            .build(), mailboxSession);
             }
 
             for (MailboxMetaData metaData : results) {
@@ -180,36 +184,22 @@ public class ListProcessor extends AbstractMailboxProcessor<ListRequest> {
 
             okComplete(command, tag, responder);
         } catch (MailboxException e) {
-            LOGGER.error("List failed for mailboxName " + mailboxName + " and user" + user, e);
+            LOGGER.error("List failed for mailboxName {} and user {}", mailboxName, user, e);
             no(command, tag, responder, HumanReadableText.SEARCH_FAILED);
         }
     }
 
-    void processResult(Responder responder, boolean relative, MailboxMetaData listResult, MailboxType mailboxType) {
-        final char delimiter = listResult.getHierarchyDelimiter();
-        final String mailboxName = mailboxName(relative, listResult.getPath(), delimiter);
+    private void processResult(Responder responder, boolean relative, MailboxMetaData listResult, MailboxType mailboxType) {
+        final String mailboxName = mailboxName(relative, listResult.getPath(), listResult.getHierarchyDelimiter());
 
-        final Children inferiors = listResult.inferiors();
-        final boolean noInferior = MailboxMetaData.Children.NO_INFERIORS.equals(inferiors);
-        final boolean hasChildren = MailboxMetaData.Children.HAS_CHILDREN.equals(inferiors);
-        final boolean hasNoChildren = MailboxMetaData.Children.HAS_NO_CHILDREN.equals(inferiors);
-        boolean noSelect = false;
-        boolean marked = false;
-        boolean unmarked = false;
-        switch (listResult.getSelectability()) {
-        case MARKED:
-            marked = true;
-            break;
-        case UNMARKED:
-            unmarked = true;
-            break;
-        case NOSELECT:
-            noSelect = true;
-            break;
-        default:
-            break;
-        }
-        responder.respond(createResponse(noInferior, noSelect, marked, unmarked, hasChildren, hasNoChildren, mailboxName, delimiter, mailboxType));
+        ImapResponseMessage response =
+            createResponse(
+                listResult.inferiors(),
+                listResult.getSelectability(),
+                mailboxName,
+                listResult.getHierarchyDelimiter(),
+                mailboxType);
+        responder.respond(response);
     }
 
     /**
@@ -232,6 +222,7 @@ public class ListProcessor extends AbstractMailboxProcessor<ListRequest> {
         return result;
     }
 
+    @Override
     protected boolean isAcceptable(ImapMessage message) {
         return ListRequest.class.equals(message.getClass());
     }

@@ -23,10 +23,12 @@ package org.apache.mailet;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
+import org.apache.james.core.Domain;
 import org.apache.james.core.MailAddress;
 import org.slf4j.Logger;
 
@@ -226,12 +228,12 @@ public interface MailetContext {
 
     /**
      * Checks if a host name is local, i.e. this server is the
-     * final delivery destination for messages sent to this host.
+     * final delivery destination for messages sent to this domain.
      *
-     * @param hostname the host name to check
+     * @param domain the domain name to check
      * @return true if server is local, false otherwise
      */
-    boolean isLocalServer(String hostname);
+    boolean isLocalServer(Domain domain);
 
     /**
      * Checks if a user account is local, i.e. the account exists locally
@@ -270,7 +272,7 @@ public interface MailetContext {
      * @return the sorted mail-handling hostnames for the domain
      * @deprecated use the generic dnsLookup method
      */
-    Collection<String> getMailServers(String domain);
+    Collection<String> getMailServers(Domain domain);
 
     /**
      * Returns the SMTP host addresses specified as mail handlers for
@@ -286,7 +288,7 @@ public interface MailetContext {
      * @since Mailet API v2.3
      * @deprecated use the generic dnsLookup method
      */
-    Iterator<HostAddress> getSMTPHostAddresses(String domain);
+    Iterator<HostAddress> getSMTPHostAddresses(Domain domain);
 
     /**
      * Sends an outgoing message to the top of this mailet container's root queue.
@@ -337,6 +339,58 @@ public interface MailetContext {
      */
     void sendMail(Mail mail)
             throws MessagingException;
+
+    /**
+     * Sends an outgoing message to the top of this mailet container's root queue.
+     * This is the equivalent of opening an SMTP session to localhost.
+     * The Mail object provides all envelope and content information
+     * 
+     * The given delay and unit are used to calculate the time when
+     * the Mail will be available for deQueue
+     *
+     * @param mail - the message that is to sent
+     * @param delay - the delay value for deQueue
+     * @param unit - the delay unit for deQueue
+     * @throws MessagingException if an error occurs accessing or sending the message
+     */
+    void sendMail(Mail mail, long delay, TimeUnit unit)
+            throws MessagingException;
+
+
+    /**
+     * Sends an outgoing message to the top of this mailet container's root queue,
+     * targeting a specific processing state.
+     *
+     * This functionally allows mail treatment done out of the MailetProcessor to be sent
+     * to a specific processor inside the MailetContainer. This is for instance useful for bouncing mail
+     * being remote delivered (asynchronously to original mail treatment)
+     *
+     * @param message The message to send
+     * @param state   The state of the message, indicating the name of the processor for
+     *                which the message will be queued
+     * @throws MessagingException if an error occurs accessing or sending the message
+     */
+    void sendMail(Mail mail, String state) throws MessagingException;
+    
+    /**
+     * Sends an outgoing message to the top of this mailet container's root queue,
+     * targeting a specific processing state.
+     *
+     * This functionally allows mail treatment done out of the MailetProcessor to be sent
+     * to a specific processor inside the MailetContainer. This is for instance useful for bouncing mail
+     * being remote delivered (asynchronously to original mail treatment)
+     * 
+     * The given delay and unit are used to calculate the time when
+     * the Mail will be available for deQueue
+     *
+     * @param message The message to send
+     * @param state   The state of the message, indicating the name of the processor for
+     *                which the message will be queued
+     * @param delay   The delay value for deQueue
+     * @param unit    The delay unit for deQueue
+     * @throws MessagingException if an error occurs accessing or sending the message
+     */
+    void sendMail(Mail mail, String state, long delay, TimeUnit unit) throws MessagingException;
 
     /**
      * Bounces the message using a standard format with the given message.

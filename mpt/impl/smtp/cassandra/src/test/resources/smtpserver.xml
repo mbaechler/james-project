@@ -23,7 +23,7 @@
     <smtpserver enabled="true">
         <heloName autodetect="false">mydomain.tld</heloName>
         <jmxName>smtpserver-global</jmxName>
-        <bind>0.0.0.0:1025</bind>
+        <bind>0.0.0.0:0</bind>
         <connectionBacklog>200</connectionBacklog>
         <tls socketTLS="false" startTLS="false">
             <keystore>file://conf/keystore</keystore>
@@ -35,7 +35,6 @@
         <connectionLimit>0</connectionLimit>
         <connectionLimitPerIP>0</connectionLimitPerIP>
         <authRequired>false</authRequired>
-        <authorizedAddresses>0.0.0.0/0</authorizedAddresses>
         <verifyIdentity>true</verifyIdentity>
         <maxmessagesize>0</maxmessagesize>
         <addressBracketsEnforcement>true</addressBracketsEnforcement>
@@ -47,7 +46,7 @@
     </smtpserver>
     <smtpserver enabled="true">
         <jmxName>smtpserver-TLS</jmxName>
-        <bind>0.0.0.0:10465</bind>
+        <bind>0.0.0.0:0</bind>
         <connectionBacklog>200</connectionBacklog>
         <tls socketTLS="false" startTLS="false">
             <keystore>file://conf/keystore</keystore>
@@ -62,7 +61,6 @@
            Authorize only local users
         -->
         <authRequired>true</authRequired>
-        <authorizedAddresses>0.0.0.0/0</authorizedAddresses>
         <!-- Trust authenticated users -->
         <verifyIdentity>false</verifyIdentity>
         <maxmessagesize>0</maxmessagesize>
@@ -75,7 +73,7 @@
     </smtpserver>
     <smtpserver enabled="true">
         <jmxName>smtpserver-authenticated</jmxName>
-        <bind>0.0.0.0:1587</bind>
+        <bind>0.0.0.0:0</bind>
         <connectionBacklog>200</connectionBacklog>
         <tls socketTLS="false" startTLS="true">
             <keystore>keystore</keystore>
@@ -90,7 +88,6 @@
            Authorize only local users
         -->
         <authRequired>true</authRequired>
-        <authorizedAddresses>0.0.0.0/0</authorizedAddresses>
         <!-- Trust authenticated users -->
         <verifyIdentity>false</verifyIdentity>
         <maxmessagesize>0</maxmessagesize>

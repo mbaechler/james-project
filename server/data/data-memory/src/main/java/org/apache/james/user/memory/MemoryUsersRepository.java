@@ -25,12 +25,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.james.user.api.UsersRepositoryException;
 import org.apache.james.user.api.model.User;
 import org.apache.james.user.lib.AbstractUsersRepository;
 import org.apache.james.user.lib.model.DefaultUser;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.HierarchicalConfiguration;
 
 public class MemoryUsersRepository extends AbstractUsersRepository {
 
@@ -102,7 +102,7 @@ public class MemoryUsersRepository extends AbstractUsersRepository {
 
     @Override
     public boolean test(String name, final String password) throws UsersRepositoryException {
-        return Optional.ofNullable(userByName.get(name))
+        return Optional.ofNullable(userByName.get(org.apache.james.core.User.fromUsername(name).asString()))
             .map(user -> user.verifyPassword(password))
             .orElse(false);
     }

@@ -18,12 +18,12 @@
  ****************************************************************/
 package org.apache.james.transport.matchers;
 
+import javax.mail.MessagingException;
+
+import org.apache.james.core.MailAddress;
 import org.apache.mailet.Experimental;
 import org.apache.mailet.Mail;
-import org.apache.james.core.MailAddress;
 import org.apache.mailet.Matcher;
-
-import javax.mail.MessagingException;
 
 /**
  * Matcher which can be used to set a quota for users Mailbox. This
@@ -33,10 +33,7 @@ import javax.mail.MessagingException;
 @Experimental
 public class MailboxQuotaFixed extends AbstractStorageQuota {
 
-    /**
-     * @see org.apache.james.mailet.standard.matchers.AbstractQuotaMatcher
-     *      #getQuota(org.apache.mailet.MailAddress, org.apache.mailet.Mail)
-     */
+    @Override
     protected long getQuota(MailAddress arg0, Mail arg1) throws MessagingException {
         return parseQuota(this.getCondition());
     }

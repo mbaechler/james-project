@@ -6,6 +6,7 @@ services:
     depends_on:
       - elasticsearch
       - cassandra
+      - tika
     entrypoint: bash -c "java -Dworking.directory=/root/ -jar james-server.jar"
     image: linagora/james-project:latest
     container_name: james
@@ -20,9 +21,12 @@ services:
       - "993:993"
 
   elasticsearch:
-    image: elasticsearch:2.2.1
+    image: elasticsearch:2.4.6
 
   cassandra:
-    image: cassandra:2.2.3
+    image: cassandra:3.11.3
     ports:
       - "9042:9042"
+
+  tika:
+    image: linagora/docker-tikaserver:1.18-SNAPSHOT-plus-TIKA-2520

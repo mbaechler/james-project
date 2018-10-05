@@ -27,6 +27,7 @@ import javax.mail.Flags;
 import org.apache.james.jmap.model.BlobId;
 import org.apache.james.jmap.model.Emailer;
 import org.apache.james.jmap.model.Keyword;
+import org.apache.james.jmap.model.Keywords;
 import org.apache.james.jmap.model.Message;
 import org.apache.james.jmap.model.SubMessage;
 import org.apache.james.mailbox.FlagsBuilder;
@@ -41,7 +42,7 @@ import com.google.common.collect.ImmutableSet;
 
 public interface ParsingWritingObjects {
 
-    public interface Common {
+    interface Common {
         MessageId MESSAGE_ID = TestMessageId.of(1);
         BlobId BLOB_ID = BlobId.of("myBlobId");
         String THREAD_ID = "myThreadId";
@@ -50,7 +51,7 @@ public interface ParsingWritingObjects {
         Flags FLAGS = FlagsBuilder.builder()
                 .add(Flags.Flag.FLAGGED, Flags.Flag.ANSWERED, Flags.Flag.DRAFT, Flags.Flag.SEEN)
                 .build();
-        ImmutableSet<Keyword> KEYWORDS = ImmutableSet.of(Keyword.DRAFT, Keyword.FLAGGED, Keyword.ANSWERED, Keyword.SEEN);
+        ImmutableSet<Keyword> KEYWORDS = ImmutableSet.of(Keyword.DRAFT, Keyword.FLAGGED, Keyword.ANSWERED, Keyword.SEEN, Keyword.FORWARDED);
         boolean HAS_ATTACHMENT = true;
         ImmutableMap<String, String> HEADERS = ImmutableMap.of("h1", "h1Value", "h2", "h2Value");
         Emailer FROM = Emailer.builder().name("myName").email("myEmail@james.org").build();
@@ -76,7 +77,7 @@ public interface ParsingWritingObjects {
             .threadId(Common.THREAD_ID)
             .mailboxIds(Common.MAILBOX_IDS)
             .inReplyToMessageId(Common.IN_REPLY_TO_MESSAGE_ID)
-            .flags(Common.FLAGS)
+            .keywords(Keywords.factory().fromSet(Common.KEYWORDS))
             .headers(Common.HEADERS)
             .from(Common.FROM)
             .to(Common.TO)

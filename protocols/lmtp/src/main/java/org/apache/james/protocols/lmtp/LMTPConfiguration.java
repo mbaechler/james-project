@@ -26,34 +26,26 @@ import org.apache.james.protocols.smtp.SMTPConfiguration;
  * A {@link ProtocolConfigurationImpl} which is used in the context of LMTP
  *
  */
-public abstract class LMTPConfiguration extends ProtocolConfigurationImpl implements SMTPConfiguration{
+public abstract class LMTPConfiguration extends ProtocolConfigurationImpl implements SMTPConfiguration {
 
 
     
-    /**
-     * Return <code>false</code>
-     */
+    @Override
     public boolean isRelayingAllowed(String remoteIP) {
         return false;
     }
 
-    /**
-     * Return <code>false</code>
-     */
+    @Override
     public boolean isAuthRequired(String remoteIP) {
         return false;
     }
 
-    /**
-     * Return <code>false</code>
-     */
+    @Override
     public boolean useHeloEhloEnforcement() {
         return false;
     }
 
-    /**
-     * Return <code>false</code>
-     */
+    @Override
     public boolean useAddressBracketsEnforcement() {
         return false;
     }

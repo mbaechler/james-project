@@ -23,20 +23,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Collection;
 
-import org.apache.mailet.Mail;
 import org.apache.james.core.MailAddress;
+import org.apache.mailet.Mail;
 import org.apache.mailet.base.MailAddressFixture;
 import org.apache.mailet.base.test.FakeMail;
 import org.apache.mailet.base.test.FakeMailContext;
 import org.apache.mailet.base.test.FakeMatcherConfig;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class SentByMailetTest {
 
     private SentByMailet testee;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         testee = new SentByMailet();
         testee.init(FakeMatcherConfig.builder().matcherName("matcherName")
@@ -45,7 +45,7 @@ public class SentByMailetTest {
     }
 
     @Test
-    public void matchShouldReturnRecipientsWhenAuthUserAttributeIsPresent() throws Exception{
+    public void matchShouldReturnRecipientsWhenAuthUserAttributeIsPresent() throws Exception {
         MailAddress recipient = MailAddressFixture.ANY_AT_JAMES;
         FakeMail fakeMail = FakeMail.builder()
             .recipient(recipient)
@@ -58,7 +58,7 @@ public class SentByMailetTest {
     }
 
     @Test
-    public void matchShouldReturnEmptyCollectionWhenAuthUserAttributeIsAbsent() throws Exception{
+    public void matchShouldReturnEmptyCollectionWhenAuthUserAttributeIsAbsent() throws Exception {
         FakeMail fakeMail = FakeMail.builder()
             .recipients(MailAddressFixture.ANY_AT_JAMES)
             .build();

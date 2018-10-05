@@ -34,13 +34,13 @@ import org.apache.james.mailbox.store.transaction.TransactionalMapper;
  *
  */
 public abstract class AbstractJCRScalingMapper extends TransactionalMapper implements JCRImapConstants {
-    public final static String MAILBOXES_PATH =  "mailboxes";
+    public static final String MAILBOXES_PATH =  "mailboxes";
 
     private final MailboxSessionJCRRepository repository;
     private final int scaling;
 
     private final MailboxSession mSession;
-    private final static char PAD ='_';
+    private static final char PAD = '_';
     
     public AbstractJCRScalingMapper(MailboxSessionJCRRepository repository, MailboxSession mSession, int scaling) {
         this.scaling = scaling;
@@ -54,14 +54,15 @@ public abstract class AbstractJCRScalingMapper extends TransactionalMapper imple
      * 
      * @return session
      */
-    protected Session getSession() throws RepositoryException{
+    protected Session getSession() throws RepositoryException {
         return repository.login(mSession);
     }
 
     /**
      * Begin is not supported by level 1 JCR implementations, however we refresh the session
      */
-    protected void begin() throws MailboxException {  
+    @Override
+    protected void begin() throws MailboxException {
         try {
             getSession().refresh(true);
         } catch (RepositoryException e) {
@@ -73,6 +74,7 @@ public abstract class AbstractJCRScalingMapper extends TransactionalMapper imple
     /**
      * Just call save on the underlying JCR Session, because level 1 JCR implementation does not offer Transactions
      */
+    @Override
     protected void commit() throws MailboxException {
         try {
             if (getSession().hasPendingChanges()) {
@@ -86,6 +88,7 @@ public abstract class AbstractJCRScalingMapper extends TransactionalMapper imple
     /**
      * Rollback is not supported by level 1 JCR implementations, so just do nothing
      */
+    @Override
     protected void rollback() throws MailboxException {
         try {
             // just refresh session and discard all pending changes
@@ -98,6 +101,7 @@ public abstract class AbstractJCRScalingMapper extends TransactionalMapper imple
     /**
      * Logout from open JCR Session
      */
+    @Override
     public void endRequest() {
        repository.logout(mSession);
     }
@@ -122,9 +126,9 @@ public abstract class AbstractJCRScalingMapper extends TransactionalMapper imple
      */
     protected String constructUserPathPart(String username) {
         StringBuffer sb = new StringBuffer();
-        for (int i = 0 ; i < scaling; i++) {
+        for (int i = 0; i < scaling; i++) {
             if (username.length() > i) {
-                sb.append(username.substring(0,i+1));
+                sb.append(username.substring(0,i + 1));
             } else {
                 sb.append(username);
                 int a = i - username.length();
@@ -160,8 +164,9 @@ public abstract class AbstractJCRScalingMapper extends TransactionalMapper imple
                     "nt:unstructured");
 
             // thats the last user node so add the right mixin type
-            if (a + 1 == userPathParts.length)
+            if (a + 1 == userPathParts.length) {
                 parent.addMixin("jamesMailbox:user");
+            }
         }
 
         return parent;

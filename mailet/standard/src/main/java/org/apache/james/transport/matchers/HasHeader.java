@@ -29,11 +29,11 @@ import java.util.StringTokenizer;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
+import org.apache.james.core.MailAddress;
 import org.apache.james.mime4j.codec.DecodeMonitor;
 import org.apache.james.mime4j.codec.DecoderUtil;
 import org.apache.james.mime4j.util.MimeUtil;
 import org.apache.mailet.Mail;
-import org.apache.james.core.MailAddress;
 import org.apache.mailet.base.GenericMatcher;
 
 /**
@@ -93,6 +93,7 @@ public class HasHeader extends GenericMatcher {
 
     private List<HeaderCondition> headerConditions;
 
+    @Override
     public void init() throws MessagingException {
         headerConditions = new ArrayList<>();
         StringTokenizer conditionTokenizer = new StringTokenizer(getCondition(), CONDITION_SEPARATOR);
@@ -114,6 +115,7 @@ public class HasHeader extends GenericMatcher {
         }
     }
 
+    @Override
     public Collection<MailAddress> match(Mail mail) throws javax.mail.MessagingException {
         for (HeaderCondition headerCondition : headerConditions) {
             if (!headerCondition.isMatching(mail.getMessage())) {

@@ -23,11 +23,13 @@ package org.apache.james.transport.mailets;
 import java.io.UnsupportedEncodingException;
 import java.util.Collection;
 import java.util.stream.Stream;
+
 import javax.mail.MessagingException;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeUtility;
 
+import org.apache.james.core.MailAddress;
 import org.apache.james.mime4j.dom.address.Address;
 import org.apache.james.mime4j.dom.address.AddressList;
 import org.apache.james.mime4j.dom.address.Group;
@@ -36,14 +38,12 @@ import org.apache.james.mime4j.field.address.LenientAddressParser;
 import org.apache.james.mime4j.util.MimeUtil;
 import org.apache.mailet.Experimental;
 import org.apache.mailet.Mail;
-import org.apache.james.core.MailAddress;
 import org.apache.mailet.base.GenericMailet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.steveash.guavate.Guavate;
 import com.google.common.base.Splitter;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 
 /**
@@ -82,6 +82,7 @@ public class UseHeaderRecipients extends GenericMailet {
      * <p/>
      * initializes the DEBUG flag
      */
+    @Override
     public void init() {
         isDebug = (getInitParameter("debug") == null) ? false : Boolean.valueOf(getInitParameter("debug"));
     }
@@ -93,13 +94,14 @@ public class UseHeaderRecipients extends GenericMailet {
      *
      * @param mail incoming email
      */
+    @Override
     public void service(Mail mail) throws MessagingException {
         MimeMessage message = mail.getMessage();
 
         mail.setRecipients(headersAddresses(message));
 
         if (isDebug) {
-            LOGGER.debug("All recipients = " + mail.getRecipients());
+            LOGGER.debug("All recipients = {}", mail.getRecipients());
             LOGGER.debug("Reprocessing mail using recipients in message headers");
         }
 
@@ -121,11 +123,7 @@ public class UseHeaderRecipients extends GenericMailet {
     }
 
 
-    /**
-     * Return a string describing this mailet.
-     *
-     * @return a string describing this mailet
-     */
+    @Override
     public String getMailetInfo() {
         return "UseHeaderRecipients Mailet";
     }
@@ -140,7 +138,7 @@ public class UseHeaderRecipients extends GenericMailet {
      */
     private Collection<MailAddress> getHeaderMailAddresses(MimeMessage message, String name) throws MessagingException {
         if (isDebug) {
-            LOGGER.debug("Checking " + name + " headers");
+            LOGGER.debug("Checking {} headers", name);
         }
         String[] headers = message.getHeader(name);
         ImmutableList.Builder<MailAddress> addresses = ImmutableList.builder();
@@ -163,7 +161,7 @@ public class UseHeaderRecipients extends GenericMailet {
         ImmutableList.Builder<MailAddress> result = ImmutableList.builder();
         for (String headerPart : headerParts) {
             if (isDebug) {
-                LOGGER.debug("Address = " + headerPart);
+                LOGGER.debug("Address = {}", headerPart);
             }
             result.addAll(readMailAddresses(headerPart));
         }
@@ -184,7 +182,7 @@ public class UseHeaderRecipients extends GenericMailet {
         try {
             return new MailAddress(mailbox.getAddress());
         } catch (AddressException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
     }
 

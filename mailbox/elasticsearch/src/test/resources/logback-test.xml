@@ -17,10 +17,8 @@
         </root>
 
 
-        <logger name="org.apache.james" level="DEBUG" >
+        <logger name="org.apache.james" level="WARN" >
                 <appender-ref ref="CONSOLE" />
         </logger>
-
-        <logger name="com.datastax.driver.core.QueryLogger.SLOW" level="DEBUG" />
 
 </configuration>

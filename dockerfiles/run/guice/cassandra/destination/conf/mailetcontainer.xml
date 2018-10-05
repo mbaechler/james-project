@@ -44,42 +44,36 @@
             </mailet>
             <mailet match="All" class="Bounce"/>
             <mailet match="All" class="ToRepository">
-                <repositoryPath>file://var/mail/error/</repositoryPath>
+                <repositoryPath>cassandra://var/mail/error/</repositoryPath>
             </mailet>
         </processor>
 
         <processor state="transport" enableJmx="true">
-            <mailet match="SMTPAuthSuccessful" class="SetMimeHeader">
-                <name>X-UserIsAuth</name>
-                <value>true</value>
-            </mailet>
-            <mailet match="HasMailAttribute=org.apache.james.SMIMECheckSignature" class="SetMimeHeader">
-                <name>X-WasSigned</name>
-                <value>true</value>
-            </mailet>
+            <matcher name="relay-allowed" match="org.apache.james.mailetcontainer.impl.matchers.Or">
+                <matcher match="SMTPAuthSuccessful"/>
+                <matcher match="SMTPIsAuthNetwork"/>
+                <matcher match="SentByMailet"/>
+                <matcher match="org.apache.james.jmap.mailet.SentByJmap"/>
+            </matcher>
+
             <mailet match="All" class="RemoveMimeHeader">
                 <name>bcc</name>
+                <onMailetException>ignore</onMailetException>
             </mailet>
-            <mailet match="All" class="RecipientRewriteTable" />
+            <mailet match="All" class="RecipientRewriteTable">
+                <errorProcessor>rrt-error</errorProcessor>
+            </mailet>
             <mailet match="RecipientIsLocal" class="org.apache.james.jmap.mailet.VacationMailet"/>
             <mailet match="RecipientIsLocal" class="Sieve"/>
             <mailet match="RecipientIsLocal" class="AddDeliveredToHeader"/>
+            <mailet match="RecipientIsLocal" class="org.apache.james.jmap.mailet.filter.JMAPFiltering"/>
             <mailet match="RecipientIsLocal" class="LocalDelivery"/>
             <mailet match="HostIsLocal" class="ToProcessor">
                 <processor>local-address-error</processor>
                 <notice>550 - Requested action not taken: no such user here</notice>
             </mailet>
 
-            <mailet match="SMTPAuthSuccessful" class="SetMailAttribute">
-                <RelayAllowed>true</RelayAllowed>
-            </mailet>
-            <mailet match="SentByMailet" class="SetMailAttribute">
-                <RelayAllowed>true</RelayAllowed>
-            </mailet>
-            <mailet match="org.apache.james.jmap.mailet.SentByJmap" class="SetMailAttribute">
-                <RelayAllowed>true</RelayAllowed>
-            </mailet>
-            <mailet match="HasMailAttribute=RelayAllowed" class="ToProcessor">
+            <mailet match="relay-allowed" class="ToProcessor">
                 <processor>relay</processor>
             </mailet>
 
@@ -100,15 +94,6 @@
             </mailet>
         </processor>
 
-        <processor state="spam" enableJmx="true">
-            <mailet match="All" class="MetricsMailet">
-                <metricName>mailetContainerSpam</metricName>
-            </mailet>
-            <mailet match="All" class="ToRepository">
-                <repositoryPath>file://var/mail/spam/</repositoryPath>
-            </mailet>
-        </processor>
-
         <processor state="local-address-error" enableJmx="true">
             <mailet match="All" class="MetricsMailet">
                 <metricName>mailetContainerLocalAddressError</metricName>
@@ -117,7 +102,7 @@
                 <attachment>none</attachment>
             </mailet>
             <mailet match="All" class="ToRepository">
-                <repositoryPath>file://var/mail/address-error/</repositoryPath>
+                <repositoryPath>cassandra://var/mail/address-error/</repositoryPath>
             </mailet>
         </processor>
 
@@ -129,7 +114,7 @@
                 <attachment>none</attachment>
             </mailet>
             <mailet match="All" class="ToRepository">
-                <repositoryPath>file://var/mail/relay-denied/</repositoryPath>
+                <repositoryPath>cassandra://var/mail/relay-denied/</repositoryPath>
                 <notice>Warning: You are sending an e-mail to a remote server. You must be authenticated to perform such an operation</notice>
             </mailet>
         </processor>
@@ -141,6 +126,15 @@
             <mailet match="All" class="DSNBounce">
                 <passThrough>false</passThrough>
             </mailet>
+        </processor>
+
+        <processor state="rrt-error" enableJmx="false">
+            <mailet match="All" class="ToRepository">
+                <repositoryPath>cassandra://var/mail/rrt-error/</repositoryPath>
+                <passThrough>true</passThrough>
+            </mailet>
+            <mailet match="IsSenderInRRTLoop" class="Null"/>
+            <mailet match="All" class="Bounce"/>
         </processor>
 
     </processors>

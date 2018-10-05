@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.james.imap.api.ImapCommand;
 import org.apache.james.imap.api.ImapConstants;
 import org.apache.james.imap.api.ImapSessionUtils;
@@ -46,7 +47,6 @@ import org.apache.james.mailbox.model.MailboxAnnotationKey;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.metrics.api.MetricFactory;
 import org.apache.james.util.MDCBuilder;
-import org.apache.commons.lang.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,19 +62,21 @@ public class GetAnnotationProcessor extends AbstractMailboxProcessor<GetAnnotati
         super(GetAnnotationRequest.class, next, mailboxManager, factory, metricFactory);
     }
 
+    @Override
     public List<String> getImplementedCapabilities(ImapSession session) {
         return ImmutableList.of(ImapConstants.SUPPORTS_ANNOTATION);
     }
 
+    @Override
     protected void doProcess(GetAnnotationRequest message, ImapSession session, String tag, ImapCommand command,
-            Responder responder) {
+                             Responder responder) {
         try {
             proceed(message, session, tag, command, responder);
         } catch (MailboxNotFoundException e) {
             LOGGER.info("The command: {} is failed because not found mailbox {}", command.getName(), message.getMailboxName());
             no(command, tag, responder, HumanReadableText.FAILURE_NO_SUCH_MAILBOX, ResponseCode.tryCreate());
         } catch (MailboxException e) {
-            LOGGER.error("GetAnnotation on mailbox " + message.getMailboxName() + " failed for user " + ImapSessionUtils.getUserName(session), e);
+            LOGGER.error("GetAnnotation on mailbox {} failed for user {}", message.getMailboxName(), ImapSessionUtils.getUserName(session), e);
             no(command, tag, responder, HumanReadableText.GENERIC_FAILURE_DURING_PROCESSING);
         }
     }
@@ -128,7 +130,7 @@ public class GetAnnotationProcessor extends AbstractMailboxProcessor<GetAnnotati
             case INFINITY:
                 return getMailboxManager().getAnnotationsByKeysWithAllDepth(mailboxPath, mailboxSession, keys);
             default:
-                throw new NotImplementedException();
+                throw new NotImplementedException("Not implemented");
         }
     }
 

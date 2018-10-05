@@ -36,18 +36,13 @@ import org.apache.james.protocols.imap.DecodingException;
  */
 public class StoreCommandParser extends AbstractUidCommandParser {
 
-    private final static byte[] UNCHANGEDSINCE = "UNCHANGEDSINCE".getBytes();
+    private static final byte[] UNCHANGEDSINCE = "UNCHANGEDSINCE".getBytes();
     
     public StoreCommandParser() {
         super(ImapCommand.selectedStateCommand(ImapConstants.STORE_COMMAND_NAME));
     }
 
-    /**
-     * @see
-     * org.apache.james.imap.decode.parser.AbstractUidCommandParser#decode(org.apache.james.imap.api.ImapCommand,
-     * org.apache.james.imap.decode.ImapRequestLineReader, java.lang.String,
-     * boolean, org.apache.james.imap.api.process.ImapSession)
-     */
+    @Override
     protected ImapMessage decode(ImapCommand command, ImapRequestLineReader request, String tag, boolean useUids, ImapSession session) throws DecodingException {
         final IdRange[] idSet = request.parseIdRange(session);
         final Boolean sign;
@@ -60,6 +55,7 @@ public class StoreCommandParser extends AbstractUidCommandParser {
             
             request.consumeWord(new CharacterValidator() {
                 private int pos = 0;
+                @Override
                 public boolean isValid(char chr) {
                     if (pos >= UNCHANGEDSINCE.length) {
                         return false;

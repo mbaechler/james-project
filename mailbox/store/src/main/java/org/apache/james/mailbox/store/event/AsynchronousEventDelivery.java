@@ -24,6 +24,7 @@ import java.util.concurrent.Executors;
 
 import javax.annotation.PreDestroy;
 
+import org.apache.james.mailbox.Event;
 import org.apache.james.mailbox.MailboxListener;
 
 public class AsynchronousEventDelivery implements EventDelivery {
@@ -31,13 +32,13 @@ public class AsynchronousEventDelivery implements EventDelivery {
     private final ExecutorService threadPoolExecutor;
     private final SynchronousEventDelivery synchronousEventDelivery;
 
-    public AsynchronousEventDelivery(int threadPoolSize) {
+    public AsynchronousEventDelivery(int threadPoolSize, SynchronousEventDelivery synchronousEventDelivery) {
         this.threadPoolExecutor = Executors.newFixedThreadPool(threadPoolSize);
-        this.synchronousEventDelivery = new SynchronousEventDelivery();
+        this.synchronousEventDelivery = synchronousEventDelivery;
     }
 
     @Override
-    public void deliver(final MailboxListener mailboxListener, final MailboxListener.Event event) {
+    public void deliver(MailboxListener mailboxListener, Event event) {
         threadPoolExecutor.submit(() -> synchronousEventDelivery.deliver(mailboxListener, event));
     }
 

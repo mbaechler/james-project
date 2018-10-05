@@ -18,16 +18,16 @@
  ****************************************************************/
 package org.apache.james.jmap;
 
-import static com.jayway.restassured.RestAssured.given;
-import static com.jayway.restassured.RestAssured.with;
-import static com.jayway.restassured.config.EncoderConfig.encoderConfig;
-import static com.jayway.restassured.config.RestAssuredConfig.newConfig;
+import static io.restassured.RestAssured.given;
+import static io.restassured.RestAssured.with;
+import static org.apache.james.jmap.TestingConstants.jmapRequestSpecBuilder;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.isA;
 import static org.hamcrest.Matchers.notNullValue;
 
+import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
@@ -40,10 +40,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.google.common.base.Charsets;
-import com.jayway.restassured.RestAssured;
-import com.jayway.restassured.builder.RequestSpecBuilder;
-import com.jayway.restassured.http.ContentType;
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
 
 public abstract class JMAPAuthenticationTest {
 
@@ -51,7 +49,7 @@ public abstract class JMAPAuthenticationTest {
     private static final ZonedDateTime newDate = ZonedDateTime.parse("2011-12-03T10:16:30+01:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME);
     private static final ZonedDateTime afterExpirationDate = ZonedDateTime.parse("2011-12-03T10:30:31+01:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME);
 
-    protected abstract GuiceJamesServer createJmapServer(FixedDateZonedDateTimeProvider zonedDateTimeProvider);
+    protected abstract GuiceJamesServer createJmapServer(FixedDateZonedDateTimeProvider zonedDateTimeProvider) throws IOException;
 
     private UserCredentials userCredentials;
     private FixedDateZonedDateTimeProvider zonedDateTimeProvider;
@@ -63,10 +61,9 @@ public abstract class JMAPAuthenticationTest {
         zonedDateTimeProvider.setFixedDateTime(oldDate);
         jmapServer = createJmapServer(zonedDateTimeProvider);
         jmapServer.start();
-        RestAssured.requestSpecification = new RequestSpecBuilder()
-        		.setConfig(newConfig().encoderConfig(encoderConfig().defaultContentCharset(Charsets.UTF_8)))
-        		.setPort(jmapServer.getProbe(JmapGuiceProbe.class).getJmapPort())
-        		.build();
+        RestAssured.requestSpecification = jmapRequestSpecBuilder
+                .setPort(jmapServer.getProbe(JmapGuiceProbe.class).getJmapPort())
+                .build();
         
         userCredentials = UserCredentials.builder()
                 .username("user@domain.tld")
@@ -75,8 +72,10 @@ public abstract class JMAPAuthenticationTest {
 
         
         String domain = "domain.tld";
-        jmapServer.getProbe(DataProbeImpl.class).addDomain(domain);
-        jmapServer.getProbe(DataProbeImpl.class).addUser(userCredentials.getUsername(), userCredentials.getPassword());
+        jmapServer.getProbe(DataProbeImpl.class)
+            .fluent()
+            .addDomain(domain)
+            .addUser(userCredentials.getUsername(), userCredentials.getPassword());
         
     }
     

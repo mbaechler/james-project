@@ -42,6 +42,7 @@ import org.apache.james.imap.api.process.ImapSession;
 import org.apache.james.imap.api.process.SelectedMailbox;
 import org.apache.james.imap.message.request.IdleRequest;
 import org.apache.james.imap.message.response.ContinuationResponse;
+import org.apache.james.mailbox.Event;
 import org.apache.james.mailbox.MailboxListener;
 import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.MailboxSession;
@@ -56,9 +57,9 @@ import com.google.common.collect.ImmutableList;
 public class IdleProcessor extends AbstractMailboxProcessor<IdleRequest> implements CapabilityImplementingProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(IdleProcessor.class);
 
-    private final static List<String> CAPS = ImmutableList.of(SUPPORTS_IDLE);
-    public final static int DEFAULT_SCHEDULED_POOL_CORE_SIZE = 5;
-    private final static String DONE = "DONE";
+    private static final List<String> CAPS = ImmutableList.of(SUPPORTS_IDLE);
+    public static final int DEFAULT_SCHEDULED_POOL_CORE_SIZE = 5;
+    private static final String DONE = "DONE";
     private TimeUnit heartbeatIntervalUnit;
     private long heartbeatInterval;
     private boolean enableIdle;
@@ -81,6 +82,7 @@ public class IdleProcessor extends AbstractMailboxProcessor<IdleRequest> impleme
         }
     }
 
+    @Override
     protected void doProcess(IdleRequest message, final ImapSession session, final String tag, final ImapCommand command, final Responder responder) {
 
         try {
@@ -91,7 +93,7 @@ public class IdleProcessor extends AbstractMailboxProcessor<IdleRequest> impleme
             final IdleMailboxListener idleListener;
             if (sm != null) {
                 idleListener = new IdleMailboxListener(session, responder);
-                mailboxManager.addListener(sm.getPath(), idleListener , mailboxSession);
+                mailboxManager.addListener(sm.getPath(), idleListener, mailboxSession);
             } else {
                 idleListener = null;
             }
@@ -99,12 +101,7 @@ public class IdleProcessor extends AbstractMailboxProcessor<IdleRequest> impleme
             final AtomicBoolean idleActive = new AtomicBoolean(true);
             
             session.pushLineHandler(new ImapLineHandler() {
-
-                /**
-                 * @see
-                 * org.apache.james.imap.api.process.ImapLineHandler
-                 * #onLine(org.apache.james.imap.api.process.ImapSession, byte[])
-                 */
+                @Override
                 public void onLine(ImapSession session, byte[] data) {
                     String line;
                     if (data.length > 2) {
@@ -117,7 +114,7 @@ public class IdleProcessor extends AbstractMailboxProcessor<IdleRequest> impleme
                         try {
                             mailboxManager.removeListener(sm.getPath(), idleListener, mailboxSession);
                         } catch (MailboxException e) {
-                                LOGGER.error("Unable to remove idle listener for mailbox {0}", sm.getPath(), e);
+                                LOGGER.error("Unable to remove idle listener for mailbox {}", sm.getPath(), e);
                         }
                     }
                     session.popLineHandler();
@@ -136,6 +133,7 @@ public class IdleProcessor extends AbstractMailboxProcessor<IdleRequest> impleme
             if (enableIdle) {
                 heartbeatExecutor.schedule(new Runnable() {
 
+                    @Override
                     public void run() {
                         // check if we need to cancel the Runnable
                         // See IMAP-275
@@ -165,15 +163,12 @@ public class IdleProcessor extends AbstractMailboxProcessor<IdleRequest> impleme
 
 
         } catch (MailboxException e) {
-            LOGGER.error("Enable idle for " + session.getSelected().getPath() + " failed", e);
+            LOGGER.error("Enable idle for {} failed", session.getSelected().getPath(), e);
             no(command, tag, responder, HumanReadableText.GENERIC_FAILURE_DURING_PROCESSING);
         }
     }
 
-    /**
-    * @see org.apache.james.imap.processor.CapabilityImplementingProcessor
-    * #getImplementedCapabilities(org.apache.james.imap.api.process.ImapSession)
-    */
+    @Override
     public List<String> getImplementedCapabilities(ImapSession session) {
         return CAPS;
     }
@@ -188,6 +183,7 @@ public class IdleProcessor extends AbstractMailboxProcessor<IdleRequest> impleme
             this.responder = responder;
         }
 
+        @Override
         public void event(Event event) {
             if (event instanceof Added || event instanceof Expunged || event instanceof FlagsUpdated) {
                 unsolicitedResponses(session, responder, false);
@@ -197,11 +193,6 @@ public class IdleProcessor extends AbstractMailboxProcessor<IdleRequest> impleme
         @Override
         public ListenerType getType() {
             return ListenerType.MAILBOX;
-        }
-
-        @Override
-        public ExecutionMode getExecutionMode() {
-            return ExecutionMode.ASYNCHRONOUS;
         }
     }
 

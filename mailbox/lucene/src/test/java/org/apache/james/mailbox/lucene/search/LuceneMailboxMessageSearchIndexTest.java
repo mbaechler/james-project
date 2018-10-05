@@ -39,7 +39,6 @@ import org.apache.james.mailbox.model.MailboxACL;
 import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.model.MessageId;
-import org.apache.james.mailbox.model.MultimailboxesSearchQuery;
 import org.apache.james.mailbox.model.SearchQuery;
 import org.apache.james.mailbox.model.SearchQuery.AddressType;
 import org.apache.james.mailbox.model.SearchQuery.DateResolution;
@@ -284,7 +283,7 @@ public class LuceneMailboxMessageSearchIndexTest {
         SearchQuery query = new SearchQuery();
         query.andCriteria(SearchQuery.bodyContains("My Body"));
 
-        List<MessageId> result = index.search(session, MultimailboxesSearchQuery.from(query).build(), LIMIT);
+        List<MessageId> result = index.search(session, ImmutableList.of(mailbox.getMailboxId(), mailbox2.getMailboxId(), mailbox3.getMailboxId()), query, LIMIT);
 
         assertThat(result).containsOnly(id1, id2);
     }
@@ -295,7 +294,8 @@ public class LuceneMailboxMessageSearchIndexTest {
         query.andCriteria(SearchQuery.bodyContains("My Body"));
 
         List<MessageId> result = index.search(session,
-                MultimailboxesSearchQuery.from(query).inMailboxes(mailbox.id, mailbox3.id).build(),
+                ImmutableList.of(mailbox.getMailboxId(), mailbox3.getMailboxId()),
+                query,
                 LIMIT);
 
         assertThat(result).containsOnly(id1);
@@ -306,7 +306,7 @@ public class LuceneMailboxMessageSearchIndexTest {
         SearchQuery query = new SearchQuery();
         query.andCriteria(SearchQuery.all());
 
-        List<MessageId> result = index.search(session, MultimailboxesSearchQuery.from(query).build(), LIMIT);
+        List<MessageId> result = index.search(session, ImmutableList.of(mailbox.getMailboxId(), mailbox2.getMailboxId(), mailbox3.getMailboxId()), query, LIMIT);
 
         // The query is not limited to one mailbox and we have 5 indexed messages
         assertThat(result).hasSize(5);
@@ -318,7 +318,7 @@ public class LuceneMailboxMessageSearchIndexTest {
         query.andCriteria(SearchQuery.all());
 
         int limit = 1;
-        List<MessageId> result = index.search(session, MultimailboxesSearchQuery.from(query).build(), limit);
+        List<MessageId> result = index.search(session, ImmutableList.of(mailbox.getMailboxId(), mailbox2.getMailboxId(), mailbox3.getMailboxId()), query, limit);
 
         assertThat(result).hasSize(limit);
     }
@@ -641,9 +641,10 @@ public class LuceneMailboxMessageSearchIndexTest {
         private final TestId id;
 
         public SimpleMailbox(long id) {
-        	this.id = TestId.of(id);
+            this.id = TestId.of(id);
         }
 
+        @Override
         public void setMailboxId(MailboxId id) {
         }
 
@@ -652,35 +653,43 @@ public class LuceneMailboxMessageSearchIndexTest {
             return new MailboxPath(getNamespace(), getUser(), getName());
         }
 
+        @Override
         public TestId getMailboxId() {
             return id;
         }
 
+        @Override
         public String getNamespace() {
             throw new UnsupportedOperationException("Not supported");
         }
 
+        @Override
         public void setNamespace(String namespace) {
             throw new UnsupportedOperationException("Not supported");
         }
 
+        @Override
         public String getUser() {
             throw new UnsupportedOperationException("Not supported");
         }
 
+        @Override
         public void setUser(String user) {
             throw new UnsupportedOperationException("Not supported");
         }
 
+        @Override
         public String getName() {
             return id.serialize();
         }
 
+        @Override
         public void setName(String name) {
             throw new UnsupportedOperationException("Not supported");
 
         }
 
+        @Override
         public long getUidValidity() {
             return 0;
         }

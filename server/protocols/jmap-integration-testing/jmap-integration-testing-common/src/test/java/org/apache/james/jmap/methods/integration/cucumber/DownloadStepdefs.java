@@ -19,28 +19,31 @@
 
 package org.apache.james.jmap.methods.integration.cucumber;
 
+import static org.apache.james.jmap.JmapURIBuilder.baseUri;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Date;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
 import javax.inject.Inject;
-import javax.mail.Flags;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.fluent.Request;
 import org.apache.http.client.fluent.Response;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.james.jmap.api.access.AccessToken;
 import org.apache.james.jmap.model.AttachmentAccessToken;
+import org.apache.james.mailbox.MessageManager.AppendCommand;
+import org.apache.james.mailbox.exception.MailboxException;
+import org.apache.james.mailbox.model.AttachmentId;
 import org.apache.james.mailbox.model.ComposedMessageId;
 import org.apache.james.mailbox.model.MailboxConstants;
 import org.apache.james.mailbox.model.MailboxPath;
@@ -48,9 +51,9 @@ import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.mime4j.codec.DecoderUtil;
 
 import com.google.common.base.CharMatcher;
-import com.google.common.base.Charsets;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
+import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
@@ -62,7 +65,7 @@ import cucumber.runtime.java.guice.ScenarioScoped;
 @ScenarioScoped
 public class DownloadStepdefs {
 
-    private static final String ONE_ATTACHMENT_EML_ATTACHMENT_BLOB_ID = "356b4005bf16f501505b144a2503b5c922837dee";
+    private static final String ONE_ATTACHMENT_EML_ATTACHMENT_BLOB_ID = "913ee2d903a68c3e8cb51169d34cf9ec257323c1bee254c0c7ab820930fdb8e7";
     private static final String EXPIRED_ATTACHMENT_TOKEN = "usera@domain.tld_"
             + "2016-06-29T13:41:22.124Z_"
             + "DiZa0O14MjLWrAA8P6MG35Gt5CBp7mt5U1EH/M++rIoZK7nlGJ4dPW0dvZD7h4m3o5b/Yd8DXU5x2x4+s0HOOKzD7X0RMlsU7JHJMNLvTvRGWF/C+MUyC8Zce7DtnRVPEQX2uAZhL2PBABV07Vpa8kH+NxoS9CL955Bc1Obr4G+KN2JorADlocFQA6ElXryF5YS/HPZSvq1MTC6aJIP0ku8WRpRnbwgwJnn26YpcHXcJjbkCBtd9/BhlMV6xNd2hTBkfZmYdoNo+UKBaXWzLxAlbLuxjpxwvDNJfOEyWFPgHDoRvzP+G7KzhVWjanHAHrhF0GilEa/MKpOI1qHBSwA==";
@@ -96,7 +99,19 @@ public class DownloadStepdefs {
         MailboxPath mailboxPath = MailboxPath.forUser(user, mailbox);
 
         ComposedMessageId composedMessageId = mainStepdefs.mailboxProbe.appendMessage(user, mailboxPath,
-            ClassLoader.getSystemResourceAsStream("eml/oneAttachment.eml"), new Date(), false, new Flags());
+            AppendCommand.from(ClassLoader.getSystemResourceAsStream("eml/oneAttachment.eml")));
+
+        inputToMessageId.put(messageId, composedMessageId.getMessageId());
+    }
+
+    @Given("^\"([^\"]*)\" mailbox \"([^\"]*)\" contains a big message \"([^\"]*)\"$")
+    public void appendBigMessageToMailbox(String user, String mailbox, String messageId) throws Throwable {
+        MailboxPath mailboxPath = MailboxPath.forUser(user, mailbox);
+
+        ComposedMessageId composedMessageId = mainStepdefs.mailboxProbe.appendMessage(user, mailboxPath,
+            AppendCommand.from(new ByteArrayInputStream(
+                Strings.repeat("header: 0123456789\r\n", 128 * 1024)
+                    .getBytes(StandardCharsets.UTF_8))));
 
         inputToMessageId.put(messageId, composedMessageId.getMessageId());
     }
@@ -105,39 +120,46 @@ public class DownloadStepdefs {
     public void appendMessageWithAttachmentToMailbox(String user, String mailbox, String messageId, String attachmentId) throws Throwable {
         MailboxPath mailboxPath = MailboxPath.forUser(user, mailbox);
 
-        mainStepdefs.mailboxProbe.appendMessage(user, mailboxPath,
-                ClassLoader.getSystemResourceAsStream("eml/oneAttachment.eml"), new Date(), false, new Flags());
-        
-        attachmentsByMessageId.put(messageId, attachmentId);
-        blobIdByAttachmentId.put(attachmentId, ONE_ATTACHMENT_EML_ATTACHMENT_BLOB_ID);
+        ComposedMessageId composedMessageId = mainStepdefs.mailboxProbe.appendMessage(user, mailboxPath,
+            AppendCommand.from(ClassLoader.getSystemResourceAsStream("eml/oneAttachment.eml")));
+
+        retrieveAndSaveAttachmentDetails(user, messageId, attachmentId, composedMessageId);
     }
 
     @Given("^\"([^\"]*)\" mailbox \"([^\"]*)\" contains a message \"([^\"]*)\" with an inlined attachment \"([^\"]*)\"$")
     public void appendMessageWithInlinedAttachmentToMailbox(String user, String mailbox, String messageId, String attachmentId) throws Throwable {
         MailboxPath mailboxPath = MailboxPath.forUser(user, mailbox);
 
-        mainStepdefs.mailboxProbe.appendMessage(user, mailboxPath,
-                ClassLoader.getSystemResourceAsStream("eml/oneInlinedImage.eml"), new Date(), false, new Flags());
-        
+        ComposedMessageId composedMessageId = mainStepdefs.mailboxProbe.appendMessage(user, mailboxPath,
+            AppendCommand.from(ClassLoader.getSystemResourceAsStream("eml/oneInlinedImage.eml")));
+
+        retrieveAndSaveAttachmentDetails(user, messageId, attachmentId, composedMessageId);
+    }
+
+    public void retrieveAndSaveAttachmentDetails(String user, String messageId, String attachmentId, ComposedMessageId composedMessageId) throws MailboxException {
+        AttachmentId mailboxAttachmentId = mainStepdefs.messageIdProbe
+            .retrieveAttachmentIds(composedMessageId.getMessageId(), user)
+            .get(0);
+
+        inputToMessageId.put(messageId, composedMessageId.getMessageId());
         attachmentsByMessageId.put(messageId, attachmentId);
+        blobIdByAttachmentId.put(attachmentId, mailboxAttachmentId.getId());
     }
 
     @Given("^\"([^\"]*)\" mailbox \"([^\"]*)\" contains a message \"([^\"]*)\" with multiple same inlined attachments \"([^\"]*)\"$")
     public void appendMessageWithSameInlinedAttachmentsToMailbox(String user, String mailbox, String messageName, String attachmentId) throws Throwable {
         MailboxPath mailboxPath = MailboxPath.forUser(user, mailbox);
 
-        mainStepdefs.mailboxProbe.appendMessage(user, mailboxPath,
-            ClassLoader.getSystemResourceAsStream("eml/sameInlinedImages.eml"), new Date(), false, new Flags());
+        ComposedMessageId composedMessageId = mainStepdefs.mailboxProbe.appendMessage(user, mailboxPath,
+            AppendCommand.from(ClassLoader.getSystemResourceAsStream("eml/sameInlinedImages.eml")));
 
-        attachmentsByMessageId.put(messageName, attachmentId);
-
-        blobIdByAttachmentId.put(attachmentId, ONE_ATTACHMENT_EML_ATTACHMENT_BLOB_ID);
+        retrieveAndSaveAttachmentDetails(user, messageName, attachmentId, composedMessageId);
     }
 
     @When("^\"([^\"]*)\" checks for the availability of the attachment endpoint$")
     public void optionDownload(String username) throws Throwable {
-        AccessToken accessToken = userStepdefs.tokenByUser.get(username);
-        URI target = mainStepdefs.baseUri().setPath("/download/" + ONE_ATTACHMENT_EML_ATTACHMENT_BLOB_ID).build();
+        AccessToken accessToken = userStepdefs.authenticate(username);
+        URI target = baseUri(mainStepdefs.jmapServer).setPath("/download/" + ONE_ATTACHMENT_EML_ATTACHMENT_BLOB_ID).build();
         Request request = Request.Options(target);
         if (accessToken != null) {
             request.addHeader("Authorization", accessToken.serialize());
@@ -155,18 +177,33 @@ public class DownloadStepdefs {
         downLoad(username, attachmentIdOrMessageId);
     }
 
+    @When("^un-authenticated user downloads \"([^\"]*)\"$")
+    public void downloadsUnAuthenticated(String blobId) throws Throwable {
+        String attachmentIdOrMessageId = Optional.ofNullable(blobIdByAttachmentId.get(blobId))
+            .orElse(Optional.ofNullable(inputToMessageId.get(blobId))
+                .map(MessageId::serialize)
+                .orElse(null));
+
+        response = Request.Get(
+            baseUri(mainStepdefs.jmapServer)
+                .setPath("/download/" + attachmentIdOrMessageId)
+                .build())
+            .execute()
+            .returnResponse();
+    }
+
     @When("^\"([^\"]*)\" downloads the message by its blobId$")
     public void downloads(String username) throws Throwable {
         downLoad(username, getMessagesMethodStepdefs.getBlobId());
     }
 
-    private void downLoad(String username, String blobId) throws IOException, ClientProtocolException, URISyntaxException {
-        URIBuilder uriBuilder = mainStepdefs.baseUri().setPath("/download/" + blobId);
+    private void downLoad(String username, String blobId) throws IOException, URISyntaxException {
+        URIBuilder uriBuilder = baseUri(mainStepdefs.jmapServer).setPath("/download/" + blobId);
         response = authenticatedDownloadRequest(uriBuilder, blobId, username).execute().returnResponse();
     }
 
     private Request authenticatedDownloadRequest(URIBuilder uriBuilder, String blobId, String username) throws URISyntaxException {
-        AccessToken accessToken = userStepdefs.tokenByUser.get(username);
+        AccessToken accessToken = userStepdefs.authenticate(username);
         AttachmentAccessTokenKey key = new AttachmentAccessTokenKey(username, blobId);
         if (attachmentAccessTokens.containsKey(key)) {
             uriBuilder.addParameter("access_token", attachmentAccessTokens.get(key).serialize());
@@ -220,8 +257,8 @@ public class DownloadStepdefs {
     }
 
     private void trustForBlobId(String blobId, String username) throws Exception {
-        Response tokenGenerationResponse = Request.Post(mainStepdefs.baseUri().setPath("/download/" + blobId).build())
-            .addHeader("Authorization", userStepdefs.tokenByUser.get(username).serialize())
+        Response tokenGenerationResponse = Request.Post(baseUri(mainStepdefs.jmapServer).setPath("/download/" + blobId).build())
+            .addHeader("Authorization", userStepdefs.authenticate(username).serialize())
             .execute();
         String serializedAttachmentAccessToken = tokenGenerationResponse.returnContent().asString();
         attachmentAccessTokens.put(
@@ -231,28 +268,31 @@ public class DownloadStepdefs {
                     blobId));
     }
 
-    @When("^\"([^\"]*)\" downloads \"([^\"]*)\" with a valid authentication token but a bad blobId$")
-    public void downloadsWithValidToken(String username, String attachmentId) throws Throwable {
-        URIBuilder uriBuilder = mainStepdefs.baseUri().setPath("/download/badblobId");
-        response = Request.Get(uriBuilder.build())
-            .addHeader("Authorization", userStepdefs.tokenByUser.get(username).serialize())
-            .execute()
-            .returnResponse();
+    @When("^\"([^\"]*)\" downloads \"(?:[^\"]*)\" with a valid authentication token but a bad blobId$")
+    public void downloadsWithValidToken(String username) {
+        userStepdefs.execWithUser(username, () -> {
+            URIBuilder uriBuilder = baseUri(mainStepdefs.jmapServer).setPath("/download/badblobId");
+            response = Request.Get(uriBuilder.build())
+                .addHeader("Authorization", userStepdefs.authenticate(username).serialize())
+                .execute()
+                .returnResponse();
+
+        });
     }
 
-    @When("^\"([^\"]*)\" downloads \"([^\"]*)\" without any authentication token$")
-    public void getDownloadWithoutToken(String username, String attachmentId) throws Exception {
+    @When("^\"(?:[^\"]*)\" downloads \"([^\"]*)\" without any authentication token$")
+    public void getDownloadWithoutToken(String attachmentId) throws Exception {
         String blobId = blobIdByAttachmentId.get(attachmentId);
-        response = Request.Get(mainStepdefs.baseUri().setPath("/download/" + blobId).build())
+        response = Request.Get(baseUri(mainStepdefs.jmapServer).setPath("/download/" + blobId).build())
             .execute()
             .returnResponse();
     }
 
-    @When("^\"([^\"]*)\" downloads \"([^\"]*)\" with an empty authentication token$")
-    public void getDownloadWithEmptyToken(String username, String attachmentId) throws Exception {
+    @When("^\"(?:[^\"]*)\" downloads \"([^\"]*)\" with an empty authentication token$")
+    public void getDownloadWithEmptyToken(String attachmentId) throws Exception {
         String blobId = blobIdByAttachmentId.get(attachmentId);
         response = Request.Get(
-                mainStepdefs.baseUri()
+                baseUri(mainStepdefs.jmapServer)
                     .setPath("/download/" + blobId)
                     .addParameter("access_token", "")
                     .build())
@@ -260,11 +300,11 @@ public class DownloadStepdefs {
                 .returnResponse();
     }
 
-    @When("^\"([^\"]*)\" downloads \"([^\"]*)\" with a bad authentication token$")
-    public void getDownloadWithBadToken(String username, String attachmentId) throws Exception {
+    @When("^\"(?:[^\"]*)\" downloads \"([^\"]*)\" with a bad authentication token$")
+    public void getDownloadWithBadToken(String attachmentId) throws Exception {
         String blobId = blobIdByAttachmentId.get(attachmentId);
         response = Request.Get(
-                mainStepdefs.baseUri()
+                baseUri(mainStepdefs.jmapServer)
                     .setPath("/download/" + blobId)
                     .addParameter("access_token", "bad")
                     .build())
@@ -272,11 +312,11 @@ public class DownloadStepdefs {
                 .returnResponse();
     }
 
-    @When("^\"([^\"]*)\" downloads \"([^\"]*)\" with an invalid authentication token$")
-    public void getDownloadWithUnknownToken(String username, String attachmentId) throws Exception {
+    @When("^\"(?:[^\"]*)\" downloads \"([^\"]*)\" with an invalid authentication token$")
+    public void getDownloadWithUnknownToken(String attachmentId) throws Exception {
         String blobId = blobIdByAttachmentId.get(attachmentId);
         response = Request.Get(
-                mainStepdefs.baseUri()
+                baseUri(mainStepdefs.jmapServer)
                     .setPath("/download/" + blobId)
                     .addParameter("access_token", INVALID_ATTACHMENT_TOKEN)
                     .build())
@@ -288,7 +328,7 @@ public class DownloadStepdefs {
     public void getDownloadWithoutBlobId(String username, String attachmentId) throws Throwable {
         String blobId = blobIdByAttachmentId.get(attachmentId);
 
-        URIBuilder uriBuilder = mainStepdefs.baseUri().setPath("/download/");
+        URIBuilder uriBuilder = baseUri(mainStepdefs.jmapServer).setPath("/download/");
         trustForBlobId(blobId, username);
         AttachmentAccessTokenKey key = new AttachmentAccessTokenKey(username, blobId);
         uriBuilder.addParameter("access_token", attachmentAccessTokens.get(key).serialize());
@@ -301,7 +341,7 @@ public class DownloadStepdefs {
     public void getDownloadWithWrongBlobId(String username, String attachmentId) throws Throwable {
         String blobId = blobIdByAttachmentId.get(attachmentId);
 
-        URIBuilder uriBuilder = mainStepdefs.baseUri().setPath("/download/badbadbadbadbadbadbadbadbadbadbadbadbadb");
+        URIBuilder uriBuilder = baseUri(mainStepdefs.jmapServer).setPath("/download/badbadbadbadbadbadbadbadbadbadbadbadbadb");
         trustForBlobId(blobId, username);
         AttachmentAccessTokenKey key = new AttachmentAccessTokenKey(username, blobId);
         uriBuilder.addParameter("access_token", attachmentAccessTokens.get(key).serialize());
@@ -313,8 +353,8 @@ public class DownloadStepdefs {
     @When("^\"([^\"]*)\" asks for a token for attachment \"([^\"]*)\"$")
     public void postDownload(String username, String attachmentId) throws Throwable {
         String blobId = blobIdByAttachmentId.get(attachmentId);
-        AccessToken accessToken = userStepdefs.tokenByUser.get(username);
-        response = Request.Post(mainStepdefs.baseUri().setPath("/download/" + blobId).build())
+        AccessToken accessToken = userStepdefs.authenticate(username);
+        response = Request.Post(baseUri(mainStepdefs.jmapServer).setPath("/download/" + blobId).build())
                 .addHeader("Authorization", accessToken.serialize())
                 .execute()
                 .returnResponse();
@@ -323,16 +363,16 @@ public class DownloadStepdefs {
     @When("^\"([^\"]*)\" downloads \"([^\"]*)\" with \"([^\"]*)\" name$")
     public void downloadsWithName(String username, String attachmentId, String name) throws Exception {
         String blobId = blobIdByAttachmentId.get(attachmentId);
-        URIBuilder uriBuilder = mainStepdefs.baseUri().setPath("/download/" + blobId + "/" + name);
+        URIBuilder uriBuilder = baseUri(mainStepdefs.jmapServer).setPath("/download/" + blobId + "/" + name);
         response = authenticatedDownloadRequest(uriBuilder, blobId, username)
                 .execute()
                 .returnResponse();
     }
 
-    @When("^\"([^\"]*)\" downloads \"([^\"]*)\" with an expired token$")
-    public void getDownloadWithExpiredToken(String username, String attachmentId) throws Exception {
+    @When("^\"(?:[^\"]*)\" downloads \"([^\"]*)\" with an expired token$")
+    public void getDownloadWithExpiredToken(String attachmentId) throws Exception {
         String blobId = blobIdByAttachmentId.get(attachmentId);
-        response = Request.Get(mainStepdefs.baseUri().setPath("/download/" + blobId)
+        response = Request.Get(baseUri(mainStepdefs.jmapServer).setPath("/download/" + blobId)
                 .addParameter("access_token", EXPIRED_ATTACHMENT_TOKEN)
                 .build())
             .execute()
@@ -340,46 +380,71 @@ public class DownloadStepdefs {
     }
 
     @When("^\"([^\"]*)\" delete mailbox \"([^\"]*)\"$")
-    public void deleteMailboxButNotAttachment(String username, String mailboxName) throws Exception {
+    public void deleteMailboxButNotAttachment(String username, String mailboxName) {
         mainStepdefs.mailboxProbe.deleteMailbox(MailboxConstants.USER_NAMESPACE, username, mailboxName);
     }
 
     @Then("^the user should be authorized$")
-    public void httpStatusDifferentFromUnauthorized() throws IOException {
+    public void httpStatusDifferentFromUnauthorized() {
         assertThat(response.getStatusLine().getStatusCode()).isIn(200, 404);
     }
 
+    @Then("^\"([^\"]*)\" be authorized$")
+    public void httpStatusDifferentFromUnauthorized(String username) {
+        userStepdefs.execWithUser(username, this::httpStatusDifferentFromUnauthorized);
+    }
+
     @Then("^the user should not be authorized$")
-    public void httpUnauthorizedStatus() throws IOException {
+    public void httpUnauthorizedStatus() {
         assertThat(response.getStatusLine().getStatusCode()).isEqualTo(401);
     }
 
+    @Then("^\"([^\"]*)\" should not be authorized$")
+    public void httpUnauthorizedStatus(String username) {
+        userStepdefs.execWithUser(username, this::httpUnauthorizedStatus);
+    }
+
     @Then("^the user should receive a bad request response$")
-    public void httpBadRequestStatus() throws IOException {
+    public void httpBadRequestStatus() {
         assertThat(response.getStatusLine().getStatusCode()).isEqualTo(400);
     }
 
-    @Then("^the user should receive that blob")
+    @Then("^\"([^\"]*)\" should receive a bad request response$")
+    public void httpBadRequestStatus(String username) {
+        userStepdefs.execWithUser(username, this::httpBadRequestStatus);
+    }
+
+    @Then("^(?:he|she|the user) can read that blob")
     public void httpOkStatusAndExpectedContent() throws IOException {
         assertThat(response.getStatusLine().getStatusCode()).isEqualTo(200);
-        assertThat(IOUtils.toString(response.getEntity().getContent(), Charsets.UTF_8)).isNotEmpty();
+        assertThat(IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8)).isNotEmpty();
     }
 
     @Then("^the user should receive a not found response$")
-    public void httpNotFoundStatus() throws IOException {
+    public void httpNotFoundStatus() {
         assertThat(response.getStatusLine().getStatusCode()).isEqualTo(404);
+    }
+
+    @Then("^\"([^\"]*)\" should receive a not found response$")
+    public void httpNotFoundStatus(String username) {
+        userStepdefs.execWithUser(username, this::httpNotFoundStatus);
     }
 
     @Then("^the user should receive an attachment access token$")
     public void accessTokenResponse() throws Throwable {
         assertThat(response.getStatusLine().getStatusCode()).isEqualTo(200);
         assertThat(response.getHeaders("Content-Type")).extracting(Header::toString).containsExactly("Content-Type: text/plain");
-        assertThat(IOUtils.toString(response.getEntity().getContent(), Charsets.UTF_8)).isNotEmpty();
+        assertThat(IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8)).isNotEmpty();
+    }
+
+    @Then("^\"([^\"]*)\" should receive an attachment access token$")
+    public void accessTokenResponse(String username) {
+        userStepdefs.execWithUser(username, this::accessTokenResponse);
     }
 
     @Then("^the attachment is named \"([^\"]*)\"$")
-    public void assertContentDisposition(String name) throws IOException {
-        if (!CharMatcher.ASCII.matchesAllOf(name)) {
+    public void assertContentDisposition(String name) {
+        if (!CharMatcher.ascii().matchesAllOf(name)) {
             assertEncodedFilenameMatches(name);
         } else {
             assertThat(response.getFirstHeader("Content-Disposition").getValue()).isEqualTo("attachment; filename=\"" + name + "\"");
@@ -387,7 +452,7 @@ public class DownloadStepdefs {
     }
 
     @Then("^the blob size is (\\d+)$")
-    public void assertContentLength(int size) throws IOException {
+    public void assertContentLength(int size) {
         assertThat(response.getFirstHeader("Content-Length").getValue()).isEqualTo(String.valueOf(size));
     }
 
@@ -400,11 +465,11 @@ public class DownloadStepdefs {
     }
 
     private String extractFilename(String contentDispositionHeader) {
-        return contentDispositionHeader.substring(UTF8_CONTENT_DIPOSITION_START.length(), 
+        return contentDispositionHeader.substring(UTF8_CONTENT_DIPOSITION_START.length(),
                 contentDispositionHeader.length() - 1);
     }
 
     private String decode(String name) {
-        return DecoderUtil.decodeEncodedWords(name, Charsets.UTF_8);
+        return DecoderUtil.decodeEncodedWords(name, StandardCharsets.UTF_8);
     }
 }

@@ -19,10 +19,11 @@
 
 package org.apache.james.imap.message.response;
 
-import com.google.common.base.Objects;
 import org.apache.james.imap.api.ImapConstants;
 import org.apache.james.imap.api.message.response.ImapResponseMessage;
 import org.apache.james.mailbox.model.Quota;
+
+import com.google.common.base.Objects;
 
 /**
  * Quota Response
@@ -30,9 +31,9 @@ import org.apache.james.mailbox.model.Quota;
 public class QuotaResponse implements ImapResponseMessage {
     private final String resourceName;
     private final String quotaRoot;
-    private final Quota quota;
+    private final Quota<?> quota;
 
-    public QuotaResponse(String resource, String quotaRoot, Quota quota) {
+    public QuotaResponse(String resource, String quotaRoot, Quota<?> quota) {
         this.quota = quota;
         this.resourceName = resource;
         this.quotaRoot = quotaRoot;
@@ -49,7 +50,7 @@ public class QuotaResponse implements ImapResponseMessage {
         return false;
     }
 
-    public Quota getQuota() {
+    public Quota<?> getQuota() {
         return quota;
     }
 
@@ -78,7 +79,7 @@ public class QuotaResponse implements ImapResponseMessage {
                 .append(' ')
                 .append(quota.getUsed())
                 .append(' ')
-                .append(quota.getMax())
+                .append(quota.getLimit())
                 .append(')');
         return result.toString();
     }

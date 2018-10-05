@@ -21,14 +21,12 @@ package org.apache.james.modules;
 
 import javax.inject.Singleton;
 
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.james.filesystem.api.FileSystem;
 import org.apache.james.metrics.es.ESReporterConfiguration;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 
-public class TestESMetricReporterModule extends AbstractModule{
+public class TestESMetricReporterModule extends AbstractModule {
 
     private static final String LOCALHOST = "localhost";
     private static final int DEFAULT_ES_HTTP_PORT = 9200;
@@ -40,12 +38,12 @@ public class TestESMetricReporterModule extends AbstractModule{
 
     @Provides
     @Singleton
-    public ESReporterConfiguration provideConfiguration(FileSystem fileSystem) throws ConfigurationException {
+    public ESReporterConfiguration provideConfiguration() {
         return ESReporterConfiguration.builder()
             .enabled()
             .onHost(LOCALHOST, DEFAULT_ES_HTTP_PORT)
             .onIndex(METRICS_INDEX)
-            .periodInSecond(1l)
+            .periodInSecond(1L)
             .build();
     }
 }

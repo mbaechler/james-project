@@ -18,8 +18,8 @@
  ****************************************************************/
 package org.apache.james.mailetcontainer.lib;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Fail.fail;
 
 import java.io.ByteArrayInputStream;
 import java.util.Arrays;
@@ -30,9 +30,9 @@ import javax.mail.MessagingException;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.DefaultConfigurationBuilder;
 import org.apache.commons.configuration.HierarchicalConfiguration;
-import org.apache.james.server.core.MailImpl;
 import org.apache.james.mailetcontainer.api.MailProcessor;
 import org.apache.james.mailetcontainer.api.mock.MockMailProcessor;
+import org.apache.james.server.core.MailImpl;
 import org.apache.mailet.Mail;
 import org.junit.Rule;
 import org.junit.Test;
@@ -55,7 +55,7 @@ public abstract class AbstractStateCompositeProcessorTest {
                     @Override
                     public void service(Mail mail) throws MessagingException {
                         // check if the right processor was selected depending on the state
-                        assertEquals(state, mail.getState());
+                        assertThat(mail.getState()).isEqualTo(state);
                         super.service(mail);
                     }
                 };

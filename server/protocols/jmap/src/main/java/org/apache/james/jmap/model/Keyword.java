@@ -24,32 +24,36 @@ import java.util.Optional;
 import javax.mail.Flags;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.james.util.UnicodeSetUtils;
 
-import com.google.common.base.CharMatcher;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableList;
+import com.ibm.icu.text.UnicodeSet;
 
 public class Keyword {
-    private final static int FLAG_NAME_MIN_LENGTH = 1;
-    private final static int FLAG_NAME_MAX_LENGTH = 255;
-    private final static CharMatcher FLAG_NAME_PATTERN = 
-            CharMatcher.JAVA_LETTER_OR_DIGIT
-                .or(CharMatcher.is('$'))
-                .or(CharMatcher.is('_'));
+    private static final int FLAG_NAME_MIN_LENGTH = 1;
+    private static final int FLAG_NAME_MAX_LENGTH = 255;
+    private static final UnicodeSet FLAG_NAME_PATTERN =
+            UnicodeSetUtils.letterOrDigitUnicodeSet()
+                .add('$')
+                .add('_')
+                .add('-')
+                .freeze();
 
-    public final static Keyword DRAFT = new Keyword("$Draft");
-    public final static Keyword SEEN = new Keyword("$Seen");
-    public final static Keyword FLAGGED = new Keyword("$Flagged");
-    public final static Keyword ANSWERED = new Keyword("$Answered");
-    public final static Keyword DELETED = new Keyword("$Deleted");
-    public final static Keyword RECENT = new Keyword("$Recent");
-    public final static Boolean FLAG_VALUE = true;
+    public static final Keyword DRAFT = new Keyword("$Draft");
+    public static final Keyword SEEN = new Keyword("$Seen");
+    public static final Keyword FLAGGED = new Keyword("$Flagged");
+    public static final Keyword ANSWERED = new Keyword("$Answered");
+    public static final Keyword DELETED = new Keyword("$Deleted");
+    public static final Keyword RECENT = new Keyword("$Recent");
+    public static final Keyword FORWARDED = new Keyword("$Forwarded");
+    public static final Boolean FLAG_VALUE = true;
 
-    private final static ImmutableList<Keyword> NON_EXPOSED_IMAP_KEYWORDS = ImmutableList.of(Keyword.RECENT, Keyword.DELETED);
-    private final static ImmutableBiMap<Flags.Flag, Keyword> IMAP_SYSTEM_FLAGS = ImmutableBiMap.<Flags.Flag, Keyword>builder()
+    private static final ImmutableList<Keyword> NON_EXPOSED_IMAP_KEYWORDS = ImmutableList.of(Keyword.RECENT, Keyword.DELETED);
+    private static final ImmutableBiMap<Flags.Flag, Keyword> IMAP_SYSTEM_FLAGS = ImmutableBiMap.<Flags.Flag, Keyword>builder()
         .put(Flags.Flag.DRAFT, DRAFT)
         .put(Flags.Flag.SEEN, SEEN)
         .put(Flags.Flag.FLAGGED, FLAGGED)
@@ -66,7 +70,8 @@ public class Keyword {
 
     public Keyword(String flagName) {
         Preconditions.checkArgument(isValid(flagName),
-                "Flagname must not be null or empty, must have length form 1-255, must not contain charater with hex from '\u0000' to '\u00019' or {'(' ')' '{' ']' '%' '*' '\"' '\\'} ");
+                "Flagname must not be null or empty, must have length form 1-255, " +
+                    "must not contain charater with hex from '\\u0000' to '\\u00019' or {'(' ')' '{' ']' '%' '*' '\"' '\\'} ");
         this.flagName = flagName;
     }
 
@@ -77,7 +82,7 @@ public class Keyword {
         if (flagName.length() < FLAG_NAME_MIN_LENGTH || flagName.length() > FLAG_NAME_MAX_LENGTH) {
             return false;
         }
-        if (!FLAG_NAME_PATTERN.matchesAllOf(flagName)) {
+        if (!FLAG_NAME_PATTERN.containsAll(flagName)) {
             return false;
         }
         return true;

@@ -19,6 +19,8 @@
 
 package org.apache.james.jmap.cassandra;
 
+import java.io.IOException;
+
 import org.apache.james.CassandraJmapTestRule;
 import org.apache.james.DockerCassandraRule;
 import org.apache.james.GuiceJamesServer;
@@ -31,12 +33,12 @@ public class CassandraGetVacationResponseTest extends GetVacationResponseTest {
 
     @ClassRule
     public static DockerCassandraRule cassandra = new DockerCassandraRule();
-    
-    @Rule 
+
+    @Rule
     public CassandraJmapTestRule rule = CassandraJmapTestRule.defaultTestRule();
     
     @Override
-    protected GuiceJamesServer createJmapServer(ZonedDateTimeProvider zonedDateTimeProvider) {
+    protected GuiceJamesServer createJmapServer(ZonedDateTimeProvider zonedDateTimeProvider) throws IOException {
         return rule.jmapServer(cassandra.getModule())
                 .overrideWith(binder -> binder.bind(ZonedDateTimeProvider.class).toInstance(zonedDateTimeProvider));
     }

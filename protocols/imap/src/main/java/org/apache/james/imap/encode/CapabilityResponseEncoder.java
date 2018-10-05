@@ -38,28 +38,19 @@ public class CapabilityResponseEncoder extends AbstractChainedImapEncoder {
         super(next);
     }
 
-    /**
-     * @see
-     * org.apache.james.imap.encode.base.AbstractChainedImapEncoder#doEncode(org.apache.james.imap.api.ImapMessage,
-     * org.apache.james.imap.encode.ImapResponseComposer,
-     * org.apache.james.imap.api.process.ImapSession)
-     */
+    @Override
     protected void doEncode(ImapMessage acceptableMessage, ImapResponseComposer composer, ImapSession session) throws IOException {
         final CapabilityResponse response = (CapabilityResponse) acceptableMessage;
         Iterator<String> capabilities = response.getCapabilities().iterator();
         composer.untagged();
         composer.message(ImapConstants.CAPABILITY_COMMAND_NAME);
-        while(capabilities.hasNext()) {
-        	composer.message(capabilities.next());
+        while (capabilities.hasNext()) {
+            composer.message(capabilities.next());
         }
         composer.end();        
     }
 
-    /**
-     * @see
-     * org.apache.james.imap.encode.base.AbstractChainedImapEncoder#isAcceptable
-     * (org.apache.james.imap.api.ImapMessage)
-     */
+    @Override
     protected boolean isAcceptable(ImapMessage message) {
         return (message instanceof CapabilityResponse);
     }

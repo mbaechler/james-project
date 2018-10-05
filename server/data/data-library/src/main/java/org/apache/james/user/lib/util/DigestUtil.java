@@ -31,10 +31,14 @@ import java.util.Locale;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeUtility;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Computes and verifies digests of files and strings
  */
 public class DigestUtil {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DigestUtil.class);
 
     /**
      * Command line interface. Use -help for arguments.
@@ -97,29 +101,21 @@ public class DigestUtil {
     public static void digestFile(String filename, String algorithm) {
         byte[] b = new byte[65536];
         int read;
-        FileInputStream fis = null;
-        FileOutputStream fos = null;
-        try {
+        try (FileInputStream fis = new FileInputStream(filename)) {
             MessageDigest md = MessageDigest.getInstance(algorithm);
-            fis = new FileInputStream(filename);
             while (fis.available() > 0) {
                 read = fis.read(b);
                 md.update(b, 0, read);
             }
             byte[] digest = md.digest();
             String fileNameBuffer = filename + "." + algorithm;
-            fos = new FileOutputStream(fileNameBuffer);
-            OutputStream encodedStream = MimeUtility.encode(fos, "base64");
-            encodedStream.write(digest);
-            fos.flush();
-        } catch (Exception e) {
-            System.out.println("Error computing Digest: " + e);
-        } finally {
-            try {
-                fis.close();
-                fos.close();
-            } catch (Exception ignored) {
+            try (FileOutputStream fos = new FileOutputStream(fileNameBuffer)) {
+                OutputStream encodedStream = MimeUtility.encode(fos, "base64");
+                encodedStream.write(digest);
+                fos.flush();
             }
+        } catch (Exception e) {
+            LOGGER.error("Error computing Digest", e);
         }
     }
 
@@ -149,7 +145,7 @@ public class DigestUtil {
             encodedStream.write(digest);
             return bos.toString("iso-8859-1");
         } catch (IOException | MessagingException e) {
-            throw new RuntimeException("Fatal error: " + e);
+            throw new RuntimeException("Fatal error", e);
         }
     }
 

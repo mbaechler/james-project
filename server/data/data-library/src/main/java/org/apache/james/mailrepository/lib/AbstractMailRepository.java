@@ -27,11 +27,16 @@ import javax.mail.MessagingException;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.james.lifecycle.api.Configurable;
+import org.apache.james.mailrepository.api.MailKey;
 import org.apache.james.mailrepository.api.MailRepository;
 import org.apache.james.repository.api.Initializable;
 import org.apache.mailet.Mail;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.github.fge.lambdas.Throwing;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterators;
 
 /**
  * This class represent an AbstractMailRepository. All MailRepositories should
@@ -51,6 +56,7 @@ public abstract class AbstractMailRepository implements MailRepository, Configur
      */
     private final Lock lock = new Lock();
 
+    @Override
     public void configure(HierarchicalConfiguration configuration) throws ConfigurationException {
         doConfigure(configuration);
     }
@@ -60,25 +66,35 @@ public abstract class AbstractMailRepository implements MailRepository, Configur
     }
 
     /**
-     * @see org.apache.james.mailrepository.api.MailRepository#unlock(String)
+     * Releases a lock on a message identified the key
+     * 
+     * @param key
+     *            the key of the message to be unlocked
+     * 
+     * @return true if successfully released the lock, false otherwise
      */
-    public boolean unlock(String key) {
+    @Override
+    public boolean unlock(MailKey key) {
         return lock.unlock(key);
     }
 
     /**
-     * @see org.apache.james.mailrepository.api.MailRepository#lock(String)
+     * Obtains a lock on a message identified by key
+     * 
+     * @param key
+     *            the key of the message to be locked
+     * 
+     * @return true if successfully obtained the lock, false otherwise
      */
-    public boolean lock(String key) {
+    @Override
+    public boolean lock(MailKey key) {
         return lock.lock(key);
     }
 
-    /**
-     * @see org.apache.james.mailrepository.api.MailRepository#store(Mail)
-     */
-    public void store(Mail mc) throws MessagingException {
+    @Override
+    public MailKey store(Mail mc) throws MessagingException {
         boolean wasLocked = true;
-        String key = mc.getName();
+        MailKey key = MailKey.forMail(mc);
         try {
             synchronized (this) {
                 wasLocked = lock.isLocked(key);
@@ -88,11 +104,12 @@ public abstract class AbstractMailRepository implements MailRepository, Configur
                 }
             }
             internalStore(mc);
+            return key;
         } catch (MessagingException e) {
-            LOGGER.error("Exception caught while storing mail " + key, e);
+            LOGGER.error("Exception caught while storing mail {}", key, e);
             throw e;
         } catch (Exception e) {
-            LOGGER.error("Exception caught while storing mail " + key, e);
+            LOGGER.error("Exception caught while storing mail {}", key, e);
             throw new MessagingException("Exception caught while storing mail " + key, e);
         } finally {
             if (!wasLocked) {
@@ -105,31 +122,22 @@ public abstract class AbstractMailRepository implements MailRepository, Configur
         }
     }
 
-    /**
-     * @see #store(Mail)
-     */
     protected abstract void internalStore(Mail mc) throws MessagingException, IOException;
 
-    /**
-     * @see org.apache.james.mailrepository.api.MailRepository#remove(Mail)
-     */
+    @Override
     public void remove(Mail mail) throws MessagingException {
-        remove(mail.getName());
+        remove(MailKey.forMail(mail));
     }
 
-    /**
-     * @see org.apache.james.mailrepository.api.MailRepository#remove(Collection)
-     */
+    @Override
     public void remove(Collection<Mail> mails) throws MessagingException {
         for (Mail mail : mails) {
             remove(mail);
         }
     }
 
-    /**
-     * @see org.apache.james.mailrepository.api.MailRepository#remove(String)
-     */
-    public void remove(String key) throws MessagingException {
+    @Override
+    public void remove(MailKey key) throws MessagingException {
         if (lock(key)) {
             try {
                 internalRemove(key);
@@ -137,14 +145,20 @@ public abstract class AbstractMailRepository implements MailRepository, Configur
                 unlock(key);
             }
         } else {
-            String exceptionBuffer = "Cannot lock " + key + " to remove it";
-            throw new MessagingException(exceptionBuffer.toString());
+            throw new MessagingException("Cannot lock " + key + " to remove it");
         }
     }
 
-    /**
-     * @see #remove(String)
-     */
-    protected abstract void internalRemove(String key) throws MessagingException;
+    protected abstract void internalRemove(MailKey key) throws MessagingException;
 
+    @Override
+    public long size() throws MessagingException {
+        return Iterators.size(list());
+    }
+
+    @Override
+    public void removeAll() throws MessagingException {
+        ImmutableList.copyOf(list())
+            .forEach(Throwing.<MailKey>consumer(this::remove).sneakyThrow());
+    }
 }

@@ -29,10 +29,12 @@ import javax.persistence.EntityTransaction;
 import javax.persistence.PersistenceException;
 import javax.persistence.PersistenceUnit;
 
+import org.apache.james.core.Domain;
 import org.apache.james.rrt.api.RecipientRewriteTableException;
 import org.apache.james.rrt.jpa.model.JPARecipientRewrite;
 import org.apache.james.rrt.lib.AbstractRecipientRewriteTable;
 import org.apache.james.rrt.lib.Mapping;
+import org.apache.james.rrt.lib.MappingSource;
 import org.apache.james.rrt.lib.Mappings;
 import org.apache.james.rrt.lib.MappingsImpl;
 import org.slf4j.Logger;
@@ -56,50 +58,49 @@ public class JPARecipientRewriteTable extends AbstractRecipientRewriteTable {
      * @param entityManagerFactory
      */
     @Inject
-    @PersistenceUnit(unitName="James")
+    @PersistenceUnit(unitName = "James")
     public void setEntityManagerFactory(EntityManagerFactory entityManagerFactory) {
         this.entityManagerFactory = entityManagerFactory;
     }
 
     @Override
-    protected void addMappingInternal(String user, String domain, Mapping mapping) throws RecipientRewriteTableException {
-        String fixedUser = getFixedUser(user);
-        String fixedDomain = getFixedDomain(domain);
-        Mappings map = getUserDomainMappings(fixedUser, fixedDomain);
-        if (map != null && map.size() != 0) {
+    public void addMapping(MappingSource source, Mapping mapping) throws RecipientRewriteTableException {
+        Mappings map = getUserDomainMappings(source);
+        if (!map.isEmpty()) {
             Mappings updatedMappings = MappingsImpl.from(map).add(mapping).build();
-            doUpdateMapping(fixedUser, fixedDomain, updatedMappings.serialize());
+            doUpdateMapping(source, updatedMappings.serialize());
         } else {
-            doAddMapping(fixedUser, fixedDomain, mapping.asString());
+            doAddMapping(source, mapping.asString());
         }
     }
 
-    /**
-     * @throws RecipientRewriteTableException
-     * @see org.apache.james.rrt.lib.AbstractRecipientRewriteTable#mapAddressInternal(java.lang.String,
-     *      java.lang.String)
-     */
-    protected String mapAddressInternal(String user, String domain) throws RecipientRewriteTableException {
-        String mapping = getMapping(user, domain, "selectExactMappings");
-        if (mapping != null) {
+    @Override
+    protected Mappings mapAddress(String user, Domain domain) throws RecipientRewriteTableException {
+        Mappings mapping = getMapping(user, domain, "selectExactMappings");
+        if (!mapping.isEmpty()) {
             return mapping;
         }
         return getMapping(user, domain, "selectMappings");
     }
 
-    private String getMapping(String user, String domain, String queryName) throws RecipientRewriteTableException {
+    private Mappings getMapping(String user, Domain domain, String queryName) throws RecipientRewriteTableException {
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         final EntityTransaction transaction = entityManager.getTransaction();
         try {
             transaction.begin();
             @SuppressWarnings("unchecked")
-            List<JPARecipientRewrite> virtualUsers = entityManager.createNamedQuery(queryName).setParameter("user", user).setParameter("domain", domain).getResultList();
+            List<JPARecipientRewrite> virtualUsers = entityManager
+                .createNamedQuery(queryName)
+                .setParameter("user", user)
+                .setParameter("domain", domain.asString())
+                .getResultList();
             transaction.commit();
             if (virtualUsers.size() > 0) {
-                return virtualUsers.get(0).getTargetAddress();
+                return MappingsImpl.fromRawString(virtualUsers.get(0).getTargetAddress());
             }
+            return MappingsImpl.empty();
         } catch (PersistenceException e) {
-            LOGGER.debug("Failed to find mapping for  user=" + user + " and domain=" + domain, e);
+            LOGGER.debug("Failed to find mapping for  user={} and domain={}", user, domain, e);
             if (transaction.isActive()) {
                 transaction.rollback();
             }
@@ -107,78 +108,68 @@ public class JPARecipientRewriteTable extends AbstractRecipientRewriteTable {
         } finally {
             entityManager.close();
         }
-        return null;
     }
 
-    /**
-     * @throws RecipientRewriteTableException
-     * @see org.apache.james.rrt.lib.AbstractRecipientRewriteTable#mapAddress(java.lang.String, java.lang.String)
-     */
-    protected Mappings getUserDomainMappingsInternal(String user, String domain) throws RecipientRewriteTableException {
+    @Override
+    public Mappings getUserDomainMappings(MappingSource source) throws RecipientRewriteTableException {
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         final EntityTransaction transaction = entityManager.getTransaction();
         try {
             transaction.begin();
             @SuppressWarnings("unchecked")
-            List<JPARecipientRewrite> virtualUsers = entityManager.createNamedQuery("selectUserDomainMapping").setParameter("user", user).setParameter("domain", domain).getResultList();
+            List<JPARecipientRewrite> virtualUsers = entityManager.createNamedQuery("selectUserDomainMapping")
+                .setParameter("user", source.getFixedUser())
+                .setParameter("domain", source.getFixedDomain())
+                .getResultList();
             transaction.commit();
             if (virtualUsers.size() > 0) {
                 return MappingsImpl.fromRawString(virtualUsers.get(0).getTargetAddress());
             }
+            return MappingsImpl.empty();
         } catch (PersistenceException e) {
             LOGGER.debug("Failed to get user domain mappings", e);
             if (transaction.isActive()) {
                 transaction.rollback();
             }
             throw new RecipientRewriteTableException("Error while retrieve mappings", e);
-
         } finally {
             entityManager.close();
         }
-        return null;
     }
 
-    /**
-     * @throws RecipientRewriteTableException
-     * @see org.apache.james.rrt.lib.AbstractRecipientRewriteTable#getAllMappingsInternal()
-     */
-    protected Map<String, Mappings> getAllMappingsInternal() throws RecipientRewriteTableException {
+    @Override
+    public Map<MappingSource, Mappings> getAllMappings() throws RecipientRewriteTableException {
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         final EntityTransaction transaction = entityManager.getTransaction();
-        Map<String, Mappings> mapping = new HashMap<>();
+        Map<MappingSource, Mappings> mapping = new HashMap<>();
         try {
             transaction.begin();
             @SuppressWarnings("unchecked")
             List<JPARecipientRewrite> virtualUsers = entityManager.createNamedQuery("selectAllMappings").getResultList();
             transaction.commit();
             for (JPARecipientRewrite virtualUser : virtualUsers) {
-                mapping.put(virtualUser.getUser() + "@" + virtualUser.getDomain(), MappingsImpl.fromRawString(virtualUser.getTargetAddress()));
+                mapping.put(MappingSource.fromUser(virtualUser.getUser(), virtualUser.getDomain()), MappingsImpl.fromRawString(virtualUser.getTargetAddress()));
             }
-            if (mapping.size() > 0)
-                return mapping;
+            return mapping;
         } catch (PersistenceException e) {
             LOGGER.debug("Failed to get all mappings", e);
             if (transaction.isActive()) {
                 transaction.rollback();
             }
             throw new RecipientRewriteTableException("Error while retrieve mappings", e);
-
         } finally {
             entityManager.close();
         }
-        return null;
     }
 
     @Override
-    protected void removeMappingInternal(String user, String domain, Mapping mapping) throws RecipientRewriteTableException {
-        String fixedUser = getFixedUser(user);
-        String fixedDomain = getFixedDomain(domain);
-        Mappings map = getUserDomainMappings(fixedUser, fixedDomain);
-        if (map != null && map.size() > 1) {
+    public void removeMapping(MappingSource source, Mapping mapping) throws RecipientRewriteTableException {
+        Mappings map = getUserDomainMappings(source);
+        if (map.size() > 1) {
             Mappings updatedMappings = map.remove(mapping);
-            doUpdateMapping(fixedUser, fixedDomain, updatedMappings.serialize());
+            doUpdateMapping(source, updatedMappings.serialize());
         } else {
-            doRemoveMapping(fixedUser, fixedDomain, mapping.asString());
+            doRemoveMapping(source, mapping.asString());
         }
     }
 
@@ -191,12 +182,17 @@ public class JPARecipientRewriteTable extends AbstractRecipientRewriteTable {
      * @return true if update was successfully
      * @throws RecipientRewriteTableException
      */
-    private boolean doUpdateMapping(String user, String domain, String mapping) throws RecipientRewriteTableException {
+    private boolean doUpdateMapping(MappingSource source, String mapping) throws RecipientRewriteTableException {
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         final EntityTransaction transaction = entityManager.getTransaction();
         try {
             transaction.begin();
-            int updated = entityManager.createNamedQuery("updateMapping").setParameter("targetAddress", mapping).setParameter("user", user).setParameter("domain", domain).executeUpdate();
+            int updated = entityManager
+                .createNamedQuery("updateMapping")
+                .setParameter("targetAddress", mapping)
+                .setParameter("user", source.getFixedUser())
+                .setParameter("domain", source.getFixedDomain())
+                .executeUpdate();
             transaction.commit();
             if (updated > 0) {
                 return true;
@@ -221,12 +217,16 @@ public class JPARecipientRewriteTable extends AbstractRecipientRewriteTable {
      * @param mapping the mapping
      * @throws RecipientRewriteTableException
      */
-    private void doRemoveMapping(String user, String domain, String mapping) throws RecipientRewriteTableException {
+    private void doRemoveMapping(MappingSource source, String mapping) throws RecipientRewriteTableException {
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         final EntityTransaction transaction = entityManager.getTransaction();
         try {
             transaction.begin();
-            entityManager.createNamedQuery("deleteMapping").setParameter("user", user).setParameter("domain", domain).setParameter("targetAddress", mapping).executeUpdate();
+            entityManager.createNamedQuery("deleteMapping")
+                .setParameter("user", source.getFixedUser())
+                .setParameter("domain", source.getFixedDomain())
+                .setParameter("targetAddress", mapping)
+                .executeUpdate();
             transaction.commit();
 
         } catch (PersistenceException e) {
@@ -249,12 +249,12 @@ public class JPARecipientRewriteTable extends AbstractRecipientRewriteTable {
      * @param mapping the mapping
      * @throws RecipientRewriteTableException
      */
-    private void doAddMapping(String user, String domain, String mapping) throws RecipientRewriteTableException {
+    private void doAddMapping(MappingSource source, String mapping) throws RecipientRewriteTableException {
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         final EntityTransaction transaction = entityManager.getTransaction();
         try {
             transaction.begin();
-            JPARecipientRewrite jpaRecipientRewrite = new JPARecipientRewrite(user, domain, mapping);
+            JPARecipientRewrite jpaRecipientRewrite = new JPARecipientRewrite(source.getFixedUser(), Domain.of(source.getFixedDomain()), mapping);
             entityManager.persist(jpaRecipientRewrite);
             transaction.commit();
         } catch (PersistenceException e) {

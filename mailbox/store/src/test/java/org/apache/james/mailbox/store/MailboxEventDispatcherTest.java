@@ -26,13 +26,13 @@ import static org.mockito.Mockito.when;
 import javax.mail.Flags;
 import javax.mail.Flags.Flag;
 
+import org.apache.james.mailbox.Event;
 import org.apache.james.mailbox.FlagsBuilder;
 import org.apache.james.mailbox.MailboxListener;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.mock.MockMailboxSession;
 import org.apache.james.mailbox.model.MailboxPath;
-import org.apache.james.mailbox.model.MessageMetaData;
 import org.apache.james.mailbox.model.MessageResult;
 import org.apache.james.mailbox.model.TestId;
 import org.apache.james.mailbox.model.UpdatedFlags;
@@ -50,9 +50,9 @@ import com.google.common.collect.ImmutableMap;
 public class MailboxEventDispatcherTest {
     private static final int sessionId = 10;
     private static final int MOD_SEQ = -1;
-    public static final Condition<MailboxListener.Event> INSTANCE_OF_EVENT_FLAGS_UPDATED = new Condition<MailboxListener.Event>() {
+    public static final Condition<Event> INSTANCE_OF_EVENT_FLAGS_UPDATED = new Condition<Event>() {
         @Override
-        public boolean matches(MailboxListener.Event event) {
+        public boolean matches(Event event) {
             return event instanceof MailboxListener.FlagsUpdated;
         }
     };
@@ -64,12 +64,7 @@ public class MailboxEventDispatcherTest {
     private MessageResult result;
     private Mailbox mailbox;
 
-    private MailboxSession session = new MockMailboxSession("test") {
-        @Override
-        public long getSessionId() {
-            return sessionId;
-        }
-    };
+    private MailboxSession session = new MockMailboxSession("test", sessionId);
 
     @Before
     public void setUp() throws Exception {
@@ -370,7 +365,7 @@ public class MailboxEventDispatcherTest {
 
     @Test
     public void expungedShouldNotFireEventWhenEmptyMap() {
-        dispatcher.expunged(session, ImmutableMap.<MessageUid, MessageMetaData> of(), mailbox);
+        dispatcher.expunged(session, ImmutableMap.of(), mailbox);
         assertThat(collector.getEvents()).isEmpty();
     }
 
@@ -383,7 +378,7 @@ public class MailboxEventDispatcherTest {
                 .newFlags(new Flags(Flag.ANSWERED))
                 .build();
         
-        dispatcher.flagsUpdated(session, ImmutableList.<MessageUid> of(), mailbox, ImmutableList.of(updatedFlags));
+        dispatcher.flagsUpdated(session, ImmutableList.of(), mailbox, ImmutableList.of(updatedFlags));
         assertThat(collector.getEvents()).isEmpty();
     }
 }

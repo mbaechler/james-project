@@ -161,10 +161,8 @@ public class MimeMessageUtil {
             }
         }
 
-        try {
-            IOUtils.copy(bis, bos);
-        } finally {
-            IOUtils.closeQuietly(bis);
+        try (InputStream input = bis) {
+            IOUtils.copy(input, bos);
         }
     }
 
@@ -181,7 +179,6 @@ public class MimeMessageUtil {
      */
     private static void writeHeadersTo(MimeMessage message, OutputStream headerOs, String[] ignoreList) throws MessagingException {
         // Write the headers (minus ignored ones)
-        @SuppressWarnings("unchecked")
         Enumeration<String> headers = message.getNonMatchingHeaderLines(ignoreList);
         writeHeadersTo(headers, headerOs);
     }
@@ -213,7 +210,6 @@ public class MimeMessageUtil {
      * @return stream the InputStream which holds the headers
      * @throws MessagingException
      */
-    @SuppressWarnings("unchecked")
     public static InputStream getHeadersInputStream(MimeMessage message, String[] ignoreList) throws MessagingException {
         return new InternetHeadersInputStream(message.getNonMatchingHeaderLines(ignoreList));
     }
@@ -224,6 +220,7 @@ public class MimeMessageUtil {
     private static final class SizeCalculatorOutputStream extends OutputStream {
         long size = 0;
 
+        @Override
         public void write(int arg0) throws IOException {
             size++;
         }
@@ -232,10 +229,12 @@ public class MimeMessageUtil {
             return size;
         }
 
+        @Override
         public void write(byte[] arg0, int arg1, int arg2) throws IOException {
             size += arg2;
         }
 
+        @Override
         public void write(byte[] arg0) throws IOException {
             size += arg0.length;
         }
@@ -284,13 +283,13 @@ public class MimeMessageUtil {
         // messages each time).
         size = message.getSize();
         if (size != -1) {
-            Enumeration<?> e = message.getAllHeaderLines();
+            Enumeration<String> e = message.getAllHeaderLines();
             if (e.hasMoreElements()) {
                 size += 2;
             }
             while (e.hasMoreElements()) {
                 // add 2 bytes for the CRLF
-                size += ((String) e.nextElement()).length() + 2;
+                size += e.nextElement().length() + 2;
             }
         }
 

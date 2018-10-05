@@ -54,6 +54,7 @@ public class HeaderCollection {
         private final Set<String> subjectSet;
         private final Multimap<String, String> headers;
         private Optional<ZonedDateTime> sentDate;
+        private Optional<String> messageID;
 
         private Builder() {
             toAddressSet = new HashSet<>();
@@ -64,6 +65,7 @@ public class HeaderCollection {
             subjectSet = new HashSet<>();
             headers = ArrayListMultimap.create();
             sentDate = Optional.empty();
+            messageID = Optional.empty();
         }
 
         public Builder add(Field field) {
@@ -71,7 +73,9 @@ public class HeaderCollection {
             String headerName = field.getName().toLowerCase(Locale.US);
             String sanitizedValue = MimeUtil.unscrambleHeaderValue(field.getBody());
 
-            headers.put(headerName, sanitizedValue);
+            if (!headerName.contains(".")) {
+                headers.put(headerName, sanitizedValue);
+            }
             handleSpecificHeader(headerName, sanitizedValue);
             return this;
         }
@@ -85,7 +89,7 @@ public class HeaderCollection {
                 ImmutableSet.copyOf(replyToAddressSet),
                 ImmutableSet.copyOf(subjectSet),
                 ImmutableMultimap.copyOf(headers),
-                sentDate);
+                sentDate, messageID);
         }
 
         private void handleSpecificHeader(String headerName, String headerValue) {
@@ -103,6 +107,9 @@ public class HeaderCollection {
                 case DATE:
                     sentDate = SentDateComparator.toISODate(headerValue);
                     break;
+                case MESSAGE_ID:
+                    messageID = Optional.ofNullable(headerValue);
+                    break;
             }
         }
 
@@ -111,7 +118,7 @@ public class HeaderCollection {
                 .parseAddressList(headerValue)
                 .stream()
                 .flatMap(this::convertAddressToMailboxStream)
-                .map((mailbox) -> new EMailer(SearchUtil.getDisplayAddress(mailbox) , mailbox.getAddress()))
+                .map((mailbox) -> new EMailer(SearchUtil.getDisplayAddress(mailbox), mailbox.getAddress()))
                 .collect(Collectors.toCollection(() -> getAddressSet(headerName)));
         }
 
@@ -148,6 +155,7 @@ public class HeaderCollection {
     public static final String REPLY_TO = "reply-to";
     public static final String SUBJECT = "subject";
     public static final String DATE = "date";
+    public static final String MESSAGE_ID = "message-id";
 
     public static Builder builder() {
         return new Builder();
@@ -161,10 +169,11 @@ public class HeaderCollection {
     private final ImmutableSet<String> subjectSet;
     private final ImmutableMultimap<String, String> headers;
     private final Optional<ZonedDateTime> sentDate;
+    private final Optional<String> messageID;
 
     private HeaderCollection(ImmutableSet<EMailer> toAddressSet, ImmutableSet<EMailer> fromAddressSet,
-        ImmutableSet<EMailer> ccAddressSet, ImmutableSet<EMailer> bccAddressSet, ImmutableSet<EMailer> replyToAddressSet, ImmutableSet<String> subjectSet,
-        ImmutableMultimap<String, String> headers, Optional<ZonedDateTime> sentDate) {
+                             ImmutableSet<EMailer> ccAddressSet, ImmutableSet<EMailer> bccAddressSet, ImmutableSet<EMailer> replyToAddressSet, ImmutableSet<String> subjectSet,
+                             ImmutableMultimap<String, String> headers, Optional<ZonedDateTime> sentDate, Optional<String> messageID) {
         this.toAddressSet = toAddressSet;
         this.fromAddressSet = fromAddressSet;
         this.ccAddressSet = ccAddressSet;
@@ -173,6 +182,7 @@ public class HeaderCollection {
         this.subjectSet = subjectSet;
         this.headers = headers;
         this.sentDate = sentDate;
+        this.messageID = messageID;
     }
 
     public Set<EMailer> getToAddressSet() {
@@ -207,4 +217,7 @@ public class HeaderCollection {
         return headers;
     }
 
+    public Optional<String> getMessageID() {
+        return messageID;
+    }
 }

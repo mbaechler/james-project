@@ -19,8 +19,6 @@
 
 package org.apache.james.jmap.methods;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -36,6 +34,7 @@ import org.apache.james.jmap.model.FilterCondition;
 import org.apache.james.jmap.model.GetMessageListRequest;
 import org.apache.james.jmap.model.GetMessageListResponse;
 import org.apache.james.jmap.model.GetMessagesRequest;
+import org.apache.james.jmap.model.Number;
 import org.apache.james.jmap.utils.FilterToSearchQuery;
 import org.apache.james.jmap.utils.SortConverter;
 import org.apache.james.mailbox.MailboxManager;
@@ -46,31 +45,30 @@ import org.apache.james.mailbox.model.MailboxId.Factory;
 import org.apache.james.mailbox.model.MultimailboxesSearchQuery;
 import org.apache.james.mailbox.model.SearchQuery;
 import org.apache.james.metrics.api.MetricFactory;
-import org.apache.james.metrics.api.TimeMetric;
 import org.apache.james.util.MDCBuilder;
 
 import com.github.steveash.guavate.Guavate;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Throwables;
 
 public class GetMessageListMethod implements Method {
 
+    private static final long DEFAULT_POSITION = 0;
     public static final String MAXIMUM_LIMIT = "maximumLimit";
-    public static final int DEFAULT_MAXIMUM_LIMIT = 256;
+    public static final long DEFAULT_MAXIMUM_LIMIT = 256;
 
     private static final Method.Request.Name METHOD_NAME = Method.Request.name("getMessageList");
     private static final Method.Response.Name RESPONSE_NAME = Method.Response.name("messageList");
 
     private final MailboxManager mailboxManager;
-    private final int maximumLimit;
+    private final long maximumLimit;
     private final GetMessagesMethod getMessagesMethod;
     private final Factory mailboxIdFactory;
     private final MetricFactory metricFactory;
 
     @Inject
     @VisibleForTesting public GetMessageListMethod(MailboxManager mailboxManager,
-            @Named(MAXIMUM_LIMIT) int maximumLimit, GetMessagesMethod getMessagesMethod, MailboxId.Factory mailboxIdFactory,
+            @Named(MAXIMUM_LIMIT) long maximumLimit, GetMessagesMethod getMessagesMethod, MailboxId.Factory mailboxIdFactory,
             MetricFactory metricFactory) {
 
         this.mailboxManager = mailboxManager;
@@ -93,50 +91,49 @@ public class GetMessageListMethod implements Method {
     @Override
     public Stream<JmapResponse> process(JmapRequest request, ClientId clientId, MailboxSession mailboxSession) {
         Preconditions.checkArgument(request instanceof GetMessageListRequest);
-        TimeMetric timeMetric = metricFactory.timer(JMAP_PREFIX + METHOD_NAME.getName());
-        
+
         GetMessageListRequest messageListRequest = (GetMessageListRequest) request;
+
+        return metricFactory.runPublishingTimerMetric(JMAP_PREFIX + METHOD_NAME.getName(), MDCBuilder.create()
+            .addContext(MDCBuilder.ACTION, "GET_MESSAGE_LIST")
+            .addContext("accountId", messageListRequest.getAccountId())
+            .addContext("limit", messageListRequest.getLimit())
+            .addContext("anchor", messageListRequest.getAnchor())
+            .addContext("offset", messageListRequest.getAnchorOffset())
+            .addContext("properties", messageListRequest.getFetchMessageProperties())
+            .addContext("position", messageListRequest.getPosition())
+            .addContext("filters", messageListRequest.getFilter())
+            .addContext("sorts", messageListRequest.getSort())
+            .addContext("isFetchMessage", messageListRequest.isFetchMessages())
+            .addContext("isCollapseThread", messageListRequest.isCollapseThreads())
+            .wrapArround(
+                () -> process(clientId, mailboxSession, messageListRequest)));
+    }
+
+    private Stream<JmapResponse> process(ClientId clientId, MailboxSession mailboxSession, GetMessageListRequest messageListRequest) {
         GetMessageListResponse messageListResponse = getMessageListResponse(messageListRequest, mailboxSession);
-        try (Closeable closeable =
-                 MDCBuilder.create()
-                     .addContext(MDCBuilder.ACTION, "GET_MESSAGE_LIST")
-                     .addContext("accountId", messageListRequest.getAccountId())
-                     .addContext("limit", messageListRequest.getLimit())
-                     .addContext("anchor", messageListRequest.getAnchor())
-                     .addContext("offset", messageListRequest.getAnchorOffset())
-                     .addContext("properties", messageListRequest.getFetchMessageProperties())
-                     .addContext("position", messageListRequest.getPosition())
-                     .addContext("filters", messageListRequest.getFilter())
-                     .addContext("sorts", messageListRequest.getSort())
-                     .addContext("isFetchMessage", messageListRequest.isFetchMessages())
-                     .addContext("isCollapseThread", messageListRequest.isCollapseThreads())
-                     .build()) {
-            Stream<JmapResponse> jmapResponse = Stream.of(JmapResponse.builder().clientId(clientId)
-                    .response(messageListResponse)
-                    .responseName(RESPONSE_NAME)
-                    .build());
-            return Stream.concat(jmapResponse,
-                    processGetMessages(messageListRequest, messageListResponse, clientId, mailboxSession));
-        } catch (IOException e) {
-            throw Throwables.propagate(e);
-        } finally {
-            timeMetric.stopAndPublish();
-        }
+        Stream<JmapResponse> jmapResponse = Stream.of(JmapResponse.builder().clientId(clientId)
+            .response(messageListResponse)
+            .responseName(RESPONSE_NAME)
+            .build());
+        return Stream.concat(jmapResponse,
+            processGetMessages(messageListRequest, messageListResponse, clientId, mailboxSession));
     }
 
     private GetMessageListResponse getMessageListResponse(GetMessageListRequest messageListRequest, MailboxSession mailboxSession) {
         GetMessageListResponse.Builder builder = GetMessageListResponse.builder();
         try {
             MultimailboxesSearchQuery searchQuery = convertToSearchQuery(messageListRequest);
+            Long postionValue = messageListRequest.getPosition().map(Number::asLong).orElse(DEFAULT_POSITION);
             mailboxManager.search(searchQuery,
                 mailboxSession,
-                messageListRequest.getLimit().orElse(maximumLimit) + messageListRequest.getPosition())
+                postionValue + messageListRequest.getLimit().map(Number::asLong).orElse(maximumLimit))
                 .stream()
-                .skip(messageListRequest.getPosition())
+                .skip(postionValue)
                 .forEach(builder::messageId);
             return builder.build();
         } catch (MailboxException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
     }
 

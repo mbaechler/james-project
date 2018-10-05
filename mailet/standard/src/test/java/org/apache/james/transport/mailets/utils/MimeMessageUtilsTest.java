@@ -20,14 +20,16 @@
 package org.apache.james.transport.mailets.utils;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 import java.util.Optional;
 import java.util.Properties;
+
 import javax.mail.Session;
 import javax.mail.internet.MimeMessage;
 
+import org.apache.james.core.builder.MimeMessageBuilder;
 import org.apache.mailet.base.test.FakeMail;
-import org.apache.mailet.base.test.MimeMessageBuilder;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class MimeMessageUtilsTest {
 
@@ -157,7 +159,7 @@ public class MimeMessageUtilsTest {
                 .build())
                 .toHeaderList())
             .extracting("name")
-            .containsOnly("Message-Id", "MIME-Version");
+            .contains("Message-Id", "MIME-Version");
     }
 
     @Test
@@ -169,6 +171,6 @@ public class MimeMessageUtilsTest {
                 .build())
                 .toHeaderList())
             .extracting("name")
-            .containsOnly("Message-Id", "MIME-Version", headerName);
+            .containsOnly("Message-Id", "MIME-Version", headerName, "Date", "Content-Type", "Content-Transfer-Encoding");
     }
 }

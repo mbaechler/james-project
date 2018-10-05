@@ -45,7 +45,7 @@ import com.google.common.collect.Iterators;
  */
 public abstract class AbstractMessageMapper extends TransactionalMapper implements MessageMapper {
 
-    private static final int UNLIMITED = -1;
+    public static final int UNLIMITED = -1;
 
     protected final MailboxSession mailboxSession;
     private final UidProvider uidProvider;
@@ -87,8 +87,8 @@ public abstract class AbstractMessageMapper extends TransactionalMapper implemen
                 modSeq = modSeqProvider.nextModSeq(mailboxSession, mailbox);
             }
         }
-        while(messages.hasNext()) {
-        	final MailboxMessage member = messages.next();
+        while (messages.hasNext()) {
+            final MailboxMessage member = messages.next();
             Flags originalFlags = member.createFlags();
             member.setFlags(flagsUpdateCalculator.buildNewFlags(originalFlags));
             Flags newFlags = member.createFlags();

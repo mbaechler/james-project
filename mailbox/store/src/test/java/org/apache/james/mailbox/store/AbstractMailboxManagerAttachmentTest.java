@@ -23,13 +23,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
-
-import javax.mail.Flags;
-import javax.mail.Flags.Flag;
 
 import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.MailboxSession;
@@ -49,7 +45,6 @@ import org.junit.Test;
 
 public abstract class AbstractMailboxManagerAttachmentTest {
     private static final String USERNAME = "user@domain.tld";
-    private static final Date SUN_SEP_9TH_2001 = new Date(1000000000000L);
 
     private MailboxManager mailboxManager;
     private MessageMapper messageMapper;
@@ -61,8 +56,11 @@ public abstract class AbstractMailboxManagerAttachmentTest {
     private AttachmentMapper attachmentMapper;
 
     protected abstract MailboxManager getMailboxManager();
+    
     protected abstract MailboxManager getParseFailingMailboxManager();
+    
     protected abstract MailboxSessionMapperFactory getMailboxSessionMapperFactory();
+    
     protected abstract AttachmentMapperFactory getAttachmentMapperFactory();
     
     public void setUp() throws Exception {
@@ -81,7 +79,8 @@ public abstract class AbstractMailboxManagerAttachmentTest {
     public void appendMessageShouldStoreWithoutAttachmentWhenMailWithoutAttachment() throws Exception {
         String mail = "Subject: Test\n\nBody";
         InputStream mailInputStream = new ByteArrayInputStream(mail.getBytes());
-        inboxMessageManager.appendMessage(mailInputStream, SUN_SEP_9TH_2001, mailboxSession, true, new Flags(Flags.Flag.RECENT));
+        inboxMessageManager.appendMessage(MessageManager.AppendCommand.builder()
+            .build(mailInputStream), mailboxSession);
         
         Iterator<MailboxMessage> messages = messageMapper.findInMailbox(inbox, MessageRange.all(), FetchType.Full, 1);
         assertThat(messages.hasNext()).isTrue();
@@ -91,8 +90,9 @@ public abstract class AbstractMailboxManagerAttachmentTest {
     @Test
     public void appendMessageShouldStoreAttachmentWhenMailWithOneAttachment() throws Exception {
         InputStream mailInputStream = ClassLoader.getSystemResourceAsStream("eml/oneAttachmentAndSomeTextInlined.eml");
-        inboxMessageManager.appendMessage(mailInputStream, SUN_SEP_9TH_2001, mailboxSession, true, new Flags(Flags.Flag.RECENT));
-        
+        inboxMessageManager.appendMessage(MessageManager.AppendCommand.builder()
+            .build(mailInputStream), mailboxSession);
+
         Iterator<MailboxMessage> messages = messageMapper.findInMailbox(inbox, MessageRange.all(), FetchType.Full, 1);
         assertThat(messages.hasNext()).isTrue();
         assertThat(messages.next().getAttachments()).hasSize(1);
@@ -101,7 +101,8 @@ public abstract class AbstractMailboxManagerAttachmentTest {
     @Test
     public void appendMessageShouldStoreAttachmentNameWhenMailWithOneAttachment() throws Exception {
         InputStream mailInputStream = ClassLoader.getSystemResourceAsStream("eml/oneAttachmentAndSomeTextInlined.eml");
-        inboxMessageManager.appendMessage(mailInputStream, SUN_SEP_9TH_2001, mailboxSession, true, new Flags(Flags.Flag.RECENT));
+        inboxMessageManager.appendMessage(MessageManager.AppendCommand.builder()
+            .build(mailInputStream), mailboxSession);
 
         Optional<String> expectedName = Optional.of("exploits_of_a_mom.png");
 
@@ -113,7 +114,9 @@ public abstract class AbstractMailboxManagerAttachmentTest {
     @Test
     public void appendMessageShouldStoreARetrievableAttachmentWhenMailWithOneAttachment() throws Exception {
         InputStream mailInputStream = ClassLoader.getSystemResourceAsStream("eml/oneAttachmentAndSomeTextInlined.eml");
-        inboxMessageManager.appendMessage(mailInputStream, SUN_SEP_9TH_2001, mailboxSession, true, new Flags(Flags.Flag.RECENT));
+
+        inboxMessageManager.appendMessage(MessageManager.AppendCommand.builder()
+            .build(mailInputStream), mailboxSession);
         
         Iterator<MailboxMessage> messages = messageMapper.findInMailbox(inbox, MessageRange.all(), FetchType.Full, 1);
         assertThat(messages.hasNext()).isTrue();
@@ -126,7 +129,9 @@ public abstract class AbstractMailboxManagerAttachmentTest {
     @Test
     public void appendMessageShouldStoreAttachmentsWhenMailWithTwoAttachment() throws Exception {
         InputStream mailInputStream = ClassLoader.getSystemResourceAsStream("eml/twoAttachments.eml");
-        inboxMessageManager.appendMessage(mailInputStream, SUN_SEP_9TH_2001, mailboxSession, true, new Flags(Flags.Flag.RECENT));
+
+        inboxMessageManager.appendMessage(MessageManager.AppendCommand.builder()
+            .build(mailInputStream), mailboxSession);
         
         Iterator<MailboxMessage> messages = messageMapper.findInMailbox(inbox, MessageRange.all(), FetchType.Full, 1);
         assertThat(messages.hasNext()).isTrue();
@@ -136,7 +141,9 @@ public abstract class AbstractMailboxManagerAttachmentTest {
     @Test
     public void appendMessageShouldStoreTwoRetrievableAttachmentsWhenMailWithTwoAttachment() throws Exception {
         InputStream mailInputStream = ClassLoader.getSystemResourceAsStream("eml/twoAttachments.eml");
-        inboxMessageManager.appendMessage(mailInputStream, SUN_SEP_9TH_2001, mailboxSession, true, new Flags(Flags.Flag.RECENT));
+
+        inboxMessageManager.appendMessage(MessageManager.AppendCommand.builder()
+            .build(mailInputStream), mailboxSession);
         
         Iterator<MailboxMessage> messages = messageMapper.findInMailbox(inbox, MessageRange.all(), FetchType.Full, 1);
         assertThat(messages.hasNext()).isTrue();
@@ -151,7 +158,9 @@ public abstract class AbstractMailboxManagerAttachmentTest {
     @Test
     public void appendMessageShouldStoreEmbeddedMailAsAttachmentWhenMailWithEmbeddedAttachment() throws Exception {
         InputStream mailInputStream = ClassLoader.getSystemResourceAsStream("eml/embeddedAttachmentWithAttachment.eml");
-        inboxMessageManager.appendMessage(mailInputStream, SUN_SEP_9TH_2001, mailboxSession, true, new Flags(Flags.Flag.RECENT));
+
+        inboxMessageManager.appendMessage(MessageManager.AppendCommand.builder()
+            .build(mailInputStream), mailboxSession);
         
         Iterator<MailboxMessage> messages = messageMapper.findInMailbox(inbox, MessageRange.all(), FetchType.Full, 1);
         assertThat(messages.hasNext()).isTrue();
@@ -163,38 +172,14 @@ public abstract class AbstractMailboxManagerAttachmentTest {
         MailboxManager parseFailingMailboxManager = getParseFailingMailboxManager();
         MessageManager parseFailingInboxMessageManager = parseFailingMailboxManager.getMailbox(inboxPath, mailboxSession);
         InputStream mailInputStream = new ByteArrayInputStream("content".getBytes());
-        parseFailingInboxMessageManager.appendMessage(mailInputStream, SUN_SEP_9TH_2001, mailboxSession, true, new Flags(Flag.RECENT));
+
+        parseFailingInboxMessageManager.appendMessage(MessageManager.AppendCommand.builder()
+            .build(mailInputStream), mailboxSession);
 
         Iterator<MailboxMessage> messages = messageMapper.findInMailbox(inbox, MessageRange.all(), FetchType.Full, 1);
         assertThat(messages.hasNext()).isTrue();
         List<MessageAttachment> attachments = messages.next().getAttachments();
         assertThat(attachments).hasSize(0);
-    }
-
-    @Test
-    public void appendMessageShouldStoreOnceWhenDuplicateAttachment() throws Exception {
-        InputStream mailInputStream = ClassLoader.getSystemResourceAsStream("eml/oneAttachmentAndSomeTextInlined.eml");
-        InputStream mailInputStream2 = ClassLoader.getSystemResourceAsStream("eml/oneAttachmentAndSomeTextInlined.eml");
-        String user2 = "user2@domain.tld";
-        MailboxSession user2MailboxSession = new MockMailboxSession(user2);
-        MessageMapper user2MessageMapper = getMailboxSessionMapperFactory().getMessageMapper(user2MailboxSession);
-        MailboxMapper user2MailboxMapper = getMailboxSessionMapperFactory().getMailboxMapper(user2MailboxSession);
-        MailboxPath user2InboxPath = MailboxPath.forUser(user2, "INBOX");
-        mailboxManager.createMailbox(user2InboxPath, user2MailboxSession);
-        Mailbox user2Inbox = user2MailboxMapper.findMailboxByPath(user2InboxPath);
-        MessageManager user2InboxMessageManager = mailboxManager.getMailbox(user2InboxPath, user2MailboxSession);
-
-        inboxMessageManager.appendMessage(mailInputStream, SUN_SEP_9TH_2001, mailboxSession, true, new Flags(Flags.Flag.RECENT));
-        user2InboxMessageManager.appendMessage(mailInputStream2, SUN_SEP_9TH_2001, user2MailboxSession, true, new Flags(Flags.Flag.RECENT));
-
-        Iterator<MailboxMessage> messages = messageMapper.findInMailbox(inbox, MessageRange.all(), FetchType.Full, 1);
-        Iterator<MailboxMessage> user2Messages = user2MessageMapper.findInMailbox(user2Inbox, MessageRange.all(), FetchType.Full, 1);
-        assertThat(messages.hasNext()).isTrue();
-        List<MessageAttachment> attachments = messages.next().getAttachments();
-        assertThat(attachments).hasSize(1);
-        assertThat(user2Messages.hasNext()).isTrue();
-        List<MessageAttachment> user2Attachments = user2Messages.next().getAttachments();
-        assertThat(attachments.equals(user2Attachments)).isTrue();
     }
 }
 

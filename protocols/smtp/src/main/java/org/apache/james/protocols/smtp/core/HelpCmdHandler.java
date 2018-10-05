@@ -40,8 +40,8 @@ import com.google.common.collect.ImmutableSet;
   */
 public class HelpCmdHandler implements CommandHandler<SMTPSession> {
     private static final String COMMAND_NAME = "HELP";
-    private static final Response NOT_SUPPORTED =  new SMTPResponse(SMTPRetCode.UNIMPLEMENTED_COMMAND, DSNStatus.getStatus(DSNStatus.PERMANENT,DSNStatus.SYSTEM_NOT_CAPABLE)+" " + COMMAND_NAME + " is not supported").immutable();
-	/**
+    private static final Response NOT_SUPPORTED =  new SMTPResponse(SMTPRetCode.UNIMPLEMENTED_COMMAND, DSNStatus.getStatus(DSNStatus.PERMANENT,DSNStatus.SYSTEM_NOT_CAPABLE) + " " + COMMAND_NAME + " is not supported").immutable();
+    /**
      * The name of the command handled by the command handler
      */
     private static final Collection<String> COMMANDS = ImmutableSet.of(COMMAND_NAME);
@@ -50,15 +50,14 @@ public class HelpCmdHandler implements CommandHandler<SMTPSession> {
      * handles HELP command
      *
     **/
-    public Response onCommand(SMTPSession session, Request request){
+    @Override
+    public Response onCommand(SMTPSession session, Request request) {
         return NOT_SUPPORTED;
     }
 
-    /**
-     * @see org.apache.james.protocols.api.handler.CommandHandler#getImplCommands()
-     */
+    @Override
     public Collection<String> getImplCommands() {
-    	return COMMANDS;
+        return COMMANDS;
     }
 
     @Override

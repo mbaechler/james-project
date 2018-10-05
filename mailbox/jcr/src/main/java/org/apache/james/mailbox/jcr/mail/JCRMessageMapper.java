@@ -74,37 +74,37 @@ public class JCRMessageMapper extends AbstractMessageMapper implements JCRImapCo
     /**
      * Store the messages directly in the mailbox: .../mailbox/
      */
-    public final static int MESSAGE_SCALE_NONE = 0;
+    public static final int MESSAGE_SCALE_NONE = 0;
 
     /**
      * Store the messages under a year directory in the mailbox:
      * .../mailbox/2010/
      */
-    public final static int MESSAGE_SCALE_YEAR = 1;
+    public static final int MESSAGE_SCALE_YEAR = 1;
 
     /**
      * Store the messages under a year/month directory in the mailbox:
      * .../mailbox/2010/05/
      */
-    public final static int MESSAGE_SCALE_MONTH = 2;
+    public static final int MESSAGE_SCALE_MONTH = 2;
 
     /**
      * Store the messages under a year/month/day directory in the mailbox:
      * .../mailbox/2010/05/01/
      */
-    public final static int MESSAGE_SCALE_DAY = 3;
+    public static final int MESSAGE_SCALE_DAY = 3;
 
     /**
      * Store the messages under a year/month/day/hour directory in the mailbox:
      * .../mailbox/2010/05/02/11
      */
-    public final static int MESSAGE_SCALE_HOUR = 4;
+    public static final int MESSAGE_SCALE_HOUR = 4;
 
     /**
      * Store the messages under a year/month/day/hour/min directory in the
      * mailbox: .../mailbox/2010/05/02/11/59
      */
-    public final static int MESSAGE_SCALE_MINUTE = 5;
+    public static final int MESSAGE_SCALE_MINUTE = 5;
 
     private final int scaleType;
 
@@ -165,6 +165,7 @@ public class JCRMessageMapper extends AbstractMessageMapper implements JCRImapCo
      * Begin is not supported by level 1 JCR implementations, however we refresh
      * the session
      */
+    @Override
     protected void begin() throws MailboxException {
         try {
             getSession().refresh(true);
@@ -178,6 +179,7 @@ public class JCRMessageMapper extends AbstractMessageMapper implements JCRImapCo
      * Just call save on the underlying JCR Session, because level 1 JCR
      * implementation does not offer Transactions
      */
+    @Override
     protected void commit() throws MailboxException {
         try {
             if (getSession().hasPendingChanges()) {
@@ -192,6 +194,7 @@ public class JCRMessageMapper extends AbstractMessageMapper implements JCRImapCo
      * Rollback is not supported by level 1 JCR implementations, so just do
      * nothing
      */
+    @Override
     protected void rollback() throws MailboxException {
         try {
             // just refresh session and discard all pending changes
@@ -204,17 +207,12 @@ public class JCRMessageMapper extends AbstractMessageMapper implements JCRImapCo
     /**
      * Logout from open JCR Session
      */
+    @Override
     public void endRequest() {
         repository.logout(mailboxSession);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * org.apache.james.mailbox.store.mail.MessageMapper#countMessagesInMailbox
-     * ()
-     */
+    @Override
     public long countMessagesInMailbox(Mailbox mailbox) throws MailboxException {
         try {
             // we use order by because without it count will always be 0 in
@@ -239,12 +237,7 @@ public class JCRMessageMapper extends AbstractMessageMapper implements JCRImapCo
 
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.apache.james.mailbox.store.mail.MessageMapper#
-     * countUnseenMessagesInMailbox ()
-     */
+    @Override
     public long countUnseenMessagesInMailbox(Mailbox mailbox) throws MailboxException {
 
         try {
@@ -271,14 +264,7 @@ public class JCRMessageMapper extends AbstractMessageMapper implements JCRImapCo
         }
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * org.apache.james.mailbox.store.mail.MessageMapper#delete(org.apache.james
-     * .mailbox.store.mail.model.Mailbox,
-     * org.apache.james.mailbox.store.mail.model.MailboxMessage)
-     */
+    @Override
     public void delete(Mailbox mailbox, MailboxMessage message) throws MailboxException {
         JCRMailboxMessage membership = (JCRMailboxMessage) message;
         if (membership.isPersistent()) {
@@ -291,15 +277,7 @@ public class JCRMessageMapper extends AbstractMessageMapper implements JCRImapCo
         }
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * org.apache.james.mailbox.store.mail.MessageMapper#findInMailbox(org.apache
-     * .james.mailbox.store.mail.model.Mailbox,
-     * org.apache.james.mailbox.MessageRange,
-     * org.apache.james.mailbox.store.mail.MessageMapper.FetchType, int)
-     */
+    @Override
     public Iterator<MailboxMessage> findInMailbox(Mailbox mailbox, MessageRange set, FetchType fType, int max)
             throws MailboxException {
         try {
@@ -333,12 +311,8 @@ public class JCRMessageMapper extends AbstractMessageMapper implements JCRImapCo
      * 
      * TODO: Maybe we should better use an ItemVisitor and just traverse through
      * the child nodes. This could be a way faster
-     * 
-     * (non-Javadoc)
-     * 
-     * @see org.apache.james.mailbox.store.mail.MessageMapper#
-     * findRecentMessageUidsInMailbox ()
      */
+    @Override
     public List<MessageUid> findRecentMessageUidsInMailbox(Mailbox mailbox) throws MailboxException {
 
         try {
@@ -420,12 +394,6 @@ public class JCRMessageMapper extends AbstractMessageMapper implements JCRImapCo
         }
     }
 
-    /**
-     * (non-Javadoc)
-     * 
-     * @see org.apache.james.mailbox.store.mail.MessageMapper#move(org.apache.james.mailbox.store.mail.model.Mailbox,
-     *      MailboxMessage)
-     */
     @Override
     public MessageMetaData move(Mailbox mailbox, MailboxMessage original) throws MailboxException {
         throw new UnsupportedOperationException("Not implemented - see https://issues.apache.org/jira/browse/IMAP-370");
@@ -563,8 +531,9 @@ public class JCRMessageMapper extends AbstractMessageMapper implements JCRImapCo
 
         QueryManager manager = getSession().getWorkspace().getQueryManager();
         Query query = manager.createQuery(queryString, XPATH_LANGUAGE);
-        if (batchSize > 0)
+        if (batchSize > 0) {
             query.setLimit(batchSize);
+        }
         QueryResult result = query.execute();
 
         NodeIterator iterator = result.getNodes();
@@ -600,8 +569,9 @@ public class JCRMessageMapper extends AbstractMessageMapper implements JCRImapCo
 
         QueryManager manager = getSession().getWorkspace().getQueryManager();
         Query query = manager.createQuery(queryString, XPATH_LANGUAGE);
-        if (batchSize > 0)
+        if (batchSize > 0) {
             query.setLimit(batchSize);
+        }
         QueryResult result = query.execute();
 
         NodeIterator iterator = result.getNodes();
@@ -619,8 +589,9 @@ public class JCRMessageMapper extends AbstractMessageMapper implements JCRImapCo
                 + JCRMailboxMessage.UID_PROPERTY;
         QueryManager manager = getSession().getWorkspace().getQueryManager();
         Query query = manager.createQuery(queryString, XPATH_LANGUAGE);
-        if (batchSize > 0)
+        if (batchSize > 0) {
             query.setLimit(batchSize);
+        }
         QueryResult result = query.execute();
 
         NodeIterator iterator = result.getNodes();

@@ -103,16 +103,13 @@ public class MyRightsProcessor extends AbstractMailboxProcessor<MyRightsRequest>
         } catch (MailboxNotFoundException e) {
             no(command, tag, responder, HumanReadableText.MAILBOX_NOT_FOUND);
         } catch (MailboxException e) {
-            LOGGER.error(command.getName() + " failed for mailbox " + mailboxName, e);
+            LOGGER.error("{} failed for mailbox {}", command.getName(), mailboxName, e);
             no(command, tag, responder, HumanReadableText.GENERIC_FAILURE_DURING_PROCESSING);
         }
 
     }
 
-    /**
-     * @see org.apache.james.imap.processor.CapabilityImplementingProcessor#
-     * getImplementedCapabilities(org.apache.james.imap.api.process.ImapSession)
-     */
+    @Override
     public List<String> getImplementedCapabilities(ImapSession session) {
         return CAPABILITIES;
     }

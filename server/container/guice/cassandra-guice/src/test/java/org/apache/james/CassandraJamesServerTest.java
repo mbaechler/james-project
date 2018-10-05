@@ -19,24 +19,24 @@
 
 package org.apache.james;
 
-import org.junit.ClassRule;
-import org.junit.Rule;
+import static org.apache.james.CassandraJamesServerMain.ALL_BUT_JMX_CASSANDRA_MODULE;
 
-public class CassandraJamesServerTest extends AbstractJmapJamesServerTest {
+import org.apache.james.mailbox.extractor.TextExtractor;
+import org.apache.james.mailbox.store.search.PDFTextExtractor;
+import org.apache.james.modules.TestJMAPServerModule;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-    @ClassRule
-    public static DockerCassandraRule cassandra = new DockerCassandraRule();
-    
-    @Rule
-    public CassandraJmapTestRule cassandraJmap = CassandraJmapTestRule.defaultTestRule();
+class CassandraJamesServerTest implements JamesServerContract {
+    private static final int LIMIT_TO_10_MESSAGES = 10;
 
-    @Override
-    protected GuiceJamesServer createJamesServer() {
-        return cassandraJmap.jmapServer(cassandra.getModule());
-    }
-
-    @Override
-    protected void clean() {
-    }
-
+    @RegisterExtension
+    static JamesServerExtension testExtension = new JamesServerExtensionBuilder()
+        .extension(new EmbeddedElasticSearchExtension())
+        .extension(new CassandraExtension())
+        .server(configuration -> GuiceJamesServer.forConfiguration(configuration)
+            .combineWith(ALL_BUT_JMX_CASSANDRA_MODULE)
+            .overrideWith(binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class))
+            .overrideWith(new TestJMAPServerModule(LIMIT_TO_10_MESSAGES))
+            .overrideWith(DOMAIN_LIST_CONFIGURATION_MODULE))
+        .build();
 }

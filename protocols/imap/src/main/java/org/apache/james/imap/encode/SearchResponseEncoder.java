@@ -35,6 +35,7 @@ public class SearchResponseEncoder extends AbstractChainedImapEncoder {
         super(next);
     }
 
+    @Override
     protected void doEncode(ImapMessage acceptableMessage, ImapResponseComposer composer, ImapSession session) throws IOException {
         SearchResponse response = (SearchResponse) acceptableMessage;
         final long[] ids = response.getIds();
@@ -49,14 +50,15 @@ public class SearchResponseEncoder extends AbstractChainedImapEncoder {
         
         // add MODSEQ
         if (highestModSeq != null) {
-        	composer.openParen();
-        	composer.message("MODSEQ");
-        	composer.message(highestModSeq);
-        	composer.closeParen();
+            composer.openParen();
+            composer.message("MODSEQ");
+            composer.message(highestModSeq);
+            composer.closeParen();
         }
         composer.end();
     }
 
+    @Override
     protected boolean isAcceptable(ImapMessage message) {
         return (message instanceof SearchResponse);
     }

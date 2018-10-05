@@ -18,7 +18,7 @@
  ****************************************************************/
 package org.apache.james.mailbox.jcr;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.exception.SubscriptionException;
@@ -42,7 +42,7 @@ import org.apache.james.mailbox.store.user.SubscriptionMapper;
 public class JCRMailboxSessionMapperFactory extends MailboxSessionMapperFactory {
 
     private final MailboxSessionJCRRepository repository;
-    private final static int DEFAULT_SCALING = 2;
+    private static final int DEFAULT_SCALING = 2;
     private final int scaling;
     private final int messageScaling;
     private final UidProvider uidProvider;
@@ -56,7 +56,7 @@ public class JCRMailboxSessionMapperFactory extends MailboxSessionMapperFactory 
         this.repository = repository;
         this.scaling = scaling;
         this.messageScaling = messageScaling;
-        this.uidProvider= uidProvider;
+        this.uidProvider = uidProvider;
         this.modSeqProvider = modSeqProvider;
     }
     
@@ -72,7 +72,7 @@ public class JCRMailboxSessionMapperFactory extends MailboxSessionMapperFactory 
 
     @Override
     public MessageIdMapper createMessageIdMapper(MailboxSession session) throws MailboxException {
-        throw new NotImplementedException();
+        throw new NotImplementedException("Not implemented");
     }
 
     @Override
@@ -87,7 +87,7 @@ public class JCRMailboxSessionMapperFactory extends MailboxSessionMapperFactory 
     @Override
     public AnnotationMapper createAnnotationMapper(MailboxSession session)
             throws MailboxException {
-        throw new NotImplementedException();
+        throw new NotImplementedException("Not implemented");
     }
 
     @Override

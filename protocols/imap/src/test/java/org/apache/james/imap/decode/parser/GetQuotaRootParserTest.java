@@ -19,16 +19,16 @@
 
 package org.apache.james.imap.decode.parser;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+
 import org.apache.james.imap.api.ImapCommand;
 import org.apache.james.imap.decode.ImapRequestStreamLineReader;
 import org.apache.james.imap.message.request.GetQuotaRootRequest;
 import org.apache.james.protocols.imap.DecodingException;
 import org.junit.Test;
-
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * Tests for GetQuotaRootCommandParser
@@ -44,7 +44,7 @@ public class GetQuotaRootParserTest {
         ImapRequestStreamLineReader lineReader = new ImapRequestStreamLineReader(inputStream, null);
         GetQuotaRootRequest request = (GetQuotaRootRequest) parser.decode(command, lineReader, "A003", null);
         GetQuotaRootRequest expected = new GetQuotaRootRequest("A003", command, "INBOX");
-        assertEquals(expected.getMailboxName(), request.getMailboxName());
+        assertThat(request.getMailboxName()).isEqualTo(expected.getMailboxName());
     }
 
     @Test
@@ -56,7 +56,7 @@ public class GetQuotaRootParserTest {
         ImapRequestStreamLineReader lineReader = new ImapRequestStreamLineReader(inputStream, null);
         GetQuotaRootRequest request = (GetQuotaRootRequest) parser.decode(command, lineReader, "A003", null);
         GetQuotaRootRequest expected = new GetQuotaRootRequest("A003", command, "INBOX");
-        assertEquals(expected.getMailboxName(), request.getMailboxName());
+        assertThat(request.getMailboxName()).isEqualTo(expected.getMailboxName());
     }
 
 }

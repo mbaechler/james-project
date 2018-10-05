@@ -22,6 +22,8 @@ package org.apache.james.mdn;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.regex.Pattern;
 
 import javax.mail.internet.MimeMessage;
 
@@ -29,11 +31,11 @@ import org.apache.james.mdn.action.mode.DispositionActionMode;
 import org.apache.james.mdn.fields.Disposition;
 import org.apache.james.mdn.sending.mode.DispositionSendingMode;
 import org.apache.james.mdn.type.DispositionType;
+import org.apache.james.mime4j.dom.Message;
+import org.apache.james.mime4j.message.DefaultMessageWriter;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-
-import com.google.common.base.Charsets;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 
@@ -53,8 +55,23 @@ public class MDNTest {
     @Test
     public void shouldMatchBeanContract() {
         EqualsVerifier.forClass(MDN.class)
-            .allFieldsShouldBeUsed()
             .verify();
+    }
+
+    @Test
+    public void asMimeMessageShouldGenerateExpectedContentType() throws Exception {
+        MimeMessage mimeMessage = MDN.builder()
+            .humanReadableText("Explanation")
+            .report(MINIMAL_REPORT)
+            .build()
+            .asMimeMessage();
+
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        mimeMessage.writeTo(byteArrayOutputStream);
+
+        assertThat(new String(byteArrayOutputStream.toByteArray(), StandardCharsets.UTF_8))
+            .containsPattern(
+                Pattern.compile("Content-Type: multipart/report;.*(\r\n.+)*report-type=disposition-notification.*\r\n\r\n"));
     }
 
     @Test
@@ -67,7 +84,7 @@ public class MDNTest {
 
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         mimeMessage.writeTo(byteArrayOutputStream);
-        assertThat(new String(byteArrayOutputStream.toByteArray(), Charsets.UTF_8))
+        assertThat(new String(byteArrayOutputStream.toByteArray(), StandardCharsets.UTF_8))
             .contains(
                 "Content-Type: text/plain; charset=UTF-8\r\n" +
                 "Content-Transfer-Encoding: 7bit\r\n" +
@@ -92,7 +109,7 @@ public class MDNTest {
 
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         mimeMessage.writeTo(byteArrayOutputStream);
-        assertThat(new String(byteArrayOutputStream.toByteArray(), Charsets.UTF_8))
+        assertThat(new String(byteArrayOutputStream.toByteArray(), StandardCharsets.UTF_8))
             .contains(
                 "Content-Type: text/plain; charset=UTF-8\r\n" +
                     "Content-Transfer-Encoding: 7bit\r\n" +
@@ -155,7 +172,7 @@ public class MDNTest {
 
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         mimeMessage.writeTo(byteArrayOutputStream);
-        assertThat(new String(byteArrayOutputStream.toByteArray(), Charsets.UTF_8))
+        assertThat(new String(byteArrayOutputStream.toByteArray(), StandardCharsets.UTF_8))
             .contains(
                 "Content-Type: text/plain; charset=UTF-8\r\n" +
                     "Content-Transfer-Encoding: 7bit\r\n" +
@@ -164,5 +181,48 @@ public class MDNTest {
                     "Explanation:\n" +
                     " - We should always write detailed unit tests\n" +
                     " - We should think of all edge cases\n");
+    }
+
+    @Test
+    public void mdnShouldBeConvertibleToMime4JMessage() throws Exception {
+        Message message = MDN.builder()
+            .humanReadableText("Explanation:\n" +
+                " - We should always write detailed unit tests\n" +
+                " - We should think of all edge cases\n")
+            .report(MINIMAL_REPORT)
+            .build()
+            .asMime4JMessageBuilder()
+            .build();
+
+        assertThat(asString(message))
+            .contains("MIME-Version: 1.0\r\n" +
+                "Content-Type: multipart/report;")
+            .contains("Content-Type: text/plain; charset=UTF-8\r\n" +
+                "\r\n" +
+                "Explanation:\n" +
+                " - We should always write detailed unit tests\n" +
+                " - We should think of all edge cases")
+        .contains("Content-Type: message/disposition-notification; charset=UTF-8\r\n" +
+            "\r\n" +
+            "Final-Recipient: rfc822; final@domain.com\r\n" +
+            "Disposition: automatic-action/MDN-sent-automatically;deleted");
+    }
+
+
+    @Test
+    public void mime4JMessageExportShouldGenerateExpectedContentType() throws Exception {
+        Message message = MDN.builder()
+            .humanReadableText("RFCs are not funny")
+            .report(MINIMAL_REPORT)
+            .build()
+            .asMime4JMessageBuilder()
+            .build();
+
+        assertThat(asString(message))
+            .containsPattern(Pattern.compile("Content-Type: multipart/report;.*(\r\n.+)*report-type=disposition-notification.*(\r\n.+)*\r\n\r\n"));
+    }
+
+    private String asString(Message message) throws Exception {
+        return new String(DefaultMessageWriter.asBytes(message), StandardCharsets.UTF_8);
     }
 }

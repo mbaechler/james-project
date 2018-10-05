@@ -20,21 +20,20 @@
 package org.apache.james.mpt.imapmailbox.hbase;
 
 import org.apache.james.mpt.api.ImapHostSystem;
+import org.apache.james.mpt.imapmailbox.hbase.host.HBaseHostSystem;
 import org.apache.james.mpt.imapmailbox.suite.QuotaTest;
-import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-
+@Ignore
 public class HBaseQuotaTest extends QuotaTest {
 
     private ImapHostSystem system;
 
+    @Override
     @Before
     public void setUp() throws Exception {
-        Injector injector = Guice.createInjector(new HBaseMailboxTestModule());
-        system = injector.getInstance(ImapHostSystem.class);
+        system = HBaseHostSystem.build();
         system.beforeTest();
         super.setUp();
     }
@@ -42,11 +41,6 @@ public class HBaseQuotaTest extends QuotaTest {
     @Override
     protected ImapHostSystem createImapHostSystem() {
         return system;
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        system.afterTest();
     }
     
 }

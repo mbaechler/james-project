@@ -34,6 +34,7 @@ public class KeepAction extends FileIntoAction implements MailAction {
     
     private static final String INBOX = "INBOX";
 
+    @Override
     public void execute(Action action, Mail mail, ActionContext context)
             throws MessagingException {
         if (action instanceof ActionKeep) {
@@ -57,8 +58,7 @@ public class KeepAction extends FileIntoAction implements MailAction {
      * @param context not null
      * @throws MessagingException
      */
-    public void execute(ActionKeep anAction, Mail aMail, ActionContext context) throws MessagingException
-    {
+    public void execute(ActionKeep anAction, Mail aMail, ActionContext context) throws MessagingException {
         final ActionFileInto action = new ActionFileInto(INBOX);
         execute(action, aMail, context);
     }

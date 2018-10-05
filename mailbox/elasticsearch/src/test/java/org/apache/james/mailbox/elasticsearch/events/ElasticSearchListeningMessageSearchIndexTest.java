@@ -18,9 +18,9 @@
  ****************************************************************/
 package org.apache.james.mailbox.elasticsearch.events;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.refEq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.refEq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -33,7 +33,7 @@ import java.util.Optional;
 import javax.mail.Flags;
 
 import org.apache.james.backends.es.ElasticSearchIndexer;
-import org.apache.james.backends.es.ElasticSearchIndexer.UpdatedRepresentation;
+import org.apache.james.backends.es.UpdatedRepresentation;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MailboxSession.User;
 import org.apache.james.mailbox.MessageUid;
@@ -53,6 +53,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -67,7 +68,7 @@ public class ElasticSearchListeningMessageSearchIndexTest {
     public static final String EXPECTED_JSON_CONTENT = "json content";
     public static final String USERNAME = "username";
 
-    private ElasticSearchIndexer indexer;
+    private ElasticSearchIndexer elasticSearchIndexer;
     private MessageToElasticSearchJson messageToElasticSearchJson;
     private ElasticSearchListeningMessageSearchIndex testee;
     private MailboxSession session;
@@ -80,9 +81,9 @@ public class ElasticSearchListeningMessageSearchIndexTest {
         messageToElasticSearchJson = mock(MessageToElasticSearchJson.class);
         ElasticSearchSearcher elasticSearchSearcher = mock(ElasticSearchSearcher.class);
 
-        indexer = mock(ElasticSearchIndexer.class);
+        elasticSearchIndexer = mock(ElasticSearchIndexer.class);
         
-        testee = new ElasticSearchListeningMessageSearchIndex(mapperFactory, indexer, elasticSearchSearcher, messageToElasticSearchJson);
+        testee = new ElasticSearchListeningMessageSearchIndex(mapperFactory, elasticSearchIndexer, elasticSearchSearcher, messageToElasticSearchJson);
         session = new MockMailboxSession(USERNAME);
         users = ImmutableList.of(session.getUser());
     }
@@ -102,10 +103,9 @@ public class ElasticSearchListeningMessageSearchIndexTest {
         testee.add(session, mailbox, message);
         
         //Then
-        verify(indexer).indexMessage(eq(ELASTIC_SEARCH_ID), eq(EXPECTED_JSON_CONTENT));
+        verify(elasticSearchIndexer).index(eq(ELASTIC_SEARCH_ID), eq(EXPECTED_JSON_CONTENT));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void addShouldIndexEmailBodyWhenNotIndexableAttachment() throws Exception {
         //Given
@@ -125,7 +125,7 @@ public class ElasticSearchListeningMessageSearchIndexTest {
         testee.add(session, mailbox, message);
         
         //Then
-        verify(indexer).indexMessage(eq(ELASTIC_SEARCH_ID), eq(EXPECTED_JSON_CONTENT));
+        verify(elasticSearchIndexer).index(eq(ELASTIC_SEARCH_ID), eq(EXPECTED_JSON_CONTENT));
     }
 
     private MailboxMessage mockedMessage(MessageUid messageId) throws IOException {
@@ -135,7 +135,6 @@ public class ElasticSearchListeningMessageSearchIndexTest {
         return message;
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void addShouldNotPropagateExceptionWhenExceptionOccurs() throws Exception {
         //Given
@@ -146,9 +145,10 @@ public class ElasticSearchListeningMessageSearchIndexTest {
         
         when(messageToElasticSearchJson.convertToJson(eq(message), eq(users)))
             .thenThrow(JsonProcessingException.class);
-        
+
+        JsonGenerator jsonGenerator = null;
         when(messageToElasticSearchJson.convertToJsonWithoutAttachment(eq(message), eq(users)))
-            .thenThrow(new JsonGenerationException("expected error"));
+            .thenThrow(new JsonGenerationException("expected error", jsonGenerator));
         
         //When
         testee.add(session, mailbox, message);
@@ -166,14 +166,14 @@ public class ElasticSearchListeningMessageSearchIndexTest {
             .thenReturn(MAILBOX_ID);
 
         BulkResponse expectedBulkResponse = mock(BulkResponse.class);
-        when(indexer.deleteMessages(any(List.class)))
+        when(elasticSearchIndexer.delete(any(List.class)))
             .thenReturn(Optional.of(expectedBulkResponse));
 
         //When
         testee.delete(session, mailbox, Lists.newArrayList(MESSAGE_UID));
 
         //Then
-        verify(indexer).deleteMessages(eq(Lists.newArrayList(ELASTIC_SEARCH_ID)));
+        verify(elasticSearchIndexer).delete(eq(Lists.newArrayList(ELASTIC_SEARCH_ID)));
     }
 
     @Test
@@ -189,14 +189,14 @@ public class ElasticSearchListeningMessageSearchIndexTest {
             .thenReturn(MAILBOX_ID);
 
         BulkResponse expectedBulkResponse = mock(BulkResponse.class);
-        when(indexer.deleteMessages(any(List.class)))
+        when(elasticSearchIndexer.delete(any(List.class)))
             .thenReturn(Optional.of(expectedBulkResponse));
         
         //When
         testee.delete(session, mailbox, Lists.newArrayList(MESSAGE_UID, messageId2, messageId3, messageId4, messageId5));
         
         //Then
-        verify(indexer).deleteMessages(eq(Lists.newArrayList(ELASTIC_SEARCH_ID, "12:2", "12:3", "12:4", "12:5")));
+        verify(elasticSearchIndexer).delete(eq(Lists.newArrayList(ELASTIC_SEARCH_ID, "12:2", "12:3", "12:4", "12:5")));
     }
 
     @Test
@@ -207,7 +207,7 @@ public class ElasticSearchListeningMessageSearchIndexTest {
         when(mailbox.getMailboxId())
             .thenReturn(MAILBOX_ID);
         
-        when(indexer.deleteMessages(any(List.class)))
+        when(elasticSearchIndexer.delete(any(List.class)))
             .thenThrow(new ElasticsearchException(""));
         
         //When
@@ -241,7 +241,7 @@ public class ElasticSearchListeningMessageSearchIndexTest {
         
         //Then
         ImmutableList<UpdatedRepresentation> expectedUpdatedRepresentations = ImmutableList.of(new UpdatedRepresentation(ELASTIC_SEARCH_ID, "json updated content"));
-        verify(indexer).updateMessages(expectedUpdatedRepresentations);
+        verify(elasticSearchIndexer).update(expectedUpdatedRepresentations);
     }
 
     @Test
@@ -259,7 +259,7 @@ public class ElasticSearchListeningMessageSearchIndexTest {
             .thenReturn(MAILBOX_ID);
 
         ImmutableList<UpdatedRepresentation> expectedUpdatedRepresentations = ImmutableList.of(new UpdatedRepresentation(ELASTIC_SEARCH_ID, "json updated content"));
-        when(indexer.updateMessages(expectedUpdatedRepresentations))
+        when(elasticSearchIndexer.update(expectedUpdatedRepresentations))
             .thenThrow(new ElasticsearchException(""));
         
         //When
@@ -281,7 +281,7 @@ public class ElasticSearchListeningMessageSearchIndexTest {
         
         //Then
         QueryBuilder expectedQueryBuilder = QueryBuilders.termQuery("mailboxId", "12");
-        verify(indexer).deleteAllMatchingQuery(refEq(expectedQueryBuilder));
+        verify(elasticSearchIndexer).deleteAllMatchingQuery(refEq(expectedQueryBuilder));
     }
 
     @Test
@@ -292,7 +292,7 @@ public class ElasticSearchListeningMessageSearchIndexTest {
             .thenReturn(MAILBOX_ID);
    
         doThrow(RuntimeException.class)
-            .when(indexer).deleteAllMatchingQuery(QueryBuilders.termQuery("mailboxId", "12"));
+            .when(elasticSearchIndexer).deleteAllMatchingQuery(QueryBuilders.termQuery("mailboxId", "12"));
 
         //When
         testee.deleteAll(session, mailbox);

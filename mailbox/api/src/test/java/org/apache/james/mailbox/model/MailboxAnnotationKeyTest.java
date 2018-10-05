@@ -19,9 +19,9 @@
 
 package org.apache.james.mailbox.model;
 
-import org.junit.Test;
-
 import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.Test;
 
 public class MailboxAnnotationKeyTest {
     @Test(expected = IllegalArgumentException.class)
@@ -80,7 +80,7 @@ public class MailboxAnnotationKeyTest {
         MailboxAnnotationKey annotationKey = new MailboxAnnotationKey("/private/comment");
         MailboxAnnotationKey anotherAnnotationKey = new MailboxAnnotationKey("/PRIVATE/COMMENT");
 
-        assertThat(annotationKey.equals(anotherAnnotationKey)).isTrue();
+        assertThat(annotationKey).isEqualTo(anotherAnnotationKey);
     }
 
     @Test(expected = IllegalArgumentException.class)

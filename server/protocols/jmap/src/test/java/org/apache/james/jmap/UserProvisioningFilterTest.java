@@ -19,8 +19,8 @@
 package org.apache.james.jmap;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -38,7 +38,7 @@ import org.apache.james.mailbox.mock.MockMailboxSession;
 import org.apache.james.metrics.api.NoopMetricFactory;
 import org.apache.james.user.api.UsersRepository;
 import org.apache.james.user.api.UsersRepositoryException;
-import org.apache.james.user.lib.mock.InMemoryUsersRepository;
+import org.apache.james.user.memory.MemoryUsersRepository;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -47,14 +47,14 @@ public class UserProvisioningFilterTest {
     private static final String MAIL = USERNAME + "@james.org";
 
     private UserProvisioningFilter sut;
-    private InMemoryUsersRepository usersRepository;
+    private MemoryUsersRepository usersRepository;
     private HttpServletRequest request;
     private HttpServletResponse response;
     private FilterChain chain;
 
     @Before
     public void setup() throws Exception {
-        usersRepository = new InMemoryUsersRepository();
+        usersRepository = MemoryUsersRepository.withoutVirtualHosting();
         sut = new UserProvisioningFilter(usersRepository, new NoopMetricFactory());
         request = mock(HttpServletRequest.class);
         response = mock(HttpServletResponse.class);

@@ -23,11 +23,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 
+import org.apache.james.core.quota.QuotaCount;
+import org.apache.james.core.quota.QuotaSize;
 import org.apache.james.mailbox.MailboxListener;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MessageUid;
+import org.apache.james.mailbox.acl.ACLDiff;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.model.MessageMetaData;
+import org.apache.james.mailbox.model.MessageMoves;
+import org.apache.james.mailbox.model.QuotaRoot;
 import org.apache.james.mailbox.model.UpdatedFlags;
 import org.apache.james.mailbox.store.StoreMailboxPath;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
@@ -54,14 +59,17 @@ public class EventFactory {
             this.availableMessages = ImmutableMap.copyOf(availableMessages);
         }
 
+        @Override
         public List<MessageUid> getUids() {
             return ImmutableList.copyOf(added.keySet());
         }
 
+        @Override
         public MessageMetaData getMetaData(MessageUid uid) {
             return added.get(uid);
         }
 
+        @Override
         public Mailbox getMailbox() {
             return mailbox;
         }
@@ -81,14 +89,17 @@ public class EventFactory {
             this.mailbox = mailbox;
         }
 
+        @Override
         public List<MessageUid> getUids() {
             return ImmutableList.copyOf(uids.keySet());
         }
 
+        @Override
         public MessageMetaData getMetaData(MessageUid uid) {
             return uids.get(uid);
         }
 
+        @Override
         public Mailbox getMailbox() {
             return mailbox;
         }
@@ -108,14 +119,17 @@ public class EventFactory {
             this.mailbox = mailbox;
         }
 
+        @Override
         public List<MessageUid> getUids() {
             return uids;
         }
 
+        @Override
         public List<UpdatedFlags> getUpdatedFlags() {
             return uFlags;
         }
 
+        @Override
         public Mailbox getMailbox() {
             return mailbox;
         }
@@ -125,12 +139,13 @@ public class EventFactory {
     public final class MailboxDeletionImpl extends MailboxListener.MailboxDeletion implements MailboxAware {
         private final Mailbox mailbox;
 
-        public MailboxDeletionImpl(MailboxSession session, Mailbox mailbox) {
-            super(session, new StoreMailboxPath(mailbox));
+        public MailboxDeletionImpl(MailboxSession session, Mailbox mailbox, QuotaRoot quotaRoot, QuotaCount deletedMessageCount, QuotaSize totalDeletedSize) {
+            super(session, new StoreMailboxPath(mailbox), quotaRoot, deletedMessageCount, totalDeletedSize);
             this.mailbox = mailbox;
         }
 
 
+        @Override
         public Mailbox getMailbox() {
             return mailbox;
         }
@@ -147,6 +162,7 @@ public class EventFactory {
         }
 
 
+        @Override
         public Mailbox getMailbox() {
             return mailbox;
         }
@@ -164,6 +180,7 @@ public class EventFactory {
             this.newMailbox = newMailbox;
         }
 
+        @Override
         public MailboxPath getNewPath() {
             return newPath;
         }
@@ -190,12 +207,24 @@ public class EventFactory {
         return new MailboxRenamedEventImpl(session, from, to);
     }
 
-    public MailboxListener.MailboxDeletion mailboxDeleted(MailboxSession session, Mailbox mailbox) {
-        return new MailboxDeletionImpl(session, mailbox);
+    public MailboxListener.MailboxDeletion mailboxDeleted(MailboxSession session, Mailbox mailbox, QuotaRoot quotaRoot,
+                                                          QuotaCount deletedMessageCount, QuotaSize totalDeletedSize) {
+        return new MailboxDeletionImpl(session, mailbox, quotaRoot, deletedMessageCount, totalDeletedSize);
     }
 
     public MailboxListener.MailboxAdded mailboxAdded(MailboxSession session, Mailbox mailbox) {
         return new MailboxAddedImpl(session, mailbox);
     }
 
+    public MailboxListener.MailboxACLUpdated aclUpdated(MailboxSession session, MailboxPath mailboxPath, ACLDiff aclDiff) {
+        return new MailboxListener.MailboxACLUpdated(session, mailboxPath, aclDiff);
+    }
+
+    public MessageMoveEvent moved(MailboxSession session, MessageMoves messageMoves, Map<MessageUid, MailboxMessage> messages) {
+        return MessageMoveEvent.builder()
+                .session(session)
+                .messageMoves(messageMoves)
+                .messages(messages)
+                .build();
+    }
 }

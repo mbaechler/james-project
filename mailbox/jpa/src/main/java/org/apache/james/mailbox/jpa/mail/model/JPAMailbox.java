@@ -35,31 +35,31 @@ import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.MailboxUtil;
 
-@Entity(name="Mailbox")
-@Table(name="JAMES_MAILBOX")
+@Entity(name = "Mailbox")
+@Table(name = "JAMES_MAILBOX")
 @NamedQueries({
-    @NamedQuery(name="findMailboxById",
-        query="SELECT mailbox FROM Mailbox mailbox WHERE mailbox.mailboxId = :idParam"),
-    @NamedQuery(name="findMailboxByName",
-        query="SELECT mailbox FROM Mailbox mailbox WHERE mailbox.name = :nameParam and mailbox.user is NULL and mailbox.namespace= :namespaceParam"),
-    @NamedQuery(name="findMailboxByNameWithUser",
-        query="SELECT mailbox FROM Mailbox mailbox WHERE mailbox.name = :nameParam and mailbox.user= :userParam and mailbox.namespace= :namespaceParam"),
-    @NamedQuery(name="deleteAllMailboxes",
-        query="DELETE FROM Mailbox mailbox"),
-    @NamedQuery(name="findMailboxWithNameLikeWithUser",
-        query="SELECT mailbox FROM Mailbox mailbox WHERE mailbox.name LIKE :nameParam and mailbox.user= :userParam and mailbox.namespace= :namespaceParam"),
-    @NamedQuery(name="findMailboxWithNameLike",
-        query="SELECT mailbox FROM Mailbox mailbox WHERE mailbox.name LIKE :nameParam and mailbox.user is NULL and mailbox.namespace= :namespaceParam"),
-    @NamedQuery(name="countMailboxesWithNameLikeWithUser",
-        query="SELECT COUNT(mailbox) FROM Mailbox mailbox WHERE mailbox.name LIKE :nameParam and mailbox.user= :userParam and mailbox.namespace= :namespaceParam"),
-    @NamedQuery(name="countMailboxesWithNameLike",
-        query="SELECT COUNT(mailbox) FROM Mailbox mailbox WHERE mailbox.name LIKE :nameParam and mailbox.user is NULL and mailbox.namespace= :namespaceParam"),
-    @NamedQuery(name="listMailboxes",
-        query="SELECT mailbox FROM Mailbox mailbox"),
-    @NamedQuery(name="findHighestModSeq",
-        query="SELECT mailbox.highestModSeq FROM Mailbox mailbox WHERE mailbox.mailboxId = :idParam"),
-    @NamedQuery(name="findLastUid",
-        query="SELECT mailbox.lastUid FROM Mailbox mailbox WHERE mailbox.mailboxId = :idParam")
+    @NamedQuery(name = "findMailboxById",
+        query = "SELECT mailbox FROM Mailbox mailbox WHERE mailbox.mailboxId = :idParam"),
+    @NamedQuery(name = "findMailboxByName",
+        query = "SELECT mailbox FROM Mailbox mailbox WHERE mailbox.name = :nameParam and mailbox.user is NULL and mailbox.namespace= :namespaceParam"),
+    @NamedQuery(name = "findMailboxByNameWithUser",
+        query = "SELECT mailbox FROM Mailbox mailbox WHERE mailbox.name = :nameParam and mailbox.user= :userParam and mailbox.namespace= :namespaceParam"),
+    @NamedQuery(name = "deleteAllMailboxes",
+        query = "DELETE FROM Mailbox mailbox"),
+    @NamedQuery(name = "findMailboxWithNameLikeWithUser",
+        query = "SELECT mailbox FROM Mailbox mailbox WHERE mailbox.name LIKE :nameParam and mailbox.user= :userParam and mailbox.namespace= :namespaceParam"),
+    @NamedQuery(name = "findMailboxWithNameLike",
+        query = "SELECT mailbox FROM Mailbox mailbox WHERE mailbox.name LIKE :nameParam and mailbox.user is NULL and mailbox.namespace= :namespaceParam"),
+    @NamedQuery(name = "countMailboxesWithNameLikeWithUser",
+        query = "SELECT COUNT(mailbox) FROM Mailbox mailbox WHERE mailbox.name LIKE :nameParam and mailbox.user= :userParam and mailbox.namespace= :namespaceParam"),
+    @NamedQuery(name = "countMailboxesWithNameLike",
+        query = "SELECT COUNT(mailbox) FROM Mailbox mailbox WHERE mailbox.name LIKE :nameParam and mailbox.user is NULL and mailbox.namespace= :namespaceParam"),
+    @NamedQuery(name = "listMailboxes",
+        query = "SELECT mailbox FROM Mailbox mailbox"),
+    @NamedQuery(name = "findHighestModSeq",
+        query = "SELECT mailbox.highestModSeq FROM Mailbox mailbox WHERE mailbox.mailboxId = :idParam"),
+    @NamedQuery(name = "findLastUid",
+        query = "SELECT mailbox.lastUid FROM Mailbox mailbox WHERE mailbox.mailboxId = :idParam")
 })
 public class JPAMailbox implements Mailbox {
     
@@ -122,9 +122,7 @@ public class JPAMailbox implements Mailbox {
         this(mailbox.generateAssociatedPath(), mailbox.getUidValidity());
     }
 
-    /**
-     * @see org.apache.james.mailbox.store.mail.model.Mailbox#getMailboxId()
-     */
+    @Override
     public JPAId getMailboxId() {
         return JPAId.of(mailboxId);
     }
@@ -133,23 +131,18 @@ public class JPAMailbox implements Mailbox {
     public void setMailboxId(MailboxId mailboxId) {
         this.mailboxId = ((JPAId)mailboxId).getRawId();
     }
-    /**
-     * @see org.apache.james.mailbox.store.mail.model.Mailbox#getName()
-     */
+
+    @Override
     public String getName() {
         return name;
     }
 
-    /**
-     * @see org.apache.james.mailbox.store.mail.model.Mailbox#getUidValidity()
-     */
+    @Override
     public long getUidValidity() {
         return uidValidity;
     }
     
-    /**
-     * @see org.apache.james.mailbox.store.mail.model.Mailbox#setName(java.lang.String)
-     */
+    @Override
     public void setName(String name) {
         this.name = name;
     }
@@ -178,42 +171,38 @@ public class JPAMailbox implements Mailbox {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         final JPAMailbox other = (JPAMailbox) obj;
-        if (mailboxId != other.mailboxId)
+        if (mailboxId != other.mailboxId) {
             return false;
+        }
         return true;
     }
 
-    /**
-     * @see org.apache.james.mailbox.store.mail.model.Mailbox#getNamespace()
-     */
+    @Override
     public String getNamespace() {
         return namespace;
     }
 
-    /**
-     * @see org.apache.james.mailbox.store.mail.model.Mailbox#getUser()
-     */
+    @Override
     public String getUser() {
         return user;
     }
 
-    /**
-     * @see org.apache.james.mailbox.store.mail.model.Mailbox#setNamespace(java.lang.String)
-     */
+    @Override
     public void setNamespace(String namespace) {
         this.namespace = namespace;
     }
 
-    /**
-     * @see org.apache.james.mailbox.store.mail.model.Mailbox#setUser(java.lang.String)
-     */
+    @Override
     public void setUser(String user) {
         this.user = user;
     }

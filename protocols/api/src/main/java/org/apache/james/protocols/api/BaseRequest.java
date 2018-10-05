@@ -23,7 +23,7 @@ package org.apache.james.protocols.api;
  * Basic Request which contains a command and argument
  *
  */
-public class BaseRequest implements Request{
+public class BaseRequest implements Request {
 
     private final String command;
     private final String argument;
@@ -34,16 +34,12 @@ public class BaseRequest implements Request{
         
     }
     
-    /**
-     * @see org.apache.james.protocols.api.Request#getArgument()
-     */
+    @Override
     public String getArgument() {
         return argument;
     }
 
-    /**
-     * @see org.apache.james.protocols.api.Request#getCommand()
-     */
+    @Override
     public String getCommand() {
         return command;
     }

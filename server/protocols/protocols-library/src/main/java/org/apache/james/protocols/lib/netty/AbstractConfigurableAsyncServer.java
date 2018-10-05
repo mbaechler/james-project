@@ -51,6 +51,7 @@ import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.ChannelUpstreamHandler;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.handler.execution.ExecutionHandler;
+import org.jboss.netty.util.HashedWheelTimer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,6 +87,7 @@ public abstract class AbstractConfigurableAsyncServer extends AbstractAsyncServe
     private String x509Algorithm = defaultX509algorithm;
 
     private FileSystem fileSystem;
+    private HashedWheelTimer timer;
 
     private boolean enabled;
 
@@ -117,10 +119,16 @@ public abstract class AbstractConfigurableAsyncServer extends AbstractAsyncServe
 
     private MBeanServer mbeanServer;
 
+    private int port;
 
     @Inject
     public final void setFileSystem(FileSystem filesystem) {
         this.fileSystem = filesystem;
+    }
+
+    @Inject
+    public void setHashWheelTimer(HashedWheelTimer timer) {
+        this.timer = timer;
     }
 
     protected void registerMBean() {
@@ -146,24 +154,20 @@ public abstract class AbstractConfigurableAsyncServer extends AbstractAsyncServe
         return  "org.apache.james:type=server,name=" + jmxName;
     }
     
-    /**
-     * @see
-     * org.apache.james.lifecycle.api.Configurable
-     * #configure(org.apache.commons.configuration.HierarchicalConfiguration)
-     */
+    @Override
     public final void configure(HierarchicalConfiguration config) throws ConfigurationException {
 
         enabled = config.getBoolean("[@enabled]", true);
 
         if (!enabled) {
-            LOGGER.info(getServiceType() + " disabled by configuration");
+            LOGGER.info("{} disabled by configuration", getServiceType());
             return;
         }
 
-        String listen[] = config.getString("bind", "0.0.0.0:" + getDefaultPort()).split(",");
+        String[] listen = config.getString("bind", "0.0.0.0:" + getDefaultPort()).split(",");
         List<InetSocketAddress> bindAddresses = new ArrayList<>();
         for (String aListen : listen) {
-            String bind[] = aListen.split(":");
+            String[] bind = aListen.split(":");
 
             InetSocketAddress address;
             String ip = bind[0].trim();
@@ -177,7 +181,7 @@ public abstract class AbstractConfigurableAsyncServer extends AbstractAsyncServe
             }
             address = new InetSocketAddress(ip, port);
 
-            LOGGER.info(getServiceType() + " bound to: " + ip + ":" + port);
+            LOGGER.info("{} bound to: {}:{}", getServiceType(), ip, port);
 
             bindAddresses.add(address);
         }
@@ -194,13 +198,11 @@ public abstract class AbstractConfigurableAsyncServer extends AbstractAsyncServe
 
         setTimeout(config.getInt(TIMEOUT_NAME, DEFAULT_TIMEOUT));
 
-        StringBuilder infoBuffer = new StringBuilder(64).append(getServiceType()).append(" handler connection timeout is: ").append(getTimeout());
-        LOGGER.info(infoBuffer.toString());
+        LOGGER.info("{} handler connection timeout is: {}", getServiceType(), getTimeout());
 
         setBacklog(config.getInt(BACKLOG_NAME, DEFAULT_BACKLOG));
 
-        infoBuffer = new StringBuilder(64).append(getServiceType()).append(" connection backlog is: ").append(getBacklog());
-        LOGGER.info(infoBuffer.toString());
+        LOGGER.info("{} connection backlog is: {}", getServiceType(), getBacklog());
 
         String connectionLimitString = config.getString("connectionLimit", null);
         if (connectionLimitString != null) {
@@ -213,8 +215,7 @@ public abstract class AbstractConfigurableAsyncServer extends AbstractAsyncServe
                 LOGGER.error("Connection limit value cannot be less than zero.");
                 throw new ConfigurationException("Connection limit value cannot be less than zero.");
             } else if (connectionLimit > 0) {
-                infoBuffer = new StringBuilder(128).append(getServiceType()).append(" will allow a maximum of ").append(connectionLimitString).append(" connections.");
-                LOGGER.info(infoBuffer.toString());
+                LOGGER.info("{} will allow a maximum of {} connections.", getServiceType(), connectionLimitString);
             }
         }
 
@@ -229,16 +230,16 @@ public abstract class AbstractConfigurableAsyncServer extends AbstractAsyncServe
                 LOGGER.error("Connection limit per IP value cannot be less than zero.");
                 throw new ConfigurationException("Connection limit value cannot be less than zero.");
             } else if (connPerIP > 0) {
-                infoBuffer = new StringBuilder(128).append(getServiceType()).append(" will allow a maximum of ").append(connPerIP).append(" per IP connections for ").append(getServiceType());
-                LOGGER.info(infoBuffer.toString());
+                LOGGER.info("{} will allow a maximum of {} per IP connections for {}", getServiceType(), connPerIP, getServiceType());
             }
         }
 
         useStartTLS = config.getBoolean("tls.[@startTLS]", false);
         useSSL = config.getBoolean("tls.[@socketTLS]", false);
 
-        if (useSSL && useStartTLS)
+        if (useSSL && useStartTLS) {
             throw new ConfigurationException("startTLS is only supported when using plain sockets");
+        }
 
         if (useStartTLS || useSSL) {
             enabledCipherSuites = config.getStringArray("tls.supportedCipherSuites.cipherSuite");
@@ -264,20 +265,35 @@ public abstract class AbstractConfigurableAsyncServer extends AbstractAsyncServe
             executionHandler = createExecutionHander();
             frameHandlerFactory = createFrameHandlerFactory();
             bind();
+            port = retrieveFirstBindedPort();
 
             mbeanServer = ManagementFactory.getPlatformMBeanServer();
             registerMBean();
             
-            LOGGER.info("Init " + getServiceType() + " done");
+            LOGGER.info("Init {} done", getServiceType());
 
         }
     
     }
 
+    private int retrieveFirstBindedPort() {
+        List<InetSocketAddress> listenAddresses = getListenAddresses();
+        InetSocketAddress inetSocketAddress = listenAddresses.get(0);
+        return inetSocketAddress.getPort();
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public boolean useSSL() {
+        return useSSL;
+    }
+
     @PreDestroy
     public final void destroy() {
         
-        LOGGER.info("Dispose " + getServiceType());
+        LOGGER.info("Dispose {}", getServiceType());
         
         if (isEnabled()) {
             unbind();
@@ -289,7 +305,7 @@ public abstract class AbstractConfigurableAsyncServer extends AbstractAsyncServe
 
             unregisterMBean();
         }
-        LOGGER.info("Dispose " + getServiceType() + " done");
+        LOGGER.info("Dispose {} done", getServiceType());
 
     }
 
@@ -356,6 +372,7 @@ public abstract class AbstractConfigurableAsyncServer extends AbstractAsyncServe
      * 
      * @return enabled
      */
+    @Override
     public boolean isEnabled() {
         return enabled;
     }
@@ -395,9 +412,9 @@ public abstract class AbstractConfigurableAsyncServer extends AbstractAsyncServe
                 SSLContext context = SSLContext.getInstance("TLS");
                 context.init(kmf.getKeyManagers(), null, null);
                 if (useStartTLS) {
-                	encryption = Encryption.createStartTls(context, enabledCipherSuites);
+                    encryption = Encryption.createStartTls(context, enabledCipherSuites);
                 } else {
-                	encryption = Encryption.createTls(context, enabledCipherSuites);
+                    encryption = Encryption.createTls(context, enabledCipherSuites);
                 }
             } finally {
                 if (fis != null) {
@@ -421,6 +438,7 @@ public abstract class AbstractConfigurableAsyncServer extends AbstractAsyncServe
      * 
      * @return the socket type ('plain' or 'secure')
      */
+    @Override
     public String getSocketType() {
         if (encryption != null && !encryption.isStartTLS()) {
             return "secure";
@@ -428,17 +446,12 @@ public abstract class AbstractConfigurableAsyncServer extends AbstractAsyncServe
         return "plain";
     }
 
-    /**
-     * @see org.apache.james.protocols.lib.jmx.ServerMBean#getStartTLSSupported()
-     */
+    @Override
     public boolean getStartTLSSupported() {
         return encryption != null && encryption.isStartTLS();
     }
 
-    /**
-     * @see
-     * org.apache.james.protocols.lib.jmx.ServerMBean#getMaximumConcurrentConnections()
-     */
+    @Override
     public int getMaximumConcurrentConnections() {
         return connectionLimit;
     }
@@ -469,16 +482,12 @@ public abstract class AbstractConfigurableAsyncServer extends AbstractAsyncServe
         return enabledCipherSuites;
     }
 
-    /**
-     * @see org.apache.james.protocols.lib.jmx.ServerMBean#isStarted()
-     */
+    @Override
     public boolean isStarted() {
         return isBound();
     }
 
-    /**
-     * @see org.apache.james.protocols.lib.jmx.ServerMBean#start()
-     */
+    @Override
     public boolean start() {
         try {
             bind();
@@ -489,24 +498,18 @@ public abstract class AbstractConfigurableAsyncServer extends AbstractAsyncServe
         return true;
     }
 
-    /**
-     * @see org.apache.james.protocols.lib.jmx.ServerMBean#stop()
-     */
+    @Override
     public boolean stop() {
         unbind();
         return true;
     }
 
-    /**
-     * @see org.apache.james.protocols.lib.jmx.ServerMBean#getHandledConnections()
-     */
+    @Override
     public long getHandledConnections() {
         return countHandler.getConnectionsTillStartup();
     }
 
-    /**
-     * @see org.apache.james.protocols.lib.jmx.ServerMBean#getCurrentConnections()
-     */
+    @Override
     public int getCurrentConnections() {
         return countHandler.getCurrentConnectionCount();
     }
@@ -515,9 +518,7 @@ public abstract class AbstractConfigurableAsyncServer extends AbstractAsyncServe
         return countHandler;
     }
 
-    /**
-     * @see org.apache.james.protocols.lib.jmx.ServerMBean#getBoundAddresses()
-     */
+    @Override
     public String[] getBoundAddresses() {
 
         List<InetSocketAddress> addresses = getListenAddresses();
@@ -566,7 +567,8 @@ public abstract class AbstractConfigurableAsyncServer extends AbstractAsyncServe
     
     @Override
     protected ChannelPipelineFactory createPipelineFactory(ChannelGroup group) {
-        return new AbstractExecutorAwareChannelPipelineFactory(getTimeout(), connectionLimit, connPerIP, group, enabledCipherSuites, getExecutionHandler(), getFrameHandlerFactory()) {
+        return new AbstractExecutorAwareChannelPipelineFactory(getTimeout(), connectionLimit, connPerIP, group,
+            enabledCipherSuites, getExecutionHandler(), getFrameHandlerFactory(), timer) {
             @Override
             protected SSLContext getSSLContext() {
                 if (encryption == null) {

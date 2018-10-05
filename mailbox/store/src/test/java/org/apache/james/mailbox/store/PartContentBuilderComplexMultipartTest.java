@@ -19,12 +19,13 @@
 
 package org.apache.james.mailbox.store;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Fail.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
@@ -33,8 +34,6 @@ import org.apache.james.mailbox.store.streaming.PartContentBuilder;
 import org.apache.james.mailbox.store.streaming.PartContentBuilder.PartNotFoundException;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.google.common.base.Charsets;
 
 public class PartContentBuilderComplexMultipartTest {
 
@@ -187,27 +186,27 @@ public class PartContentBuilderComplexMultipartTest {
     private void check(String full, String body, String contentType,
             int[] position) throws Exception {
         checkContentType(contentType, position);
-        assertEquals(body, bodyContent(position));
-        assertEquals(full, fullContent(position));
+        assertThat(bodyContent(position)).isEqualTo(body);
+        assertThat(fullContent(position)).isEqualTo(full);
     }
 
     private String fullContent(int[] position) throws Exception {
         to(position);
-        return IOUtils.toString(builder.getFullContent().getInputStream(), Charsets.UTF_8);
+        return IOUtils.toString(builder.getFullContent().getInputStream(), StandardCharsets.UTF_8);
     }
 
     private String bodyContent(int[] position) throws Exception {
         to(position);
-        return IOUtils.toString(builder.getMimeBodyContent().getInputStream(), Charsets.UTF_8);
+        return IOUtils.toString(builder.getMimeBodyContent().getInputStream(), StandardCharsets.UTF_8);
     }
 
     private void checkContentType(String contentType, int[] position)
             throws Exception {
         List<Header> headers = headers(position);
-        assertEquals(1, headers.size());
+        assertThat(headers.size()).isEqualTo(1);
         ResultHeader header = (ResultHeader) headers.get(0);
-        assertEquals(CONTENT_TYPE, header.getName());
-        assertEquals(contentType, header.getValue());
+        assertThat(header.getName()).isEqualTo(CONTENT_TYPE);
+        assertThat(header.getValue()).isEqualTo(contentType);
     }
 
     private List<Header> headers(int[] position) throws Exception {

@@ -28,18 +28,17 @@ import org.apache.james.mailbox.model.Content;
  * Just an Empty {@link Content}
  *
  */
-public class EmptyContent implements Content{
+public class EmptyContent implements Content {
 
     /**
      * Return 0 as this {@link Content} is empty
      */
+    @Override
     public long size() {
         return 0;
     }
 
-    /**
-     * @see org.apache.james.mailbox.Content#getInputStream()
-     */
+    @Override
     public InputStream getInputStream() throws IOException {
         return new ByteArrayInputStream("".getBytes());
     }

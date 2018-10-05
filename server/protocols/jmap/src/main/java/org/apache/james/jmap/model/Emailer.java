@@ -22,6 +22,12 @@ package org.apache.james.jmap.model;
 import java.util.Objects;
 import java.util.Optional;
 
+import javax.mail.internet.AddressException;
+
+import org.apache.james.core.MailAddress;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -32,6 +38,8 @@ import com.google.common.base.Preconditions;
 
 @JsonDeserialize(builder = Emailer.Builder.class)
 public class Emailer {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Emailer.class);
 
     public static Builder builder() {
         return new Builder();
@@ -115,6 +123,17 @@ public class Emailer {
 
     public Optional<String> getEmail() {
         return email;
+    }
+
+    @JsonIgnore
+    public MailAddress toMailAddress() {
+        Preconditions.checkArgument(email.isPresent(), "eMailer mail address should be present when sending a mail using JMAP");
+        try {
+            return new MailAddress(email.get());
+        } catch (AddressException e) {
+            LOGGER.error("Invalid mail address", email);
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

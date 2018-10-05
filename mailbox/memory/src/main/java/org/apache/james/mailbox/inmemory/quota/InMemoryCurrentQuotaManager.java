@@ -24,6 +24,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import javax.inject.Inject;
 
+import org.apache.james.core.quota.QuotaCount;
+import org.apache.james.core.quota.QuotaSize;
 import org.apache.james.mailbox.MailboxListener;
 import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.exception.MailboxException;
@@ -68,18 +70,18 @@ public class InMemoryCurrentQuotaManager implements StoreCurrentQuotaManager {
     }
 
     @Override
-    public long getCurrentMessageCount(QuotaRoot quotaRoot) throws MailboxException {
+    public QuotaCount getCurrentMessageCount(QuotaRoot quotaRoot) throws MailboxException {
         try {
-            return quotaCache.get(quotaRoot).getCount().get();
+            return QuotaCount.count(quotaCache.get(quotaRoot).getCount().get());
         } catch (ExecutionException e) {
             throw new MailboxException("Exception caught", e);
         }
     }
 
     @Override
-    public long getCurrentStorage(QuotaRoot quotaRoot) throws MailboxException {
+    public QuotaSize getCurrentStorage(QuotaRoot quotaRoot) throws MailboxException {
         try {
-            return quotaCache.get(quotaRoot).getSize().get();
+            return QuotaSize.size(quotaCache.get(quotaRoot).getSize().get());
         } catch (ExecutionException e) {
             throw new MailboxException("Exception caught", e);
         }

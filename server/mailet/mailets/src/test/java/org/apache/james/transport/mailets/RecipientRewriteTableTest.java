@@ -20,12 +20,10 @@ package org.apache.james.transport.mailets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.Properties;
-
-import javax.mail.Session;
 import javax.mail.internet.MimeMessage;
 
 import org.apache.james.domainlist.api.DomainList;
+import org.apache.james.util.MimeMessageUtil;
 import org.apache.mailet.MailetContext;
 import org.apache.mailet.base.MailAddressFixture;
 import org.apache.mailet.base.test.FakeMail;
@@ -54,7 +52,7 @@ public class RecipientRewriteTableTest {
         
         mailet = new RecipientRewriteTable(virtualTableStore, domainList);
 
-        message = new MimeMessage(Session.getDefaultInstance(new Properties()));
+        message = MimeMessageUtil.defaultMimeMessage();
 
         mailetContext = FakeMailContext.defaultContext();
 

@@ -19,10 +19,15 @@
 
 package org.apache.james.jmap.methods.integration;
 
-import static com.jayway.restassured.RestAssured.given;
-import static com.jayway.restassured.RestAssured.with;
-import static com.jayway.restassured.config.EncoderConfig.encoderConfig;
-import static com.jayway.restassured.config.RestAssuredConfig.newConfig;
+import static io.restassured.RestAssured.given;
+import static io.restassured.RestAssured.with;
+import static org.apache.james.jmap.HttpJmapAuthentication.authenticateJamesUser;
+import static org.apache.james.jmap.JmapURIBuilder.baseUri;
+import static org.apache.james.jmap.TestingConstants.ARGUMENTS;
+import static org.apache.james.jmap.TestingConstants.DOMAIN;
+import static org.apache.james.jmap.TestingConstants.FIRST_MAILBOX;
+import static org.apache.james.jmap.TestingConstants.NAME;
+import static org.apache.james.jmap.TestingConstants.jmapRequestSpecBuilder;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -38,17 +43,20 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsMapWithSize.aMapWithSize;
 
+import java.io.IOException;
+
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.client.utils.URIBuilder;
 import org.apache.james.GuiceJamesServer;
-import org.apache.james.jmap.DefaultMailboxes;
-import org.apache.james.jmap.HttpJmapAuthentication;
 import org.apache.james.jmap.api.access.AccessToken;
+import org.apache.james.mailbox.DefaultMailboxes;
+import org.apache.james.mailbox.MailboxManager;
+import org.apache.james.mailbox.model.MailboxACL;
 import org.apache.james.mailbox.model.MailboxACL.Right;
 import org.apache.james.mailbox.model.MailboxConstants;
 import org.apache.james.mailbox.model.MailboxId;
-import org.apache.james.mailbox.store.mail.model.Mailbox;
-import org.apache.james.mailbox.store.probe.MailboxProbe;
+import org.apache.james.mailbox.model.MailboxPath;
+import org.apache.james.mailbox.probe.MailboxProbe;
+import org.apache.james.modules.ACLProbeImpl;
 import org.apache.james.modules.MailboxProbeImpl;
 import org.apache.james.probe.DataProbe;
 import org.apache.james.utils.DataProbeImpl;
@@ -58,19 +66,12 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.jayway.restassured.RestAssured;
-import com.jayway.restassured.builder.RequestSpecBuilder;
-import com.jayway.restassured.http.ContentType;
+
+import io.restassured.RestAssured;
 
 public abstract class SetMailboxesMethodTest {
-
-    private static final String NAME = "[0][0]";
-    private static final String ARGUMENTS = "[0][1]";
-    private static final String FIRST_MAILBOX = ARGUMENTS + ".list[0]";
-    private static final String USERS_DOMAIN = "domain.tld";
 
     private static final String ADMINISTER = String.valueOf(Right.Administer.asCharacter());
     private static final String WRITE = String.valueOf(Right.Write.asCharacter());
@@ -78,7 +79,7 @@ public abstract class SetMailboxesMethodTest {
 
     private static int MAILBOX_NAME_LENGTH_64K = 65536;
 
-    protected abstract GuiceJamesServer createJmapServer();
+    protected abstract GuiceJamesServer createJmapServer() throws IOException;
 
     protected abstract void await();
 
@@ -86,6 +87,7 @@ public abstract class SetMailboxesMethodTest {
     private String username;
     private GuiceJamesServer jmapServer;
     private MailboxProbe mailboxProbe;
+    private MailboxId inboxId;
 
     @Before
     public void setup() throws Throwable {
@@ -94,31 +96,17 @@ public abstract class SetMailboxesMethodTest {
         mailboxProbe = jmapServer.getProbe(MailboxProbeImpl.class);
         DataProbe dataProbe = jmapServer.getProbe(DataProbeImpl.class);
         
-        RestAssured.requestSpecification = new RequestSpecBuilder()
-                .setContentType(ContentType.JSON)
-                .setAccept(ContentType.JSON)
-                .setConfig(newConfig().encoderConfig(encoderConfig().defaultContentCharset(Charsets.UTF_8)))
+        RestAssured.requestSpecification = jmapRequestSpecBuilder
                 .setPort(jmapServer.getProbe(JmapGuiceProbe.class).getJmapPort())
                 .build();
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
 
-        username = "username@" + USERS_DOMAIN;
+        username = "username@" + DOMAIN;
         String password = "password";
-        dataProbe.addDomain(USERS_DOMAIN);
+        dataProbe.addDomain(DOMAIN);
         dataProbe.addUser(username, password);
-        mailboxProbe.createMailbox("#private", username, DefaultMailboxes.INBOX);
-        accessToken = HttpJmapAuthentication.authenticateJamesUser(baseUri(), username, password);
-
-        await();
-    }
-
-    private URIBuilder baseUri() {
-        return new URIBuilder()
-            .setScheme("http")
-            .setHost("localhost")
-            .setPort(jmapServer.getProbe(JmapGuiceProbe.class)
-                .getJmapPort())
-            .setCharset(Charsets.UTF_8);
+        inboxId = mailboxProbe.createMailbox("#private", username, DefaultMailboxes.INBOX);
+        accessToken = authenticateJamesUser(baseUri(jmapServer), username, password);
     }
 
     @After
@@ -190,14 +178,15 @@ public abstract class SetMailboxesMethodTest {
     }
 
     @Test
-    public void setMailboxesShouldCreateWhenOverLimitName() throws Exception {
-        String overLimitName = StringUtils.repeat("a", MAILBOX_NAME_LENGTH_64K);
+    public void setMailboxesCreateShouldFailWhenOverLimitName() {
+        String overLimitName = StringUtils.repeat("a", MailboxManager.MAX_MAILBOX_NAME_LENGTH + 1);
+        String creationId = "create-id01";
         String requestBody =
             "[" +
                 "  [ \"setMailboxes\"," +
                 "    {" +
                 "      \"create\": {" +
-                "        \"create-id01\" : {" +
+                "        \"" + creationId + "\" : {" +
                 "          \"name\" : \"" + overLimitName + "\"" +
                 "        }" +
                 "      }" +
@@ -214,12 +203,14 @@ public abstract class SetMailboxesMethodTest {
         .then()
             .statusCode(200)
             .body(NAME, equalTo("mailboxesSet"))
-            .body(ARGUMENTS + ".created", hasKey("create-id01"));
+            .body(ARGUMENTS + ".notCreated", hasKey(creationId))
+            .body(ARGUMENTS + ".notCreated." + creationId + ".type", is("invalidArguments"))
+            .body(ARGUMENTS + ".notCreated." + creationId + ".description", is("The mailbox name length is too long"));
     }
 
     @Test
-    public void setMailboxesShouldUpdateMailboxWhenOverLimitName() throws Exception {
-        String overLimitName = StringUtils.repeat("a", MAILBOX_NAME_LENGTH_64K);
+    public void setMailboxesUpdateShouldFailWhenOverLimitName() throws Exception {
+        String overLimitName = StringUtils.repeat("a", MailboxManager.MAX_MAILBOX_NAME_LENGTH + 1);
         MailboxId mailboxId = mailboxProbe.createMailbox(MailboxConstants.USER_NAMESPACE, username, "myBox");
         String requestBody =
             "[" +
@@ -242,13 +233,15 @@ public abstract class SetMailboxesMethodTest {
         .then()
             .statusCode(200)
             .body(NAME, equalTo("mailboxesSet"))
-            .body(ARGUMENTS + ".updated", contains(mailboxId.serialize()));
+            .body(ARGUMENTS + ".notUpdated", hasKey(mailboxId.serialize()))
+            .body(ARGUMENTS + ".notUpdated." + mailboxId.serialize() + ".type", is("invalidArguments"))
+            .body(ARGUMENTS + ".notUpdated." + mailboxId.serialize() + ".description", is("The mailbox name length is too long"));
 
-        assertThat(mailboxProbe.listSubscriptions(username)).containsOnly(overLimitName);
+        assertThat(mailboxProbe.listSubscriptions(username)).doesNotContain(overLimitName);
     }
 
     @Test
-    public void userShouldBeSubscribedOnCreatedMailboxWhenCreateMailbox() throws Exception{
+    public void userShouldBeSubscribedOnCreatedMailboxWhenCreateMailbox() throws Exception {
         String requestBody =
             "[" +
                 "  [ \"setMailboxes\"," +
@@ -273,12 +266,12 @@ public abstract class SetMailboxesMethodTest {
             .body(NAME, equalTo("mailboxesSet"))
             .body(ARGUMENTS + ".created", hasKey("create-id01"));
 
-        assertThat(mailboxProbe.listSubscriptions(username)).containsOnly("foo");
+        assertThat(mailboxProbe.listSubscriptions(username)).contains("foo");
     }
 
     @Test
     public void userShouldBeSubscribedOnCreatedMailboxWhenCreateChildOfInboxMailbox() throws Exception {
-        MailboxId inboxId = mailboxProbe.getMailbox(MailboxConstants.USER_NAMESPACE, username, MailboxConstants.INBOX).getMailboxId();
+        MailboxId inboxId = mailboxProbe.getMailboxId(MailboxConstants.USER_NAMESPACE, username, MailboxConstants.INBOX);
 
         String requestBody =
             "[" +
@@ -301,14 +294,15 @@ public abstract class SetMailboxesMethodTest {
         .when()
             .post("/jmap");
 
-        assertThat(mailboxProbe.listSubscriptions(username)).containsOnly(DefaultMailboxes.INBOX + ".foo");
+        assertThat(mailboxProbe.listSubscriptions(username)).contains(DefaultMailboxes.INBOX + ".foo");
     }
 
     @Test
     public void subscriptionUserShouldBeChangedWhenUpdateMailbox() throws Exception {
         mailboxProbe.createMailbox(MailboxConstants.USER_NAMESPACE, username, "root");
 
-        MailboxId mailboxId = mailboxProbe.createMailbox(MailboxConstants.USER_NAMESPACE, username, "root.myBox");
+        String initialMailboxName = "root.myBox";
+        MailboxId mailboxId = mailboxProbe.createMailbox(MailboxConstants.USER_NAMESPACE, username, initialMailboxName);
 
         String requestBody =
             "[" +
@@ -328,7 +322,9 @@ public abstract class SetMailboxesMethodTest {
             .body(requestBody)
             .post("/jmap");
 
-        assertThat(mailboxProbe.listSubscriptions(username)).containsOnly("mySecondBox");
+        assertThat(mailboxProbe.listSubscriptions(username))
+            .contains("mySecondBox")
+            .doesNotContain(initialMailboxName);
     }
 
     @Test
@@ -357,8 +353,7 @@ public abstract class SetMailboxesMethodTest {
             .body(NAME, equalTo("mailboxesSet"))
             .body(ARGUMENTS + ".created", hasKey("create-id01"));
 
-        Mailbox mailbox = mailboxProbe.getMailbox(MailboxConstants.USER_NAMESPACE, username, "foo");
-        String mailboxId = mailbox.getMailboxId().serialize();
+        String mailboxId = mailboxProbe.getMailboxId(MailboxConstants.USER_NAMESPACE, username, "foo").serialize();
 
         requestBody =
             "[" +
@@ -379,7 +374,12 @@ public abstract class SetMailboxesMethodTest {
             .body(requestBody)
             .post("/jmap");
 
-        assertThat(mailboxProbe.listSubscriptions(username)).containsOnly("mySecondBox");
+        assertThat(mailboxProbe.listSubscriptions(username))
+            .contains(DefaultMailboxes.OUTBOX,
+                DefaultMailboxes.SENT,
+                DefaultMailboxes.TRASH,
+                DefaultMailboxes.DRAFTS,
+                "mySecondBox");
     }
 
     @Test
@@ -403,7 +403,11 @@ public abstract class SetMailboxesMethodTest {
         .then()
             .statusCode(200);
 
-        assertThat(mailboxProbe.listSubscriptions(username)).isEmpty();
+        assertThat(mailboxProbe.listSubscriptions(username))
+            .contains(DefaultMailboxes.OUTBOX,
+            DefaultMailboxes.SENT,
+            DefaultMailboxes.TRASH,
+            DefaultMailboxes.DRAFTS);
     }
 
     @Test
@@ -432,13 +436,13 @@ public abstract class SetMailboxesMethodTest {
             .body(NAME, equalTo("mailboxesSet"))
             .body(ARGUMENTS + ".created", hasKey("create-id01"));
 
-        Mailbox mailbox = mailboxProbe.getMailbox(MailboxConstants.USER_NAMESPACE, username, "foo");
+        MailboxId mailbox = mailboxProbe.getMailboxId(MailboxConstants.USER_NAMESPACE, username, "foo");
 
         requestBody =
             "[" +
                 "  [ \"setMailboxes\"," +
                 "    {" +
-                "      \"destroy\": [\"" + mailbox.getMailboxId().serialize() + "\"]" +
+                "      \"destroy\": [\"" + mailbox.serialize() + "\"]" +
                 "    }," +
                 "    \"#0\"" +
                 "  ]" +
@@ -452,7 +456,11 @@ public abstract class SetMailboxesMethodTest {
         .then()
             .statusCode(200);
 
-        assertThat(mailboxProbe.listSubscriptions(username)).isEmpty();
+        assertThat(mailboxProbe.listSubscriptions(username))
+            .contains(DefaultMailboxes.OUTBOX,
+                DefaultMailboxes.SENT,
+                DefaultMailboxes.TRASH,
+                DefaultMailboxes.DRAFTS);
     }
 
     @Test
@@ -480,7 +488,8 @@ public abstract class SetMailboxesMethodTest {
         .then()
             .statusCode(200)
             .body(NAME, equalTo("error"))
-            .body(ARGUMENTS + ".type", equalTo("Not yet implemented"));
+            .body(ARGUMENTS + ".type", equalTo("invalidArguments"))
+            .body(ARGUMENTS + ".description", equalTo("The field 'role' of 'MailboxCreateRequest' is not supported"));
     }
 
     @Test
@@ -508,7 +517,8 @@ public abstract class SetMailboxesMethodTest {
         .then()
             .statusCode(200)
             .body(NAME, equalTo("error"))
-            .body(ARGUMENTS + ".type", equalTo("Not yet implemented"));
+            .body(ARGUMENTS + ".type", equalTo("invalidArguments"))
+            .body(ARGUMENTS + ".description", equalTo("The field 'sortOrder' of 'MailboxCreateRequest' is not supported"));
     }
 
     @Test
@@ -557,7 +567,7 @@ public abstract class SetMailboxesMethodTest {
         with()
             .header("Authorization", accessToken.serialize())
             .body(requestBody)
-            .then()
+        .when()
             .post("/jmap");
 
         given()
@@ -615,7 +625,7 @@ public abstract class SetMailboxesMethodTest {
 
     @Test
     public void setMailboxesShouldCreateMailboxWhenChildOfInboxMailbox() {
-        MailboxId inboxId = mailboxProbe.getMailbox(MailboxConstants.USER_NAMESPACE, username, MailboxConstants.INBOX).getMailboxId();
+        MailboxId inboxId = mailboxProbe.getMailboxId(MailboxConstants.USER_NAMESPACE, username, MailboxConstants.INBOX);
 
         String requestBody =
             "[" +
@@ -969,8 +979,7 @@ public abstract class SetMailboxesMethodTest {
 
     @Test
     public void setMailboxesShouldReturnNotDestroyedWhenSystemMailbox() {
-        Mailbox mailbox = mailboxProbe.getMailbox(MailboxConstants.USER_NAMESPACE, username, MailboxConstants.INBOX);
-        String mailboxId = mailbox.getMailboxId().serialize();
+        String mailboxId = mailboxProbe.getMailboxId(MailboxConstants.USER_NAMESPACE, username, MailboxConstants.INBOX).serialize();
         String requestBody =
             "[" +
                 "  [ \"setMailboxes\"," +
@@ -1173,7 +1182,7 @@ public abstract class SetMailboxesMethodTest {
                 "    {" +
                 "      \"update\": {" +
                 "        \"" + mailboxId.serialize() + "\" : {" +
-                "          \"sharedWith\" : {\"user\": [\"a\", \"w\"]}" +
+                "          \"sharedWith\" : {\"user@" + DOMAIN + "\": [\"a\", \"w\"]}" +
                 "        }" +
                 "      }" +
                 "    }," +
@@ -1194,9 +1203,9 @@ public abstract class SetMailboxesMethodTest {
 
     @Test
     public void updateShouldRejectInvalidRights() {
-        jmapServer.getProbe(MailboxProbeImpl.class).createMailbox(MailboxConstants.USER_NAMESPACE, username, "myBox");
-        Mailbox mailbox = jmapServer.getProbe(MailboxProbeImpl.class).getMailbox(MailboxConstants.USER_NAMESPACE, username, "myBox");
-        String mailboxId = mailbox.getMailboxId().serialize();
+        String mailboxId = jmapServer.getProbe(MailboxProbeImpl.class)
+            .createMailbox(MailboxConstants.USER_NAMESPACE, username, "myBox")
+            .serialize();
 
         given()
             .header("Authorization", accessToken.serialize())
@@ -1223,9 +1232,9 @@ public abstract class SetMailboxesMethodTest {
 
     @Test
     public void updateShouldRejectUnhandledRight() {
-        jmapServer.getProbe(MailboxProbeImpl.class).createMailbox(MailboxConstants.USER_NAMESPACE, username, "myBox");
-        Mailbox mailbox = jmapServer.getProbe(MailboxProbeImpl.class).getMailbox(MailboxConstants.USER_NAMESPACE, username, "myBox");
-        String mailboxId = mailbox.getMailboxId().serialize();
+        String mailboxId = jmapServer.getProbe(MailboxProbeImpl.class)
+            .createMailbox(MailboxConstants.USER_NAMESPACE, username, "myBox")
+            .serialize();
 
         given()
             .header("Authorization", accessToken.serialize())
@@ -1252,9 +1261,9 @@ public abstract class SetMailboxesMethodTest {
 
     @Test
     public void updateShouldRejectNonExistingRights() {
-        jmapServer.getProbe(MailboxProbeImpl.class).createMailbox(MailboxConstants.USER_NAMESPACE, username, "myBox");
-        Mailbox mailbox = jmapServer.getProbe(MailboxProbeImpl.class).getMailbox(MailboxConstants.USER_NAMESPACE, username, "myBox");
-        String mailboxId = mailbox.getMailboxId().serialize();
+        String mailboxId = jmapServer.getProbe(MailboxProbeImpl.class)
+            .createMailbox(MailboxConstants.USER_NAMESPACE, username, "myBox")
+            .serialize();
 
         given()
             .header("Authorization", accessToken.serialize())
@@ -1282,7 +1291,7 @@ public abstract class SetMailboxesMethodTest {
     @Test
     public void updateShouldApplyWhenSettingNewACL() {
         String myBox = "myBox";
-        String user = "user";
+        String user = "user@" + DOMAIN;
         MailboxId mailboxId = mailboxProbe.createMailbox(MailboxConstants.USER_NAMESPACE, username, myBox);
         String requestBody =
             "[" +
@@ -1318,7 +1327,7 @@ public abstract class SetMailboxesMethodTest {
     @Test
     public void updateShouldModifyStoredDataWhenUpdatingACL() {
         String myBox = "myBox";
-        String user = "user";
+        String user = "user@" + DOMAIN;
         MailboxId mailboxId = mailboxProbe.createMailbox(MailboxConstants.USER_NAMESPACE, username, myBox);
 
         with()
@@ -1418,8 +1427,8 @@ public abstract class SetMailboxesMethodTest {
     @Test
     public void updateShouldModifyStoredDataWhenSwitchingACLUser() {
         String myBox = "myBox";
-        String user1 = "user1";
-        String user2 = "user2";
+        String user1 = "user1@" + DOMAIN;
+        String user2 = "user2@" + DOMAIN;
         MailboxId mailboxId = mailboxProbe.createMailbox(MailboxConstants.USER_NAMESPACE, username, myBox);
 
         with()
@@ -1464,6 +1473,36 @@ public abstract class SetMailboxesMethodTest {
             .body(NAME, equalTo("mailboxes"))
             .body(FIRST_MAILBOX + ".name", equalTo(myBox))
             .body(FIRST_MAILBOX + ".sharedWith", hasEntry(user2, ImmutableList.of(ADMINISTER, WRITE)));
+    }
+
+    @Test
+    public void updateShouldFilterOwnerACL() throws Exception {
+        String myBox = "myBox";
+        String user2 = "user2";
+        MailboxId mailboxId = mailboxProbe.createMailbox(MailboxConstants.USER_NAMESPACE, username, myBox);
+
+        with()
+            .header("Authorization", accessToken.serialize())
+            .body("[" +
+                "  [ \"setMailboxes\"," +
+                "    {" +
+                "      \"update\": {" +
+                "        \"" + mailboxId.serialize() + "\" : {" +
+                "          \"sharedWith\" : {\"" + username + "\": [\"a\", \"w\"]," +
+                "                            \"" + user2 + "\": [\"a\", \"w\"]}" +
+                "        }" +
+                "      }" +
+                "    }," +
+                "    \"#0\"" +
+                "  ]" +
+                "]")
+            .post("/jmap");
+
+        MailboxACL acl = jmapServer.getProbe(ACLProbeImpl.class)
+            .retrieveRights(MailboxPath.forUser(username, myBox));
+
+        assertThat(acl.getEntries())
+            .doesNotContainKeys(MailboxACL.EntryKey.createUserEntryKey(username));
     }
 
     @Test
@@ -1985,8 +2024,7 @@ public abstract class SetMailboxesMethodTest {
 
     @Test
     public void setMailboxesShouldReturnNotUpdatedWhenRenamingSystemMailbox() {
-        Mailbox mailbox = mailboxProbe.getMailbox(MailboxConstants.USER_NAMESPACE, username, MailboxConstants.INBOX);
-        String mailboxId = mailbox.getMailboxId().serialize();
+        String mailboxId = mailboxProbe.getMailboxId(MailboxConstants.USER_NAMESPACE, username, MailboxConstants.INBOX).serialize();
 
         String requestBody =
                 "[" +
@@ -2025,7 +2063,7 @@ public abstract class SetMailboxesMethodTest {
                     "    {" +
                     "      \"update\": {" +
                     "        \"" + mailboxId.serialize() + "\" : {" +
-                    "          \"name\" : \"outbox\"" +
+                    "          \"name\" : \"Outbox\"" +
                     "        }" +
                     "      }" +
                     "    }," +
@@ -2043,7 +2081,7 @@ public abstract class SetMailboxesMethodTest {
             .body(NAME, equalTo("mailboxesSet"))
             .body(ARGUMENTS + ".notUpdated", hasEntry(equalTo(mailboxId.serialize()), Matchers.allOf(
                     hasEntry(equalTo("type"), equalTo("invalidArguments")),
-                    hasEntry(equalTo("description"), equalTo("The mailbox 'outbox' is a system mailbox.")))));
+                    hasEntry(equalTo("description"), equalTo("The mailbox 'Outbox' is a system mailbox.")))));
     }
 
     @Test
@@ -2078,5 +2116,94 @@ public abstract class SetMailboxesMethodTest {
           .body(ARGUMENTS + ".notUpdated", hasEntry(equalTo(mailboxChildToMoveCId.serialize()), Matchers.allOf(
                   hasEntry(equalTo("type"), equalTo("invalidArguments")),
                   hasEntry(equalTo("description"), equalTo("Cannot rename a mailbox to an already existing mailbox.")))));
+    }
+
+    @Test
+    public void setMailboxesShouldReturnUpdatedWhenShareSystemMailbox() {
+        String requestBody =
+            "[" +
+                "  [ \"setMailboxes\"," +
+                "    {" +
+                "      \"update\": {" +
+                "        \"" + inboxId.serialize() + "\" : {" +
+                "          \"sharedWith\" : {\"user@" + DOMAIN + "\": [\"a\", \"w\"]}" +
+                "        }" +
+                "      }" +
+                "    }," +
+                "    \"#0\"" +
+                "  ]" +
+                "]";
+
+        given()
+            .header("Authorization", accessToken.serialize())
+            .body(requestBody)
+        .when()
+            .post("/jmap")
+        .then()
+            .statusCode(200)
+            .body(NAME, equalTo("mailboxesSet"))
+            .body(ARGUMENTS + ".updated", contains(inboxId.serialize()));
+    }
+
+    @Test
+    public void setMailboxesShouldReturnNotUpdatedWhenShareOutboxMailbox() {
+        MailboxId outboxId = mailboxProbe.createMailbox(MailboxConstants.USER_NAMESPACE, username, DefaultMailboxes.OUTBOX);
+        String requestBody =
+            "[" +
+                "  [ \"setMailboxes\"," +
+                "    {" +
+                "      \"update\": {" +
+                "        \"" + outboxId.serialize() + "\" : {" +
+                "          \"sharedWith\" : {\"user@" + DOMAIN + "\": [\"a\", \"w\"]}" +
+                "        }" +
+                "      }" +
+                "    }," +
+                "    \"#0\"" +
+                "  ]" +
+                "]";
+
+        given()
+            .header("Authorization", accessToken.serialize())
+            .body(requestBody)
+        .when()
+            .post("/jmap")
+        .then()
+            .statusCode(200)
+            .body(NAME, equalTo("mailboxesSet"))
+            .body(ARGUMENTS + ".notUpdated", aMapWithSize(1))
+            .body(ARGUMENTS + ".notUpdated", hasEntry(equalTo(outboxId.serialize()), Matchers.allOf(
+                hasEntry(equalTo("type"), equalTo("invalidArguments")),
+                hasEntry(equalTo("description"), equalTo("Sharing 'Outbox' is forbidden")))));
+    }
+
+    @Test
+    public void setMailboxesShouldReturnNotUpdatedWhenShareDraftMailbox() {
+        MailboxId draftId = mailboxProbe.createMailbox(MailboxConstants.USER_NAMESPACE, username, DefaultMailboxes.DRAFTS);
+        String requestBody =
+            "[" +
+                "  [ \"setMailboxes\"," +
+                "    {" +
+                "      \"update\": {" +
+                "        \"" + draftId.serialize() + "\" : {" +
+                "          \"sharedWith\" : {\"user@" + DOMAIN + "\": [\"a\", \"w\"]}" +
+                "        }" +
+                "      }" +
+                "    }," +
+                "    \"#0\"" +
+                "  ]" +
+                "]";
+
+        given()
+            .header("Authorization", accessToken.serialize())
+            .body(requestBody)
+        .when()
+            .post("/jmap")
+        .then()
+            .statusCode(200)
+            .body(NAME, equalTo("mailboxesSet"))
+            .body(ARGUMENTS + ".notUpdated", aMapWithSize(1))
+            .body(ARGUMENTS + ".notUpdated", hasEntry(equalTo(draftId.serialize()), Matchers.allOf(
+                hasEntry(equalTo("type"), equalTo("invalidArguments")),
+                hasEntry(equalTo("description"), equalTo("Sharing 'Draft' is forbidden")))));
     }
 }

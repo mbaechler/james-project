@@ -29,18 +29,19 @@ import static org.apache.james.mailbox.hbase.HBaseNames.MESSAGE_DATA_HEADERS_CF;
 import static org.apache.james.mailbox.hbase.HBaseNames.SUBSCRIPTIONS;
 import static org.apache.james.mailbox.hbase.HBaseNames.SUBSCRIPTIONS_TABLE;
 import static org.apache.james.mailbox.hbase.HBaseNames.SUBSCRIPTION_CF;
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.hbase.HBaseClusterSingleton;
 import org.apache.james.mailbox.hbase.mail.model.HBaseMailbox;
 import org.apache.james.mailbox.model.MailboxPath;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -129,10 +130,10 @@ public class HBaseUidAndModSeqProviderTest {
         pathsList.add(path);
         MailboxSession session = null;
         Optional<MessageUid> result = uidProvider.lastUid(session, newBox);
-        assertEquals(Optional.empty(), result);
+        assertThat(result).isEqualTo(Optional.empty());
         for (int i = 1; i < 10; i++) {
             MessageUid uid = uidProvider.nextUid(session, newBox);
-            assertEquals(uid, uidProvider.lastUid(session, newBox).get());
+            assertThat(uidProvider.lastUid(session, newBox).get()).isEqualTo(uid);
         }
     }
 
@@ -152,7 +153,7 @@ public class HBaseUidAndModSeqProviderTest {
                 lastUid = Optional.of(MessageUid.MIN_VALUE);
             }
             MessageUid result = uidProvider.nextUid(session, mailbox);
-            assertEquals(lastUid.get(), result);
+            assertThat(result).isEqualTo(lastUid.get());
         }
     }
 
@@ -170,10 +171,10 @@ public class HBaseUidAndModSeqProviderTest {
         pathsList.add(path);
         MailboxSession session = null;
         long result = modSeqProvider.highestModSeq(session, newBox);
-        assertEquals(0, result);
+        assertThat(result).isEqualTo(0);
         for (int i = 1; i < 10; i++) {
             long uid = modSeqProvider.nextModSeq(session, newBox);
-            assertEquals(uid, modSeqProvider.highestModSeq(session, newBox));
+            assertThat(modSeqProvider.highestModSeq(session, newBox)).isEqualTo(uid);
         }
     }
 
@@ -189,7 +190,7 @@ public class HBaseUidAndModSeqProviderTest {
         long result;
         for (int i = (int) lastUid + 1; i < (lastUid + 10); i++) {
             result = modSeqProvider.nextModSeq(session, mailbox);
-            assertEquals(i, result);
+            assertThat(result).isEqualTo(i);
         }
     }
 }

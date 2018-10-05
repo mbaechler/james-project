@@ -26,17 +26,16 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import javax.mail.MessagingException;
 import javax.management.JMException;
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
+import org.apache.james.core.MailAddress;
 import org.apache.james.lifecycle.api.Disposable;
 import org.apache.james.mailetcontainer.impl.matchers.CompositeMatcher;
 import org.apache.james.mailetcontainer.lib.AbstractStateMailetProcessor;
 import org.apache.james.mailetcontainer.lib.AbstractStateMailetProcessor.MailetProcessorListener;
-import org.apache.james.core.MailAddress;
 import org.apache.mailet.Mailet;
 import org.apache.mailet.Matcher;
 
@@ -62,26 +61,16 @@ public class JMXStateMailetProcessorListener implements MailetProcessorListener,
         registerMBeans();
     }
 
-    /**
-     * @see
-     * org.apache.james.mailetcontainer.lib.AbstractStateMailetProcessor.MailetProcessorListener
-     * #afterMailet(org.apache.mailet.Mailet, java.lang.String, java.lang.String, long,
-     * javax.mail.MessagingException)
-     */
-    public void afterMailet(Mailet m, String mailName, String state, long processTime, MessagingException e) {
+    @Override
+    public void afterMailet(Mailet m, String mailName, String state, long processTime, Exception e) {
         MailetManagement mgmt = mailetMap.get(m);
         if (mgmt != null) {
             mgmt.update(processTime, e == null);
         }
     }
 
-    /**
-     * @see
-     * org.apache.james.mailetcontainer.lib.AbstractStateMailetProcessor.MailetProcessorListener
-     * #afterMatcher(org.apache.mailet.Matcher, java.lang.String, java.util.Collection,
-     * java.util.Collection, long, javax.mail.MessagingException)
-     */
-    public void afterMatcher(Matcher m, String mailName, Collection<MailAddress> rcpts, Collection<MailAddress> matches, long processTime, MessagingException e) {
+    @Override
+    public void afterMatcher(Matcher m, String mailName, Collection<MailAddress> rcpts, Collection<MailAddress> matches, long processTime, Exception e) {
         MatcherManagement mgmt = matcherMap.get(m);
 
         if (mgmt != null) {
@@ -164,9 +153,7 @@ public class JMXStateMailetProcessorListener implements MailetProcessorListener,
 
     }
 
-    /**
-     * @see org.apache.james.lifecycle.api.Disposable#dispose()
-     */
+    @Override
     public void dispose() {
         unregisterMBeans();
         mailetMap.clear();

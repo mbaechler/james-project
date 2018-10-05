@@ -21,11 +21,11 @@
 
 package org.apache.james.transport.matchers;
 
+import javax.mail.MessagingException;
+
+import org.apache.james.core.MailAddress;
 import org.apache.mailet.Experimental;
 import org.apache.mailet.base.GenericRecipientMatcher;
-import org.apache.james.core.MailAddress;
-
-import javax.mail.MessagingException;
 
 /**
  * CommandListservMatcher is the matcher that pairs with the CommandListservManager
@@ -46,10 +46,7 @@ public class CommandListservMatcher extends GenericRecipientMatcher {
 
     private MailAddress listservAddress;
 
-    /*
-     * (non-Javadoc)
-     * @see org.apache.mailet.base.GenericMatcher#init()
-     */
+    @Override
     public void init() throws MessagingException {
         listservAddress = new MailAddress(getCondition());
     }
@@ -60,6 +57,7 @@ public class CommandListservMatcher extends GenericRecipientMatcher {
      * @param recipient
      * @return true if matches, false otherwise
      */
+    @Override
     public boolean matchRecipient(MailAddress recipient) {
         if (recipient.getDomain().equals(listservAddress.getDomain())) {
             if (recipient.getLocalPart().startsWith(listservAddress.getLocalPart() + "-")) {

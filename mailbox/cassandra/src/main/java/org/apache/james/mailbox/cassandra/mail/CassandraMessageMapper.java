@@ -31,7 +31,7 @@ import java.util.stream.Stream;
 import javax.mail.Flags;
 import javax.mail.Flags.Flag;
 
-import org.apache.james.backends.cassandra.init.CassandraConfiguration;
+import org.apache.james.backends.cassandra.init.configuration.CassandraConfiguration;
 import org.apache.james.mailbox.ApplicableFlagBuilder;
 import org.apache.james.mailbox.FlagsBuilder;
 import org.apache.james.mailbox.MailboxSession;
@@ -39,7 +39,6 @@ import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.cassandra.ids.CassandraId;
 import org.apache.james.mailbox.cassandra.ids.CassandraMessageId;
 import org.apache.james.mailbox.cassandra.mail.utils.FlagsUpdateStageResult;
-import org.apache.james.mailbox.cassandra.mail.utils.Limit;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.ComposedMessageId;
 import org.apache.james.mailbox.model.ComposedMessageIdWithMetaData;
@@ -56,6 +55,7 @@ import org.apache.james.mailbox.store.mail.model.impl.SimpleMailboxMessage;
 import org.apache.james.util.FluentFutureStream;
 import org.apache.james.util.OptionalUtils;
 import org.apache.james.util.streams.JamesCollectors;
+import org.apache.james.util.streams.Limit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -214,10 +214,13 @@ public class CassandraMessageMapper implements MessageMapper {
     }
 
     private CompletableFuture<Stream<SimpleMailboxMessage>> expungeUidChunk(CassandraId mailboxId, Collection<MessageUid> uidChunk) {
-        return FluentFutureStream.ofOptionals(
-                uidChunk.stream().map(uid -> retrieveComposedId(mailboxId, uid)))
+        return FluentFutureStream.of(
+                uidChunk.stream().map(uid -> retrieveComposedId(mailboxId, uid)),
+                FluentFutureStream::unboxOptional)
             .performOnAll(this::deleteUsingMailboxId)
-            .thenFlatCompose(idWithMetadata -> messageDAO.retrieveMessages(ImmutableList.of(idWithMetadata), FetchType.Metadata, Limit.unlimited()))
+            .map(idWithMetadata -> FluentFutureStream.of(
+                messageDAO.retrieveMessages(ImmutableList.of(idWithMetadata), FetchType.Metadata, Limit.unlimited())),
+                FluentFutureStream::unboxFluentFuture)
             .filter(CassandraMessageDAO.MessageResult::isFound)
             .map(CassandraMessageDAO.MessageResult::message)
             .map(pair -> pair.getKey().toMailboxMessage(ImmutableList.of()))
@@ -299,8 +302,9 @@ public class CassandraMessageMapper implements MessageMapper {
     }
 
     private FlagsUpdateStageResult retryUpdatesStage(CassandraId mailboxId, FlagsUpdateCalculator flagsUpdateCalculator, List<MessageUid> failed) {
-        Stream<ComposedMessageIdWithMetaData> idsFailed = FluentFutureStream.ofOptionals(
-            failed.stream().map(uid -> messageIdDAO.retrieve(mailboxId, uid)))
+        Stream<ComposedMessageIdWithMetaData> idsFailed = FluentFutureStream.of(
+                failed.stream().map(uid -> messageIdDAO.retrieve(mailboxId, uid)),
+                FluentFutureStream::unboxOptional)
             .join();
 
         return runUpdateStage(mailboxId, idsFailed, flagsUpdateCalculator);
@@ -330,7 +334,7 @@ public class CassandraMessageMapper implements MessageMapper {
                 .map(Throwing
                     .function((UpdatedFlags updatedFlags) -> indexTableHandler.updateIndexOnFlagsUpdate(mailboxId, updatedFlags))
                     .fallbackTo(failedindex -> {
-                        LOGGER.error("Could not update flag indexes for mailboxId {} UID {}. This will lead to inconsistencies across Cassandra tables");
+                        LOGGER.error("Could not update flag indexes for mailboxId {} UID {}. This will lead to inconsistencies across Cassandra tables", mailboxId, failedindex.getUid());
                         return CompletableFuture.completedFuture(null);
                     })))
             .completableFuture()

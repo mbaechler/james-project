@@ -55,9 +55,9 @@ public class URIRBLHandler implements JamesMessageHook, ProtocolHandler {
     /** This log is the fall back shared by all instances */
     private static final Logger LOGGER = LoggerFactory.getLogger(URIRBLHandler.class);
 
-    private final static String LISTED_DOMAIN = "LISTED_DOMAIN";
+    private static final String LISTED_DOMAIN = "LISTED_DOMAIN";
 
-    private final static String URBLSERVER = "URBL_SERVER";
+    private static final String URBLSERVER = "URBL_SERVER";
 
     private DNSService dnsService;
 
@@ -105,10 +105,7 @@ public class URIRBLHandler implements JamesMessageHook, ProtocolHandler {
         this.getDetail = getDetail;
     }
 
-    /**
-     * @see org.apache.james.smtpserver.JamesMessageHook#onMessage(org.apache.james.protocols.smtp.SMTPSession,
-     *      org.apache.mailet.Mail)
-     */
+    @Override
     public HookResult onMessage(SMTPSession session, Mail mail) {
         if (check(session, mail)) {
             String uRblServer = (String) session.getAttachment(URBLSERVER, State.Transaction);
@@ -128,13 +125,19 @@ public class URIRBLHandler implements JamesMessageHook, ProtocolHandler {
             }
 
             if (detail != null) {
-                return new HookResult(HookReturnCode.DENY, DSNStatus.getStatus(DSNStatus.PERMANENT, DSNStatus.SECURITY_OTHER) + "Rejected: message contains domain " + target + " listed by " + uRblServer + " . Details: " + detail);
+                return HookResult.builder()
+                    .hookReturnCode(HookReturnCode.deny())
+                    .smtpDescription(DSNStatus.getStatus(DSNStatus.PERMANENT, DSNStatus.SECURITY_OTHER) + "Rejected: message contains domain " + target + " listed by " + uRblServer + " . Details: " + detail)
+                    .build();
             } else {
-                return new HookResult(HookReturnCode.DENY, DSNStatus.getStatus(DSNStatus.PERMANENT, DSNStatus.SECURITY_OTHER) + " Rejected: message contains domain " + target + " listed by " + uRblServer);
+                return HookResult.builder()
+                    .hookReturnCode(HookReturnCode.deny())
+                    .smtpDescription(DSNStatus.getStatus(DSNStatus.PERMANENT, DSNStatus.SECURITY_OTHER) + " Rejected: message contains domain " + target + " listed by " + uRblServer)
+                    .build();
             }
 
         } else {
-            return new HookResult(HookReturnCode.DECLINED);
+            return HookResult.DECLINED;
         }
     }
 
@@ -151,10 +154,10 @@ public class URIRBLHandler implements JamesMessageHook, ProtocolHandler {
      */
     private HashSet<String> scanMailForDomains(MimePart part, SMTPSession session) throws MessagingException, IOException {
         HashSet<String> domains = new HashSet<>();
-        LOGGER.debug("mime type is: \"" + part.getContentType() + "\"");
+        LOGGER.debug("mime type is: \"{}\"", part.getContentType());
 
         if (part.isMimeType("text/plain") || part.isMimeType("text/html")) {
-            LOGGER.debug("scanning: \"" + part.getContent().toString() + "\"");
+            LOGGER.debug("scanning: \"{}\"", part.getContent());
             HashSet<String> newDom = URIScanner.scanContentForDomains(domains, part.getContent().toString());
 
             // Check if new domains are found and add the domains
@@ -164,10 +167,10 @@ public class URIRBLHandler implements JamesMessageHook, ProtocolHandler {
         } else if (part.isMimeType("multipart/*")) {
             MimeMultipart multipart = (MimeMultipart) part.getContent();
             int count = multipart.getCount();
-            LOGGER.debug("multipart count is: " + count);
+            LOGGER.debug("multipart count is: {}", count);
 
             for (int index = 0; index < count; index++) {
-                LOGGER.debug("recursing index: " + index);
+                LOGGER.debug("recursing index: {}", index);
                 MimeBodyPart mimeBodyPart = (MimeBodyPart) multipart.getBodyPart(index);
                 HashSet<String> newDomains = scanMailForDomains(mimeBodyPart, session);
 
@@ -200,9 +203,7 @@ public class URIRBLHandler implements JamesMessageHook, ProtocolHandler {
                         String uRblServer = uRbl.next();
                         String address = target + "." + uRblServer;
 
-                        if (LOGGER.isDebugEnabled()) {
-                            LOGGER.debug("Lookup " + address);
-                        }
+                        LOGGER.debug("Lookup {}", address);
 
                         dnsService.getByName(address);
 
@@ -229,9 +230,7 @@ public class URIRBLHandler implements JamesMessageHook, ProtocolHandler {
         Collection<String> serverCollection = new ArrayList<>();
         for (String rblServerName : servers) {
             serverCollection.add(rblServerName);
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info("Adding uriRBL server: " + rblServerName);
-            }
+            LOGGER.info("Adding uriRBL server: {}", rblServerName);
         }
         if (serverCollection != null && serverCollection.size() > 0) {
             setUriRblServer(serverCollection);

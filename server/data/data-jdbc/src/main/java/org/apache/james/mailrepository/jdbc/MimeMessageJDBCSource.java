@@ -29,8 +29,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.apache.james.server.core.MimeMessageSource;
 import org.apache.james.repository.api.StreamRepository;
+import org.apache.james.server.core.MimeMessageSource;
 import org.apache.james.util.sql.JDBCUtil;
 
 /**
@@ -107,6 +107,7 @@ public class MimeMessageJDBCSource extends MimeMessageSource {
      * 
      * @return the String ID
      */
+    @Override
     public String getSourceId() {
         return repository.repositoryName + "/" + key;
     }
@@ -116,9 +117,8 @@ public class MimeMessageJDBCSource extends MimeMessageSource {
      * This should be smart enough to work even if the file does not exist. This
      * is to support a repository with the entire message in the database, which
      * is how James 1.2 worked.
-     * 
-     * @see org.apache.james.server.core.MimeMessageSource#getInputStream()
      */
+    @Override
     public synchronized InputStream getInputStream() throws IOException {
         Connection conn = null;
         PreparedStatement retrieveMessageStream = null;
@@ -175,12 +175,12 @@ public class MimeMessageJDBCSource extends MimeMessageSource {
 
     /**
      * Runs a custom SQL statement to check the size of the message body
-     * 
-     * @see org.apache.james.server.core.MimeMessageSource#getMessageSize()
      */
+    @Override
     public synchronized long getMessageSize() throws IOException {
-        if (size != -1)
+        if (size != -1) {
             return size;
+        }
         if (retrieveMessageBodySizeSQL == null) {
             // There was no SQL statement for this repository... figure it out
             // the hard way

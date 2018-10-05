@@ -28,16 +28,18 @@ import org.apache.james.imap.message.response.ExistsResponse;
 
 public class ExistsResponseEncoder extends AbstractChainedImapEncoder {
    
-	public static final String EXISTS = "EXISTS";
+    public static final String EXISTS = "EXISTS";
 
     public ExistsResponseEncoder(ImapEncoder next) {
         super(next);
     }
 
+    @Override
     public boolean isAcceptable(ImapMessage message) {
         return message instanceof ExistsResponse;
     }
 
+    @Override
     protected void doEncode(ImapMessage acceptableMessage, ImapResponseComposer composer, ImapSession session) throws IOException {
         final ExistsResponse existsResponse = (ExistsResponse) acceptableMessage;
         final long numberOfMessages = existsResponse.getNumberOfMessages();

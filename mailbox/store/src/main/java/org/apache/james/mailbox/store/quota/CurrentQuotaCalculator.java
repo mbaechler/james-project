@@ -36,7 +36,6 @@ import org.apache.james.mailbox.store.mail.MessageMapper;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.MailboxMessage;
 
-import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 
 public class CurrentQuotaCalculator {
@@ -59,7 +58,7 @@ public class CurrentQuotaCalculator {
         for (Mailbox mailbox : mailboxes) {
             Iterator<MailboxMessage> messages = mapper.findInMailbox(mailbox, MessageRange.all(), MessageMapper.FetchType.Metadata, -1);
             messageCount += mapper.countMessagesInMailbox(mailbox);
-            while(messages.hasNext()) {
+            while (messages.hasNext()) {
                 messagesSizes +=  messages.next().getFullContentOctets();
             }
         }
@@ -73,7 +72,7 @@ public class CurrentQuotaCalculator {
             try {
                 return mapper.findMailboxByPath(mailboxPath);
             } catch (MailboxException e) {
-                throw Throwables.propagate(e);
+                throw new RuntimeException(e);
             }
         });
     }

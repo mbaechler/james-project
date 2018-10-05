@@ -28,22 +28,45 @@ import org.apache.james.mailbox.BlobManager;
 import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.MailboxPathLocker;
 import org.apache.james.mailbox.MessageIdManager;
+import org.apache.james.mailbox.RightManager;
 import org.apache.james.mailbox.SubscriptionManager;
 import org.apache.james.mailbox.cassandra.CassandraMailboxManager;
 import org.apache.james.mailbox.cassandra.CassandraMailboxSessionMapperFactory;
 import org.apache.james.mailbox.cassandra.CassandraSubscriptionManager;
 import org.apache.james.mailbox.cassandra.ids.CassandraId;
 import org.apache.james.mailbox.cassandra.ids.CassandraMessageId;
+import org.apache.james.mailbox.cassandra.mail.CassandraACLMapper;
+import org.apache.james.mailbox.cassandra.mail.CassandraApplicableFlagDAO;
 import org.apache.james.mailbox.cassandra.mail.CassandraAttachmentDAO;
 import org.apache.james.mailbox.cassandra.mail.CassandraAttachmentDAOV2;
 import org.apache.james.mailbox.cassandra.mail.CassandraAttachmentMessageIdDAO;
-import org.apache.james.mailbox.cassandra.mail.CassandraBlobsDAO;
+import org.apache.james.mailbox.cassandra.mail.CassandraAttachmentOwnerDAO;
+import org.apache.james.mailbox.cassandra.mail.CassandraDeletedMessageDAO;
+import org.apache.james.mailbox.cassandra.mail.CassandraFirstUnseenDAO;
+import org.apache.james.mailbox.cassandra.mail.CassandraMailboxCounterDAO;
+import org.apache.james.mailbox.cassandra.mail.CassandraMailboxDAO;
 import org.apache.james.mailbox.cassandra.mail.CassandraMailboxMapper;
+import org.apache.james.mailbox.cassandra.mail.CassandraMailboxPathDAOImpl;
+import org.apache.james.mailbox.cassandra.mail.CassandraMailboxPathV2DAO;
+import org.apache.james.mailbox.cassandra.mail.CassandraMailboxRecentsDAO;
 import org.apache.james.mailbox.cassandra.mail.CassandraMessageDAO;
 import org.apache.james.mailbox.cassandra.mail.CassandraMessageIdDAO;
 import org.apache.james.mailbox.cassandra.mail.CassandraMessageIdToImapUidDAO;
 import org.apache.james.mailbox.cassandra.mail.CassandraModSeqProvider;
 import org.apache.james.mailbox.cassandra.mail.CassandraUidProvider;
+import org.apache.james.mailbox.cassandra.mail.CassandraUserMailboxRightsDAO;
+import org.apache.james.mailbox.cassandra.modules.CassandraAclModule;
+import org.apache.james.mailbox.cassandra.modules.CassandraAnnotationModule;
+import org.apache.james.mailbox.cassandra.modules.CassandraApplicableFlagsModule;
+import org.apache.james.mailbox.cassandra.modules.CassandraAttachmentModule;
+import org.apache.james.mailbox.cassandra.modules.CassandraDeletedMessageModule;
+import org.apache.james.mailbox.cassandra.modules.CassandraFirstUnseenModule;
+import org.apache.james.mailbox.cassandra.modules.CassandraMailboxCounterModule;
+import org.apache.james.mailbox.cassandra.modules.CassandraMailboxRecentsModule;
+import org.apache.james.mailbox.cassandra.modules.CassandraMessageModule;
+import org.apache.james.mailbox.cassandra.modules.CassandraModSeqModule;
+import org.apache.james.mailbox.cassandra.modules.CassandraSubscriptionModule;
+import org.apache.james.mailbox.cassandra.modules.CassandraUidModule;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MessageId;
@@ -56,7 +79,9 @@ import org.apache.james.mailbox.store.MailboxSessionMapperFactory;
 import org.apache.james.mailbox.store.NoMailboxPathLocker;
 import org.apache.james.mailbox.store.StoreAttachmentManager;
 import org.apache.james.mailbox.store.StoreBlobManager;
+import org.apache.james.mailbox.store.StoreMailboxManager;
 import org.apache.james.mailbox.store.StoreMessageIdManager;
+import org.apache.james.mailbox.store.StoreRightManager;
 import org.apache.james.mailbox.store.event.MailboxEventDispatcher;
 import org.apache.james.mailbox.store.mail.AttachmentMapperFactory;
 import org.apache.james.mailbox.store.mail.MailboxMapperFactory;
@@ -81,28 +106,42 @@ public class CassandraMailboxModule extends AbstractModule {
         install(new DefaultEventModule());
         install(new CassandraQuotaModule());
 
-        bind(CassandraMailboxSessionMapperFactory.class).in(Scopes.SINGLETON);
-        bind(CassandraMailboxManager.class).in(Scopes.SINGLETON);
-        bind(NoMailboxPathLocker.class).in(Scopes.SINGLETON);
-        bind(CassandraSubscriptionManager.class).in(Scopes.SINGLETON);
-        bind(CassandraModSeqProvider.class).in(Scopes.SINGLETON);
-        bind(CassandraUidProvider.class).in(Scopes.SINGLETON);
-        bind(UserRepositoryAuthenticator.class).in(Scopes.SINGLETON);
-        bind(UserRepositoryAuthorizator.class).in(Scopes.SINGLETON);
-        bind(CassandraId.Factory.class).in(Scopes.SINGLETON);
-        bind(CassandraMessageId.Factory.class).in(Scopes.SINGLETON);
+        bind(CassandraApplicableFlagDAO.class).in(Scopes.SINGLETON);
+        bind(CassandraAttachmentDAO.class).in(Scopes.SINGLETON);
+        bind(CassandraAttachmentDAOV2.class).in(Scopes.SINGLETON);
+        bind(CassandraAttachmentMessageIdDAO.class).in(Scopes.SINGLETON);
+        bind(CassandraAttachmentOwnerDAO.class).in(Scopes.SINGLETON);
+        bind(CassandraDeletedMessageDAO.class).in(Scopes.SINGLETON);
+        bind(CassandraFirstUnseenDAO.class).in(Scopes.SINGLETON);
+        bind(CassandraMailboxCounterDAO.class).in(Scopes.SINGLETON);
+        bind(CassandraMailboxDAO.class).in(Scopes.SINGLETON);
+        bind(CassandraMailboxPathDAOImpl.class).in(Scopes.SINGLETON);
+        bind(CassandraMailboxPathV2DAO.class).in(Scopes.SINGLETON);
+        bind(CassandraMailboxRecentsDAO.class).in(Scopes.SINGLETON);
+        bind(CassandraMessageDAO.class).in(Scopes.SINGLETON);
         bind(CassandraMessageIdDAO.class).in(Scopes.SINGLETON);
         bind(CassandraMessageIdToImapUidDAO.class).in(Scopes.SINGLETON);
-        bind(MailboxEventDispatcher.class).in(Scopes.SINGLETON);
-        bind(StoreMessageIdManager.class).in(Scopes.SINGLETON);
+        bind(CassandraUserMailboxRightsDAO.class).in(Scopes.SINGLETON);
+
+        bind(CassandraMailboxManager.class).in(Scopes.SINGLETON);
+        bind(CassandraSubscriptionManager.class).in(Scopes.SINGLETON);
         bind(StoreAttachmentManager.class).in(Scopes.SINGLETON);
-        bind(CassandraMailboxMapper.class).in(Scopes.SINGLETON);
-        bind(CassandraMessageDAO.class).in(Scopes.SINGLETON);
-        bind(CassandraBlobsDAO.class).in(Scopes.SINGLETON);
-        bind(CassandraAttachmentDAO.class).in(Scopes.SINGLETON);
-        bind(CassandraAttachmentMessageIdDAO.class).in(Scopes.SINGLETON);
-        bind(CassandraAttachmentDAOV2.class).in(Scopes.SINGLETON);
         bind(StoreBlobManager.class).in(Scopes.SINGLETON);
+        bind(StoreMessageIdManager.class).in(Scopes.SINGLETON);
+        bind(StoreRightManager.class).in(Scopes.SINGLETON);
+
+        bind(CassandraACLMapper.class).in(Scopes.SINGLETON);
+        bind(CassandraMailboxMapper.class).in(Scopes.SINGLETON);
+
+        bind(CassandraId.Factory.class).in(Scopes.SINGLETON);
+        bind(CassandraMailboxSessionMapperFactory.class).in(Scopes.SINGLETON);
+        bind(CassandraMessageId.Factory.class).in(Scopes.SINGLETON);
+        bind(CassandraModSeqProvider.class).in(Scopes.SINGLETON);
+        bind(CassandraUidProvider.class).in(Scopes.SINGLETON);
+        bind(MailboxEventDispatcher.class).in(Scopes.SINGLETON);
+        bind(NoMailboxPathLocker.class).in(Scopes.SINGLETON);
+        bind(UserRepositoryAuthenticator.class).in(Scopes.SINGLETON);
+        bind(UserRepositoryAuthorizator.class).in(Scopes.SINGLETON);
 
         bind(BlobManager.class).to(StoreBlobManager.class);
         bind(MessageMapperFactory.class).to(CassandraMailboxSessionMapperFactory.class);
@@ -117,34 +156,34 @@ public class CassandraMailboxModule extends AbstractModule {
         bind(Authenticator.class).to(UserRepositoryAuthenticator.class);
         bind(Authorizator.class).to(UserRepositoryAuthorizator.class);
         bind(MailboxManager.class).to(CassandraMailboxManager.class);
+        bind(StoreMailboxManager.class).to(CassandraMailboxManager.class);
         bind(MailboxId.Factory.class).to(CassandraId.Factory.class);
         bind(MessageId.Factory.class).to(CassandraMessageId.Factory.class);
         bind(MessageIdManager.class).to(StoreMessageIdManager.class);
         bind(AttachmentManager.class).to(StoreAttachmentManager.class);
+        bind(RightManager.class).to(StoreRightManager.class);
 
         Multibinder<CassandraModule> cassandraDataDefinitions = Multibinder.newSetBinder(binder(), CassandraModule.class);
-        cassandraDataDefinitions.addBinding().to(org.apache.james.mailbox.cassandra.modules.CassandraAclModule.class);
-        cassandraDataDefinitions.addBinding().to(org.apache.james.mailbox.cassandra.modules.CassandraMailboxCounterModule.class);
-        cassandraDataDefinitions.addBinding().to(org.apache.james.mailbox.cassandra.modules.CassandraMailboxRecentsModule.class);
-        cassandraDataDefinitions.addBinding().to(org.apache.james.mailbox.cassandra.modules.CassandraFirstUnseenModule.class);
-        cassandraDataDefinitions.addBinding().to(org.apache.james.mailbox.cassandra.modules.CassandraMailboxModule.class);
-        cassandraDataDefinitions.addBinding().to(org.apache.james.mailbox.cassandra.modules.CassandraMessageModule.class);
-        cassandraDataDefinitions.addBinding().to(org.apache.james.mailbox.cassandra.modules.CassandraBlobModule.class);
-        cassandraDataDefinitions.addBinding().to(org.apache.james.mailbox.cassandra.modules.CassandraSubscriptionModule.class);
-        cassandraDataDefinitions.addBinding().to(org.apache.james.mailbox.cassandra.modules.CassandraUidModule.class);
-        cassandraDataDefinitions.addBinding().to(org.apache.james.mailbox.cassandra.modules.CassandraModSeqModule.class);
-        cassandraDataDefinitions.addBinding().to(org.apache.james.mailbox.cassandra.modules.CassandraAttachmentModule.class);
-        cassandraDataDefinitions.addBinding().to(org.apache.james.mailbox.cassandra.modules.CassandraAnnotationModule.class);
-
-        cassandraDataDefinitions.addBinding().to(org.apache.james.mailbox.cassandra.modules.CassandraApplicableFlagsModule.class);
-
-        cassandraDataDefinitions.addBinding().to(org.apache.james.mailbox.cassandra.modules.CassandraDeletedMessageModule.class);
-
+        cassandraDataDefinitions.addBinding().toInstance(CassandraAclModule.MODULE);
+        cassandraDataDefinitions.addBinding().toInstance(CassandraAttachmentModule.MODULE);
+        cassandraDataDefinitions.addBinding().toInstance(org.apache.james.mailbox.cassandra.modules.CassandraMailboxModule.MODULE);
+        cassandraDataDefinitions.addBinding().toInstance(CassandraMessageModule.MODULE);
+        cassandraDataDefinitions.addBinding().toInstance(CassandraMailboxCounterModule.MODULE);
+        cassandraDataDefinitions.addBinding().toInstance(CassandraAnnotationModule.MODULE);
+        cassandraDataDefinitions.addBinding().toInstance(CassandraApplicableFlagsModule.MODULE);
+        cassandraDataDefinitions.addBinding().toInstance(CassandraDeletedMessageModule.MODULE);
+        cassandraDataDefinitions.addBinding().toInstance(CassandraFirstUnseenModule.MODULE);
+        cassandraDataDefinitions.addBinding().toInstance(CassandraMailboxRecentsModule.MODULE);
+        cassandraDataDefinitions.addBinding().toInstance(CassandraModSeqModule.MODULE);
+        cassandraDataDefinitions.addBinding().toInstance(CassandraSubscriptionModule.MODULE);
+        cassandraDataDefinitions.addBinding().toInstance(CassandraUidModule.MODULE);
 
         Multibinder.newSetBinder(binder(), MailboxManagerDefinition.class).addBinding().to(CassandraMailboxManagerDefinition.class);
     }
 
-    @Provides @Named(Names.MAILBOXMANAGER_NAME) @Singleton
+    @Provides
+    @Named(Names.MAILBOXMANAGER_NAME)
+    @Singleton
     public MailboxManager provideMailboxManager(CassandraMailboxManager cassandraMailboxManager, ListeningCurrentQuotaUpdater quotaUpdater,
                                                 QuotaManager quotaManager, QuotaRootResolver quotaRootResolver, BatchSizes batchSizes) throws MailboxException {
         cassandraMailboxManager.setQuotaUpdater(quotaUpdater);

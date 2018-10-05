@@ -25,11 +25,11 @@ import static org.apache.james.mailbox.store.mail.model.MessageAssert.assertThat
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 import javax.mail.Flags;
 import javax.mail.Flags.Flag;
@@ -62,7 +62,7 @@ import com.google.common.collect.Lists;
 
 public abstract class MessageMapperTest {
 
-    private final static char DELIMITER = '.';
+    private static final char DELIMITER = '.';
     private static final int LIMIT = 10;
     private static final int BODY_START = 16;
     public static final int UID_VALIDITY = 42;
@@ -102,7 +102,7 @@ public abstract class MessageMapperTest {
 
     private void initData() throws MailboxException {
         benwaInboxMailbox = createMailbox(MailboxPath.forUser("benwa", "INBOX"));
-        benwaWorkMailbox = createMailbox( MailboxPath.forUser("benwa", "INBOX"+DELIMITER+"work"));
+        benwaWorkMailbox = createMailbox(MailboxPath.forUser("benwa", "INBOX" + DELIMITER + "work"));
 
         message1 = createMessage(benwaInboxMailbox, mapperProvider.generateMessageId(), "Subject: Test1 \n\nBody1\n.\n", BODY_START, new PropertyBuilder());
         message2 = createMessage(benwaInboxMailbox, mapperProvider.generateMessageId(), "Subject: Test2 \n\nBody2\n.\n", BODY_START, new PropertyBuilder());
@@ -189,16 +189,16 @@ public abstract class MessageMapperTest {
     }
 
     @Test
-    public void messagesCanBeRetrievedInMailboxWithRangeTypeOne() throws MailboxException, IOException{
+    public void messagesCanBeRetrievedInMailboxWithRangeTypeOne() throws MailboxException, IOException {
         saveMessages();
         MessageMapper.FetchType fetchType = MessageMapper.FetchType.Full;
-        int limit =10;
+        int limit = 10;
         assertThat(messageMapper.findInMailbox(benwaInboxMailbox, MessageRange.one(message1.getUid()), fetchType, limit).next())
             .isEqualToWithoutAttachment(message1, fetchType);
     }
 
     @Test
-    public void messagesCanBeRetrievedInMailboxWithRangeTypeRange() throws MailboxException, IOException{
+    public void messagesCanBeRetrievedInMailboxWithRangeTypeRange() throws MailboxException, IOException {
         saveMessages();
         Iterator<MailboxMessage> retrievedMessageIterator = messageMapper
                 .findInMailbox(benwaInboxMailbox, MessageRange.range(message1.getUid(), message4.getUid()), MessageMapper.FetchType.Full, LIMIT);
@@ -249,7 +249,7 @@ public abstract class MessageMapperTest {
     }
 
     @Test
-    public void messagesRetrievedUsingFetchTypeMetadataShouldHaveAtLastMetadataDataLoaded() throws MailboxException, IOException{
+    public void messagesRetrievedUsingFetchTypeMetadataShouldHaveAtLastMetadataDataLoaded() throws MailboxException, IOException {
         saveMessages();
         MessageMapper.FetchType fetchType = MessageMapper.FetchType.Metadata;
         Iterator<MailboxMessage> retrievedMessageIterator = messageMapper.findInMailbox(benwaInboxMailbox, MessageRange.one(message1.getUid()), fetchType, LIMIT);
@@ -258,7 +258,7 @@ public abstract class MessageMapperTest {
     }
 
     @Test
-    public void messagesRetrievedUsingFetchTypeHeaderShouldHaveHeaderDataLoaded() throws MailboxException, IOException{
+    public void messagesRetrievedUsingFetchTypeHeaderShouldHaveHeaderDataLoaded() throws MailboxException, IOException {
         saveMessages();
         MessageMapper.FetchType fetchType = MessageMapper.FetchType.Headers;
         Iterator<MailboxMessage> retrievedMessageIterator = messageMapper.findInMailbox(benwaInboxMailbox, MessageRange.one(message1.getUid()), fetchType, LIMIT);
@@ -267,7 +267,7 @@ public abstract class MessageMapperTest {
     }
 
     @Test
-    public void messagesRetrievedUsingFetchTypeBodyShouldHaveBodyDataLoaded() throws MailboxException, IOException{
+    public void messagesRetrievedUsingFetchTypeBodyShouldHaveBodyDataLoaded() throws MailboxException, IOException {
         saveMessages();
         MessageMapper.FetchType fetchType = MessageMapper.FetchType.Body;
         Iterator<MailboxMessage> retrievedMessageIterator = messageMapper.findInMailbox(benwaInboxMailbox, MessageRange.one(message1.getUid()), fetchType, LIMIT);
@@ -276,7 +276,7 @@ public abstract class MessageMapperTest {
     }
 
     @Test
-    public void messagesRetrievedUsingFetchTypeFullShouldHaveBodyDataLoaded() throws MailboxException, IOException{
+    public void messagesRetrievedUsingFetchTypeFullShouldHaveBodyDataLoaded() throws MailboxException, IOException {
         saveMessages();
         MessageMapper.FetchType fetchType = FetchType.Full;
         Iterator<MailboxMessage> retrievedMessageIterator = messageMapper.findInMailbox(benwaInboxMailbox, MessageRange.one(message1.getUid()), fetchType, LIMIT);
@@ -796,12 +796,13 @@ public abstract class MessageMapperTest {
 
         int threadCount = 2;
         int updateCount = 10;
-        assertThat(new ConcurrentTestRunner(threadCount, updateCount,
-            (threadNumber, step) -> messageMapper.updateFlags(benwaInboxMailbox,
+        ConcurrentTestRunner.builder()
+            .operation((threadNumber, step) -> messageMapper.updateFlags(benwaInboxMailbox,
                 new FlagsUpdateCalculator(new Flags("custom-" + threadNumber + "-" + step), FlagsUpdateMode.ADD),
-                MessageRange.one(message1.getUid()))).run()
-            .awaitTermination(1, TimeUnit.MINUTES))
-            .isTrue();
+                MessageRange.one(message1.getUid())))
+            .threadCount(threadCount)
+            .operationCount(updateCount)
+            .runSuccessfullyWithin(Duration.ofMinutes(1));
 
         Iterator<MailboxMessage> messages = messageMapper.findInMailbox(benwaInboxMailbox, MessageRange.one(message1.getUid()),
             FetchType.Metadata, 1);
@@ -814,10 +815,10 @@ public abstract class MessageMapperTest {
         Assume.assumeTrue(mapperProvider.getSupportedCapabilities().contains(MapperProvider.Capabilities.THREAD_SAFE_FLAGS_UPDATE));
         saveMessages();
 
-        final int threadCount = 4;
-        final int updateCount = 20;
-        assertThat(new ConcurrentTestRunner(threadCount, updateCount,
-            (threadNumber, step) -> {
+        int threadCount = 4;
+        int updateCount = 20;
+        ConcurrentTestRunner.builder()
+            .operation((threadNumber, step) -> {
                 if (step  < updateCount / 2) {
                     messageMapper.updateFlags(benwaInboxMailbox,
                         new FlagsUpdateCalculator(new Flags("custom-" + threadNumber + "-" + step), FlagsUpdateMode.ADD),
@@ -828,9 +829,10 @@ public abstract class MessageMapperTest {
                             FlagsUpdateMode.REMOVE),
                         MessageRange.one(message1.getUid()));
                 }
-            }).run()
-            .awaitTermination(1, TimeUnit.MINUTES))
-            .isTrue();
+            })
+            .threadCount(threadCount)
+            .operationCount(updateCount)
+            .runSuccessfullyWithin(Duration.ofMinutes(1));
 
         Iterator<MailboxMessage> messages = messageMapper.findInMailbox(benwaInboxMailbox, MessageRange.one(message1.getUid()),
             FetchType.Metadata, 1);

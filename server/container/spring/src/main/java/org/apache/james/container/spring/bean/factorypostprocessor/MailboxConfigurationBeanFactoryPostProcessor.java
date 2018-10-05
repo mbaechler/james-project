@@ -22,13 +22,13 @@ package org.apache.james.container.spring.bean.factorypostprocessor;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.james.container.spring.lifecycle.ConfigurationProvider;
-
-import com.google.common.collect.ImmutableSet;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.FatalBeanException;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+
+import com.google.common.collect.ImmutableSet;
 
 /**
  * Read mailbox.xml file and register the right bean alias in the
@@ -38,10 +38,6 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
  * It will register it with the alias mailboxmanager
  */
 public class MailboxConfigurationBeanFactoryPostProcessor implements BeanFactoryPostProcessor {
-    /**
-     * @see org.springframework.beans.factory.config.BeanFactoryPostProcessor#postProcessBeanFactory
-     * (org.springframework.beans.factory.config.ConfigurableListableBeanFactory)
-     */
 
     private static final String JPA_MAILBOXMANAGER = "jpa-mailboxmanager";
     private static final String MEMORY_MAILBOX_MANAGER = "memory-mailboxManager";
@@ -53,6 +49,7 @@ public class MailboxConfigurationBeanFactoryPostProcessor implements BeanFactory
             JCR_MAILBOXMANAGER, MAILDIR_MAILBOXMANAGER,
             HBASE_MAILBOXMANAGER, CASSANDRA_MAILBOXMANAGER);
 
+    @Override
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
         ConfigurationProvider confProvider = beanFactory.getBean(ConfigurationProvider.class);
         try {
@@ -101,8 +98,9 @@ public class MailboxConfigurationBeanFactoryPostProcessor implements BeanFactory
                 mailboxIdFactory = "cassandra-mailboxIdFactory";
             }
 
-            if (mailbox == null)
+            if (mailbox == null) {
                 throw new ConfigurationException("Mailboxmanager provider " + provider + " not supported!");
+            }
             registry.registerAlias(mailbox, "mailboxmanager");
             registry.registerAlias(subscription, "subscriptionManager");
             registry.registerAlias(messageMapperFactory, "messageMapperFactory");

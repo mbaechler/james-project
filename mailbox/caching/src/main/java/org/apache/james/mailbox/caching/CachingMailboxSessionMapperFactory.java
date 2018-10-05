@@ -1,6 +1,6 @@
 package org.apache.james.mailbox.caching;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.exception.SubscriptionException;
@@ -22,21 +22,21 @@ import org.apache.james.mailbox.store.user.SubscriptionMapper;
 public class CachingMailboxSessionMapperFactory extends
         MailboxSessionMapperFactory {
 
-	private final MailboxSessionMapperFactory underlying;
-	private final MailboxByPathCache mailboxByPathCache;
-	private final MailboxMetadataCache mailboxMetadataCache;
+    private final MailboxSessionMapperFactory underlying;
+    private final MailboxByPathCache mailboxByPathCache;
+    private final MailboxMetadataCache mailboxMetadataCache;
 
-	public CachingMailboxSessionMapperFactory(MailboxSessionMapperFactory underlying, MailboxByPathCache mailboxByPathCache, MailboxMetadataCache mailboxMetadataCache) {
-		this.underlying = underlying;
-		this.mailboxByPathCache = mailboxByPathCache;
-		this.mailboxMetadataCache = mailboxMetadataCache;
-	}
-	
-	@Override
-	public MessageMapper createMessageMapper(MailboxSession session)
-			throws MailboxException {
-		return new CachingMessageMapper(underlying.createMessageMapper(session), mailboxMetadataCache);
-	}
+    public CachingMailboxSessionMapperFactory(MailboxSessionMapperFactory underlying, MailboxByPathCache mailboxByPathCache, MailboxMetadataCache mailboxMetadataCache) {
+        this.underlying = underlying;
+        this.mailboxByPathCache = mailboxByPathCache;
+        this.mailboxMetadataCache = mailboxMetadataCache;
+    }
+
+    @Override
+    public MessageMapper createMessageMapper(MailboxSession session)
+            throws MailboxException {
+        return new CachingMessageMapper(underlying.createMessageMapper(session), mailboxMetadataCache);
+    }
 
     @Override
     public MailboxMapper createMailboxMapper(MailboxSession session)
@@ -53,7 +53,7 @@ public class CachingMailboxSessionMapperFactory extends
     @Override
     public AnnotationMapper createAnnotationMapper(MailboxSession session)
             throws MailboxException {
-        throw new NotImplementedException();
+        throw new NotImplementedException("Not implemented");
     }
 
     @Override
@@ -68,6 +68,6 @@ public class CachingMailboxSessionMapperFactory extends
 
     @Override
     public MessageIdMapper createMessageIdMapper(MailboxSession session) throws MailboxException {
-        throw new NotImplementedException();
+        throw new NotImplementedException("Not implemented");
     }
 }

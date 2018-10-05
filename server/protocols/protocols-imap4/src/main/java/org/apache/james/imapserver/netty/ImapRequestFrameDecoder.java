@@ -28,7 +28,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.james.imap.api.ImapMessage;
 import org.apache.james.imap.api.ImapSessionState;
 import org.apache.james.imap.api.process.ImapSession;
@@ -51,10 +50,10 @@ public class ImapRequestFrameDecoder extends FrameDecoder implements NettyConsta
     private final ImapDecoder decoder;
     private final int inMemorySizeLimit;
     private final int literalSizeLimit;
-    private final static String NEEDED_DATA = "NEEDED_DATA";
-    private final static String STORED_DATA = "STORED_DATA";
-    private final static String WRITTEN_DATA = "WRITTEN_DATA";
-    private final static String OUTPUT_STREAM = "OUTPUT_STREAM";
+    private static final String NEEDED_DATA = "NEEDED_DATA";
+    private static final String STORED_DATA = "STORED_DATA";
+    private static final String WRITTEN_DATA = "WRITTEN_DATA";
+    private static final String OUTPUT_STREAM = "OUTPUT_STREAM";
 
     public ImapRequestFrameDecoder(ImapDecoder decoder, int inMemorySizeLimit, int literalSizeLimit) {
         this.decoder = decoder;
@@ -68,11 +67,7 @@ public class ImapRequestFrameDecoder extends FrameDecoder implements NettyConsta
         super.channelOpen(ctx, e);
     }
 
-    /**
-     * @see
-     * org.jboss.netty.handler.codec.frame.FrameDecoder#decode(org.jboss.netty.channel.ChannelHandlerContext,
-     * org.jboss.netty.channel.Channel, org.jboss.netty.buffer.ChannelBuffer)
-     */
+    @Override
     @SuppressWarnings("unchecked")
     protected Object decode(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer) throws Exception {
         buffer.markReaderIndex();
@@ -121,12 +116,20 @@ public class ImapRequestFrameDecoder extends FrameDecoder implements NettyConsta
                         buffer.readBytes(out, amount);
                         written += amount;
                     } catch (Exception e) {
-                        IOUtils.closeQuietly(out);
+                        try {
+                            out.close();
+                        } catch (IOException ignored) {
+                            //ignore exception during close
+                        }
                         throw e;
                     }
                     // Check if all needed data was streamed to the file.
                     if (written == size) {
-                        IOUtils.closeQuietly(out);
+                        try {
+                            out.close();
+                        } catch (IOException ignored) {
+                            //ignore exception during close
+                        }
 
                         reader = new NettyStreamImapRequestLineReader(channel, new FileInputStream(f) {
                             /**
@@ -175,12 +178,12 @@ public class ImapRequestFrameDecoder extends FrameDecoder implements NettyConsta
                 
                 // Code portion commented further to JAMES-1436.
                 // TODO Remove if no negative feedback on JAMES-1436.
-//                ChannelHandler handler = (ChannelHandler) attachment.remove(FRAMER);
-//                if (handler != null) {
-//                    channel.getPipeline().addFirst(FRAMER, handler);
-//                }
+                //ChannelHandler handler = (ChannelHandler) attachment.remove(FRAMER);
+                //if (handler != null) {
+                //    channel.getPipeline().addFirst(FRAMER, handler);
+                //}
                 
-                ((SwitchableDelimiterBasedFrameDecoder) channel.getPipeline().get(FRAMER)).enableFraming();
+                ((SwitchableLineBasedFrameDecoder) channel.getPipeline().get(FRAMER)).enableFraming();
                 
                 attachment.clear();
                 return message;
@@ -196,11 +199,11 @@ public class ImapRequestFrameDecoder extends FrameDecoder implements NettyConsta
                 
                 // Code portion commented further to JAMES-1436.
                 // TODO Remove if no negative feedback on JAMES-1436.
-//                ChannelHandler handler = channel.getPipeline().remove(FRAMER);
-//                attachment.put(FRAMER, handler);
+                //ChannelHandler handler = channel.getPipeline().remove(FRAMER);
+                //attachment.put(FRAMER, handler);
 
                 // SwitchableDelimiterBasedFrameDecoder added further to JAMES-1436.
-                final SwitchableDelimiterBasedFrameDecoder framer = (SwitchableDelimiterBasedFrameDecoder) pipeline.get(FRAMER);
+                final SwitchableLineBasedFrameDecoder framer = (SwitchableLineBasedFrameDecoder) pipeline.get(FRAMER);
                 framer.disableFraming(framerContext);
                 
                 buffer.resetReaderIndex();

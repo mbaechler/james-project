@@ -21,10 +21,9 @@
 package org.apache.james.transport.matchers;
 
 import java.util.Collection;
-import java.util.Locale;
 
-import org.apache.mailet.Mail;
 import org.apache.james.core.MailAddress;
+import org.apache.mailet.Mail;
 import org.apache.mailet.base.GenericMatcher;
 
 /**
@@ -38,6 +37,7 @@ import org.apache.mailet.base.GenericMatcher;
  * <br>
  */
 public class SenderHostIsLocal extends GenericMatcher {
+    @Override
     public Collection<MailAddress> match(Mail mail) {
         if (mail.getSender() != null && isLocalServer(mail)) {
             return mail.getRecipients();
@@ -47,8 +47,7 @@ public class SenderHostIsLocal extends GenericMatcher {
     }
 
     private boolean isLocalServer(Mail mail) {
-        return this.getMailetContext().isLocalServer(
-                mail.getSender().getDomain().toLowerCase(Locale.US));
+        return this.getMailetContext().isLocalServer(mail.getSender().getDomain());
     }
 
 }

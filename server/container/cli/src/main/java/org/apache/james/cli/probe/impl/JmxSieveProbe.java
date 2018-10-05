@@ -23,15 +23,16 @@ import java.io.IOException;
 
 import javax.management.MalformedObjectNameException;
 
-import org.apache.james.mailbox.store.probe.SieveProbe;
+import org.apache.james.probe.SieveProbe;
 import org.apache.james.sieverepository.api.SieveRepositoryManagementMBean;
 
 public class JmxSieveProbe implements SieveProbe, JmxProbe {
     
-    private final static String SIEVEMANAGER_OBJECT_NAME = "org.apache.james:type=component,name=sievemanagerbean";
+    private static final String SIEVEMANAGER_OBJECT_NAME = "org.apache.james:type=component,name=sievemanagerbean";
     
     private SieveRepositoryManagementMBean sieveRepositoryManagement;
     
+    @Override
     public JmxSieveProbe connect(JmxConnection jmxc) throws IOException {
         try {
             sieveRepositoryManagement = jmxc.retrieveBean(SieveRepositoryManagementMBean.class, SIEVEMANAGER_OBJECT_NAME);

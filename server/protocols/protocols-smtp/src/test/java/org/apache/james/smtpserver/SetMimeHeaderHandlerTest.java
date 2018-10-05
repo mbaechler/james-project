@@ -18,22 +18,25 @@
  ****************************************************************/
 package org.apache.james.smtpserver;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
+
 import org.apache.james.protocols.smtp.SMTPSession;
 import org.apache.james.protocols.smtp.utils.BaseFakeSMTPSession;
 import org.apache.mailet.Mail;
-import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.Test;
 
 public class SetMimeHeaderHandlerTest {
 
+    private static final String HEADER_NAME = "JUNIT";
+    private static final String HEADER_VALUE = "test-value";
+
     private SMTPSession mockedSMTPSession;
     private MimeMessage mockedMimeMessage;
     private Mail mockedMail;
-    private final String HEADER_NAME = "JUNIT";
-    private final String HEADER_VALUE = "test-value";
     private String headerName = "defaultHeaderName";
     private String headerValue = "defaultHeaderValue";
 
@@ -79,7 +82,7 @@ public class SetMimeHeaderHandlerTest {
         header.setHeaderValue(HEADER_VALUE);
         header.onMessage(mockedSMTPSession, mockedMail);
 
-        assertEquals(HEADER_VALUE, mockedMail.getMessage().getHeader(HEADER_NAME)[0]);
+        assertThat(mockedMail.getMessage().getHeader(HEADER_NAME)[0]).isEqualTo(HEADER_VALUE);
     }
 
     // test if the Header was replaced
@@ -97,6 +100,6 @@ public class SetMimeHeaderHandlerTest {
         header.setHeaderValue(HEADER_VALUE);
         header.onMessage(mockedSMTPSession, mockedMail);
 
-        assertEquals(HEADER_VALUE, mockedMail.getMessage().getHeader(HEADER_NAME)[0]);
+        assertThat(mockedMail.getMessage().getHeader(HEADER_NAME)[0]).isEqualTo(HEADER_VALUE);
     }
 }

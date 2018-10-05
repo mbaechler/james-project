@@ -18,27 +18,28 @@
  ****************************************************************/
 package org.apache.james.transport.mailets;
 
-import static net.javacrumbs.jsonunit.fluent.JsonFluentAssert.assertThatJson;
+import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
-import org.apache.james.core.MailAddress;
+import org.apache.james.core.builder.MimeMessageBuilder;
+import org.apache.james.util.MimeMessageUtil;
 import org.apache.mailet.MailetContext;
 import org.apache.mailet.MailetException;
 import org.apache.mailet.base.test.FakeMail;
 import org.apache.mailet.base.test.FakeMailContext;
 import org.apache.mailet.base.test.FakeMailetConfig;
-import org.apache.mailet.base.test.MimeMessageBuilder;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class ContactExtractorTest {
@@ -51,7 +52,7 @@ public class ContactExtractorTest {
     private MailetContext mailetContext;
     private FakeMailetConfig mailetConfig;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         mailet = new ContactExtractor();
         mailetContext = FakeMailContext.builder()
@@ -86,14 +87,15 @@ public class ContactExtractorTest {
 
     @Test
     public void serviceShouldNotThrowWhenJsonProcessingFails() throws Exception {
-        FakeMail mail = FakeMail.builder().mimeMessage(MimeMessageBuilder.defaultMimeMessage())
-                .sender(new MailAddress(SENDER))
-                .recipient(new MailAddress(TO))
+        FakeMail mail = FakeMail.builder().mimeMessage(MimeMessageUtil.defaultMimeMessage())
+                .sender(SENDER)
+                .recipient(TO)
                 .build();
 
         ObjectMapper objectMapper = mock(ObjectMapper.class);
+        JsonGenerator jsonGenerator = null;
         when(objectMapper.writeValueAsString(any(ContactExtractor.ExtractedContacts.class)))
-            .thenThrow(new JsonGenerationException(""));
+            .thenThrow(new JsonGenerationException("", jsonGenerator));
 
         mailet.init(mailetConfig);
         mailet.objectMapper = objectMapper;
@@ -103,15 +105,14 @@ public class ContactExtractorTest {
 
     @Test
     public void serviceShouldAddTheAttribute() throws Exception {
-        MimeMessage message = MimeMessageBuilder.mimeMessageBuilder()
+        MimeMessageBuilder message = MimeMessageBuilder.mimeMessageBuilder()
                 .setSender(SENDER)
                 .addToRecipient(TO)
                 .setSubject("Contact collection Rocks")
-                .setText("This is my email")
-                .build();
+                .setText("This is my email");
         FakeMail mail = FakeMail.builder().mimeMessage(message)
-            .sender(new MailAddress(SENDER))
-            .recipient(new MailAddress(TO))
+            .sender(SENDER)
+            .recipient(TO)
             .build();
         mailet.init(mailetConfig);
 
@@ -119,24 +120,186 @@ public class ContactExtractorTest {
         mailet.service(mail);
 
         assertThatJson(mail.getAttribute(ATTRIBUTE).toString()).isEqualTo(expectedMessage);
+    }
 
+    @Test
+    public void serviceShouldPreserveRecipientsEmailAddress() throws Exception {
+        MimeMessageBuilder message = MimeMessageBuilder.mimeMessageBuilder()
+            .setSender(SENDER)
+            .addToRecipient("To <" + TO + ">")
+            .setSubject("Contact collection Rocks")
+            .setText("This is my email");
+        FakeMail mail = FakeMail.builder().mimeMessage(message)
+            .sender(SENDER)
+            .recipient(TO)
+            .build();
+        mailet.init(mailetConfig);
+
+        String expectedMessage = "{\"userEmail\" : \"" + SENDER + "\", \"emails\" : [ \"To <" + TO + ">\" ]}";
+        mailet.service(mail);
+
+        assertThatJson(mail.getAttribute(ATTRIBUTE).toString()).isEqualTo(expectedMessage);
+    }
+
+    @Test
+    public void serviceShouldUnscrambleRecipients() throws Exception {
+        MimeMessageBuilder message = MimeMessageBuilder.mimeMessageBuilder()
+            .setSender(SENDER)
+            .addToRecipient("=?ISO-8859-1?Q?Beno=EEt_TELLIER?= <tellier@linagora.com>")
+            .setSubject("Contact collection Rocks")
+            .setText("This is my email");
+        FakeMail mail = FakeMail.builder().mimeMessage(message)
+            .sender(SENDER)
+            .recipient(TO)
+            .build();
+        mailet.init(mailetConfig);
+
+        String expectedMessage = "{\"userEmail\" : \"" + SENDER + "\", \"emails\" : [ \"Benoît TELLIER <tellier@linagora.com>\" ]}";
+        mailet.service(mail);
+
+        assertThatJson(mail.getAttribute(ATTRIBUTE).toString()).isEqualTo(expectedMessage);
+    }
+
+    @Test
+    public void serviceShouldUnscrambleRecipientsWhenNameContainsSuperiors() throws Exception {
+        String rawMessage = "From: sender@example.com\r\n"
+            + "To: =?UTF-8?Q?recip_>>_Fr=c3=a9d=c3=a9ric_RECIPIENT?= <frecipient@example.com>\r\n"
+            + "Subject: extract this recipient please\r\n"
+            + "\r\n"
+            + "Please!";
+        MimeMessage message = MimeMessageUtil.mimeMessageFromString(rawMessage);
+        FakeMail mail = FakeMail.builder().mimeMessage(message)
+            .sender(SENDER)
+            .recipient("recipient@example.com")
+            .build();
+        mailet.init(mailetConfig);
+
+        String expectedMessage = "{\"userEmail\" : \"" + SENDER + "\", \"emails\" : [ \"\\\"recip >> Frédéric RECIPIENT\\\" <frecipient@example.com>\" ]}";
+        mailet.service(mail);
+
+        assertThatJson(mail.getAttribute(ATTRIBUTE).toString()).isEqualTo(expectedMessage);
+    }
+
+    @Test
+    public void serviceShouldParseMultipleRecipients() throws Exception {
+        String rawMessage = "From: sender@example.com\r\n"
+            + "To: User 1 <user1@example.com>, =?UTF-8?Q?recip_>>_Fr=c3=a9d=c3=a9ric_RECIPIENT?= <frecipient@example.com>\r\n"
+            + "Subject: extract this recipient please\r\n"
+            + "\r\n"
+            + "Please!";
+        MimeMessage message = MimeMessageUtil.mimeMessageFromString(rawMessage);
+        FakeMail mail = FakeMail.builder().mimeMessage(message)
+            .sender(SENDER)
+            .recipient("recipient@example.com")
+            .build();
+        mailet.init(mailetConfig);
+
+        String expectedMessage = "{\"userEmail\" : \"" + SENDER + "\", \"emails\" : [ \"User 1 <user1@example.com>\", \"\\\"recip >> Frédéric RECIPIENT\\\" <frecipient@example.com>\" ]}";
+        mailet.service(mail);
+
+        assertThatJson(mail.getAttribute(ATTRIBUTE).toString()).isEqualTo(expectedMessage);
+    }
+
+    @Test
+    public void serviceShouldParseRecipientWithCommaInName() throws Exception {
+        String rawMessage = "From: sender@example.com\r\n"
+            + "To: \"User, the first one\" <user1@example.com>\r\n"
+            + "Subject: extract this recipient please\r\n"
+            + "\r\n"
+            + "Please!";
+        MimeMessage message = MimeMessageUtil.mimeMessageFromString(rawMessage);
+        FakeMail mail = FakeMail.builder().mimeMessage(message)
+            .sender(SENDER)
+            .recipient("recipient@example.com")
+            .build();
+        mailet.init(mailetConfig);
+
+        String expectedMessage = "{\"userEmail\" : \"" + SENDER + "\", \"emails\" : [ \"\\\"User, the first one\\\" <user1@example.com>\" ]}";
+        mailet.service(mail);
+
+        assertThatJson(mail.getAttribute(ATTRIBUTE).toString()).isEqualTo(expectedMessage);
+    }
+
+    @Test
+    public void serviceShouldNotOverwriteSenderWhenDifferentFromField() throws Exception {
+        MimeMessageBuilder message = MimeMessageBuilder.mimeMessageBuilder()
+            .addFrom("other@sender.org")
+            .addToRecipient("To <" + TO + ">")
+            .setSubject("Contact collection Rocks")
+            .setText("This is my email");
+        FakeMail mail = FakeMail.builder().mimeMessage(message)
+            .sender(SENDER)
+            .recipient(TO)
+            .build();
+        mailet.init(mailetConfig);
+
+        String expectedMessage = "{\"userEmail\" : \"" + SENDER + "\", \"emails\" : [ \"To <" + TO + ">\" ]}";
+        mailet.service(mail);
+
+        assertThatJson(mail.getAttribute(ATTRIBUTE).toString()).isEqualTo(expectedMessage);
+    }
+
+    @Test
+    public void serviceShouldNotOverwriteSenderWhenDifferentSenderField() throws Exception {
+        MimeMessageBuilder message = MimeMessageBuilder.mimeMessageBuilder()
+            .setSender("other@sender.org")
+            .addToRecipient("To <" + TO + ">")
+            .setSubject("Contact collection Rocks")
+            .setText("This is my email");
+        FakeMail mail = FakeMail.builder().mimeMessage(message)
+            .sender(SENDER)
+            .recipient(TO)
+            .build();
+        mailet.init(mailetConfig);
+
+        String expectedMessage = "{\"userEmail\" : \"" + SENDER + "\", \"emails\" : [ \"To <" + TO + ">\" ]}";
+        mailet.service(mail);
+
+        assertThatJson(mail.getAttribute(ATTRIBUTE).toString()).isEqualTo(expectedMessage);
+    }
+
+    @Test
+    public void serviceShouldSkipMessagesWithoutSenderEnvelope() throws Exception {
+        MimeMessageBuilder message = MimeMessageBuilder.mimeMessageBuilder()
+            .addToRecipient("To <" + TO + ">")
+            .setSubject("Contact collection Rocks")
+            .setText("This is my email");
+        FakeMail mail = FakeMail.builder().mimeMessage(message)
+            .recipient(TO)
+            .build();
+        mailet.init(mailetConfig);
+
+        mailet.service(mail);
+
+        assertThatJson(mail.getAttribute(ATTRIBUTE)).isEqualTo(null);
     }
 
     @Test
     public void serviceShouldNotAddTheAttributeWhenNoRecipient() throws Exception {
-        MimeMessage message = MimeMessageBuilder.mimeMessageBuilder()
+        MimeMessageBuilder message = MimeMessageBuilder.mimeMessageBuilder()
                 .setSender(SENDER)
                 .setSubject("Contact collection Rocks")
-                .setText("This is my email")
-                .build();
+                .setText("This is my email");
         FakeMail mail = FakeMail.builder().mimeMessage(message)
-            .sender(new MailAddress(SENDER))
+            .sender(SENDER)
             .build();
         mailet.init(mailetConfig);
 
         mailet.service(mail);
 
         assertThat(mail.getAttribute(ATTRIBUTE)).isNull();
+    }
 
+    @Test
+    public void extractContactsShouldNotThrowWhenNoRecipient() throws Exception {
+        MimeMessageBuilder message = MimeMessageBuilder.mimeMessageBuilder()
+                .setSender(SENDER)
+                .setSubject("Contact collection Rocks")
+                .setText("This is my email");
+        FakeMail mail = FakeMail.builder().mimeMessage(message)
+            .sender(SENDER)
+            .build();
+
+        mailet.extractContacts(mail);
     }
 }

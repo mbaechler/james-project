@@ -23,7 +23,7 @@ import org.apache.james.imap.api.ImapConstants;
 import org.apache.james.imap.api.ImapMessage;
 import org.apache.james.imap.api.process.ImapSession;
 import org.apache.james.imap.decode.ImapRequestLineReader;
-import org.apache.james.imap.decode.ImapRequestLineReader.ATOM_CHARValidator;
+import org.apache.james.imap.decode.ImapRequestLineReader.AtomCharValidator;
 import org.apache.james.imap.message.request.ListRequest;
 import org.apache.james.protocols.imap.DecodingException;
 
@@ -59,7 +59,8 @@ public class ListCommandParser extends AbstractUidCommandParser {
         }
     }
 
-    private class ListCharValidator extends ATOM_CHARValidator {
+    private class ListCharValidator extends AtomCharValidator {
+        @Override
         public boolean isValid(char chr) {
             if (ImapRequestLineReader.isListWildcard(chr)) {
                 return true;
@@ -68,12 +69,7 @@ public class ListCommandParser extends AbstractUidCommandParser {
         }
     }
 
-    /**
-     * @see
-     * org.apache.james.imap.decode.parser.AbstractUidCommandParser#decode(org.apache.james.imap.api.ImapCommand,
-     * org.apache.james.imap.decode.ImapRequestLineReader, java.lang.String,
-     * boolean, org.apache.james.imap.api.process.ImapSession)
-     */
+    @Override
     protected ImapMessage decode(ImapCommand command, ImapRequestLineReader request, String tag, boolean useUids, ImapSession session) throws DecodingException {
         String referenceName = request.mailbox();
         String mailboxPattern = listMailbox(request);

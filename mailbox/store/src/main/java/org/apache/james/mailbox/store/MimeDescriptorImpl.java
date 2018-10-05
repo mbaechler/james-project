@@ -44,16 +44,8 @@ import org.apache.james.mime4j.stream.RecursionMode;
 
 public class MimeDescriptorImpl implements MimeDescriptor {
 
-    private final static Charset US_ASCII = Charset.forName("US-ASCII");
-    private static final MimeConfig MIME_ENTITY_CONFIG = MimeConfig.custom()
-        .setMaxContentLen(-1)
-        .setMaxHeaderCount(-1)
-        .setMaxHeaderLen(-1)
-        .setMaxHeaderCount(-1)
-        .setMaxLineLen(-1)
-        .build();
+    private static final Charset US_ASCII = Charset.forName("US-ASCII");
 
-    
     /**
      * Is this a composite media type (as per RFC2045)?
      * 
@@ -70,7 +62,7 @@ public class MimeDescriptorImpl implements MimeDescriptor {
         // Disable line length limit
         // See https://issues.apache.org/jira/browse/IMAP-132
         //
-        final MimeTokenStream parser = new MimeTokenStream(MIME_ENTITY_CONFIG, new DefaultBodyDescriptorBuilder());
+        final MimeTokenStream parser = new MimeTokenStream(MimeConfig.PERMISSIVE, new DefaultBodyDescriptorBuilder());
         
         parser.parse(stream);
         
@@ -257,46 +249,57 @@ public class MimeDescriptorImpl implements MimeDescriptor {
         this.md5 = md5;
     }
 
+    @Override
     public Map<String, String> contentTypeParameters() {
         return contentTypeParameters;
     }
 
+    @Override
     public MimeDescriptor embeddedMessage() {
         return embeddedMessage;
     }
 
+    @Override
     public long getBodyOctets() {
         return bodyOctets;
     }
 
+    @Override
     public String getContentDescription() {
         return contentDescription;
     }
 
+    @Override
     public String getContentID() {
         return contentId;
     }
 
+    @Override
     public long getLines() {
         return lines;
     }
 
+    @Override
     public String getMimeSubType() {
         return subType;
     }
 
+    @Override
     public String getMimeType() {
         return type;
     }
 
+    @Override
     public String getTransferContentEncoding() {
         return transferEncoding;
     }
 
+    @Override
     public Iterator<MessageResult.Header> headers() {
         return headers.iterator();
     }
 
+    @Override
     public Iterator<MimeDescriptor> parts() {
         return parts.iterator();
     }
@@ -305,22 +308,27 @@ public class MimeDescriptorImpl implements MimeDescriptor {
         parts.add(descriptor);
     }
 
+    @Override
     public List<String> getLanguages() {
         return languages;
     }
 
+    @Override
     public String getDisposition() {
         return disposition;
     }
 
+    @Override
     public Map<String,String> getDispositionParams() {
         return dispositionParams;
     }
 
+    @Override
     public String getContentLocation() {
         return location;
     }
 
+    @Override
     public String getContentMD5() {
         return md5;
     }
@@ -329,9 +337,9 @@ public class MimeDescriptorImpl implements MimeDescriptor {
     public InputStream getInputStream() throws IOException {
         StringBuilder sb = new StringBuilder();
         Iterator<MessageResult.Header> hIt = headers.iterator();
-        while(hIt.hasNext()) {
+        while (hIt.hasNext()) {
             MessageResult.Header header = hIt.next();
-            sb.append(header.getName()).append(": " ).append(header.getValue()).append("\r\n");
+            sb.append(header.getName()).append(": ").append(header.getValue()).append("\r\n");
         }
         sb.append("\r\n");
         return new ByteArrayInputStream(sb.toString().getBytes(US_ASCII));
@@ -348,7 +356,7 @@ public class MimeDescriptorImpl implements MimeDescriptor {
         }
         
         // Add for CLRF
-        result +=2;
+        result += 2;
         return result;
     }
 }

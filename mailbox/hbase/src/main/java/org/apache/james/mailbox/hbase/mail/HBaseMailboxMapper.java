@@ -49,16 +49,20 @@ import org.apache.hadoop.hbase.filter.SingleColumnValueFilter;
 import org.apache.hadoop.hbase.filter.SubstringComparator;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.IOUtils;
+import org.apache.james.mailbox.acl.ACLDiff;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.exception.MailboxNotFoundException;
 import org.apache.james.mailbox.hbase.HBaseId;
 import org.apache.james.mailbox.hbase.HBaseNonTransactionalMapper;
 import org.apache.james.mailbox.hbase.mail.model.HBaseMailbox;
 import org.apache.james.mailbox.model.MailboxACL;
+import org.apache.james.mailbox.model.MailboxACL.Right;
 import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.mail.MailboxMapper;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
+
+import com.google.common.collect.ImmutableList;
 
 /**
  * Data access management for mailbox.
@@ -77,11 +81,9 @@ public class HBaseMailboxMapper extends HBaseNonTransactionalMapper implements M
     
     @Override
     public Mailbox findMailboxByPath(MailboxPath mailboxPath) throws MailboxException, MailboxNotFoundException {
-        HTable mailboxes = null;
-        ResultScanner scanner = null;
-        try {
-            mailboxes = new HTable(conf, MAILBOXES_TABLE);
-            
+
+        try (HTable mailboxes = new HTable(conf, MAILBOXES_TABLE)) {
+
             Scan scan = new Scan();
             scan.addFamily(MAILBOX_CF);
             scan.setCaching(mailboxes.getConfiguration().getInt("hbase.client.scanner.caching", 1) * 2);
@@ -103,61 +105,38 @@ public class HBaseMailboxMapper extends HBaseNonTransactionalMapper implements M
             filters.addFilter(nameFilter);
             SingleColumnValueFilter namespaceFilter = new SingleColumnValueFilter(MAILBOX_CF, MAILBOX_NAMESPACE, CompareOp.EQUAL, Bytes.toBytes(mailboxPath.getNamespace()));
             filters.addFilter(namespaceFilter);
-            
             scan.setFilter(filters);
-            scanner = mailboxes.getScanner(scan);
-            Result result = scanner.next();
-            
-            if (result == null) {
-                throw new MailboxNotFoundException(mailboxPath);
+
+            try (ResultScanner scanner = mailboxes.getScanner(scan)) {
+                Result result = scanner.next();
+                if (result == null) {
+                    throw new MailboxNotFoundException(mailboxPath);
+                }
+                return mailboxFromResult(result);
             }
-            return mailboxFromResult(result);
         } catch (IOException e) {
             throw new MailboxException("Search of mailbox " + mailboxPath + " failed", e);
-        } finally {
-            scanner.close();
-            if (mailboxes != null) {
-                try {
-                    mailboxes.close();
-                } catch (IOException ex) {
-                    throw new MailboxException("Error closing table " + mailboxes, ex);
-                }
-            }
         }
     }
 
     @Override
     public Mailbox findMailboxById(MailboxId id) throws MailboxException, MailboxNotFoundException {
         HBaseId mailboxId = (HBaseId)id;
-        HTable mailboxes = null;
-        try {
-            mailboxes = new HTable(conf, MAILBOXES_TABLE);
+        try (HTable mailboxes = new HTable(conf, MAILBOXES_TABLE)) {
             Get get = new Get(mailboxId.toBytes());
             Result result = mailboxes.get(get);
             if (result == null) {
-                throw new MailboxNotFoundException(mailboxId.serialize());
+                throw new MailboxNotFoundException(mailboxId);
             }
             return mailboxFromResult(result);
         } catch (IOException ex) {
             throw new MailboxException("IOException in HBase cluster during get()", ex);
-        } finally {
-            if (mailboxes != null) {
-                try {
-                    mailboxes.close();
-                } catch (IOException ex) {
-                    throw new MailboxException("Error closing table " + mailboxes, ex);
-                }
-            }
         }
     }
     
     @Override
     public List<Mailbox> findMailboxWithPathLike(MailboxPath mailboxPath) throws MailboxException {
-        HTable mailboxes = null;
-        ResultScanner scanner = null;
-        try {
-            mailboxes = new HTable(conf, MAILBOXES_TABLE);
-            
+        try (HTable mailboxes = new HTable(conf, MAILBOXES_TABLE)) {
             Scan scan = new Scan();
             scan.addFamily(MAILBOX_CF);
             scan.setCaching(mailboxes.getConfiguration().getInt("hbase.client.scanner.caching", 1) * 2);
@@ -191,59 +170,38 @@ public class HBaseMailboxMapper extends HBaseNonTransactionalMapper implements M
             filters.addFilter(namespaceFilter);
             
             scan.setFilter(filters);
-            scanner = mailboxes.getScanner(scan);
-            
-            List<Mailbox> mailboxList = new ArrayList<>();
-            
-            for (Result result : scanner) {
-                mailboxList.add(mailboxFromResult(result));
+            try (ResultScanner scanner = mailboxes.getScanner(scan)) {
+                List<Mailbox> mailboxList = new ArrayList<>();
+                for (Result result : scanner) {
+                    mailboxList.add(mailboxFromResult(result));
+                }
+                return mailboxList;
             }
-            return mailboxList;
         } catch (IOException e) {
             throw new MailboxException("Search of mailbox " + mailboxPath + " failed", e);
-        } finally {
-            scanner.close();
-            if (mailboxes != null) {
-                try {
-                    mailboxes.close();
-                } catch (IOException ex) {
-                    throw new MailboxException("Error closing table " + mailboxes, ex);
-                }
-            }
         }
     }
     
     @Override
     public List<Mailbox> list() throws MailboxException {
-        HTable mailboxes = null;
-        ResultScanner scanner = null;
         //TODO: possible performance isssues, we are creating an object from all the rows in HBase mailbox table
-        try {
-            mailboxes = new HTable(conf, MAILBOXES_TABLE);
+        try (HTable mailboxes = new HTable(conf, MAILBOXES_TABLE)) {
             Scan scan = new Scan();
             scan.addFamily(MAILBOX_CF);
             scan.setCaching(mailboxes.getConfiguration().getInt("hbase.client.scanner.caching", 1) * 2);
             scan.setMaxVersions(1);
-            scanner = mailboxes.getScanner(scan);
-            List<Mailbox> mailboxList = new ArrayList<>();
-            
-            Result result;
-            while ((result = scanner.next()) != null) {
-                Mailbox mlbx = mailboxFromResult(result);
-                mailboxList.add(mlbx);
+
+            try (ResultScanner scanner = mailboxes.getScanner(scan)) {
+                List<Mailbox> mailboxList = new ArrayList<>();
+                Result result;
+                while ((result = scanner.next()) != null) {
+                    Mailbox mlbx = mailboxFromResult(result);
+                    mailboxList.add(mlbx);
+                }
+                return mailboxList;
             }
-            return mailboxList;
         } catch (IOException ex) {
             throw new MailboxException("HBase IOException in list()", ex);
-        } finally {
-            scanner.close();
-            if (mailboxes != null) {
-                try {
-                    mailboxes.close();
-                } catch (IOException ex) {
-                    throw new MailboxException("Error closing table " + mailboxes, ex);
-                }
-            }
         }
     }
     
@@ -254,9 +212,7 @@ public class HBaseMailboxMapper extends HBaseNonTransactionalMapper implements M
     @Override
     public MailboxId save(Mailbox mlbx) throws MailboxException {
         //TODO: maybe switch to checkAndPut for transactions
-        HTable mailboxes = null;
-        try {
-            mailboxes = new HTable(conf, MAILBOXES_TABLE);
+        try (HTable mailboxes = new HTable(conf, MAILBOXES_TABLE)) {
             /*
              * cast to HBaseMailbox to access lastuid and ModSeq
              */
@@ -265,47 +221,25 @@ public class HBaseMailboxMapper extends HBaseNonTransactionalMapper implements M
             return mlbx.getMailboxId();
         } catch (IOException ex) {
             throw new MailboxException("IOExeption", ex);
-        } finally {
-            if (mailboxes != null) {
-                try {
-                    mailboxes.close();
-                } catch (IOException ex) {
-                    throw new MailboxException("Error closing table " + mailboxes, ex);
-                }
-            }
         }
     }
     
     @Override
     public void delete(Mailbox mlbx) throws MailboxException {
         //TODO: maybe switch to checkAndDelete
-        HTable mailboxes = null;
         HBaseId mailboxId = (HBaseId) mlbx.getMailboxId();
-        try {
-            mailboxes = new HTable(conf, MAILBOXES_TABLE);
+        try (HTable mailboxes = new HTable(conf, MAILBOXES_TABLE)) {
             //TODO: delete all maessages from this mailbox
             Delete delete = new Delete(mailboxId.toBytes());
             mailboxes.delete(delete);
         } catch (IOException ex) {
             throw new MailboxException("IOException in HBase cluster during delete()", ex);
-        } finally {
-            if (mailboxes != null) {
-                try {
-                    mailboxes.close();
-                } catch (IOException ex) {
-                    throw new MailboxException("Error closing table " + mailboxes, ex);
-                }
-            }
         }
     }
     
     @Override
     public boolean hasChildren(Mailbox mailbox, char c) throws MailboxException, MailboxNotFoundException {
-        HTable mailboxes = null;
-        ResultScanner scanner = null;
-        try {
-            mailboxes = new HTable(conf, MAILBOXES_TABLE);
-            
+        try (HTable mailboxes = new HTable(conf, MAILBOXES_TABLE)) {
             Scan scan = new Scan();
             scan.addFamily(MAILBOX_CF);
             scan.setCaching(mailboxes.getConfiguration().getInt("hbase.client.scanner.caching", 1) * 2);
@@ -326,8 +260,7 @@ public class HBaseMailboxMapper extends HBaseNonTransactionalMapper implements M
             filters.addFilter(namespaceFilter);
             
             scan.setFilter(filters);
-            scanner = mailboxes.getScanner(scan);
-            try {
+            try (ResultScanner scanner = mailboxes.getScanner(scan)) {
                 if (scanner.next() != null) {
                     return true;
                 }
@@ -337,57 +270,46 @@ public class HBaseMailboxMapper extends HBaseNonTransactionalMapper implements M
             return false;
         } catch (IOException e) {
             throw new MailboxException("Search of mailbox " + mailbox + " failed", e);
-        } finally {
-            scanner.close();
-            if (mailboxes != null) {
-                try {
-                    mailboxes.close();
-                } catch (IOException ex) {
-                    throw new MailboxException("Error closing table " + mailboxes, ex);
-                }
-            }
         }
     }
     
     public void deleteAllMemberships() {
-        HTable messages = null;
-        HTable mailboxes = null;
-        ResultScanner scanner = null;
-        try {
-            messages = new HTable(conf, MESSAGES_TABLE);
-            mailboxes = new HTable(conf, MAILBOXES_TABLE);
-            Scan scan = new Scan();
-            scan.setMaxVersions(1);
-            scan.addColumn(MESSAGES_META_CF, MESSAGE_INTERNALDATE);
-            scanner = messages.getScanner(scan);
-            Result result;
-            List<Delete> deletes = new ArrayList<>();
-            while ((result = scanner.next()) != null) {
-                deletes.add(new Delete(result.getRow()));
-            }
-            long totalDeletes = deletes.size();
-            messages.delete(deletes);
-            if (deletes.size() > 0) {
-                //TODO: what shoul we do if not all messages are deleted?
-                System.out.println("Just " + deletes.size() + " out of " + totalDeletes + " messages have been deleted");
-                //throw new RuntimeException("Just " + deletes.size() + " out of " + totalDeletes + " messages have been deleted");
-            }
-            List<Put> puts = new ArrayList<>();
-            scan = new Scan();
-            scan.setMaxVersions(1);
-            scan.addColumn(MAILBOX_CF, MAILBOX_MESSAGE_COUNT);
-            IOUtils.cleanup(null, scanner);
-            scanner = mailboxes.getScanner(scan);
-            Put put = null;
-            while ((result = scanner.next()) != null) {
-                put = new Put(result.getRow());
-                put.add(MAILBOX_CF, MAILBOX_MESSAGE_COUNT, Bytes.toBytes(0L));
-                puts.add(new Put());
+        try (HTable messages = new HTable(conf, MESSAGES_TABLE)) {
+            try (HTable mailboxes = new HTable(conf, MAILBOXES_TABLE)) {
+                Scan scan = new Scan();
+                scan.setMaxVersions(1);
+                scan.addColumn(MESSAGES_META_CF, MESSAGE_INTERNALDATE);
+                try (ResultScanner scanner = messages.getScanner(scan)) {
+                    Result result;
+                    List<Delete> deletes = new ArrayList<>();
+                    while ((result = scanner.next()) != null) {
+                        deletes.add(new Delete(result.getRow()));
+                    }
+                    long totalDeletes = deletes.size();
+                    messages.delete(deletes);
+                    if (deletes.size() > 0) {
+                        //TODO: what shoul we do if not all messages are deleted?
+                        System.out.println("Just " + deletes.size() + " out of " + totalDeletes + " messages have been deleted");
+                        //throw new RuntimeException("Just " + deletes.size() + " out of " + totalDeletes + " messages have been deleted");
+                    }
+                }
+
+                List<Put> puts = new ArrayList<>();
+                scan = new Scan();
+                scan.setMaxVersions(1);
+                scan.addColumn(MAILBOX_CF, MAILBOX_MESSAGE_COUNT);
+                try (ResultScanner scanner = mailboxes.getScanner(scan)) {
+                    Put put = null;
+                    Result result;
+                    while ((result = scanner.next()) != null) {
+                        put = new Put(result.getRow());
+                        put.add(MAILBOX_CF, MAILBOX_MESSAGE_COUNT, Bytes.toBytes(0L));
+                        puts.add(new Put());
+                    }
+                }
             }
         } catch (IOException e) {
             throw new RuntimeException("Error deleting MESSAGES table ", e);
-        } finally {
-            IOUtils.cleanup(null, scanner, messages, mailboxes);
         }
     }
     
@@ -414,12 +336,22 @@ public class HBaseMailboxMapper extends HBaseNonTransactionalMapper implements M
     }
 
     @Override
-    public void updateACL(Mailbox mailbox, MailboxACL.ACLCommand mailboxACLCommand) throws MailboxException {
-        mailbox.setACL(mailbox.getACL().apply(mailboxACLCommand));
+    public ACLDiff updateACL(Mailbox mailbox, MailboxACL.ACLCommand mailboxACLCommand) throws MailboxException {
+        MailboxACL oldACL = mailbox.getACL();
+        MailboxACL newACL = mailbox.getACL().apply(mailboxACLCommand);
+        mailbox.setACL(newACL);
+        return ACLDiff.computeDiff(oldACL, newACL);
     }
 
     @Override
-    public void setACL(Mailbox mailbox, MailboxACL mailboxACL) throws MailboxException {
+    public ACLDiff setACL(Mailbox mailbox, MailboxACL mailboxACL) throws MailboxException {
+        MailboxACL oldMailboxAcl = mailbox.getACL();
         mailbox.setACL(mailboxACL);
+        return ACLDiff.computeDiff(oldMailboxAcl, mailboxACL);
+    }
+
+    @Override
+    public List<Mailbox> findNonPersonalMailboxes(String userName, Right right) throws MailboxException {
+        return ImmutableList.of();
     }
 }

@@ -50,12 +50,13 @@ public class CassandraMapperProvider implements MapperProvider {
     private final MessageUidProvider messageUidProvider;
     private final CassandraModSeqProvider cassandraModSeqProvider;
     private final MockMailboxSession mailboxSession = new MockMailboxSession("benwa");
-
+    private CassandraMailboxSessionMapperFactory mapperFactory;
 
     public CassandraMapperProvider(CassandraCluster cassandra) {
         this.cassandra = cassandra;
         messageUidProvider = new MessageUidProvider();
         cassandraModSeqProvider = new CassandraModSeqProvider(this.cassandra.getConf());
+        mapperFactory = createMapperFactory();
     }
 
     @Override
@@ -65,17 +66,17 @@ public class CassandraMapperProvider implements MapperProvider {
     
     @Override
     public MailboxMapper createMailboxMapper() throws MailboxException {
-        return createMapperFactory().getMailboxMapper(mailboxSession);
+        return mapperFactory.getMailboxMapper(mailboxSession);
     }
 
     @Override
     public MessageMapper createMessageMapper() throws MailboxException {
-        return createMapperFactory().getMessageMapper(mailboxSession);
+        return mapperFactory.getMessageMapper(mailboxSession);
     }
 
     @Override
     public MessageIdMapper createMessageIdMapper() throws MailboxException {
-        return createMapperFactory().getMessageIdMapper(mailboxSession);
+        return mapperFactory.getMessageIdMapper(mailboxSession);
     }
 
     private CassandraMailboxSessionMapperFactory createMapperFactory() {
@@ -85,18 +86,13 @@ public class CassandraMapperProvider implements MapperProvider {
     }
 
     @Override
-    public AttachmentMapper createAttachmentMapper() throws MailboxException {
-        return createMapperFactory().createAttachmentMapper(mailboxSession);
+    public AttachmentMapper createAttachmentMapper() {
+        return mapperFactory.createAttachmentMapper(mailboxSession);
     }
 
     @Override
     public CassandraId generateId() {
         return CassandraId.timeBased();
-    }
-
-    @Override
-    public void clearMapper() throws MailboxException {
-        cassandra.clearAllTables();
     }
 
     @Override
@@ -106,7 +102,7 @@ public class CassandraMapperProvider implements MapperProvider {
 
     @Override
     public AnnotationMapper createAnnotationMapper() throws MailboxException {
-        return createMapperFactory().getAnnotationMapper(mailboxSession);
+        return mapperFactory.getAnnotationMapper(mailboxSession);
     }
 
     @Override

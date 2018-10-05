@@ -20,82 +20,78 @@
 package org.apache.james.transport.matchers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.Collection;
 
 import javax.mail.MessagingException;
 
 import org.apache.james.core.MailAddress;
+import org.apache.james.core.builder.MimeMessageBuilder;
 import org.apache.mailet.base.test.FakeMail;
 import org.apache.mailet.base.test.FakeMatcherConfig;
-import org.apache.mailet.base.test.MimeMessageBuilder;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-public class TooManyLinesTest {
+class TooManyLinesTest {
 
     private TooManyLines testee;
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         testee = new TooManyLines();
     }
 
     @Test
-    public void initShouldThrowOnAbsentCondition() throws Exception {
-        expectedException.expect(MessagingException.class);
-
-        testee.init(FakeMatcherConfig.builder().matcherName("name").build());
+    void initShouldThrowOnAbsentCondition() {
+        assertThatThrownBy(() ->
+            testee.init(FakeMatcherConfig.builder().matcherName("name").build()))
+        .isInstanceOf(MessagingException.class);
     }
 
     @Test
-    public void initShouldThrowOnInvalidCondition() throws Exception {
-        expectedException.expect(MessagingException.class);
+    void initShouldThrowOnInvalidCondition() {
+        assertThatThrownBy(() ->
+            testee.init(
+                FakeMatcherConfig.builder()
+                    .condition("a")
+                    .matcherName("name")
+                    .build()))
+            .isInstanceOf(MessagingException.class);
+    }
 
-        testee.init(
-            FakeMatcherConfig.builder()
-                .condition("a")
+    @Test
+    void initShouldThrowOnEmptyCondition() {
+        assertThatThrownBy(() ->
+            testee.init(FakeMatcherConfig.builder()
+                .condition("")
                 .matcherName("name")
-                .build());
+                .build()))
+        .isInstanceOf(MessagingException.class);
     }
 
     @Test
-    public void initShouldThrowOnEmptyCondition() throws Exception {
-        expectedException.expect(MessagingException.class);
-
-        testee.init(FakeMatcherConfig.builder()
-            .condition("")
-            .matcherName("name")
-            .build());
+    void initShouldThrowOnZeroCondition() {
+        assertThatThrownBy(() ->
+            testee.init(FakeMatcherConfig.builder()
+                .condition("0")
+                .matcherName("name")
+                .build()))
+            .isInstanceOf(MessagingException.class);
     }
 
     @Test
-    public void initShouldThrowOnZeroCondition() throws Exception {
-        expectedException.expect(MessagingException.class);
-
-        testee.init(FakeMatcherConfig.builder()
-            .condition("0")
-            .matcherName("name")
-            .build());
+    void initShouldThrowOnNegativeCondition() {
+        assertThatThrownBy(() ->
+            testee.init(FakeMatcherConfig.builder()
+                .condition("-10")
+                .matcherName("name")
+                .build()))
+            .isInstanceOf(MessagingException.class);
     }
 
     @Test
-    public void initShouldThrowOnNegativeCondition() throws MessagingException {
-        expectedException.expect(MessagingException.class);
-
-        testee.init(FakeMatcherConfig.builder()
-            .condition("-10")
-            .matcherName("name")
-            .build());
-    }
-
-    @Test
-    public void matchShouldReturnNoRecipientWhenMailHaveNoMimeMessageAndConditionIs100() throws Exception {
+    void matchShouldReturnNoRecipientWhenMailHaveNoMimeMessageAndConditionIs100() throws Exception {
         testee.init(FakeMatcherConfig.builder()
             .condition("100")
             .matcherName("name")
@@ -108,7 +104,7 @@ public class TooManyLinesTest {
     }
 
     @Test
-    public void matchShouldAcceptMailsUnderLimit() throws Exception {
+    void matchShouldAcceptMailsUnderLimit() throws Exception {
         testee.init(FakeMatcherConfig.builder()
             .condition("100")
             .matcherName("name")
@@ -117,9 +113,7 @@ public class TooManyLinesTest {
         FakeMail fakeMail = FakeMail.builder()
             .mimeMessage(MimeMessageBuilder.mimeMessageBuilder()
                 .setMultipartWithBodyParts(MimeMessageBuilder.bodyPartBuilder()
-                    .data("content")
-                    .build())
-                .build())
+                    .data("content")))
             .build();
 
         Collection<MailAddress> result = testee.match(fakeMail);
@@ -128,15 +122,14 @@ public class TooManyLinesTest {
     }
 
     @Test
-    public void matchShouldRejectMailsOverLimit() throws Exception {
+    void matchShouldRejectMailsOverLimit() throws Exception {
         testee.init(FakeMatcherConfig.builder().condition("10").matcherName("name").build());
 
         FakeMail fakeMail = FakeMail.builder()
             .mimeMessage(MimeMessageBuilder.mimeMessageBuilder()
-                .setMultipartWithBodyParts(MimeMessageBuilder.bodyPartBuilder()
-                    .data("1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11")
-                    .build())
-                .build())
+                .setMultipartWithBodyParts(
+                    MimeMessageBuilder.bodyPartBuilder()
+                        .data("1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11")))
             .build();
 
         Collection<MailAddress> result = testee.match(fakeMail);

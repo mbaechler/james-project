@@ -38,20 +38,16 @@ import com.google.common.collect.ImmutableList;
 /**
  * Processes a <code>LOGIN</code> command.
  */
-public class LoginProcessor extends AbstractAuthProcessor<LoginRequest> implements CapabilityImplementingProcessor{
+public class LoginProcessor extends AbstractAuthProcessor<LoginRequest> implements CapabilityImplementingProcessor {
 
-    private final static List<String> LOGINDISABLED_CAPS = ImmutableList.of("LOGINDISABLED");
+    private static final List<String> LOGINDISABLED_CAPS = ImmutableList.of("LOGINDISABLED");
+    
     public LoginProcessor(ImapProcessor next, MailboxManager mailboxManager, StatusResponseFactory factory,
             MetricFactory metricFactory) {
         super(LoginRequest.class, next, mailboxManager, factory, metricFactory);
     }
 
-    /**
-     * @see org.apache.james.imap.processor.AbstractMailboxProcessor
-     * #doProcess(org.apache.james.imap.api.message.request.ImapRequest,
-     * org.apache.james.imap.api.process.ImapSession, java.lang.String,
-     * org.apache.james.imap.api.ImapCommand, org.apache.james.imap.api.process.ImapProcessor.Responder)
-     */
+    @Override
     protected void doProcess(LoginRequest request, ImapSession session, String tag, ImapCommand command, Responder responder) {
             // check if the login is allowed with LOGIN command. See IMAP-304
             if (session.isPlainAuthDisallowed() && session.isTLSActive() == false) {
@@ -62,10 +58,7 @@ public class LoginProcessor extends AbstractAuthProcessor<LoginRequest> implemen
             }
     }
 
-    /**
-     * @see org.apache.james.imap.processor.CapabilityImplementingProcessor
-     * #getImplementedCapabilities(org.apache.james.imap.api.process.ImapSession)
-     */
+    @Override
     public List<String> getImplementedCapabilities(ImapSession session) {
         // Announce LOGINDISABLED if plain auth / login is deactivated and the session is not using
         // TLS. See IMAP-304

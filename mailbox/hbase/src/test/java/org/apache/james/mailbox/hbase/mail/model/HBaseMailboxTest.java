@@ -18,7 +18,7 @@
  ****************************************************************/
 package org.apache.james.mailbox.hbase.mail.model;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.UUID;
 
@@ -36,13 +36,12 @@ public class HBaseMailboxTest {
      */
     @Test
     public void testGetSetMailboxId() {
-        System.out.println("getSetMailboxId");
         final MailboxPath mailboxPath = new MailboxPath("gsoc", "ieugen", "INBOX");
         final HBaseMailbox instance = new HBaseMailbox(mailboxPath, 10);
 
         HBaseId expResult = HBaseId.of(UUID.randomUUID());
         instance.setMailboxId(expResult);
-        assertEquals(expResult, instance.getMailboxId());
+        assertThat(instance.getMailboxId()).isEqualTo(expResult);
 
     }
 
@@ -51,14 +50,13 @@ public class HBaseMailboxTest {
      */
     @Test
     public void testGetSetNamespace() {
-        System.out.println("getSetNamespace");
         final MailboxPath mailboxPath = new MailboxPath("gsoc", "ieugen", "INBOX");
         final HBaseMailbox instance = new HBaseMailbox(mailboxPath, 124566);
         String result = instance.getNamespace();
-        assertEquals(mailboxPath.getNamespace(), result);
+        assertThat(result).isEqualTo(mailboxPath.getNamespace());
 
         instance.setNamespace("newName");
-        assertEquals("newName", instance.getNamespace());
+        assertThat(instance.getNamespace()).isEqualTo("newName");
 
     }
 
@@ -67,14 +65,13 @@ public class HBaseMailboxTest {
      */
     @Test
     public void testGetSetUser() {
-        System.out.println("getUser");
         final MailboxPath mailboxPath = new MailboxPath("gsoc", "ieugen", "INBOX");
         final HBaseMailbox instance = new HBaseMailbox(mailboxPath, 12);
         String result = instance.getUser();
-        assertEquals(mailboxPath.getUser(), result);
+        assertThat(result).isEqualTo(mailboxPath.getUser());
 
         instance.setUser("eric");
-        assertEquals("eric", instance.getUser());
+        assertThat(instance.getUser()).isEqualTo("eric");
     }
 
     /**
@@ -82,14 +79,13 @@ public class HBaseMailboxTest {
      */
     @Test
     public void testGetSetName() {
-        System.out.println("getSetName");
         final MailboxPath mailboxPath = new MailboxPath("gsoc", "ieugen", "INBOX");
         final HBaseMailbox instance = new HBaseMailbox(mailboxPath, 1677);
         String result = instance.getName();
-        assertEquals(mailboxPath.getName(), result);
+        assertThat(result).isEqualTo(mailboxPath.getName());
 
         instance.setName("newINBOX");
-        assertEquals("newINBOX", instance.getName());
+        assertThat(instance.getName()).isEqualTo("newINBOX");
     }
 
     /**
@@ -97,12 +93,11 @@ public class HBaseMailboxTest {
      */
     @Test
     public void testGetUidValidity() {
-        System.out.println("getUidValidity");
         final MailboxPath mailboxPath = new MailboxPath("gsoc", "ieugen", "INBOX");
         final HBaseMailbox instance = new HBaseMailbox(mailboxPath, 123345);
         long expResult = 123345L;
         long result = instance.getUidValidity();
-        assertEquals(expResult, result);
+        assertThat(result).isEqualTo(expResult);
 
     }
 
@@ -111,7 +106,6 @@ public class HBaseMailboxTest {
      */
     @Test
     public void testHashCode() {
-        System.out.println("hashCode");
         final MailboxPath mailboxPath = new MailboxPath("gsoc", "ieugen", "INBOX");
         final HBaseMailbox instance = new HBaseMailbox(mailboxPath, 1234);
         // from the hashCode()
@@ -120,7 +114,7 @@ public class HBaseMailboxTest {
         HBaseId mailboxId = instance.getMailboxId();
         int expResult = PRIME * result + (int) (mailboxId.getRawId().getMostSignificantBits() ^ (mailboxId.getRawId().getMostSignificantBits() >>> 32));
 
-        assertEquals(expResult, instance.hashCode());
+        assertThat(instance.hashCode()).isEqualTo(expResult);
     }
 
     /**
@@ -128,12 +122,11 @@ public class HBaseMailboxTest {
      */
     @Test
     public void testEquals() {
-        System.out.println("equals");
         final MailboxPath mailboxPath = new MailboxPath("gsoc", "ieugen", "INBOX");
         final HBaseMailbox instance = new HBaseMailbox(mailboxPath, 12345);
         final HBaseMailbox instance2 = new HBaseMailbox(mailboxPath, 12345);
         instance2.setMailboxId(instance.getMailboxId());
-        assertEquals(instance, instance2);
+        assertThat(instance2).isEqualTo(instance);
     }
 
     /**
@@ -141,12 +134,11 @@ public class HBaseMailboxTest {
      */
     @Test
     public void testConsumeUid() {
-        System.out.println("consumeUid");
         final MailboxPath mailboxPath = new MailboxPath("gsoc", "ieugen", "INBOX");
         final HBaseMailbox instance = new HBaseMailbox(mailboxPath, 10);
         long expResult = instance.getLastUid() + 1;
         long result = instance.consumeUid();
-        assertEquals(expResult, result);
+        assertThat(result).isEqualTo(expResult);
     }
 
     /**
@@ -154,11 +146,10 @@ public class HBaseMailboxTest {
      */
     @Test
     public void testConsumeModSeq() {
-        System.out.println("consumeModSeq");
         final MailboxPath mailboxPath = new MailboxPath("gsoc", "ieugen", "INBOX");
         final HBaseMailbox instance = new HBaseMailbox(mailboxPath, 10);
         long expResult = instance.getHighestModSeq() + 1;
         long result = instance.consumeModSeq();
-        assertEquals(expResult, result);
+        assertThat(result).isEqualTo(expResult);
     }
 }

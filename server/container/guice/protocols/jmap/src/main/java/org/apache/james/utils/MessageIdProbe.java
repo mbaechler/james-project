@@ -20,16 +20,24 @@
 package org.apache.james.utils;
 
 import java.util.List;
+
 import javax.inject.Inject;
+import javax.mail.Flags;
 
 import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MessageIdManager;
+import org.apache.james.mailbox.MessageManager.FlagsUpdateMode;
 import org.apache.james.mailbox.exception.MailboxException;
+import org.apache.james.mailbox.model.AttachmentId;
 import org.apache.james.mailbox.model.FetchGroupImpl;
+import org.apache.james.mailbox.model.MailboxId;
+import org.apache.james.mailbox.model.MessageAttachment;
 import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.mailbox.model.MessageResult;
 
+import com.github.fge.lambdas.Throwing;
+import com.github.steveash.guavate.Guavate;
 import com.google.common.collect.ImmutableList;
 
 public class MessageIdProbe implements GuiceProbe {
@@ -46,5 +54,24 @@ public class MessageIdProbe implements GuiceProbe {
         MailboxSession mailboxSession = mailboxManager.createSystemSession(user);
 
         return messageIdManager.getMessages(ImmutableList.of(messageId), FetchGroupImpl.FULL_CONTENT, mailboxSession);
+    }
+
+    public void updateNewFlags(String user, Flags newFlags, MessageId messageId, List<MailboxId> mailboxIds) throws MailboxException {
+        MailboxSession mailboxSession = mailboxManager.createSystemSession(user);
+
+        messageIdManager.setFlags(newFlags, FlagsUpdateMode.REPLACE, messageId, mailboxIds, mailboxSession);
+    }
+
+    public List<AttachmentId> retrieveAttachmentIds(MessageId messageId, String username) throws MailboxException {
+        MailboxSession mailboxSession = mailboxManager.createSystemSession(username);
+        List<MessageResult> messages = messageIdManager.getMessages(
+            ImmutableList.of(messageId),
+            FetchGroupImpl.MINIMAL,
+            mailboxSession);
+
+        return messages.stream()
+            .flatMap(Throwing.function(messageResult -> messageResult.getAttachments().stream()))
+            .map(MessageAttachment::getAttachmentId)
+            .collect(Guavate.toImmutableList());
     }
 }

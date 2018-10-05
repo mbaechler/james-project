@@ -20,6 +20,7 @@ package org.apache.james.mailbox.elasticsearch.events;
 
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
@@ -27,19 +28,21 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 import org.apache.james.backends.es.ElasticSearchIndexer;
+import org.apache.james.backends.es.UpdatedRepresentation;
 import org.apache.james.mailbox.MailboxManager.MessageCapabilities;
 import org.apache.james.mailbox.MailboxManager.SearchCapabilities;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MessageUid;
+import org.apache.james.mailbox.elasticsearch.MailboxElasticSearchConstants;
 import org.apache.james.mailbox.elasticsearch.json.JsonMessageConstants;
 import org.apache.james.mailbox.elasticsearch.json.MessageToElasticSearchJson;
 import org.apache.james.mailbox.elasticsearch.search.ElasticSearchSearcher;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MessageId;
-import org.apache.james.mailbox.model.MultimailboxesSearchQuery;
 import org.apache.james.mailbox.model.SearchQuery;
 import org.apache.james.mailbox.model.UpdatedFlags;
 import org.apache.james.mailbox.store.mail.MessageMapperFactory;
@@ -56,18 +59,19 @@ import com.google.common.collect.ImmutableList;
 
 public class ElasticSearchListeningMessageSearchIndex extends ListeningMessageSearchIndex {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(ElasticSearchListeningMessageSearchIndex.class);
-    private final static String ID_SEPARATOR = ":";
+    private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchListeningMessageSearchIndex.class);
+    private static final String ID_SEPARATOR = ":";
 
-    private final ElasticSearchIndexer indexer;
+    private final ElasticSearchIndexer elasticSearchIndexer;
     private final ElasticSearchSearcher searcher;
     private final MessageToElasticSearchJson messageToElasticSearchJson;
 
     @Inject
-    public ElasticSearchListeningMessageSearchIndex(MessageMapperFactory factory, ElasticSearchIndexer indexer,
-        ElasticSearchSearcher searcher, MessageToElasticSearchJson messageToElasticSearchJson) {
+    public ElasticSearchListeningMessageSearchIndex(MessageMapperFactory factory,
+            @Named(MailboxElasticSearchConstants.InjectionNames.MAILBOX) ElasticSearchIndexer indexer,
+            ElasticSearchSearcher searcher, MessageToElasticSearchJson messageToElasticSearchJson) {
         super(factory);
-        this.indexer = indexer;
+        this.elasticSearchIndexer = indexer;
         this.messageToElasticSearchJson = messageToElasticSearchJson;
         this.searcher = searcher;
     }
@@ -79,26 +83,35 @@ public class ElasticSearchListeningMessageSearchIndex extends ListeningMessageSe
 
     @Override
     public EnumSet<SearchCapabilities> getSupportedCapabilities(EnumSet<MessageCapabilities> messageCapabilities) {
-        return EnumSet.of(SearchCapabilities.MultimailboxSearch, SearchCapabilities.Text, SearchCapabilities.FullText, SearchCapabilities.Attachment);
+        return EnumSet.of(
+            SearchCapabilities.MultimailboxSearch,
+            SearchCapabilities.Text,
+            SearchCapabilities.FullText,
+            SearchCapabilities.Attachment,
+            SearchCapabilities.AttachmentFileName,
+            SearchCapabilities.PartialEmailMatch);
     }
     
     @Override
     public Iterator<MessageUid> search(MailboxSession session, Mailbox mailbox, SearchQuery searchQuery) throws MailboxException {
         Preconditions.checkArgument(session != null, "'session' is mandatory");
-        MailboxId mailboxId = mailbox.getMailboxId();
-        MultimailboxesSearchQuery query = MultimailboxesSearchQuery.from(searchQuery).inMailboxes(mailboxId).build();
         Optional<Long> noLimit = Optional.empty();
         return searcher
-                .search(ImmutableList.of(session.getUser()), query, noLimit)
+                .search(ImmutableList.of(mailbox.getMailboxId()), searchQuery, noLimit)
                 .map(SearchResult::getMessageUid)
                 .iterator();
     }
     
     @Override
-    public List<MessageId> search(MailboxSession session, MultimailboxesSearchQuery searchQuery, long limit)
+    public List<MessageId> search(MailboxSession session, Collection<MailboxId> mailboxIds, SearchQuery searchQuery, long limit)
             throws MailboxException {
         Preconditions.checkArgument(session != null, "'session' is mandatory");
-        return searcher.search(ImmutableList.of(session.getUser()), searchQuery, Optional.empty())
+
+        if (mailboxIds.isEmpty()) {
+            return ImmutableList.of();
+        }
+
+        return searcher.search(mailboxIds, searchQuery, Optional.empty())
             .peek(this::logIfNoMessageId)
             .map(SearchResult::getMessageId)
             .map(Optional::get)
@@ -115,22 +128,22 @@ public class ElasticSearchListeningMessageSearchIndex extends ListeningMessageSe
                     mailbox.getMailboxId(),
                     session.getUser().getUserName(),
                     message.getUid());
-            indexer.indexMessage(indexIdFor(mailbox, message.getUid()), messageToElasticSearchJson.convertToJson(message, ImmutableList.of(session.getUser())));
+            elasticSearchIndexer.index(indexIdFor(mailbox, message.getUid()), messageToElasticSearchJson.convertToJson(message, ImmutableList.of(session.getUser())));
         } catch (Exception e) {
             try {
-                LOGGER.warn(String.format("Indexing mailbox %s-%s of user %s on message %s without attachments ",
+                LOGGER.warn("Indexing mailbox {}-{} of user {} on message {} without attachments ",
                         mailbox.getName(),
                         mailbox.getMailboxId().serialize(),
                         session.getUser().getUserName(),
-                        message.getUid().toString()),
-                    e);
-                indexer.indexMessage(indexIdFor(mailbox, message.getUid()), messageToElasticSearchJson.convertToJsonWithoutAttachment(message, ImmutableList.of(session.getUser())));
+                        message.getUid(),
+                        e);
+                elasticSearchIndexer.index(indexIdFor(mailbox, message.getUid()), messageToElasticSearchJson.convertToJsonWithoutAttachment(message, ImmutableList.of(session.getUser())));
             } catch (JsonProcessingException e1) {
-                LOGGER.error(String.format("Error when indexing mailbox %s-%s of user %s on message %s without its attachment",
+                LOGGER.error("Error when indexing mailbox {}-{} of user {} on message {} without its attachment",
                         mailbox.getName(),
                         mailbox.getMailboxId().serialize(),
                         session.getUser().getUserName(),
-                        message.getUid().toString()),
+                        message.getUid(),
                         e1);
             }
         }
@@ -139,43 +152,42 @@ public class ElasticSearchListeningMessageSearchIndex extends ListeningMessageSe
     @Override
     public void delete(MailboxSession session, Mailbox mailbox, List<MessageUid> expungedUids) throws MailboxException {
         try {
-            indexer.deleteMessages(expungedUids.stream()
+            elasticSearchIndexer.delete(expungedUids.stream()
                 .map(uid ->  indexIdFor(mailbox, uid))
                 .collect(Collectors.toList()));
         } catch (Exception e) {
-            LOGGER.error(String.format("Error when deleting messages %s in mailbox %s from index",
-                mailbox.getMailboxId().serialize(),
-                ImmutableList.copyOf(expungedUids).toString()),
-                e);
+            if (LOGGER.isErrorEnabled()) {
+                LOGGER.error("Error when deleting messages {} in mailbox {} from index", mailbox.getMailboxId().serialize(), expungedUids.toArray(), e);
+            }
         }
     }
 
     @Override
     public void deleteAll(MailboxSession session, Mailbox mailbox) throws MailboxException {
         try {
-            indexer.deleteAllMatchingQuery(
+            elasticSearchIndexer.deleteAllMatchingQuery(
                 termQuery(
                     JsonMessageConstants.MAILBOX_ID,
                     mailbox.getMailboxId().serialize()));
         } catch (Exception e) {
-            LOGGER.error(String.format("Error when deleting all messages in mailbox %s", mailbox.getMailboxId().serialize()), e);
+            LOGGER.error("Error when deleting all messages in mailbox {}", mailbox.getMailboxId().serialize(), e);
         }
     }
 
     @Override
     public void update(MailboxSession session, Mailbox mailbox, List<UpdatedFlags> updatedFlagsList) throws MailboxException {
         try {
-            indexer.updateMessages(updatedFlagsList.stream()
+            elasticSearchIndexer.update(updatedFlagsList.stream()
                 .map(updatedFlags -> createUpdatedDocumentPartFromUpdatedFlags(mailbox, updatedFlags))
                 .collect(Collectors.toList()));
         } catch (Exception e) {
-            LOGGER.error(String.format("Error when updating index on mailbox %s", mailbox.getMailboxId().serialize()), e);
+            LOGGER.error("Error when updating index on mailbox {}", mailbox.getMailboxId().serialize(), e);
         }
     }
 
-    private ElasticSearchIndexer.UpdatedRepresentation createUpdatedDocumentPartFromUpdatedFlags(Mailbox mailbox, UpdatedFlags updatedFlags) {
+    private UpdatedRepresentation createUpdatedDocumentPartFromUpdatedFlags(Mailbox mailbox, UpdatedFlags updatedFlags) {
         try {
-            return new ElasticSearchIndexer.UpdatedRepresentation(
+            return new UpdatedRepresentation(
                 indexIdFor(mailbox, updatedFlags.getUid()),
                     messageToElasticSearchJson.getUpdatedJsonMessagePart(
                         updatedFlags.getNewFlags(),

@@ -24,11 +24,10 @@ import org.apache.james.lifecycle.api.Configurable;
 import org.apache.james.managesieve.api.commands.CoreCommands;
 import org.apache.james.managesieve.core.CoreProcessor;
 import org.apache.james.managesieveserver.netty.ManageSieveServerFactory;
+import org.apache.james.server.core.configuration.ConfigurationProvider;
 import org.apache.james.utils.ConfigurationPerformer;
-import org.apache.james.utils.ConfigurationProvider;
 import org.apache.james.utils.GuiceProbe;
 
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -62,7 +61,7 @@ public class ManageSieveServerModule extends AbstractModule {
                 manageSieveServerFactory.configure(configurationProvider.getConfiguration("managesieveserver"));
                 manageSieveServerFactory.init();
             } catch (Exception e) {
-                Throwables.propagate(e);
+                throw new RuntimeException(e);
             }
         }
 

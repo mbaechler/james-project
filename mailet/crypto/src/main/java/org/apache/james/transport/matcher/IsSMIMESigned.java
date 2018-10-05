@@ -25,9 +25,9 @@ import java.util.Collection;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
-import org.apache.mailet.base.GenericMatcher;
-import org.apache.mailet.Mail;
 import org.apache.james.core.MailAddress;
+import org.apache.mailet.Mail;
+import org.apache.mailet.base.GenericMatcher;
 
 /**
  * checks if a mail is smime signed. 
@@ -35,14 +35,16 @@ import org.apache.james.core.MailAddress;
  */
 public class IsSMIMESigned extends GenericMatcher {
 
-    /**
-     * @see org.apache.mailet.Matcher#match(org.apache.mailet.Mail)
-     */
+    @Override
     public Collection<MailAddress> match(Mail mail) throws MessagingException {
-        if (mail == null) return null;
+        if (mail == null) {
+            return null;
+        }
         
         MimeMessage message = mail.getMessage();
-        if (message == null) return null;
+        if (message == null) {
+            return null;
+        }
         
         
         if (message.isMimeType("multipart/signed") 
@@ -51,6 +53,8 @@ public class IsSMIMESigned extends GenericMatcher {
                 || ((message.isMimeType("application/pkcs7-mime") || message.isMimeType("application/x-pkcs7-mime")) 
                         && message.getContentType().contains("signed-data"))) {
             return mail.getRecipients();
-        } else return null;
+        } else {
+            return null;
+        }
     }
 }

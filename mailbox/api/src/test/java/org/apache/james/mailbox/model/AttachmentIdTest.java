@@ -29,39 +29,10 @@ import org.junit.Test;
 public class AttachmentIdTest {
 
     @Test
-    public void forPayloadAndTypeShouldCalculateTheUnderlyingSha1() {
-        AttachmentId attachmentId = AttachmentId.forPayloadAndType("payload".getBytes(), "text/plain");
-        String expectedId = "826b0786f04e07525a36be70f84c647af7b73059";
-        assertThat(attachmentId.getId()).isEqualTo(expectedId);
-    }
-
-    @Test
-    public void forPayloadAndTypeShouldCalculateDifferentSha1WhenContentTypeIsDifferent() {
-        AttachmentId attachmentId = AttachmentId.forPayloadAndType("payload".getBytes(), "text/plain");
-        AttachmentId attachmentId2 = AttachmentId.forPayloadAndType("payload".getBytes(), "text/html");
+    public void randomShouldGenerateDifferentIds() {
+        AttachmentId attachmentId = AttachmentId.random();
+        AttachmentId attachmentId2 = AttachmentId.random();
         assertThat(attachmentId.getId()).isNotEqualTo(attachmentId2.getId());
-    }
-
-    @Test
-    public void forPayloadAndTypeShouldCalculateSameSha1WhenMimeTypeIsSameButNotParameters() {
-        AttachmentId attachmentId = AttachmentId.forPayloadAndType("payload".getBytes(), "text/html; charset=UTF-8");
-        AttachmentId attachmentId2 = AttachmentId.forPayloadAndType("payload".getBytes(), "text/html; charset=UTF-16");
-        assertThat(attachmentId.getId()).isEqualTo(attachmentId2.getId());
-    }
-    
-    @Test
-    public void forPayloadAndTypeShouldThrowWhenPayloadIsNull() {
-        assertThatThrownBy(() -> AttachmentId.forPayloadAndType(null, "text/plain")).isInstanceOf(NullPointerException.class);
-    }
-
-    @Test
-    public void forPayloadAndTypeShouldThrowWhenTypeIsNull() {
-        assertThatThrownBy(() -> AttachmentId.forPayloadAndType("payload".getBytes(), null)).isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
-    public void forPayloadAndTypeShouldThrowWhenTypeIsEmpty() {
-        assertThatThrownBy(() -> AttachmentId.forPayloadAndType("payload".getBytes(), "")).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -101,26 +72,5 @@ public class AttachmentIdTest {
 
         assertThat(attachmentId.asUUID())
             .isEqualTo(UUID.fromString("2f3a4fcc-ca64-36e3-9bcf-33e92dd93135"));
-    }
-
-    @Test
-    public void asMimeTypeShouldReturnOnlyMimeTypeFromContentTypeWhenContainingParameters() {
-        String mimeType = AttachmentId.asMimeType("text/html; charset=UTF-8");
-        
-        assertThat(mimeType).isEqualTo("text/html");
-    }
-
-    @Test
-    public void asMimeTypeShouldReturnOnlyMimeTypeFromContentTypeWhenNoParameters() {
-        String mimeType = AttachmentId.asMimeType("text/html");
-        
-        assertThat(mimeType).isEqualTo("text/html");
-    }
-
-    @Test
-    public void asMimeTypeShouldReturnDefaultMimeTypeWhenContentTypeIsUnparsable() {
-        String mimeType = AttachmentId.asMimeType("text");
-        
-        assertThat(mimeType).isEqualTo("application/octet-stream");
     }
 }

@@ -49,8 +49,6 @@ import org.bouncycastle.mail.smime.SMIMEUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Charsets;
-
 /**
  * This mailet decrypts a s/mime encrypted message. It takes as input an
  * encrypted message and it tries to dechiper it using the key specified in its
@@ -83,6 +81,7 @@ public class SMIMEDecrypt extends GenericMailet {
     private X509CertificateHolder certificateHolder;
     protected String mailAttribute = "org.apache.james.SMIMEDecrypt";
     
+    @Override
     public void init() throws MessagingException {
         super.init();
         
@@ -91,15 +90,19 @@ public class SMIMEDecrypt extends GenericMailet {
         String privateStoreType = config.getInitParameter("keyStoreType");
         
         String privateStoreFile = config.getInitParameter("keyStoreFileName");
-        if (privateStoreFile == null) throw new MessagingException("No keyStoreFileName specified");
+        if (privateStoreFile == null) {
+            throw new MessagingException("No keyStoreFileName specified");
+        }
         
         String privateStorePass = config.getInitParameter("keyStorePassword");
         
-        String keyAlias= config.getInitParameter("keyAlias");
+        String keyAlias = config.getInitParameter("keyAlias");
         String keyPass = config.getInitParameter("keyAliasPassword");
         
         String mailAttributeConf = config.getInitParameter("mailAttribute");
-        if (mailAttributeConf != null) mailAttribute = mailAttributeConf;
+        if (mailAttributeConf != null) {
+            mailAttribute = mailAttributeConf;
+        }
         
         try {
             keyHolder = new SMIMEKeyHolder(privateStoreFile, privateStorePass, keyAlias, keyPass, privateStoreType);
@@ -118,9 +121,7 @@ public class SMIMEDecrypt extends GenericMailet {
         }
     }
     
-    /**
-     * @see org.apache.mailet.Mailet#service(org.apache.mailet.Mail)
-     */
+    @Override
     @SuppressWarnings("unchecked")
     public void service(Mail mail) throws MessagingException {
         MimeMessage message = mail.getMessage();
@@ -165,7 +166,7 @@ public class SMIMEDecrypt extends GenericMailet {
             // I start the message stripping.
             try {
                 MimeMessage newMessage = new MimeMessage(message);
-                newMessage.setText(text(strippedMessage), Charsets.UTF_8.name());
+                newMessage.setText(text(strippedMessage), StandardCharsets.UTF_8.name());
                 if (!strippedMessage.isMimeType("multipart/*")) {
                     newMessage.setDisposition(null);
                 }

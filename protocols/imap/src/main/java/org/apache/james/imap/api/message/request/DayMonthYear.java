@@ -67,7 +67,7 @@ public class DayMonthYear {
      */
     public final Date toDate() {
         Calendar cal = getGMT();
-        cal.set(getYear(), getMonth() -1,  getDay());
+        cal.set(getYear(), getMonth() - 1,  getDay());
         return cal.getTime();
     }
     
@@ -88,9 +88,7 @@ public class DayMonthYear {
         return day + "-" + month + "-" + year;
     }
 
-    /**
-     * @see java.lang.Object#hashCode()
-     */
+    @Override
     public int hashCode() {
         final int PRIME = 31;
         int result = 1;
@@ -100,23 +98,27 @@ public class DayMonthYear {
         return result;
     }
 
-    /**
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
+    @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         final DayMonthYear other = (DayMonthYear) obj;
-        if (day != other.day)
+        if (day != other.day) {
             return false;
-        if (month != other.month)
+        }
+        if (month != other.month) {
             return false;
-        if (year != other.year)
+        }
+        if (year != other.year) {
             return false;
+        }
         return true;
     }
 

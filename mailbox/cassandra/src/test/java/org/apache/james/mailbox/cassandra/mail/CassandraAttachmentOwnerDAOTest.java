@@ -21,44 +21,44 @@ package org.apache.james.mailbox.cassandra.mail;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.stream.IntStream;
+
 import org.apache.james.backends.cassandra.CassandraCluster;
-import org.apache.james.backends.cassandra.DockerCassandraRule;
+import org.apache.james.backends.cassandra.CassandraClusterExtension;
 import org.apache.james.backends.cassandra.utils.CassandraUtils;
 import org.apache.james.mailbox.cassandra.modules.CassandraAttachmentModule;
 import org.apache.james.mailbox.model.AttachmentId;
 import org.apache.james.mailbox.store.mail.model.Username;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.apache.james.util.FluentFutureStream;
+import org.apache.james.util.streams.JamesCollectors;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-public class CassandraAttachmentOwnerDAOTest {
-    public static final AttachmentId ATTACHMENT_ID = AttachmentId.from("id1");
-    public static final Username OWNER_1 = Username.fromRawValue("owner1");
-    public static final Username OWNER_2 = Username.fromRawValue("owner2");
+class CassandraAttachmentOwnerDAOTest {
+    private static final AttachmentId ATTACHMENT_ID = AttachmentId.from("id1");
+    private static final Username OWNER_1 = Username.fromRawValue("owner1");
+    private static final Username OWNER_2 = Username.fromRawValue("owner2");
 
-    @ClassRule
-    public static DockerCassandraRule cassandraServer = new DockerCassandraRule();
-
-    private CassandraCluster cassandra;
+    @RegisterExtension
+    static CassandraClusterExtension cassandraCluster = new CassandraClusterExtension(CassandraAttachmentModule.MODULE);
 
     private CassandraAttachmentOwnerDAO testee;
 
-    @Before
-    public void setUp() throws Exception {
-        cassandra = CassandraCluster.create(new CassandraAttachmentModule(),
-            cassandraServer.getIp(), cassandraServer.getBindingPort());
+    @BeforeEach
+    void setUp(CassandraCluster cassandra) {
         testee = new CassandraAttachmentOwnerDAO(cassandra.getConf(),
             CassandraUtils.WITH_DEFAULT_CONFIGURATION);
     }
 
     @Test
-    public void retrieveOwnersShouldReturnEmptyByDefault() {
+    void retrieveOwnersShouldReturnEmptyByDefault() {
         assertThat(testee.retrieveOwners(ATTACHMENT_ID).join())
             .isEmpty();
     }
 
     @Test
-    public void retrieveOwnersShouldReturnAddedOwner() {
+    void retrieveOwnersShouldReturnAddedOwner() {
         testee.addOwner(ATTACHMENT_ID, OWNER_1).join();
 
         assertThat(testee.retrieveOwners(ATTACHMENT_ID).join())
@@ -66,11 +66,27 @@ public class CassandraAttachmentOwnerDAOTest {
     }
 
     @Test
-    public void retrieveOwnersShouldReturnAddedOwners() {
+    void retrieveOwnersShouldReturnAddedOwners() {
         testee.addOwner(ATTACHMENT_ID, OWNER_1).join();
         testee.addOwner(ATTACHMENT_ID, OWNER_2).join();
 
         assertThat(testee.retrieveOwners(ATTACHMENT_ID).join())
             .containsOnly(OWNER_1, OWNER_2);
+    }
+
+    @Test
+    void retrieveOwnersShouldNotThrowWhenMoreReferencesThanPaging() {
+        int referenceCountExceedingPaging = 5050;
+
+        IntStream.range(0, referenceCountExceedingPaging)
+            .boxed()
+            .collect(JamesCollectors.chunker(128))
+            .forEach(chunk -> FluentFutureStream.of(
+                chunk.stream()
+                    .map(i -> testee.addOwner(ATTACHMENT_ID, Username.fromRawValue("owner" + i))))
+                .join());
+
+        assertThat(testee.retrieveOwners(ATTACHMENT_ID).join())
+            .hasSize(referenceCountExceedingPaging);
     }
 }

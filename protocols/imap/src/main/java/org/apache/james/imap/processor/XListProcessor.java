@@ -35,6 +35,7 @@ import org.apache.james.imap.message.request.ListRequest;
 import org.apache.james.imap.message.request.XListRequest;
 import org.apache.james.imap.message.response.XListResponse;
 import org.apache.james.mailbox.MailboxManager;
+import org.apache.james.mailbox.model.MailboxMetaData;
 import org.apache.james.metrics.api.MetricFactory;
 
 import com.google.common.collect.ImmutableList;
@@ -44,7 +45,7 @@ import com.google.common.collect.ImmutableList;
  */
 public class XListProcessor extends ListProcessor implements CapabilityImplementingProcessor {
 
-    private final static List<String> XLIST_CAPS = ImmutableList.of(SUPPORTS_XLIST);
+    private static final List<String> XLIST_CAPS = ImmutableList.of(SUPPORTS_XLIST);
     private final MailboxTyper mailboxTyper;
 
     // some interface
@@ -54,10 +55,7 @@ public class XListProcessor extends ListProcessor implements CapabilityImplement
         this.mailboxTyper = mailboxTyper;
     }
 
-    /**
-     * @see org.apache.james.imap.processor.CapabilityImplementingProcessor
-     * #getImplementedCapabilities(org.apache.james.imap.api.process.ImapSession)
-     */
+    @Override
     public List<String> getImplementedCapabilities(ImapSession session) {
         // if there's no mailboxTyper, do not annnoyce XLIST capability
         if (mailboxTyper == null) {
@@ -81,7 +79,7 @@ public class XListProcessor extends ListProcessor implements CapabilityImplement
     }
 
     @Override
-    protected ImapResponseMessage createResponse(boolean noInferior, boolean noSelect, boolean marked, boolean unmarked, boolean hasChildren, boolean hasNoChildren, String mailboxName, char delimiter, MailboxType type) {
-        return new XListResponse(noInferior, noSelect, marked, unmarked, hasChildren, hasNoChildren, mailboxName, delimiter, type);
+    protected ImapResponseMessage createResponse(MailboxMetaData.Children children, MailboxMetaData.Selectability selectability, String name, char hierarchyDelimiter, MailboxType type) {
+        return new XListResponse(children, selectability, name, hierarchyDelimiter, type);
     }
 }

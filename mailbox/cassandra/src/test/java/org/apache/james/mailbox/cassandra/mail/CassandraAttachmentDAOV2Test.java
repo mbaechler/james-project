@@ -25,57 +25,46 @@ import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 import org.apache.james.backends.cassandra.CassandraCluster;
-import org.apache.james.backends.cassandra.DockerCassandraRule;
-import org.apache.james.mailbox.cassandra.ids.BlobId;
+import org.apache.james.backends.cassandra.CassandraClusterExtension;
+import org.apache.james.blob.api.BlobId;
+import org.apache.james.blob.api.HashBlobId;
 import org.apache.james.mailbox.cassandra.mail.CassandraAttachmentDAOV2.DAOAttachment;
 import org.apache.james.mailbox.cassandra.modules.CassandraAttachmentModule;
 import org.apache.james.mailbox.model.Attachment;
 import org.apache.james.mailbox.model.AttachmentId;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-public class CassandraAttachmentDAOV2Test {
-    public static final AttachmentId ATTACHMENT_ID = AttachmentId.from("id1");
+class CassandraAttachmentDAOV2Test {
+    private static final AttachmentId ATTACHMENT_ID = AttachmentId.from("id1");
+    private static final HashBlobId.Factory BLOB_ID_FACTORY = new HashBlobId.Factory();
 
-    @ClassRule
-    public static DockerCassandraRule cassandraServer = new DockerCassandraRule();
-
-    private CassandraCluster cassandra;
+    @RegisterExtension
+    static CassandraClusterExtension cassandraCluster = new CassandraClusterExtension(CassandraAttachmentModule.MODULE);
 
     private CassandraAttachmentDAOV2 testee;
 
-    @Before
-    public void setUp() throws Exception {
-        cassandra = CassandraCluster.create(
-            new CassandraAttachmentModule(),
-            cassandraServer.getIp(),
-            cassandraServer.getBindingPort());
-
-        testee = new CassandraAttachmentDAOV2(cassandra.getConf());
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        cassandra.close();
+    @BeforeEach
+    void setUp(CassandraCluster cassandra) {
+        testee = new CassandraAttachmentDAOV2(BLOB_ID_FACTORY, cassandra.getConf());
     }
 
     @Test
-    public void getAttachmentShouldReturnEmptyWhenAbsent() {
+    void getAttachmentShouldReturnEmptyWhenAbsent() {
         Optional<DAOAttachment> attachment = testee.getAttachment(ATTACHMENT_ID).join();
 
         assertThat(attachment).isEmpty();
     }
 
     @Test
-    public void getAttachmentShouldReturnAttachmentWhenStored() throws Exception {
+    void getAttachmentShouldReturnAttachmentWhenStored() {
         Attachment attachment = Attachment.builder()
             .attachmentId(ATTACHMENT_ID)
             .type("application/json")
             .bytes("{\"property\":`\"value\"}".getBytes(StandardCharsets.UTF_8))
             .build();
-        BlobId blobId = BlobId.from("blobId");
+        BlobId blobId = BLOB_ID_FACTORY.from("blobId");
         DAOAttachment daoAttachment = CassandraAttachmentDAOV2.from(attachment, blobId);
         testee.storeAttachment(daoAttachment).join();
 

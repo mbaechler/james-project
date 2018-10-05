@@ -23,8 +23,8 @@ import java.util.Collection;
 
 import javax.mail.MessagingException;
 
-import org.apache.james.transport.matchers.utils.MailAddressCollectionReader;
 import org.apache.james.core.MailAddress;
+import org.apache.james.transport.matchers.utils.MailAddressCollectionReader;
 import org.apache.mailet.base.GenericRecipientMatcher;
 
 import com.google.common.base.Strings;
@@ -45,6 +45,7 @@ public class RecipientIs extends GenericRecipientMatcher {
 
     private Collection<MailAddress> recipients;
 
+    @Override
     public void init() throws javax.mail.MessagingException {
         if (Strings.isNullOrEmpty(getCondition())) {
             throw new MessagingException("RecipientIs should have a condition  composed of a list of mail addresses");
@@ -55,6 +56,7 @@ public class RecipientIs extends GenericRecipientMatcher {
         }
     }
 
+    @Override
     public boolean matchRecipient(MailAddress recipient) {
         return recipients.contains(recipient);
     }

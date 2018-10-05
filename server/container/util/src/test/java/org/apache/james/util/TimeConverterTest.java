@@ -36,6 +36,26 @@ public class TimeConverterTest {
         assertThat(actual).isEqualTo(expected);
     }
 
+    @Test
+    public void getMilliSecondsShouldUseProvidedUnitWhenNoUnitAmountAsString() {
+        //Given
+        long expected = 2000;
+        //When
+        long actual = TimeConverter.getMilliSeconds("2", TimeConverter.Unit.SECONDS);
+        //Then
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    public void getMilliSecondsShouldNotUseProvidedUnitWhenNoUnitAmountAsString() {
+        //Given
+        long expected = 120000;
+        //When
+        long actual = TimeConverter.getMilliSeconds("2 minutes", TimeConverter.Unit.SECONDS);
+        //Then
+        assertThat(actual).isEqualTo(expected);
+    }
+
     @Test 
     public void getMilliSecondsShouldConvertValueWhenMsecUnit() {
         //Given

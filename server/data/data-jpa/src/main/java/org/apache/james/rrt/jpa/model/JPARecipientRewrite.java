@@ -18,8 +18,6 @@
  ****************************************************************/
 package org.apache.james.rrt.jpa.model;
 
-import com.google.common.base.Objects;
-
 import java.io.Serializable;
 
 import javax.persistence.Column;
@@ -29,6 +27,10 @@ import javax.persistence.IdClass;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
+
+import org.apache.james.core.Domain;
+
+import com.google.common.base.Objects;
 
 /**
  * RecipientRewriteTable class for the James Virtual User Table to be used for JPA
@@ -114,9 +116,9 @@ public class JPARecipientRewrite {
      * @param user
      *            , domain and their associated targetAddress
      */
-    public JPARecipientRewrite(String user, String domain, String targetAddress) {
+    public JPARecipientRewrite(String user, Domain domain, String targetAddress) {
         this.user = user;
-        this.domain = domain;
+        this.domain = domain.asString();
         this.targetAddress = targetAddress;
     }
 

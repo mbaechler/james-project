@@ -59,7 +59,7 @@ public class Rfc4314RightsTest {
         none = MailboxACL.NO_RIGHTS;
     }
     
-    @Test(expected=NullPointerException.class)
+    @Test(expected = NullPointerException.class)
     public void newInstanceShouldThrowWhenNullString() throws UnsupportedRightException {
         Rfc4314Rights.fromSerializedRfc4314Rights((String) null);
     }
@@ -211,5 +211,79 @@ public class Rfc4314RightsTest {
     @Test
     public void unionShouldThrowWhenAppliedWithNull() throws UnsupportedRightException {
         assertThatThrownBy(() -> lprs.union(null)).isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    public void containsShouldReturnFalseWhenRightNotPresent() throws UnsupportedRightException {
+        assertThat(lprs.contains(Write)).isFalse();
+    }
+
+    @Test
+    public void containsShouldReturnFalseWhenAtLeastOneRightNotPresent() throws UnsupportedRightException {
+        assertThat(lprs.contains(Lookup, Write)).isFalse();
+    }
+
+    @Test
+    public void containsShouldReturnTrueWhenAllRightsPresent() throws UnsupportedRightException {
+        assertThat(lprs.contains(Lookup, Post)).isTrue();
+    }
+
+    @Test
+    public void containsShouldReturnTrueWhenNonRightsPresent() throws UnsupportedRightException {
+        assertThat(lprs.contains()).isTrue();
+    }
+
+    @Test
+    public void allExceptShouldReturnFullWhenProvidedEmpty() throws UnsupportedRightException {
+        assertThat(Rfc4314Rights.allExcept()).isEqualTo(MailboxACL.FULL_RIGHTS);
+    }
+
+    @Test
+    public void allExceptShouldReturnAllButProvidedRight() throws UnsupportedRightException {
+        assertThat(Rfc4314Rights.allExcept(Lookup))
+            .isEqualTo(new Rfc4314Rights(
+                DeleteMessages,
+                Insert,
+                Read,
+                Administer,
+                Write,
+                WriteSeenFlag,
+                PerformExpunge,
+                CreateMailbox,
+                Post,
+                DeleteMailbox));
+    }
+
+    @Test
+    public void allExceptShouldReturnAllButProvidedRights() throws UnsupportedRightException {
+        assertThat(Rfc4314Rights.allExcept(Lookup, Read))
+            .isEqualTo(new Rfc4314Rights(
+                DeleteMessages,
+                Insert,
+                Administer,
+                Write,
+                WriteSeenFlag,
+                PerformExpunge,
+                CreateMailbox,
+                Post,
+                DeleteMailbox));
+    }
+
+    @Test
+    public void allExceptShouldReturnEmptyWhenProvidedAllRights() throws UnsupportedRightException {
+        assertThat(
+            Rfc4314Rights.allExcept(
+                Lookup,
+                Read,
+                DeleteMessages,
+                Insert,
+                Administer,
+                Write,
+                WriteSeenFlag,
+                PerformExpunge,
+                CreateMailbox,
+                Post,
+                DeleteMailbox))
+            .isEqualTo(new Rfc4314Rights());
     }
 }

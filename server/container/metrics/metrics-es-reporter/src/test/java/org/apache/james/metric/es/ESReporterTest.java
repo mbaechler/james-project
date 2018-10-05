@@ -19,7 +19,7 @@
 
 package org.apache.james.metric.es;
 
-import static com.jayway.awaitility.Awaitility.await;
+import static org.awaitility.Awaitility.await;
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -31,16 +31,19 @@ import org.apache.james.metrics.api.TimeMetric;
 import org.apache.james.metrics.dropwizard.DropWizardMetricFactory;
 import org.apache.james.metrics.es.ESMetricReporter;
 import org.apache.james.metrics.es.ESReporterConfiguration;
-import org.apache.james.util.streams.SwarmGenericContainer;
+import org.apache.james.util.docker.Images;
+import org.apache.james.util.docker.RateLimiters;
+import org.apache.james.util.docker.SwarmGenericContainer;
+import org.awaitility.Duration;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy;
 
 import com.codahale.metrics.MetricRegistry;
-import com.jayway.awaitility.Duration;
 
 public class ESReporterTest {
 
@@ -52,9 +55,10 @@ public class ESReporterTest {
     public static final int ES_HTTP_PORT = 9200;
 
     @Rule
-    public SwarmGenericContainer esContainer = new SwarmGenericContainer("elasticsearch:2.2.2")
+    public SwarmGenericContainer esContainer = new SwarmGenericContainer(Images.ELASTICSEARCH)
         .withAffinityToContainer()
-        .withExposedPorts(ES_HTTP_PORT, ES_APPLICATIVE_PORT);
+        .withExposedPorts(ES_HTTP_PORT, ES_APPLICATIVE_PORT)
+        .waitingFor(new HostPortWaitStrategy().withRateLimiter(RateLimiters.DEFAULT));
 
     private ClientProvider clientProvider;
     private ESMetricReporter esMetricReporter;

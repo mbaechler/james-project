@@ -57,31 +57,28 @@ public interface RecipientRewriteTableManagementMBean {
     void removeRegexMapping(String user, String domain, String regex) throws Exception;
 
     /***
-     * Add address mapping
+     * Add address mapping that, for a user from@fromDomain would redirect
+     * mails to toAddress
      * 
-     * @param user
+     * @param fromUser
      *            the username. Null if no username should be used
-     * @param domain
+     * @param fromDomain
      *            the domain. Null if no domain should be used
-     * @param address
+     * @param toAddress
      *            the address.
-     * @throws Exception
-     *            If an error occurred
      */
-    void addAddressMapping(String user, String domain, String address) throws Exception;
+    void addAddressMapping(String fromUser, String fromDomain, String toAddress) throws Exception;
 
     /**
-     * Remove address mapping
-     * 
-     * @param user
+     * Remove address mapping. The API takes the same arguments as addAddressMapping
+     *
+     * @param fromUser
      *            the username. Null if no username should be used
-     * @param domain
+     * @param fromDomain
      *            the domain. Null if no domain should be used
-     * @param address
-     * @throws Exception
-     *            If an error occurred
+     * @param toAddress
      */
-    void removeAddressMapping(String user, String domain, String address) throws Exception;
+    void removeAddressMapping(String fromUser, String fromDomain, String toAddress) throws Exception;
 
     /**
      * Add error mapping
@@ -187,4 +184,52 @@ public interface RecipientRewriteTableManagementMBean {
      *            If an error occurred
      */
     Map<String, Mappings> getAllMappings() throws Exception;
+
+    /***
+     * Add forward mapping
+     *
+     * @param toUser
+     *            the username part of the mail address destination defined for this forward.
+     * @param toDomain
+     *            the domain part of the mail address destination defined for this forward.
+     * @param fromAddress The base address of the forward. Mails for this address will be sent to the added forward destination.
+     * @throws Exception If an error occurred
+     */
+    void addForwardMapping(String user, String domain, String address) throws Exception;
+
+    /**
+     * Remove forward mapping
+     * 
+     * @param toUser
+     *            the username part of the mail address destination defined for this forward.
+     * @param toDomain
+     *            the domain part of the mail address destination defined for this forward.
+     * @param fromAddress The base address of the forward. Mails for this address will no more sent to the removed forward destination.
+     * @throws Exception If an error occurred
+     */
+    void removeForwardMapping(String toUser, String toDomain, String fromAddress) throws Exception;
+
+    /***
+     * Add group mapping
+     *
+     * @param toUser
+     *            the username part of the mail address destination defined for this group.
+     * @param toDomain
+     *            the domain part of the mail address destination defined for this group.
+     * @param fromAddress The base address of the group. Mails for this address will be sent to the added group destination.
+     * @throws Exception If an error occurred
+     */
+    void addGroupMapping(String user, String domain, String address) throws Exception;
+
+    /**
+     * Remove group mapping
+     *
+     * @param toUser
+     *            the username part of the mail address destination defined for this group.
+     * @param toDomain
+     *            the domain part of the mail address destination defined for this group.
+     * @param fromAddress The base address of the forward. Mails for this address will no more sent to the removed group destination.
+     * @throws Exception If an error occurred
+     */
+    void removeGroupMapping(String toUser, String toDomain, String fromAddress) throws Exception;
 }

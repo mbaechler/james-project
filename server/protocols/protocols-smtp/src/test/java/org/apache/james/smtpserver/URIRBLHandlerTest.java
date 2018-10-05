@@ -18,7 +18,7 @@
  ****************************************************************/
 package org.apache.james.smtpserver;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -28,13 +28,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
-import javax.mail.BodyPart;
 import javax.mail.MessagingException;
-import javax.mail.Multipart;
-import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
-import javax.mail.internet.MimeMultipart;
 
+import org.apache.james.core.builder.MimeMessageBuilder;
 import org.apache.james.dnsservice.api.DNSService;
 import org.apache.james.dnsservice.api.mock.MockDNSService;
 import org.apache.james.protocols.smtp.SMTPSession;
@@ -42,9 +39,8 @@ import org.apache.james.protocols.smtp.hook.HookResult;
 import org.apache.james.protocols.smtp.hook.HookReturnCode;
 import org.apache.james.protocols.smtp.utils.BaseFakeSMTPSession;
 import org.apache.james.smtpserver.fastfail.URIRBLHandler;
-import org.apache.james.smtpserver.mock.MockMimeMessage;
-import org.apache.james.smtpserver.mock.mailet.MockMail;
 import org.apache.mailet.Mail;
+import org.apache.mailet.base.test.FakeMail;
 import org.junit.Test;
 
 public class URIRBLHandlerTest {
@@ -104,35 +100,24 @@ public class URIRBLHandlerTest {
 
     }
 
-    private Mail setupMockedMail(MimeMessage message) {
-        MockMail mail = new MockMail();
-        mail.setMessage(message);
-        return mail;
+    private Mail setupMockedMail(MimeMessage message) throws MessagingException {
+       return FakeMail.builder()
+            .mimeMessage(message)
+            .build();
     }
 
     public MimeMessage setupMockedMimeMessage(String text) throws MessagingException {
-        MimeMessage message = new MimeMessage(new MockMimeMessage());
-        message.setText(text);
-        message.saveChanges();
-
-        return message;
+        return MimeMessageBuilder.mimeMessageBuilder()
+            .setText(text)
+            .build();
     }
 
     public MimeMessage setupMockedMimeMessageMP(String text) throws MessagingException {
-        MimeMessage message = new MimeMessage(new MockMimeMessage());
-
-        // Create the message part
-        BodyPart messageBodyPart = new MimeBodyPart();
-
-        // Fill the message
-        messageBodyPart.setText(text);
-
-        Multipart multipart = new MimeMultipart();
-        multipart.addBodyPart(messageBodyPart);
-        message.setContent(multipart);
-        message.saveChanges();
-
-        return message;
+        return MimeMessageBuilder.mimeMessageBuilder()
+            .setMultipartWithBodyParts(
+                MimeMessageBuilder.bodyPartBuilder()
+                    .data(text))
+            .build();
     }
 
     /**
@@ -185,7 +170,7 @@ public class URIRBLHandlerTest {
         handler.setUriRblServer(servers);
         HookResult response = handler.onMessage(session, mockedMail);
 
-        assertEquals("Email was not rejected", response.getResult(), HookReturnCode.DECLINED);
+        assertThat(HookReturnCode.declined()).describedAs("Email was not rejected").isEqualTo(response.getResult());
     }
 
     @Test
@@ -203,7 +188,7 @@ public class URIRBLHandlerTest {
         handler.setUriRblServer(servers);
         HookResult response = handler.onMessage(session, mockedMail);
 
-        assertEquals("Email was rejected", response.getResult(), HookReturnCode.DENY);
+        assertThat(HookReturnCode.deny()).describedAs("Email was rejected").isEqualTo(response.getResult());
     }
 
     @Test
@@ -221,7 +206,7 @@ public class URIRBLHandlerTest {
         handler.setUriRblServer(servers);
         HookResult response = handler.onMessage(session, mockedMail);
 
-        assertEquals("Email was rejected", response.getResult(), HookReturnCode.DENY);
+        assertThat(HookReturnCode.deny()).describedAs("Email was rejected").isEqualTo(response.getResult());
     }
 
     /*

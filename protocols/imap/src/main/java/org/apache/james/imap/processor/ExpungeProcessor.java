@@ -53,13 +53,14 @@ import com.google.common.collect.ImmutableList;
 public class ExpungeProcessor extends AbstractMailboxProcessor<ExpungeRequest> implements CapabilityImplementingProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(ExpungeProcessor.class);
 
-    private final static List<String> UIDPLUS = ImmutableList.of("UIDPLUS");
+    private static final List<String> UIDPLUS = ImmutableList.of("UIDPLUS");
 
     public ExpungeProcessor(ImapProcessor next, MailboxManager mailboxManager, StatusResponseFactory factory,
             MetricFactory metricFactory) {
         super(ExpungeRequest.class, next, mailboxManager, factory, metricFactory);
     }
 
+    @Override
     protected void doProcess(ExpungeRequest request, ImapSession session, String tag, ImapCommand command, Responder responder) {
         try {
             final MessageManager mailbox = getSelectedMailbox(session);
@@ -99,12 +100,10 @@ public class ExpungeProcessor extends AbstractMailboxProcessor<ExpungeRequest> i
                 }
             }
         } catch (MessageRangeException e) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Expunge failed", e);
-            }
+            LOGGER.debug("Expunge failed", e);
             taggedBad(command, tag, responder, HumanReadableText.INVALID_MESSAGESET);
         } catch (MailboxException e) {
-            LOGGER.error("Expunge failed for mailbox " + session.getSelected().getPath(), e);
+            LOGGER.error("Expunge failed for mailbox {}", session.getSelected().getPath(), e);
             no(command, tag, responder, HumanReadableText.GENERIC_FAILURE_DURING_PROCESSING);
         }
     }
@@ -123,10 +122,7 @@ public class ExpungeProcessor extends AbstractMailboxProcessor<ExpungeRequest> i
         return expunged;
     }
 
-    /**
-     * @see org.apache.james.imap.processor.CapabilityImplementingProcessor
-     * #getImplementedCapabilities(org.apache.james.imap.api.process.ImapSession)
-     */
+    @Override
     public List<String> getImplementedCapabilities(ImapSession session) {
         return UIDPLUS;
     }

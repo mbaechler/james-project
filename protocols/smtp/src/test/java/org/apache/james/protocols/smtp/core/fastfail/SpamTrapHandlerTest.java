@@ -19,8 +19,8 @@
 
 package org.apache.james.protocols.smtp.core.fastfail;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Fail.fail;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -62,30 +62,30 @@ public class SpamTrapHandlerTest {
     
         handler.setBlockTime(blockTime);
         handler.setSpamTrapRecipients(rcpts);
+
+        HookReturnCode result = handler.doRcpt(setUpSMTPSession(ip),null,new MailAddress(SPAM_TRAP_RECIP1)).getResult();
     
-        int result = handler.doRcpt(setUpSMTPSession(ip),null,new MailAddress(SPAM_TRAP_RECIP1)).getResult();
-    
-        assertEquals("Blocked on first connect",HookReturnCode.DENY,result);
+        assertThat(result).describedAs("Blocked on first connect").isEqualTo(HookReturnCode.deny());
     
 
         result = handler.doRcpt(setUpSMTPSession(ip),null,new MailAddress(RECIP1)).getResult();
     
-        assertEquals("Blocked on second connect", HookReturnCode.DENY,result);
+        assertThat(result).describedAs("Blocked on second connect").isEqualTo(HookReturnCode.deny());
     
         
         result = handler.doRcpt(setUpSMTPSession(ip2),null,new MailAddress(RECIP1)).getResult();
     
-        assertEquals("Not Blocked", HookReturnCode.DECLINED,result);
+        assertThat(result).describedAs("Not Blocked").isEqualTo(HookReturnCode.declined());
     
         try {
             // Wait for the blockTime to exceed
             Thread.sleep(blockTime);
         } catch (InterruptedException e) {
-            fail("Failed to sleep for " + blockTime +" ms");
+            fail("Failed to sleep for " + blockTime + " ms");
         }
     
         result = handler.doRcpt(setUpSMTPSession(ip),null,new MailAddress(RECIP1)).getResult();
     
-        assertEquals("Not blocked. BlockTime exceeded", HookReturnCode.DECLINED,result); 
+        assertThat(result).describedAs("Not blocked. BlockTime exceeded").isEqualTo(HookReturnCode.declined());
     }
 }

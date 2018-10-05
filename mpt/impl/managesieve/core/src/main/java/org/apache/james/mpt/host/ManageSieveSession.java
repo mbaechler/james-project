@@ -19,6 +19,9 @@
 
 package org.apache.james.mpt.host;
 
+import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.james.managesieve.api.SessionTerminatedException;
 import org.apache.james.managesieve.transcode.ManageSieveProcessor;
@@ -29,8 +32,6 @@ import org.apache.james.mpt.helper.ByteBufferInputStream;
 import org.apache.james.mpt.helper.ByteBufferOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.StringWriter;
 
 public class ManageSieveSession implements Session {
 
@@ -54,7 +55,7 @@ public class ManageSieveSession implements Session {
         if (!isReadLast) {
             String response;
             StringWriter stringWriter = new StringWriter();
-            IOUtils.copy(in, stringWriter);
+            IOUtils.copy(in, stringWriter, StandardCharsets.UTF_8);
             String request = stringWriter.toString();
             try {
                 response = manageSieveProcessor.handleRequest(settableSession, request);

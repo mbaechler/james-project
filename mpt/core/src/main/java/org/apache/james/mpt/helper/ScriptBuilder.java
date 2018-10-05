@@ -31,7 +31,7 @@ import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Locale;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class ScriptBuilder {
 
@@ -282,8 +282,8 @@ public class ScriptBuilder {
         return this;
     }
 
-    public ScriptBuilder NEW() {
-        search.NEW();
+    public ScriptBuilder newOperator() {
+        search.newOperator();
         return this;
     }
 
@@ -770,7 +770,7 @@ public class ScriptBuilder {
             return append("LARGER").append(size);
         }
 
-        public Search NEW() {
+        public Search newOperator() {
             return append("NEW");
         }
 
@@ -1192,10 +1192,12 @@ public class ScriptBuilder {
             } else {
                 inBuffer.compact();
                 int i = 0;
-                while ((i = source.read(inBuffer)) == 0)
+                while ((i = source.read(inBuffer)) == 0) {
                     ;
-                if (i == -1)
+                }
+                if (i == -1) {
                     throw new RuntimeException("Unexpected EOF");
+                }
                 inBuffer.flip();
                 result = next();
             }
@@ -1483,6 +1485,7 @@ public class ScriptBuilder {
             this.delegate = delegate;
         }
 
+        @Override
         public int read() throws IOException {
             final int result;
             final int next = delegate.read();

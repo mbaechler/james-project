@@ -45,15 +45,14 @@ public abstract class JPATransactionalMapper extends TransactionalMapper {
      * @return entitymanger
      */
     public EntityManager getEntityManager() {
-        if (entityManager != null)
+        if (entityManager != null) {
             return entityManager;
+        }
         entityManager = entityManagerFactory.createEntityManager();
         return entityManager;
     }
 
-    /**
-     * @see org.apache.james.mailbox.store.transaction.TransactionalMapper#begin()
-     */
+    @Override
     protected void begin() throws MailboxException {
         try {
             getEntityManager().getTransaction().begin();
@@ -65,6 +64,7 @@ public abstract class JPATransactionalMapper extends TransactionalMapper {
     /**
      * Commit the Transaction and close the EntityManager
      */
+    @Override
     protected void commit() throws MailboxException {
         try {
             getEntityManager().getTransaction().commit();
@@ -73,9 +73,7 @@ public abstract class JPATransactionalMapper extends TransactionalMapper {
         }
     }
 
-    /**
-     * @see org.apache.james.mailbox.store.transaction.TransactionalMapper#rollback()
-     */
+    @Override
     protected void rollback() throws MailboxException {
         EntityTransaction transaction = entityManager.getTransaction();
         // check if we have a transaction to rollback
@@ -87,10 +85,12 @@ public abstract class JPATransactionalMapper extends TransactionalMapper {
     /**
      * Close open {@link EntityManager}
      */
+    @Override
     public void endRequest() {
         if (entityManager != null) {
-            if (entityManager.isOpen())
+            if (entityManager.isOpen()) {
                 entityManager.close();
+            }
             entityManager = null;
         }
     }

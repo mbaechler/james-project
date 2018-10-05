@@ -24,17 +24,17 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.apache.commons.cli.PosixParser;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.time.StopWatch;
 import org.apache.james.cli.exceptions.InvalidArgumentNumberException;
-import org.apache.james.cli.exceptions.InvalidPortException;
 import org.apache.james.cli.exceptions.JamesCliException;
 import org.apache.james.cli.exceptions.MissingCommandException;
 import org.apache.james.cli.exceptions.UnrecognizedCommandException;
@@ -44,19 +44,25 @@ import org.apache.james.cli.probe.impl.JmxMailboxProbe;
 import org.apache.james.cli.probe.impl.JmxQuotaProbe;
 import org.apache.james.cli.probe.impl.JmxSieveProbe;
 import org.apache.james.cli.type.CmdType;
-import org.apache.james.cli.utils.ValueWithUnit;
-import org.apache.james.mailbox.model.Quota;
-import org.apache.james.mailbox.store.mail.model.SerializableQuota;
-import org.apache.james.mailbox.store.probe.MailboxProbe;
-import org.apache.james.mailbox.store.probe.QuotaProbe;
-import org.apache.james.mailbox.store.probe.SieveProbe;
+import org.apache.james.core.quota.QuotaCount;
+import org.apache.james.core.quota.QuotaSize;
+import org.apache.james.core.quota.QuotaValue;
+import org.apache.james.mailbox.model.SerializableQuota;
+import org.apache.james.mailbox.model.SerializableQuotaValue;
+import org.apache.james.mailbox.probe.MailboxProbe;
+import org.apache.james.mailbox.probe.QuotaProbe;
 import org.apache.james.probe.DataProbe;
+import org.apache.james.probe.SieveProbe;
 import org.apache.james.rrt.lib.Mappings;
+import org.apache.james.util.Port;
+import org.apache.james.util.Size;
+import org.apache.james.util.SizeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
+import com.google.common.base.Stopwatch;
 import com.google.common.base.Strings;
 
 /**
@@ -94,7 +100,7 @@ public class ServerCmd {
         } catch (IOException ioe) {
             failWithMessage("Error connecting to remote JMX agent : " + ioe.getMessage());
         } catch (Exception e) {
-            LOG.error("Error on command: {}", e);
+            LOG.error("Error while playing command", e);
             failWithMessage("Error " + e.getClass() + " while executing command:" + e.getMessage());
         }
     }
@@ -105,20 +111,17 @@ public class ServerCmd {
     }
 
     public static void executeAndOutputToStream(String[] args, PrintStream printStream) throws Exception {
-        StopWatch stopWatch = new StopWatch();
-        stopWatch.start();
+        Stopwatch stopWatch = Stopwatch.createStarted();
         CommandLine cmd = parseCommandLine(args);
         JmxConnection jmxConnection = new JmxConnection(getHost(cmd), getPort(cmd));
         CmdType cmdType = new ServerCmd(
                 new JmxDataProbe().connect(jmxConnection),
                 new JmxMailboxProbe().connect(jmxConnection),
                 new JmxQuotaProbe().connect(jmxConnection),
-                new JmxSieveProbe().connect(jmxConnection)
-            )
+                new JmxSieveProbe().connect(jmxConnection))
             .executeCommandLine(cmd, printStream);
-        stopWatch.split();
         print(new String[] { Joiner.on(' ')
-                .join(cmdType.getCommand(), "command executed sucessfully in", stopWatch.getSplitTime(), "ms.")},
+                .join(cmdType.getCommand(), "command executed sucessfully in", stopWatch.elapsed(TimeUnit.MILLISECONDS), "ms.")},
             printStream);
         stopWatch.stop();
     }
@@ -137,7 +140,7 @@ public class ServerCmd {
     
     @VisibleForTesting
     static CommandLine parseCommandLine(String[] args) throws ParseException {
-        CommandLineParser parser = new PosixParser();
+        CommandLineParser parser = new DefaultParser();
         CommandLine commandLine = parser.parse(createOptions(), args);
         if (commandLine.getArgs().length < 1) {
             throw new MissingCommandException();
@@ -159,19 +162,14 @@ public class ServerCmd {
         String portNum = cmd.getOptionValue(PORT_OPT_LONG);
         if (!Strings.isNullOrEmpty(portNum)) {
             try {
-                return validatePortNumber(Integer.parseInt(portNum));
+                int portNumber = Integer.parseInt(portNum);
+                Port.assertValid(portNumber);
+                return portNumber;
             } catch (NumberFormatException e) {
                 throw new ParseException("Port must be a number");
             }
         }
         return DEFAULT_PORT;
-    }
-
-    private static int validatePortNumber(int portNumber) {
-        if (portNumber < 1 || portNumber > 65535) {
-            throw new InvalidPortException(portNumber);
-        }
-        return portNumber;
     }
 
     private static void failWithMessage(String s) {
@@ -288,22 +286,22 @@ public class ServerCmd {
             printStream.println("MailboxMessage count allowed for Quota Root " + arguments[1] + ": " + formatMessageValue(quotaProbe.getMaxMessageCount(arguments[1])));
             break;
         case SETMAXSTORAGEQUOTA:
-            quotaProbe.setMaxStorage(arguments[1], ValueWithUnit.parse(arguments[2]).getConvertedValue());
+            quotaProbe.setMaxStorage(arguments[1], parseQuotaSize(arguments[2]));
             break;
         case SETMAXMESSAGECOUNTQUOTA:
-            quotaProbe.setMaxMessageCount(arguments[1], Long.parseLong(arguments[2]));
+            quotaProbe.setMaxMessageCount(arguments[1], parseQuotaCount(arguments[2]));
             break;
-        case SETDEFAULTMAXSTORAGEQUOTA:
-            quotaProbe.setDefaultMaxStorage(ValueWithUnit.parse(arguments[1]).getConvertedValue());
+        case SETGLOBALMAXSTORAGEQUOTA:
+            quotaProbe.setGlobalMaxStorage(parseQuotaSize(arguments[1]));
             break;
-        case SETDEFAULTMAXMESSAGECOUNTQUOTA:
-            quotaProbe.setDefaultMaxMessageCount(Long.parseLong(arguments[1]));
+        case SETGLOBALMAXMESSAGECOUNTQUOTA:
+            quotaProbe.setGlobalMaxMessageCount(parseQuotaCount(arguments[1]));
             break;
-        case GETDEFAULTMAXSTORAGEQUOTA:
-            printStream.println("Default Maximum Storage Quota: " + formatStorageValue(quotaProbe.getDefaultMaxStorage()));
+        case GETGLOBALMAXSTORAGEQUOTA:
+            printStream.println("Global Maximum Storage Quota: " + formatStorageValue(quotaProbe.getGlobalMaxStorage()));
             break;
-        case GETDEFAULTMAXMESSAGECOUNTQUOTA:
-            printStream.println("Default Maximum message count Quota: " + formatMessageValue(quotaProbe.getDefaultMaxMessageCount()));
+        case GETGLOBALMAXMESSAGECOUNTQUOTA:
+            printStream.println("Global Maximum message count Quota: " + formatMessageValue(quotaProbe.getGlobalMaxMessageCount()));
             break;
         case REINDEXMAILBOX:
             mailboxProbe.reIndexMailbox(arguments[1], arguments[2], arguments[3]);
@@ -312,10 +310,10 @@ public class ServerCmd {
             mailboxProbe.reIndexAll();
             break;
         case SETSIEVEQUOTA:
-            sieveProbe.setSieveQuota(ValueWithUnit.parse(arguments[1]).getConvertedValue());
+            sieveProbe.setSieveQuota(Size.parse(arguments[1]).asBytes());
             break;
         case SETSIEVEUSERQUOTA:
-            sieveProbe.setSieveQuota(arguments[1], ValueWithUnit.parse(arguments[2]).getConvertedValue());
+            sieveProbe.setSieveQuota(arguments[1], Size.parse(arguments[2]).asBytes());
             break;
         case GETSIEVEQUOTA:
             printStream.println("Storage space allowed for Sieve scripts by default: "
@@ -338,6 +336,30 @@ public class ServerCmd {
         }
     }
 
+    private SerializableQuotaValue<QuotaSize> parseQuotaSize(String argument) throws Exception {
+        long convertedValue = Size.parse(argument).asBytes();
+        return longToSerializableQuotaValue(convertedValue, QuotaSize.unlimited(), QuotaSize::size);
+    }
+
+    private SerializableQuotaValue<QuotaCount> parseQuotaCount(String argument) {
+        long value = Long.parseLong(argument);
+        return longToSerializableQuotaValue(value, QuotaCount.unlimited(), QuotaCount::count);
+    }
+
+    private <T extends QuotaValue<T>> SerializableQuotaValue<T> longToSerializableQuotaValue(long value, T unlimited, Function<Long, T> factory) {
+        return SerializableQuotaValue.valueOf(Optional.of(longToQuotaValue(value, unlimited, factory)));
+    }
+
+    private <T extends QuotaValue<T>> T longToQuotaValue(long value, T unlimited, Function<Long, T> factory) {
+        if (value == -1) {
+            return unlimited;
+        }
+        if (value >= 0) {
+            return factory.apply(value);
+        }
+        throw new IllegalArgumentException("Quota should be -1 for unlimited or a positive value");
+    }
+
     private static void print(String[] data, PrintStream out) {
         print(Arrays.asList(data), out);
     }
@@ -348,38 +370,60 @@ public class ServerCmd {
         }
     }
 
-    private void printStorageQuota(String quotaRootString, SerializableQuota quota, PrintStream printStream) {
+    private void printStorageQuota(String quotaRootString, SerializableQuota<QuotaSize> quota, PrintStream printStream) {
         printStream.println(String.format("Storage quota for %s is: %s / %s",
             quotaRootString,
             formatStorageValue(quota.getUsed()),
-            formatStorageValue(quota.getMax())));
+            formatStorageValue(quota.encodeAsLong())));
     }
 
-    private void printMessageQuota(String quotaRootString, SerializableQuota quota, PrintStream printStream) {
+    private void printMessageQuota(String quotaRootString, SerializableQuota<QuotaCount> quota, PrintStream printStream) {
         printStream.println(String.format("MailboxMessage count quota for %s is: %s / %s",
             quotaRootString,
             formatMessageValue(quota.getUsed()),
-            formatMessageValue(quota.getMax())));
+            formatMessageValue(quota.encodeAsLong())));
     }
 
-    private String formatStorageValue(long value) {
-        if (value == Quota.UNKNOWN) {
-            return ValueWithUnit.UNKNOWN;
+    private String formatStorageValue(Long value) {
+        if (value == null) {
+            return Size.UNKNOWN;
         }
-        if (value == Quota.UNLIMITED) {
-            return ValueWithUnit.UNLIMITED;
+        if (value == SerializableQuota.UNLIMITED) {
+            return Size.UNLIMITED;
         }
-        return FileUtils.byteCountToDisplaySize(value);
+        return SizeFormat.format(value);
     }
 
-    private String formatMessageValue(long value) {
-        if (value == Quota.UNKNOWN) {
-            return ValueWithUnit.UNKNOWN;
+    private String formatStorageValue(SerializableQuotaValue<QuotaSize> value) {
+        return value
+            .toValue(QuotaSize::size, QuotaSize.unlimited())
+            .map(size -> {
+            if (size.isUnlimited()) {
+                return Size.UNLIMITED;
+            }
+            return SizeFormat.format(size.asLong());
+        }).orElse(Size.UNKNOWN);
+    }
+
+    private String formatMessageValue(Long value) {
+        if (value == null) {
+            return Size.UNKNOWN;
         }
-        if (value == Quota.UNLIMITED) {
-            return ValueWithUnit.UNLIMITED;
+        if (value == SerializableQuota.UNLIMITED) {
+            return Size.UNLIMITED;
         }
         return String.valueOf(value);
+    }
+
+    private String formatMessageValue(SerializableQuotaValue<QuotaCount> value) {
+        return value
+            .toValue(QuotaCount::count, QuotaCount.unlimited())
+            .map(count -> {
+            if (count.isUnlimited()) {
+                return Size.UNLIMITED;
+            }
+            return String.valueOf(count.asLong());
+        }).orElse(Size.UNKNOWN);
     }
 
     private void print(Map<String, Mappings> map, PrintStream out) {

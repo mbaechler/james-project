@@ -30,7 +30,7 @@ import java.io.InputStream;
  * 
  *
  */
-final public class CountingInputStream extends InputStream {
+public final class CountingInputStream extends InputStream {
 
     private final InputStream in;
 
@@ -43,9 +43,7 @@ final public class CountingInputStream extends InputStream {
         this.in = in;
     }
 
-    /**
-     * @see java.io.InputStream#read()
-     */
+    @Override
     public int read() throws IOException {
         int next = in.read();
         if (next > 0) {
@@ -80,6 +78,8 @@ final public class CountingInputStream extends InputStream {
      * @throws IOException
      */
     public void readAll() throws IOException {
-        while (read()>0);
+        while (read() > 0) {
+            ;
+        }
     }
 }

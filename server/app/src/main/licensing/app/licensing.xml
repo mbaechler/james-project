@@ -1324,7 +1324,7 @@ All rights reserved.
                 <resource name='commons-logging-1.0.3.jar'/>
                 <resource name='commons-logging-api-1.1.jar'/>
                 <resource name='commons-pool-1.5.5.jar'/>
-                <resource name='derby-10.7.1.1.jar'/>
+                <resource name='derby-10.14.2.0.jar'/>
                 <resource name='geronimo-annotation_1.0_spec-1.1.1.jar'/>
                 <resource name='geronimo-annotation_1.1_spec-1.0.1.jar'/>
                 <resource name='geronimo-j2ee-management_1.1_spec-1.0.1.jar'/>
@@ -1419,12 +1419,12 @@ All rights reserved.
                 <resource name='bcprov-jdk15-1.45.jar'/>
             </by-organisation>
         </with-license>
-        <with-license id='BSD3Clause'>
+        <with-license id='BSD2Clause'>
             <copyright-notice>
 dnsjava is placed under the BSD license.  Several files are also under
 additional licenses; see the individual files for details.
 
-Copyright (c) 1999-2005, Brian Wellington
+Copyright (c) 1999-2011, Brian Wellington
 All rights reserved.
             </copyright-notice>
             <license-parameters>
@@ -1434,7 +1434,7 @@ All rights reserved.
                 </parameter>
             </license-parameters>
             <by-organisation id='person:Brian.Wellington'>
-                <resource name='dnsjava-2.1.1.jar'/>
+                <resource name='dnsjava-2.1.8.jar'/>
             </by-organisation>
         </with-license>
         <with-license id='BSD3Clause'>

@@ -21,10 +21,11 @@ package org.apache.james.transport.matchers;
 
 import java.util.Collection;
 
-import com.google.common.collect.ImmutableList;
-import org.apache.mailet.Mail;
 import org.apache.james.core.MailAddress;
+import org.apache.mailet.Mail;
 import org.apache.mailet.base.GenericMatcher;
+
+import com.google.common.collect.ImmutableList;
 
 /**
  * This matcher matches email sent automatically by mailets.
@@ -37,6 +38,7 @@ import org.apache.mailet.base.GenericMatcher;
  */
 public class SentByMailet extends GenericMatcher {
 
+    @Override
     public Collection<MailAddress> match(Mail mail) {
         String authUser = (String) mail.getAttribute(Mail.SENT_BY_MAILET);
         if (authUser != null) {

@@ -27,6 +27,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.james.mailbox.MailboxSession;
+import org.apache.james.mailbox.acl.ACLDiff;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.exception.MailboxExistsException;
 import org.apache.james.mailbox.exception.MailboxNotFoundException;
@@ -35,15 +36,17 @@ import org.apache.james.mailbox.maildir.MaildirId;
 import org.apache.james.mailbox.maildir.MaildirMessageName;
 import org.apache.james.mailbox.maildir.MaildirStore;
 import org.apache.james.mailbox.model.MailboxACL;
+import org.apache.james.mailbox.model.MailboxACL.Right;
 import org.apache.james.mailbox.model.MailboxConstants;
 import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.mail.MailboxMapper;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
-import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
 import org.apache.james.mailbox.store.transaction.NonTransactionalMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.ImmutableList;
 
 public class MaildirMailboxMapper extends NonTransactionalMapper implements MailboxMapper {
 
@@ -56,18 +59,16 @@ public class MaildirMailboxMapper extends NonTransactionalMapper implements Mail
     /**
      * A request-scoped list of mailboxes in order to refer to them via id
      */
-    private final ArrayList<Mailbox> mailboxCache = new ArrayList<>();
+    private final MailboxCache mailboxCache;
 
     private final MailboxSession session;
     
     public MaildirMailboxMapper(MaildirStore maildirStore, MailboxSession session) {
         this.maildirStore = maildirStore;
         this.session = session;
+        this.mailboxCache = new MailboxCache();
     }
 
-    /**
-     * @see org.apache.james.mailbox.store.mail.MailboxMapper#delete(org.apache.james.mailbox.store.mail.model.Mailbox)
-     */
     @Override
     public void delete(Mailbox mailbox) throws MailboxException {
         
@@ -82,14 +83,13 @@ public class MaildirMailboxMapper extends NonTransactionalMapper implements Mail
                         new File(folder, MaildirFolder.TMP),
                         new File(folder, MaildirFolder.UIDLIST_FILE),
                         new File(folder, MaildirFolder.VALIDITY_FILE));
-            }
-            else {
+            } else {
                 // We simply delete all the folder for non INBOX mailboxes.
                 delete(folder);
             }
+        } else {
+            throw new MailboxNotFoundException(mailbox.generateAssociatedPath());
         }
-        else
-            throw new MailboxNotFoundException(mailbox.getName());
     }
 
     private void delete(File...files) {
@@ -101,30 +101,24 @@ public class MaildirMailboxMapper extends NonTransactionalMapper implements Mail
                     FileUtils.forceDelete(file);
                 }
             } catch (IOException e) {
-                LOGGER.error("Error while deleting file " + file, e);
+                LOGGER.error("Error while deleting file {}", file, e);
             }
         }
     }
    
-    /**
-     * @see org.apache.james.mailbox.store.mail.MailboxMapper#findMailboxByPath(org.apache.james.mailbox.model.MailboxPath)
-     */
     @Override
     public Mailbox findMailboxByPath(MailboxPath mailboxPath)
             throws MailboxException, MailboxNotFoundException {      
         Mailbox mailbox = maildirStore.loadMailbox(session, mailboxPath);
-        return cacheMailbox(mailbox);
+        return mailboxCache.cacheMailbox(mailbox);
     }
     
     @Override
     public Mailbox findMailboxById(MailboxId id) throws MailboxException, MailboxNotFoundException {
         MaildirId mailboxId = (MaildirId)id;
-        return getCachedMailbox(mailboxId);
+        return mailboxCache.getCachedMailbox(mailboxId);
     }
     
-    /**
-     * @see org.apache.james.mailbox.store.mail.MailboxMapper#findMailboxWithPathLike(org.apache.james.mailbox.model.MailboxPath)
-     */
     @Override
     public List<Mailbox> findMailboxWithPathLike(MailboxPath mailboxPath)
             throws MailboxException {
@@ -134,22 +128,20 @@ public class MaildirMailboxMapper extends NonTransactionalMapper implements Mail
         File root = maildirStore.getMailboxRootForUser(mailboxPath.getUser());
         File[] folders = root.listFiles(filter);
         ArrayList<Mailbox> mailboxList = new ArrayList<>();
-        for (File folder : folders)
+        for (File folder : folders) {
             if (folder.isDirectory()) {
                 Mailbox mailbox = maildirStore.loadMailbox(session, root, mailboxPath.getNamespace(), mailboxPath.getUser(), folder.getName());
-                mailboxList.add(cacheMailbox(mailbox));
+                mailboxList.add(mailboxCache.cacheMailbox(mailbox));
             }
+        }
         // INBOX is in the root of the folder
         if (Pattern.matches(mailboxPath.getName().replace(MaildirStore.WILDCARD, ".*"), MailboxConstants.INBOX)) {
             Mailbox mailbox = maildirStore.loadMailbox(session, root, mailboxPath.getNamespace(), mailboxPath.getUser(), "");
-            mailboxList.add(0, cacheMailbox(mailbox));
+            mailboxList.add(0, mailboxCache.cacheMailbox(mailbox));
         }
         return mailboxList;
     }
 
-    /**
-     * @see org.apache.james.mailbox.store.mail.MailboxMapper#hasChildren(org.apache.james.mailbox.store.mail.model.Mailbox, char)
-     */
     @Override
     public boolean hasChildren(Mailbox mailbox, char delimiter) throws MailboxException, MailboxNotFoundException {
         String searchString = mailbox.getName() + MaildirStore.maildirDelimiter + MaildirStore.WILDCARD;
@@ -158,18 +150,16 @@ public class MaildirMailboxMapper extends NonTransactionalMapper implements Mail
         return (mailboxes.size() > 0);
     }
 
-    /**
-     * @see org.apache.james.mailbox.store.mail.MailboxMapper#save(org.apache.james.mailbox.store.mail.model.Mailbox)
-     */
     @Override
     public MailboxId save(Mailbox mailbox) throws MailboxException {
         try {
-            Mailbox originalMailbox = getCachedMailbox((MaildirId) mailbox.getMailboxId());
+            Mailbox originalMailbox = mailboxCache.getCachedMailbox((MaildirId) mailbox.getMailboxId());
             MaildirFolder folder = maildirStore.createMaildirFolder(mailbox);
             // equals with null check
             if (originalMailbox.getName() == null ? mailbox.getName() != null : !originalMailbox.getName().equals(mailbox.getName())) {
-                if (folder.exists())
+                if (folder.exists()) {
                     throw new MailboxExistsException(mailbox.getName());
+                }
                 
                 MaildirFolder originalFolder = maildirStore.createMaildirFolder(originalMailbox);
                 // renaming the INBOX means to move its contents to the new folder 
@@ -178,20 +168,25 @@ public class MaildirMailboxMapper extends NonTransactionalMapper implements Mail
                         File inboxFolder = originalFolder.getRootFile();
                         File newFolder = folder.getRootFile();
                         FileUtils.forceMkdir(newFolder);
-                        if (!originalFolder.getCurFolder().renameTo(folder.getCurFolder()))
+                        if (!originalFolder.getCurFolder().renameTo(folder.getCurFolder())) {
                             throw new IOException("Could not rename folder " + originalFolder.getCurFolder() + " to " + folder.getCurFolder());
-                        if (!originalFolder.getNewFolder().renameTo(folder.getNewFolder()))
+                        }
+                        if (!originalFolder.getNewFolder().renameTo(folder.getNewFolder())) {
                             throw new IOException("Could not rename folder " + originalFolder.getNewFolder() + " to " + folder.getNewFolder());
-                        if (!originalFolder.getTmpFolder().renameTo(folder.getTmpFolder()))
+                        }
+                        if (!originalFolder.getTmpFolder().renameTo(folder.getTmpFolder())) {
                             throw new IOException("Could not rename folder " + originalFolder.getTmpFolder() + " to " + folder.getTmpFolder());
+                        }
                         File oldUidListFile = new File(inboxFolder, MaildirFolder.UIDLIST_FILE);
                         File newUidListFile = new File(newFolder, MaildirFolder.UIDLIST_FILE);
-                        if (!oldUidListFile.renameTo(newUidListFile))
+                        if (!oldUidListFile.renameTo(newUidListFile)) {
                             throw new IOException("Could not rename file " + oldUidListFile + " to " + newUidListFile);
+                        }
                         File oldValidityFile = new File(inboxFolder, MaildirFolder.VALIDITY_FILE);
                         File newValidityFile = new File(newFolder, MaildirFolder.VALIDITY_FILE);
-                        if (!oldValidityFile.renameTo(newValidityFile))
+                        if (!oldValidityFile.renameTo(newValidityFile)) {
                             throw new IOException("Could not rename file " + oldValidityFile + " to " + newValidityFile);
+                        }
                         // recreate the INBOX folders, uidvalidity and uidlist will
                         // automatically be recreated later
                         FileUtils.forceMkdir(originalFolder.getCurFolder());
@@ -200,11 +195,11 @@ public class MaildirMailboxMapper extends NonTransactionalMapper implements Mail
                     } catch (IOException e) {
                         throw new MailboxException("Failed to save Mailbox " + mailbox, e);
                     }
-                }
-                else {
-                    if (!originalFolder.getRootFile().renameTo(folder.getRootFile()))
-                        throw new MailboxException("Failed to save Mailbox " + mailbox, 
-                                new IOException("Could not rename folder " + originalFolder));
+                } else {
+                    if (!originalFolder.getRootFile().renameTo(folder.getRootFile())) {
+                        throw new MailboxException("Failed to save Mailbox " + mailbox,
+                            new IOException("Could not rename folder " + originalFolder));
+                    }
                 }
             }
             folder.setACL(session, mailbox.getACL());
@@ -213,14 +208,18 @@ public class MaildirMailboxMapper extends NonTransactionalMapper implements Mail
             MaildirFolder folder = maildirStore.createMaildirFolder(mailbox);
             if (!folder.exists()) {
                 boolean success = folder.getRootFile().exists();
-                if (!success) success = folder.getRootFile().mkdirs();
-                if (!success)
+                if (!success) {
+                    success = folder.getRootFile().mkdirs();
+                }
+                if (!success) {
                     throw new MailboxException("Failed to save Mailbox " + mailbox);
+                }
                 success = folder.getCurFolder().mkdir();
                 success = success && folder.getNewFolder().mkdir();
                 success = success && folder.getTmpFolder().mkdir();
-                if (!success)
+                if (!success) {
                     throw new MailboxException("Failed to save Mailbox " + mailbox, new IOException("Needed folder structure can not be created"));
+                }
 
             }
             try {
@@ -231,13 +230,10 @@ public class MaildirMailboxMapper extends NonTransactionalMapper implements Mail
             }
             folder.setACL(session, mailbox.getACL());
         }
-        cacheMailbox(mailbox);
+        mailboxCache.cacheMailbox(mailbox);
         return mailbox.getMailboxId();
     }
 
-    /**
-     * @see org.apache.james.mailbox.store.mail.MailboxMapper#list()
-     */
     @Override
     public List<Mailbox> list() throws MailboxException {
         
@@ -259,41 +255,9 @@ public class MaildirMailboxMapper extends NonTransactionalMapper implements Mail
         
     }
 
-    /**
-     * @see org.apache.james.mailbox.store.transaction.TransactionalMapper#endRequest()
-     */
     @Override
     public void endRequest() {
         mailboxCache.clear();
-    }
-    
-    /**
-     * Stores a copy of a mailbox in a cache valid for one request. This is to enable
-     * referring to renamed mailboxes via id.
-     * @param mailbox The mailbox to cache
-     * @return The id of the cached mailbox
-     */
-    private Mailbox cacheMailbox(Mailbox mailbox) {
-        mailboxCache.add(new SimpleMailbox(mailbox));
-        int id = mailboxCache.size() - 1;
-        ((SimpleMailbox) mailbox).setMailboxId(MaildirId.of(id));
-        return mailbox;
-    }
-    
-    /**
-     * Retrieves a mailbox from the cache
-     * @param mailboxId The id of the mailbox to retrieve
-     * @return The mailbox
-     * @throws MailboxNotFoundException If the mailboxId is not in the cache
-     */
-    private Mailbox getCachedMailbox(MaildirId mailboxId) throws MailboxNotFoundException {
-        if (mailboxId == null)
-            throw new MailboxNotFoundException("null");
-        try {
-            return mailboxCache.get(mailboxId.getRawId());
-        } catch (IndexOutOfBoundsException e) {
-            throw new MailboxNotFoundException(String.valueOf(mailboxId));
-        }
     }
     
     private void visitUsersForMailboxList(File domain, File[] users, List<Mailbox> mailboxList) throws MailboxException {
@@ -305,13 +269,12 @@ public class MaildirMailboxMapper extends NonTransactionalMapper implements Mail
             
             if (domain == null) {
                 userName = user.getName();
-            }
-            else {
+            } else {
                 userName = user.getName() + "@" + domain.getName();
             }
             
             // Special case for INBOX: Let's use the user's folder.
-            MailboxPath inboxMailboxPath = new MailboxPath(session.getPersonalSpace(), userName, MailboxConstants.INBOX);
+            MailboxPath inboxMailboxPath = MailboxPath.forUser(userName, MailboxConstants.INBOX);
             mailboxList.add(maildirStore.loadMailbox(session, inboxMailboxPath));
             
             // List all INBOX sub folders.
@@ -333,17 +296,26 @@ public class MaildirMailboxMapper extends NonTransactionalMapper implements Mail
     }
 
     @Override
-    public void updateACL(Mailbox mailbox, MailboxACL.ACLCommand mailboxACLCommand) throws MailboxException {
+    public ACLDiff updateACL(Mailbox mailbox, MailboxACL.ACLCommand mailboxACLCommand) throws MailboxException {
         MaildirFolder folder = maildirStore.createMaildirFolder(mailbox);
+        MailboxACL oldACL = mailbox.getACL();
         MailboxACL newACL = mailbox.getACL().apply(mailboxACLCommand);
         folder.setACL(session, newACL);
         mailbox.setACL(newACL);
+        return ACLDiff.computeDiff(oldACL, newACL);
     }
 
     @Override
-    public void setACL(Mailbox mailbox, MailboxACL mailboxACL) throws MailboxException {
+    public ACLDiff setACL(Mailbox mailbox, MailboxACL mailboxACL) throws MailboxException {
+        MailboxACL oldAcl = mailbox.getACL();
         MaildirFolder folder = maildirStore.createMaildirFolder(mailbox);
         folder.setACL(session, mailboxACL);
         mailbox.setACL(mailboxACL);
+        return ACLDiff.computeDiff(oldAcl, mailboxACL);
+    }
+
+    @Override
+    public List<Mailbox> findNonPersonalMailboxes(String userName, Right right) throws MailboxException {
+        return ImmutableList.of();
     }
 }

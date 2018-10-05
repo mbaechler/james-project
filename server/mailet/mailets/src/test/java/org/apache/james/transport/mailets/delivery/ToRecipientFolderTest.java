@@ -20,22 +20,20 @@
 package org.apache.james.transport.mailets.delivery;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.Date;
 
-import javax.mail.Flags;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeBodyPart;
 
 import org.apache.james.core.MailAddress;
+import org.apache.james.core.builder.MimeMessageBuilder;
 import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MessageManager;
@@ -49,14 +47,11 @@ import org.apache.mailet.Mail;
 import org.apache.mailet.base.test.FakeMail;
 import org.apache.mailet.base.test.FakeMailContext;
 import org.apache.mailet.base.test.FakeMailetConfig;
-import org.apache.mailet.base.test.MimeMessageBuilder;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 
-import com.google.common.base.Throwables;
-
+@Deprecated
 public class ToRecipientFolderTest {
 
     public static final String USER_LOCAL_PART = "receiver";
@@ -91,7 +86,7 @@ public class ToRecipientFolderTest {
         try {
             when(mailboxManager.createSystemSession(any(String.class))).thenReturn(session);
         } catch (MailboxException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
         when(session.getUser()).thenReturn(user);
     }
@@ -104,7 +99,7 @@ public class ToRecipientFolderTest {
             .setProperty(ToRecipientFolder.FOLDER_PARAMETER, "Junk")
             .build());
 
-        Assert.assertEquals("Junk", testee.getInitParameter(ToRecipientFolder.FOLDER_PARAMETER));
+        assertThat(testee.getInitParameter(ToRecipientFolder.FOLDER_PARAMETER)).isEqualTo("Junk");
     }
 
     @Test
@@ -148,7 +143,7 @@ public class ToRecipientFolderTest {
             .build());
         testee.service(createMail());
 
-        verify(messageManager).appendMessage(any(InputStream.class), any(Date.class), any(MailboxSession.class), eq(true), any(Flags.class));
+        verify(messageManager).appendMessage(any(MessageManager.AppendCommand.class), any(MailboxSession.class));
     }
 
     @Test
@@ -164,7 +159,7 @@ public class ToRecipientFolderTest {
             .build());
         testee.service(createMail());
 
-        verify(messageManager).appendMessage(any(InputStream.class), any(Date.class), any(MailboxSession.class), eq(true), any(Flags.class));
+        verify(messageManager).appendMessage(any(MessageManager.AppendCommand.class), any(MailboxSession.class));
     }
 
     @Test
@@ -183,7 +178,7 @@ public class ToRecipientFolderTest {
             .build());
         testee.service(createMail());
 
-        verify(messageManager).appendMessage(any(InputStream.class), any(Date.class), any(MailboxSession.class), eq(true), any(Flags.class));
+        verify(messageManager).appendMessage(any(MessageManager.AppendCommand.class), any(MailboxSession.class));
     }
 
     private Mail createMail() throws MessagingException, IOException {
@@ -197,11 +192,9 @@ public class ToRecipientFolderTest {
                         .data("toto")
                         .disposition(MimeBodyPart.ATTACHMENT)
                         .filename("file.txt")
-                        .addHeader("Content-Type", "application/sieve; charset=UTF-8")
-                        .build())
-                .build())
+                        .addHeader("Content-Type", "application/sieve; charset=UTF-8")))
             .state(Mail.DEFAULT)
-            .recipient(new MailAddress("receiver@domain.com"))
+            .recipient("receiver@domain.com")
             .build();
     }
 

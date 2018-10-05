@@ -19,8 +19,12 @@
 
 package org.apache.james.mailbox.store;
 
+import static org.apache.james.mailbox.fixture.MailboxFixture.ALICE;
+
 import javax.mail.Flags;
 
+import org.apache.james.core.quota.QuotaCount;
+import org.apache.james.core.quota.QuotaSize;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MessageIdManager;
 import org.apache.james.mailbox.MessageUid;
@@ -58,7 +62,9 @@ public abstract class AbstractMessageIdManagerQuotaTest {
     protected abstract MessageIdManagerTestSystem createTestSystem(QuotaManager quotaManager, CurrentQuotaManager currentQuotaManager) throws Exception;
 
     protected abstract MaxQuotaManager createMaxQuotaManager();
+    
     protected abstract CurrentQuotaManager createCurrentQuotaManager();
+    
     protected abstract QuotaManager createQuotaManager(MaxQuotaManager maxQuotaManager, CurrentQuotaManager currentQuotaManager);
 
     @Before
@@ -67,18 +73,18 @@ public abstract class AbstractMessageIdManagerQuotaTest {
         CurrentQuotaManager currentQuotaManager = createCurrentQuotaManager();
         QuotaManager quotaManager = createQuotaManager(maxQuotaManager, currentQuotaManager);
 
-        session = new MockMailboxSession("user");
+        session = new MockMailboxSession(ALICE);
         testingData = createTestSystem(quotaManager, currentQuotaManager);
         messageIdManager = testingData.getMessageIdManager();
 
-        mailbox1 = testingData.createMailbox(MailboxFixture.MAILBOX_PATH1, session);
-        mailbox2 = testingData.createMailbox(MailboxFixture.MAILBOX_PATH2, session);
-        mailbox3 = testingData.createMailbox(MailboxFixture.MAILBOX_PATH3, session);
+        mailbox1 = testingData.createMailbox(MailboxFixture.INBOX_ALICE, session);
+        mailbox2 = testingData.createMailbox(MailboxFixture.OUTBOX_ALICE, session);
+        mailbox3 = testingData.createMailbox(MailboxFixture.SENT_ALICE, session);
     }
 
     @Test
     public void setInMailboxesShouldNotThrowWhenMessageQuotaNotExceeded() throws Exception {
-        maxQuotaManager.setDefaultMaxMessage(1);
+        maxQuotaManager.setGlobalMaxMessage(QuotaCount.count(1));
 
         MessageId messageId = testingData.persist(mailbox2.getMailboxId(), messageUid1, FLAGS, session);
 
@@ -87,7 +93,7 @@ public abstract class AbstractMessageIdManagerQuotaTest {
 
     @Test
     public void setInMailboxesShouldNotThrowWhenStorageQuotaNotExceeded() throws Exception {
-        maxQuotaManager.setDefaultMaxStorage(testingData.getConstantMessageSize());
+        maxQuotaManager.setGlobalMaxStorage(QuotaSize.size(testingData.getConstantMessageSize()));
 
         MessageId messageId = testingData.persist(mailbox2.getMailboxId(), messageUid1, FLAGS, session);
 
@@ -96,7 +102,7 @@ public abstract class AbstractMessageIdManagerQuotaTest {
 
     @Test
     public void setInMailboxesShouldThrowWhenStorageQuotaExceeded() throws Exception {
-        maxQuotaManager.setDefaultMaxStorage(2 * testingData.getConstantMessageSize());
+        maxQuotaManager.setGlobalMaxStorage(QuotaSize.size(2 * testingData.getConstantMessageSize()));
 
         testingData.persist(mailbox1.getMailboxId(), messageUid1, FLAGS, session);
         MessageId messageId = testingData.persist(mailbox2.getMailboxId(), messageUid1, FLAGS, session);
@@ -107,7 +113,7 @@ public abstract class AbstractMessageIdManagerQuotaTest {
 
     @Test
     public void setInMailboxesShouldThrowWhenStorageQuotaExceededWhenCopiedToMultipleMailboxes() throws Exception {
-        maxQuotaManager.setDefaultMaxStorage(2 * testingData.getConstantMessageSize());
+        maxQuotaManager.setGlobalMaxStorage(QuotaSize.size(2 * testingData.getConstantMessageSize()));
 
         MessageId messageId = testingData.persist(mailbox1.getMailboxId(), messageUid1, FLAGS, session);
 
@@ -117,7 +123,7 @@ public abstract class AbstractMessageIdManagerQuotaTest {
 
     @Test
     public void setInMailboxesShouldThrowWhenStorageMessageExceeded() throws Exception {
-        maxQuotaManager.setDefaultMaxMessage(2);
+        maxQuotaManager.setGlobalMaxMessage(QuotaCount.count(2));
 
         testingData.persist(mailbox1.getMailboxId(), messageUid1, FLAGS, session);
         MessageId messageId = testingData.persist(mailbox2.getMailboxId(), messageUid1, FLAGS, session);

@@ -50,14 +50,7 @@ public class RenameProcessor extends AbstractMailboxProcessor<RenameRequest> {
         super(RenameRequest.class, next, mailboxManager, factory, metricFactory);
     }
 
-    /**
-     * @see
-     * org.apache.james.imap.processor.AbstractMailboxProcessor
-     * #doProcess(org.apache.james.imap.api.message.request.ImapRequest,
-     * org.apache.james.imap.api.process.ImapSession, java.lang.String,
-     * org.apache.james.imap.api.ImapCommand,
-     * org.apache.james.imap.api.process.ImapProcessor.Responder)
-     */
+    @Override
     protected void doProcess(RenameRequest request, ImapSession session, String tag, ImapCommand command, Responder responder) {
         PathConverter pathConverter = PathConverter.forSession(session);
         MailboxPath existingPath = pathConverter.buildFullPath(request.getExistingName());
@@ -73,22 +66,16 @@ public class RenameProcessor extends AbstractMailboxProcessor<RenameRequest> {
             okComplete(command, tag, responder);
             unsolicitedResponses(session, responder, false);
         } catch (MailboxExistsException e) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Rename from " + existingPath + " to " + newPath + " failed because the target mailbox exists", e);
-            }
+            LOGGER.debug("Rename from {} to {} failed because the target mailbox exists", existingPath, newPath, e);
             no(command, tag, responder, HumanReadableText.FAILURE_MAILBOX_EXISTS);
         } catch (MailboxNotFoundException e) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Rename from " + existingPath + " to " + newPath + " failed because the source mailbox not exists", e);
-            }
+            LOGGER.debug("Rename from {} to {} failed because the source mailbox doesn't exist", existingPath, newPath, e);
             no(command, tag, responder, HumanReadableText.MAILBOX_NOT_FOUND);
         } catch (TooLongMailboxNameException e) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("The mailbox name length is over limit: " + newPath.getName(), e);
-            }
+            LOGGER.debug("The mailbox name length is over limit: {}", newPath.getName(), e);
             taggedBad(command, tag, responder, HumanReadableText.FAILURE_MAILBOX_NAME);
         } catch (MailboxException e) {
-            LOGGER.error("Rename from " + existingPath + " to " + newPath + " failed", e);
+            LOGGER.error("Rename from {} to {} failed", existingPath, newPath, e);
             no(command, tag, responder, HumanReadableText.GENERIC_FAILURE_DURING_PROCESSING);
         }
     }

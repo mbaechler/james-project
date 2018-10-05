@@ -29,7 +29,7 @@ import org.apache.james.protocols.api.StartTlsResponse;
  * 
  *
  */
-public class POP3StartTlsResponse extends POP3Response implements StartTlsResponse{
+public class POP3StartTlsResponse extends POP3Response implements StartTlsResponse {
 
     public POP3StartTlsResponse(String code, CharSequence description) {
         super(code, description);
@@ -47,14 +47,17 @@ public class POP3StartTlsResponse extends POP3Response implements StartTlsRespon
         // We need to override this and return a StartTlsResponse. See ROTOCOLS-89
         return new StartTlsResponse() {
             
+            @Override
             public boolean isEndSession() {
                 return POP3StartTlsResponse.this.isEndSession();
             }
             
+            @Override
             public String getRetCode() {
                 return POP3StartTlsResponse.this.getRetCode();
             }
             
+            @Override
             public List<CharSequence> getLines() {
                 return POP3StartTlsResponse.this.getLines();
             }

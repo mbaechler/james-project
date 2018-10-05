@@ -22,11 +22,14 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.james.mailbox.Event;
 import org.apache.james.mailbox.MailboxListener;
 import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.QuotaRoot;
+import org.apache.james.mailbox.quota.QuotaManager;
 import org.apache.james.mailbox.quota.QuotaRootResolver;
+import org.apache.james.mailbox.store.event.MailboxEventDispatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,11 +39,15 @@ public class ListeningCurrentQuotaUpdater implements MailboxListener, QuotaUpdat
 
     private final StoreCurrentQuotaManager currentQuotaManager;
     private final QuotaRootResolver quotaRootResolver;
+    private final MailboxEventDispatcher dispatcher;
+    private final QuotaManager quotaManager;
 
     @Inject
-    public ListeningCurrentQuotaUpdater(StoreCurrentQuotaManager currentQuotaManager, QuotaRootResolver quotaRootResolver) {
+    public ListeningCurrentQuotaUpdater(StoreCurrentQuotaManager currentQuotaManager, QuotaRootResolver quotaRootResolver, MailboxEventDispatcher dispatcher, QuotaManager quotaManager) {
         this.currentQuotaManager = currentQuotaManager;
         this.quotaRootResolver = quotaRootResolver;
+        this.dispatcher = dispatcher;
+        this.quotaManager = quotaManager;
     }
 
     @Override
@@ -49,20 +56,21 @@ public class ListeningCurrentQuotaUpdater implements MailboxListener, QuotaUpdat
     }
 
     @Override
-    public ExecutionMode getExecutionMode() {
-        return ExecutionMode.ASYNCHRONOUS;
-    }
-
-    @Override
     public void event(Event event) {
         try {
-            QuotaRoot quotaRoot = quotaRootResolver.getQuotaRoot(event.getMailboxPath());
             if (event instanceof Added) {
-                handleAddedEvent((Added) event, quotaRoot);
+                Added addedEvent = (Added) event;
+                QuotaRoot quotaRoot = quotaRootResolver.getQuotaRoot(addedEvent.getMailboxPath());
+                handleAddedEvent(addedEvent, quotaRoot);
             } else if (event instanceof Expunged) {
-                handleExpungedEvent((Expunged) event, quotaRoot);
+                Expunged expungedEvent = (Expunged) event;
+                QuotaRoot quotaRoot = quotaRootResolver.getQuotaRoot(expungedEvent.getMailboxPath());
+                handleExpungedEvent(expungedEvent, quotaRoot);
+            } else if (event instanceof MailboxDeletion) {
+                MailboxDeletion mailboxDeletionEvent = (MailboxDeletion) event;
+                handleMailboxDeletionEvent(mailboxDeletionEvent);
             }
-        } catch(MailboxException e) {
+        } catch (MailboxException e) {
             LOGGER.error("Error while updating quotas", e);
         }
     }
@@ -79,6 +87,10 @@ public class ListeningCurrentQuotaUpdater implements MailboxListener, QuotaUpdat
         if (addedCount != 0 && addedSize != 0) {
             currentQuotaManager.decrease(quotaRoot, addedCount, addedSize);
         }
+        dispatcher.quota(expunged.getSession(),
+            quotaRoot,
+            quotaManager.getMessageQuota(quotaRoot),
+            quotaManager.getStorageQuota(quotaRoot));
     }
 
     private void handleAddedEvent(Added added, QuotaRoot quotaRoot) throws MailboxException {
@@ -91,6 +103,19 @@ public class ListeningCurrentQuotaUpdater implements MailboxListener, QuotaUpdat
         }
         if (addedCount != 0 && addedSize != 0) {
             currentQuotaManager.increase(quotaRoot, addedCount, addedSize);
+        }
+        dispatcher.quota(added.getSession(),
+            quotaRoot,
+            quotaManager.getMessageQuota(quotaRoot),
+            quotaManager.getStorageQuota(quotaRoot));
+    }
+
+    private void handleMailboxDeletionEvent(MailboxDeletion mailboxDeletionEvent) throws MailboxException {
+        boolean mailboxContainedMessages = mailboxDeletionEvent.getDeletedMessageCount().asLong() > 0;
+        if (mailboxContainedMessages) {
+            currentQuotaManager.decrease(mailboxDeletionEvent.getQuotaRoot(),
+                mailboxDeletionEvent.getDeletedMessageCount().asLong(),
+                mailboxDeletionEvent.getTotalDeletedSize().asLong());
         }
     }
 

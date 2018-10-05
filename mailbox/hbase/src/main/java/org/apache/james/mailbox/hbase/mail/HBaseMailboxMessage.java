@@ -34,7 +34,6 @@ import java.util.List;
 
 import javax.mail.Flags;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.exception.MailboxException;
@@ -44,11 +43,13 @@ import org.apache.james.mailbox.model.ComposedMessageId;
 import org.apache.james.mailbox.model.ComposedMessageIdWithMetaData;
 import org.apache.james.mailbox.model.MessageAttachment;
 import org.apache.james.mailbox.model.MessageId;
-import org.apache.james.mailbox.store.mail.model.FlagsBuilder;
+import org.apache.james.mailbox.store.mail.model.FlagsFactory;
 import org.apache.james.mailbox.store.mail.model.MailboxMessage;
 import org.apache.james.mailbox.store.mail.model.Property;
+import org.apache.james.mailbox.store.mail.model.impl.MessageParser;
 import org.apache.james.mailbox.store.mail.model.impl.PropertyBuilder;
 import org.apache.james.mailbox.store.search.comparator.UidComparator;
+import org.apache.james.mime4j.MimeException;
 
 import com.google.common.base.Objects;
 
@@ -177,7 +178,7 @@ public class HBaseMailboxMessage implements MailboxMessage {
         if (obj instanceof HBaseMailboxMessage) {
             HBaseMailboxMessage other = (HBaseMailboxMessage) obj;
             return Objects.equal(this.mailboxId, other.mailboxId) &&
-                    Objects.equal(this.uid, other.uid) ;
+                    Objects.equal(this.uid, other.uid);
         }
         return false;
     }
@@ -317,7 +318,7 @@ public class HBaseMailboxMessage implements MailboxMessage {
 
     @Override
     public Flags createFlags() {
-        return FlagsBuilder.createFlags(this, createUserFlags());
+        return FlagsFactory.createFlags(this, createUserFlags());
     }
 
     @Override
@@ -354,6 +355,10 @@ public class HBaseMailboxMessage implements MailboxMessage {
 
     @Override
     public List<MessageAttachment> getAttachments() {
-        throw new NotImplementedException("Attachments are not implemented");
+        try {
+            return new MessageParser().retrieveAttachments(getFullContent());
+        } catch (MimeException | IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

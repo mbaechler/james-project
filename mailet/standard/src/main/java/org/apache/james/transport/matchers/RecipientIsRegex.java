@@ -22,10 +22,10 @@ package org.apache.james.transport.matchers;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import org.apache.mailet.base.GenericRecipientMatcher;
-import org.apache.james.core.MailAddress;
-
 import javax.mail.MessagingException;
+
+import org.apache.james.core.MailAddress;
+import org.apache.mailet.base.GenericRecipientMatcher;
 
 import com.google.common.base.Strings;
 
@@ -48,6 +48,7 @@ import com.google.common.base.Strings;
 public class RecipientIsRegex extends GenericRecipientMatcher {
     Pattern pattern   = null;
 
+    @Override
     public void init() throws javax.mail.MessagingException {
         String patternString = getCondition();
         if (Strings.isNullOrEmpty(patternString)) {
@@ -57,11 +58,12 @@ public class RecipientIsRegex extends GenericRecipientMatcher {
         patternString = patternString.trim();
         try {
             pattern = Pattern.compile(patternString);
-        } catch(PatternSyntaxException mpe) {
+        } catch (PatternSyntaxException mpe) {
             throw new MessagingException("Malformed pattern: " + patternString, mpe);
         }
     }
 
+    @Override
     public boolean matchRecipient(MailAddress recipient) {
         String myRecipient = recipient.toString();
         return pattern.matcher(myRecipient).matches();

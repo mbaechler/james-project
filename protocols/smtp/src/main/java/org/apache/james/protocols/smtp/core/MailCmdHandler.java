@@ -91,11 +91,7 @@ public class MailCmdHandler extends AbstractHookableCmdHandler<MailHook> {
 
     }
 
-    /**
-     * @see
-     * org.apache.james.protocols.smtp.core.AbstractHookableCmdHandler
-     * #onCommand(SMTPSession, Request)
-     */
+    @Override
     public Response onCommand(SMTPSession session, Request request) {
         Response response = super.onCommand(session, request);
         // Check if the response was not ok
@@ -107,7 +103,7 @@ public class MailCmdHandler extends AbstractHookableCmdHandler<MailHook> {
         return response;
     }
 
-	/**
+    /**
      * Handler method called upon receipt of a MAIL command. Sets up handler to
      * deliver mail as the stated sender.
      * 
@@ -130,28 +126,20 @@ public class MailCmdHandler extends AbstractHookableCmdHandler<MailHook> {
         return new SMTPResponse(SMTPRetCode.MAIL_OK, responseBuffer);
     }
 
-    /**
-     * @see org.apache.james.protocols.api.handler.CommandHandler#getImplCommands()
-     */
+    @Override
     public Collection<String> getImplCommands() {
-    	return COMMANDS;
+        return COMMANDS;
     }
 
-    /**
-     * @see org.apache.james.protocols.smtp.core.AbstractHookableCmdHandler#doCoreCmd(org.apache.james.protocols.smtp.SMTPSession,
-     *      java.lang.String, java.lang.String)
-     */
+    @Override
     protected Response doCoreCmd(SMTPSession session, String command,
-            String parameters) {
+                                 String parameters) {
         return doMAIL(session, parameters);
     }
 
-    /**
-     * @see org.apache.james.protocols.smtp.core.AbstractHookableCmdHandler#doFilterChecks(org.apache.james.protocols.smtp.SMTPSession,
-     *      java.lang.String, java.lang.String)
-     */
+    @Override
     protected Response doFilterChecks(SMTPSession session, String command,
-            String parameters) {
+                                      String parameters) {
         return doMAILFilter(session, parameters);
     }
 
@@ -216,26 +204,13 @@ public class MailCmdHandler extends AbstractHookableCmdHandler<MailHook> {
                         }
                     } else {
                         // Unexpected option attached to the Mail command
-                        if (LOGGER.isDebugEnabled()) {
-                            StringBuilder debugBuffer = new StringBuilder(128)
-                                    .append(
-                                            "MAIL command had unrecognized/unexpected option ")
-                                    .append(mailOptionName).append(
-                                            " with value ").append(
-                                            mailOptionValue);
-                            LOGGER.debug(debugBuffer.toString());
-                        }
+                        LOGGER.debug("MAIL command had unrecognized/unexpected option {} with value {}", mailOptionName, mailOptionValue);
                     }
                 }
             }
             if (session.getConfiguration().useAddressBracketsEnforcement()
                     && (!sender.startsWith("<") || !sender.endsWith(">"))) {
-                if (LOGGER.isInfoEnabled()) {
-                    StringBuilder errorBuffer = new StringBuilder(128).append(
-                            "Error parsing sender address: ").append(sender)
-                            .append(": did not start and end with < >");
-                    LOGGER.info(errorBuffer.toString());
-                }
+                LOGGER.info("Error parsing sender address: {}: did not start and end with < >", sender);
                 return SYNTAX_ERROR;
             }
             MailAddress senderAddress = null;
@@ -259,18 +234,12 @@ public class MailCmdHandler extends AbstractHookableCmdHandler<MailHook> {
                 try {
                     senderAddress = new MailAddress(sender);
                 } catch (Exception pe) {
-                    if (LOGGER.isInfoEnabled()) {
-                        StringBuilder errorBuffer = new StringBuilder(256)
-                                .append("Error parsing sender address: ")
-                                .append(sender).append(": ").append(
-                                        pe.getMessage());
-                        LOGGER.info(errorBuffer.toString());
-                    }
+                    LOGGER.info("Error parsing sender address: {}", sender, pe);
                     return SYNTAX_ERROR_ADDRESS;
                 }
             }
             if ((senderAddress == null) || 
-                    ((senderAddress.getLocalPart().length() == 0) && (senderAddress.getDomain().length() == 0))) {
+                    ((senderAddress.getLocalPart().length() == 0) && (senderAddress.getDomain().name().length() == 0))) {
                 senderAddress = MailAddress.nullSender();
             }
             // Store the senderAddress in session map
@@ -278,17 +247,14 @@ public class MailCmdHandler extends AbstractHookableCmdHandler<MailHook> {
         }
         return null;
     }
-    /**
-     * @see org.apache.james.protocols.smtp.core.AbstractHookableCmdHandler#getHookInterface()
-     */
+    
+    @Override
     protected Class<MailHook> getHookInterface() {
         return MailHook.class;
     }
 
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     protected HookResult callHook(MailHook rawHook, SMTPSession session, String parameters) {
         MailAddress sender = (MailAddress) session.getAttachment(SMTPSession.SENDER, State.Transaction);
         if (sender.isNullSender()) {
@@ -298,18 +264,14 @@ public class MailCmdHandler extends AbstractHookableCmdHandler<MailHook> {
     }
 
     
-    /**
-     * @see org.apache.james.protocols.smtp.core.AbstractHookableCmdHandler#getMarkerInterfaces()
-     */
+    @Override
     public List<Class<?>> getMarkerInterfaces() {
         List<Class<?>> l = super.getMarkerInterfaces();
         l.add(MailParametersHook.class);
         return l;
     }
 
-    /**
-     * @see org.apache.james.protocols.smtp.core.AbstractHookableCmdHandler#wireExtensions(java.lang.Class, java.util.List)
-     */
+    @Override
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public void wireExtensions(Class interfaceName, List extension) {
         if (MailParametersHook.class.equals(interfaceName)) {

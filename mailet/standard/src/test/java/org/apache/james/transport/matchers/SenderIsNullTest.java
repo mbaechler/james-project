@@ -23,23 +23,17 @@ package org.apache.james.transport.matchers;
 import static org.apache.mailet.base.MailAddressFixture.ANY_AT_JAMES;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.apache.james.core.MailAddress;
 import org.apache.mailet.base.test.FakeMail;
 import org.apache.mailet.base.test.FakeMatcherConfig;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-public class SenderIsNullTest {
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
+class SenderIsNullTest {
 
     private SenderIsNull matcher;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         matcher = new SenderIsNull();
         matcher.init(FakeMatcherConfig.builder()
                 .matcherName("SenderIsNull")
@@ -47,7 +41,7 @@ public class SenderIsNullTest {
     }
 
     @Test
-    public void shouldMatchWhenNullSender() throws Exception {
+    void shouldMatchWhenNullSender() throws Exception {
         FakeMail fakeMail = FakeMail.builder()
             .recipient(ANY_AT_JAMES)
             .build();
@@ -56,10 +50,10 @@ public class SenderIsNullTest {
     }
 
     @Test
-    public void shouldNotMatchWhenSenderIsPresent() throws Exception {
+    void shouldNotMatchWhenSenderIsPresent() throws Exception {
         FakeMail fakeMail = FakeMail.builder()
             .recipient(ANY_AT_JAMES)
-            .sender(new MailAddress("other@james.apache.org"))
+            .sender("other@james.apache.org")
             .build();
 
         assertThat(matcher.match(fakeMail)).isNull();

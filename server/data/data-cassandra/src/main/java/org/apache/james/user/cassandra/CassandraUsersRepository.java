@@ -95,7 +95,7 @@ public class CassandraUsersRepository extends AbstractUsersRepository {
     }
 
     private PreparedStatement prepareRemoveUserStatement(Session session) {
-        return session.prepare( delete()
+        return session.prepare(delete()
             .from(TABLE_NAME)
             .where(eq(NAME, bindMarker(NAME)))
             .ifExists());
@@ -117,13 +117,13 @@ public class CassandraUsersRepository extends AbstractUsersRepository {
     }
 
     @Override
-    public User getUserByName(String name){
+    public User getUserByName(String name) {
         ResultSet result = executor.execute(getUserStatement.bind()
             .setString(NAME, name.toLowerCase(Locale.US)))
             .join();
         return Optional.ofNullable(result.one())
             .map(row -> new DefaultUser(row.getString(REALNAME), row.getString(PASSWORD), row.getString(ALGORITHM)))
-            .filter(user -> user.getUserName().equals(name))
+            .filter(user -> user.hasUsername(name))
             .orElse(null);
     }
 
@@ -166,7 +166,7 @@ public class CassandraUsersRepository extends AbstractUsersRepository {
         return Optional.ofNullable(getUserByName(name))
                 .map(x -> x.verifyPassword(password))
             .orElseGet(() -> {
-                LOGGER.info("Could not retrieve user {}. Password is unverified.");
+                LOGGER.info("Could not retrieve user {}. Password is unverified.", name);
                 return false;
             });
     }

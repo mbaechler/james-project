@@ -96,6 +96,16 @@ public class HeaderCollectionTest {
     }
 
     @Test
+    public void getHeadersShouldIgnoreHeadersWithDots() {
+        HeaderCollection headerCollection = HeaderCollection.builder()
+            .add(new FieldImpl("a.b.c", "value"))
+            .build();
+
+        assertThat(headerCollection.getHeaders().get("a.b.c"))
+            .isEmpty();
+    }
+
+    @Test
     public void addressWithTwoDisplayNamesOnTheSameFieldShouldBeRetrieved() {
         HeaderCollection headerCollection = HeaderCollection.builder()
             .add(new FieldImpl("From", "Christophe Hamerling <chri.hamerling@linagora.com>, Graham CROSMARIE <grah.crosmarie@linagora.com>"))
@@ -260,6 +270,39 @@ public class HeaderCollectionTest {
             .build();
 
         assertThat(headerCollection.getSubjectSet()).containsOnly("A fantastic ElasticSearch module will be available soon for JAMES");
+    }
+
+    @Test
+    public void getMessageIDShouldReturnMessageIdValue() {
+        String messageID = "<abc@123>";
+        HeaderCollection headerCollection = HeaderCollection.builder()
+            .add(new FieldImpl("Message-ID", messageID))
+            .build();
+
+        assertThat(headerCollection.getMessageID())
+            .contains(messageID);
+    }
+
+    @Test
+    public void getMessageIDShouldReturnLatestEncounteredMessageIdValue() {
+        String messageID = "<abc@123>";
+        HeaderCollection headerCollection = HeaderCollection.builder()
+            .add(new FieldImpl("Message-ID", "<other@toto.com>"))
+            .add(new FieldImpl("Message-ID", messageID))
+            .build();
+
+        assertThat(headerCollection.getMessageID())
+            .contains(messageID);
+    }
+
+    @Test
+    public void getMessageIDShouldReturnEmptyWhenNoMessageId() {
+        HeaderCollection headerCollection = HeaderCollection.builder()
+            .add(new FieldImpl("Other", "value"))
+            .build();
+
+        assertThat(headerCollection.getMessageID())
+            .isEmpty();
     }
 
     @Test(expected = NullPointerException.class)

@@ -27,6 +27,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.mail.MessagingException;
 
+import org.apache.james.core.MailAddress;
 import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MessageManager;
@@ -34,15 +35,14 @@ import org.apache.james.mailbox.exception.BadCredentialsException;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.FetchGroupImpl;
 import org.apache.james.mailbox.model.MailboxMetaData;
-import org.apache.james.mailbox.model.MailboxPath;
-import org.apache.james.mailbox.model.MailboxQuery;
 import org.apache.james.mailbox.model.MessageRange;
 import org.apache.james.mailbox.model.MessageResult;
+import org.apache.james.mailbox.model.search.MailboxQuery;
+import org.apache.james.mailbox.model.search.Wildcard;
 import org.apache.james.user.api.UsersRepository;
 import org.apache.james.user.api.UsersRepositoryException;
 import org.apache.mailet.Experimental;
 import org.apache.mailet.Mail;
-import org.apache.james.core.MailAddress;
 import org.apache.mailet.MailetContext;
 
 /**
@@ -64,7 +64,7 @@ import org.apache.mailet.MailetContext;
  * @since 2.2.0
  */
 @Experimental
-abstract public class AbstractStorageQuota extends AbstractQuotaMatcher {
+public abstract class AbstractStorageQuota extends AbstractQuotaMatcher {
 
     private MailboxManager manager;
 
@@ -94,6 +94,7 @@ abstract public class AbstractStorageQuota extends AbstractQuotaMatcher {
      * @param recipient
      *            the recipient to check
      */
+    @Override
     protected boolean isRecipientChecked(MailAddress recipient) throws MessagingException {
         MailetContext mailetContext = getMailetContext();
         return super.isRecipientChecked(recipient) && (mailetContext.isLocalEmail(recipient));
@@ -115,8 +116,7 @@ abstract public class AbstractStorageQuota extends AbstractQuotaMatcher {
                 // see if we need use the full email address as username or not.
                 // See JAMES-1197
                 username = localUsers.getUser(recipient).toLowerCase(Locale.US);
-            }
-            catch (UsersRepositoryException e) {
+            } catch (UsersRepositoryException e) {
                 throw new MessagingException("Unable to access UsersRepository", e);
             }
             session = manager.createSystemSession(username);
@@ -125,7 +125,10 @@ abstract public class AbstractStorageQuota extends AbstractQuotaMatcher {
             // get all mailboxes for the user to calculate the size
             // TODO: See JAMES-1198
             List<MailboxMetaData> mList = manager.search(
-                    new MailboxQuery(MailboxPath.inbox(session), "", session.getPathDelimiter()), session);
+                    MailboxQuery.privateMailboxesBuilder(session)
+                        .expression(Wildcard.INSTANCE)
+                        .build(),
+                    session);
             for (MailboxMetaData aMList : mList) {
                 MessageManager mailbox = manager.getMailbox(aMList.getPath(), session);
                 Iterator<MessageResult> results = mailbox.getMessages(MessageRange.all(), FetchGroupImpl.MINIMAL,
@@ -136,11 +139,9 @@ abstract public class AbstractStorageQuota extends AbstractQuotaMatcher {
             }
             manager.endProcessingRequest(session);
             manager.logout(session, true);
-        }
-        catch (BadCredentialsException e) {
+        } catch (BadCredentialsException e) {
             throw new MessagingException("Unable to authenticate to mailbox", e);
-        }
-        catch (MailboxException e) {
+        } catch (MailboxException e) {
             throw new MessagingException("Unable to get used space from mailbox", e);
         }
 

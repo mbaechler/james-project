@@ -27,8 +27,10 @@ import javax.inject.Inject;
 import javax.mail.MessagingException;
 
 import org.apache.james.lifecycle.api.LifecycleUtil;
+import org.apache.james.mailrepository.api.MailKey;
 import org.apache.james.mailrepository.api.MailRepository;
 import org.apache.james.mailrepository.api.MailRepositoryStore;
+import org.apache.james.mailrepository.api.MailRepositoryUrl;
 import org.apache.james.transport.mailets.managesieve.ManageSieveMailet;
 import org.apache.mailet.Experimental;
 import org.apache.mailet.Mail;
@@ -58,7 +60,7 @@ public class FromRepository extends GenericMailet {
     private boolean delete = false;
 
     /** The path to the repository */
-    private String repositoryPath;
+    private MailRepositoryUrl repositoryPath;
 
     /** The processor that will handle the re-spooled message(s) */
     private String processor;
@@ -70,11 +72,9 @@ public class FromRepository extends GenericMailet {
         this.mailStore = mailStore;
     }
 
-    /**
-     * Initialize the mailet, loading configuration information.
-     */
+    @Override
     public void init() throws MessagingException {
-        repositoryPath = getInitParameter("repositoryPath");
+        repositoryPath = MailRepositoryUrl.from(getInitParameter("repositoryPath"));
         processor = (getInitParameter("processor") == null) ? Mail.DEFAULT : getInitParameter("processor");
 
         try {
@@ -97,41 +97,39 @@ public class FromRepository extends GenericMailet {
      *            triggering e-mail (eventually parameterize via the trigger
      *            message)
      */
+    @Override
     public void service(Mail trigger) throws MessagingException {
         trigger.setState(Mail.GHOST);
-        Collection<String> processed = new ArrayList<>();
-        Iterator<String> list = repository.list();
+        Collection<MailKey> processed = new ArrayList<>();
+        Iterator<MailKey> list = repository.list();
         while (list.hasNext()) {
-            String key = (String) list.next();
+            MailKey key = list.next();
             try {
                 Mail mail = repository.retrieve(key);
                 if (mail != null && mail.getRecipients() != null) {
-                    LOGGER.debug((new StringBuffer(160).append("Spooling mail ").append(mail.getName()).append(" from ").append(repositoryPath)).toString());
+                    LOGGER.debug("Spooling mail {} from {}", mail.getName(), repositoryPath);
 
                     mail.setAttribute("FromRepository", Boolean.TRUE);
                     mail.setState(processor);
                     getMailetContext().sendMail(mail);
-                    if (delete)
+                    if (delete) {
                         processed.add(key);
+                    }
                     LifecycleUtil.dispose(mail);
                 }
             } catch (MessagingException e) {
-                LOGGER.error((new StringBuffer(160).append("Unable to re-spool mail ").append(key).append(" from ").append(repositoryPath)).toString(), e);
+                LOGGER.error("Unable to re-spool mail {} from {}", key, repositoryPath, e);
             }
         }
 
         if (delete) {
             for (Object aProcessed : processed) {
-                repository.remove((String) aProcessed);
+                repository.remove((MailKey) aProcessed);
             }
         }
     }
 
-    /**
-     * Return a string describing this mailet.
-     * 
-     * @return a string describing this mailet
-     */
+    @Override
     public String getMailetInfo() {
         return "FromRepository Mailet";
     }

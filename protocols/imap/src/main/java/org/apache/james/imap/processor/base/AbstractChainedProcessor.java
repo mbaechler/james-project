@@ -26,11 +26,12 @@ import org.apache.james.imap.api.ImapConfiguration;
 import org.apache.james.imap.api.ImapMessage;
 import org.apache.james.imap.api.process.ImapProcessor;
 import org.apache.james.imap.api.process.ImapSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Throwables;
+public abstract class AbstractChainedProcessor<M extends ImapMessage> implements ImapProcessor {
 
-abstract public class AbstractChainedProcessor<M extends ImapMessage> implements ImapProcessor {
-
+    public static final Logger LOGGER = LoggerFactory.getLogger(AbstractChainedProcessor.class);
     private final ImapProcessor next;
     private final Class<M> acceptableClass;
 
@@ -45,12 +46,6 @@ abstract public class AbstractChainedProcessor<M extends ImapMessage> implements
         this.acceptableClass = acceptableClass;
     }
 
-    /**
-     * @see
-     * org.apache.james.imap.api.process.ImapProcessor#process(org.apache.james.imap.api.ImapMessage,
-     * org.apache.james.imap.api.process.ImapProcessor.Responder,
-     * org.apache.james.imap.api.process.ImapSession)
-     */
     @Override
     @SuppressWarnings("unchecked")
     public void process(ImapMessage message, Responder responder, ImapSession session) {
@@ -58,9 +53,14 @@ abstract public class AbstractChainedProcessor<M extends ImapMessage> implements
         if (isAcceptable) {
             M acceptableMessage = (M) message;
             try (Closeable closeable = addContextToMDC(acceptableMessage)) {
-                doProcess(acceptableMessage, responder, session);
+                try {
+                    doProcess(acceptableMessage, responder, session);
+                } catch (RuntimeException e) {
+                    LOGGER.error("Error while processing IMAP request", e);
+                    throw e;
+                }
             } catch (IOException e) {
-                throw Throwables.propagate(e);
+                throw new RuntimeException(e);
             }
         } else {
             next.process(message, responder, session);
@@ -94,10 +94,10 @@ abstract public class AbstractChainedProcessor<M extends ImapMessage> implements
      * @param session
      *            <code>ImapSession</code>, not null
      */
-    abstract protected void doProcess(M acceptableMessage, Responder responder, ImapSession session);
+    protected abstract void doProcess(M acceptableMessage, Responder responder, ImapSession session);
 
     /**
      * Add request specific information to the MDC, for contextual logging
      */
-    abstract protected Closeable addContextToMDC(M message);
+    protected abstract Closeable addContextToMDC(M message);
 }

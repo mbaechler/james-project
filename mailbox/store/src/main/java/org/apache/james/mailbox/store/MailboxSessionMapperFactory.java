@@ -40,16 +40,14 @@ import org.apache.james.mailbox.store.user.SubscriptionMapperFactory;
  */
 public abstract class MailboxSessionMapperFactory implements RequestAware, MailboxMapperFactory, MessageMapperFactory, SubscriptionMapperFactory {
 
-    protected final static String MESSAGEMAPPER ="MESSAGEMAPPER";
-    protected final static String MESSAGEIDMAPPER ="MESSAGEIDMAPPER";
-    protected final static String MAILBOXMAPPER ="MAILBOXMAPPER";
-    protected final static String SUBSCRIPTIONMAPPER ="SUBSCRIPTIONMAPPER";
-    protected final static String ANNOTATIONMAPPER = "ANNOTATIONMAPPER";
+    protected static final String MESSAGEMAPPER = "MESSAGEMAPPER";
+    protected static final String MESSAGEIDMAPPER = "MESSAGEIDMAPPER";
+    protected static final String MAILBOXMAPPER = "MAILBOXMAPPER";
+    protected static final String SUBSCRIPTIONMAPPER = "SUBSCRIPTIONMAPPER";
+    protected static final String ANNOTATIONMAPPER = "ANNOTATIONMAPPER";
     
     
-    /**
-     * @see org.apache.james.mailbox.store.mail.MessageMapperFactory#getMessageMapper(MailboxSession)
-     */
+    @Override
     public MessageMapper getMessageMapper(MailboxSession session) throws MailboxException {
         MessageMapper mapper = (MessageMapper) session.getAttributes().get(MESSAGEMAPPER);
         if (mapper == null) {
@@ -91,9 +89,7 @@ public abstract class MailboxSessionMapperFactory implements RequestAware, Mailb
 
     public abstract MessageIdMapper createMessageIdMapper(MailboxSession session) throws MailboxException;
 
-    /**
-     * @see org.apache.james.mailbox.store.mail.MailboxMapperFactory#getMailboxMapper(MailboxSession)
-     */
+    @Override
     public MailboxMapper getMailboxMapper(MailboxSession session) throws MailboxException {
         MailboxMapper mapper = (MailboxMapper) session.getAttributes().get(MAILBOXMAPPER);
         if (mapper == null) {
@@ -118,6 +114,7 @@ public abstract class MailboxSessionMapperFactory implements RequestAware, Mailb
      * @param session
      * @return mapper
      */
+    @Override
     public SubscriptionMapper getSubscriptionMapper(MailboxSession session) throws SubscriptionException {
         SubscriptionMapper mapper = (SubscriptionMapper) session.getAttributes().get(SUBSCRIPTIONMAPPER);
         if (mapper == null) {
@@ -144,23 +141,26 @@ public abstract class MailboxSessionMapperFactory implements RequestAware, Mailb
      * 
      * @param session
      */
+    @Override
     public void endProcessingRequest(MailboxSession session) {
-        if (session == null) return;
+        if (session == null) {
+            return;
+        }
         MessageMapper messageMapper = (MessageMapper) session.getAttributes().get(MESSAGEMAPPER);
         MailboxMapper mailboxMapper = (MailboxMapper) session.getAttributes().get(MAILBOXMAPPER);
         SubscriptionMapper subscriptionMapper = (SubscriptionMapper) session.getAttributes().get(SUBSCRIPTIONMAPPER);
-        if (messageMapper != null)
+        if (messageMapper != null) {
             messageMapper.endRequest();
-        if (mailboxMapper != null)
+        }
+        if (mailboxMapper != null) {
             mailboxMapper.endRequest();
-        if (subscriptionMapper != null)
-            subscriptionMapper.endRequest();        
+        }
+        if (subscriptionMapper != null) {
+            subscriptionMapper.endRequest();
+        }
     }
 
-    /**
-     * Do nothing
-     * 
-     */
+    @Override
     public void startProcessingRequest(MailboxSession session) {
         // Do nothing
         

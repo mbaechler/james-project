@@ -22,13 +22,13 @@ package org.apache.james.transport.mailets;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
+import org.apache.james.core.MailAddress;
 import org.apache.james.jspf.core.Logger;
 import org.apache.james.jspf.executor.SPFResult;
 import org.apache.james.jspf.impl.DefaultSPF;
 import org.apache.james.transport.mailets.managesieve.ManageSieveMailet;
 import org.apache.mailet.Experimental;
 import org.apache.mailet.Mail;
-import org.apache.james.core.MailAddress;
 import org.apache.mailet.base.GenericMailet;
 import org.slf4j.LoggerFactory;
 
@@ -58,12 +58,10 @@ public class SPF extends GenericMailet {
 
     private boolean addHeader = false;
     private org.apache.james.jspf.impl.SPF spf;
-    public final static String EXPLANATION_ATTRIBUTE = "org.apache.james.transport.mailets.spf.explanation";
-    public final static String RESULT_ATTRIBUTE = "org.apache.james.transport.mailets.spf.result";
+    public static final String EXPLANATION_ATTRIBUTE = "org.apache.james.transport.mailets.spf.explanation";
+    public static final String RESULT_ATTRIBUTE = "org.apache.james.transport.mailets.spf.result";
 
-    /**
-     * @see org.apache.mailet.base.GenericMailet#init()
-     */
+    @Override
     public void init() {
         addHeader = Boolean.valueOf(getInitParameter("addHeader", "false"));
         SPFLoggerAdapter logger = new SPFLoggerAdapter(Boolean.valueOf(getInitParameter("debug", "false")));
@@ -71,9 +69,7 @@ public class SPF extends GenericMailet {
         spf = new DefaultSPF(logger);
     }
 
-    /**
-     * @see org.apache.mailet.base.GenericMailet#service(org.apache.mailet.Mail)
-     */
+    @Override
     public void service(Mail mail) throws MessagingException {
         String sender;
         MailAddress senderAddr = mail.getSender();
@@ -90,7 +86,7 @@ public class SPF extends GenericMailet {
             mail.setAttribute(EXPLANATION_ATTRIBUTE, result.getExplanation());
             mail.setAttribute(RESULT_ATTRIBUTE, result.getResult());
 
-            LOGGER.debug("ip:" + remoteAddr + " from:" + sender + " helo:" + helo + " = " + result.getResult());
+            LOGGER.debug("ip:{} from:{} helo:{} = {}", remoteAddr, sender, helo, result.getResult());
             if (addHeader) {
                 try {
                     MimeMessage msg = mail.getMessage();
@@ -116,70 +112,86 @@ public class SPF extends GenericMailet {
             this.debug = debug;
         }
 
+        @Override
         public void debug(String arg0) {
             if (debug) {
                 LOGGER.debug(arg0);
             }
         }
 
+        @Override
         public void debug(String arg0, Throwable arg1) {
             if (debug) {
                 LOGGER.debug(arg0, arg1);
             }
         }
 
+        @Override
         public void error(String arg0) {
             LOGGER.error(arg0);
         }
 
+        @Override
         public void error(String arg0, Throwable arg1) {
             LOGGER.error(arg0, arg1);
         }
 
+        @Override
         public void fatalError(String arg0) {
             LOGGER.error(arg0);
         }
 
+        @Override
         public void fatalError(String arg0, Throwable arg1) {
             LOGGER.error(arg0, arg1);
         }
 
+        @Override
         public Logger getChildLogger(String childName) {
             return new SPFLoggerAdapter(name + "." + childName, debug);
         }
 
+        @Override
         public void info(String arg0) {
             LOGGER.info(arg0);
         }
 
+        @Override
         public void info(String arg0, Throwable arg1) {
             LOGGER.info(arg0, arg1);
         }
 
+        @Override
         public boolean isDebugEnabled() {
             return LOGGER.isDebugEnabled();
         }
 
+        @Override
         public boolean isErrorEnabled() {
             return LOGGER.isErrorEnabled();
         }
 
+        @Override
         public boolean isFatalErrorEnabled() {
             return LOGGER.isErrorEnabled();
         }
 
+        @Override
         public boolean isInfoEnabled() {
             return LOGGER.isInfoEnabled();
         }
 
+        @Override
         public boolean isWarnEnabled() {
             return LOGGER.isWarnEnabled();
         }
 
+        @Override
         public void warn(String arg0) {
             LOGGER.warn(arg0);
         }
 
+        @Override
         public void warn(String arg0, Throwable arg1) {
             LOGGER.warn(arg0, arg1);
         }

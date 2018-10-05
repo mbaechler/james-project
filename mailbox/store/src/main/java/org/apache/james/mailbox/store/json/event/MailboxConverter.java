@@ -37,7 +37,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class MailboxConverter {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(MailboxConverter.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MailboxConverter.class);
 
     private final MailboxIdDeserializer mailboxIdDeserializer;
 
@@ -72,7 +72,7 @@ public class MailboxConverter {
             .build();
     }
 
-    public MailboxDataTransferObject extractMailboxDataTransferObject(MailboxListener.Event event) {
+    public MailboxDataTransferObject extractMailboxDataTransferObject(MailboxListener.MailboxEvent event) {
         if (event instanceof EventFactory.MailboxAware) {
             return convertMailboxDataTransferObject(((EventFactory.MailboxAware) event).getMailbox());
         } else {

@@ -37,10 +37,7 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
  */
 public class IndexerConfigurationBeanFactoryPostProcessor implements BeanFactoryPostProcessor {
 
-    /**
-     * @see org.springframework.beans.factory.config.BeanFactoryPostProcessor#postProcessBeanFactory
-     * (org.springframework.beans.factory.config.ConfigurableListableBeanFactory)
-     */
+    @Override
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
         ConfigurationProvider confProvider = beanFactory.getBean(ConfigurationProvider.class);
         try {
@@ -61,8 +58,9 @@ public class IndexerConfigurationBeanFactoryPostProcessor implements BeanFactory
                 reIndexer = "fake-reindexer";
             }
 
-            if (indexer == null)
+            if (indexer == null) {
                 throw new ConfigurationException("Indexer provider " + provider + " not supported!");
+            }
             registry.registerAlias(indexer, "indexer");
             registry.registerAlias(reIndexer, "reindexer");
 

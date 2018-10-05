@@ -30,8 +30,9 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.james.util.Port;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Simple <a href='http://tools.ietf.org/html/rfc863'>RFC 863</a> implementation.
@@ -44,10 +45,10 @@ public class DiscardProtocol {
     
     private static final int IDLE_TIMEOUT = 120000;
 
-    private static final Log LOG = LogFactory.getLog(DiscardProtocol.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DiscardProtocol.class);
     
     /** Serve on this port */
-    private int port;
+    private Port port;
     
     /** 
      * Queues requests for recordings.
@@ -76,12 +77,11 @@ public class DiscardProtocol {
      * @throws IllegalStateException when already started
      */
     public void start() throws IOException {
-        synchronized (queue)
-        {
+        synchronized (queue) {
             if (socket == null) {
                 socket = ServerSocketChannel.open();
                 socket.socket().bind(new InetSocketAddress(0));
-                port = socket.socket().getLocalPort();
+                port = new Port(socket.socket().getLocalPort());
                 // only going to record a single conversation
                 socket.configureBlocking(false);
                 
@@ -94,13 +94,12 @@ public class DiscardProtocol {
         }
     }
     
-    public int getPort() {
+    public Port getPort() {
         return port;
     }
     
     public Record recordNext() {
-        synchronized (queue)
-        {
+        synchronized (queue) {
             Server server = new Server();
             queue.add(server);
             return server;
@@ -108,8 +107,7 @@ public class DiscardProtocol {
     }
     
     private void abort() {
-        synchronized (queue)
-        {
+        synchronized (queue) {
             stop();
             for (Server server: queue) {
                 server.abort();
@@ -118,13 +116,8 @@ public class DiscardProtocol {
         }
     }
     
-    /**
-     * Stops serving.
-     * @return ASCII bytes sent to socket by first
-     */
     public void stop() {
-        synchronized (queue)
-        {
+        synchronized (queue) {
             try {
                 if (socket != null) {
                     if (socket.isOpen()) {
@@ -142,19 +135,19 @@ public class DiscardProtocol {
     }
     
     private final class SocketMonitor implements Runnable {
+        @Override
         public void run() {
-            try
-            {
+            try {
                 long lastConnection = System.currentTimeMillis();
-                while(socket != null) {
+                while (socket != null) {
                     final SocketChannel socketChannel = socket.accept();
                     if (socketChannel == null) {
                         if (System.currentTimeMillis() - lastConnection > IDLE_TIMEOUT) {
-                            throw new Exception ("Idle timeout");
+                            throw new Exception("Idle timeout");
                         }
                         Thread.sleep(SOCKET_CONNECTION_WAIT_MILLIS);
                     } else {
-                        synchronized(queue) {
+                        synchronized (queue) {
                             Server nextServer = (Server) queue.poll();
                             if (nextServer == null) {
                                 nextServer = new Server();
@@ -169,7 +162,7 @@ public class DiscardProtocol {
                     }
                 }
             } catch (Exception e) {
-                LOG.fatal("Cannot accept connection", e);
+                LOG.error("Cannot accept connection", e);
                 abort();
             }
         }
@@ -183,7 +176,7 @@ public class DiscardProtocol {
     /**
      * Basic server.
      */
-    private final static class Server implements Runnable, Record {
+    private static final class Server implements Runnable, Record {
 
         private static final int COMPLETION_TIMEOUT = 60000;
 
@@ -218,22 +211,19 @@ public class DiscardProtocol {
             this.socketChannel = socketChannel;
         }
 
+        @Override
         public void run() {
-            try
-            {
-                if (socketChannel == null)
-                {
-                    LOG.fatal("Socket channel must be set before instance is run.");
-                }
-                else
-                {
+            try {
+                if (socketChannel == null) {
+                    LOG.error("Socket channel must be set before instance is run.");
+                } else {
                     try {
-                        while(!socketChannel.finishConnect()) {
+                        while (!socketChannel.finishConnect()) {
                             Thread.sleep(SOCKET_CONNECTION_WAIT_MILLIS);
                         }
                         
                         int read = 0;
-                        while(!aborted && socketChannel.isOpen() && read >= 0) {
+                        while (!aborted && socketChannel.isOpen() && read >= 0) {
                             read = socketChannel.read(buffer);
                             if (!buffer.hasRemaining()) {
                                 decant();
@@ -241,7 +231,7 @@ public class DiscardProtocol {
                         }
                         
                     } catch (Exception e) {
-                        LOG.fatal("Socket communication failed", e);
+                        LOG.error("Socket communication failed", e);
                         aborted = true;
                         
                     // Tidy up
@@ -254,8 +244,7 @@ public class DiscardProtocol {
                     }
                 }
             } finally {
-                synchronized (this)
-                {
+                synchronized (this) {
                     // Ensure completion is flagged
                     complete = true;
                     // Signal to any waiting threads 
@@ -283,6 +272,7 @@ public class DiscardProtocol {
         /**
          * Blocks until connection is complete (closed)
          */
+        @Override
         public synchronized String complete() throws Exception {
             if (aborted) {
                 throw new Exception("Aborted");

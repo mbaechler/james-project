@@ -40,12 +40,15 @@ import org.apache.james.mailbox.hbase.mail.HBaseUidProvider;
 import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.mailbox.store.Authenticator;
 import org.apache.james.mailbox.store.Authorizator;
+import org.apache.james.mailbox.store.JVMMailboxPathLocker;
+import org.apache.james.mailbox.store.StoreMailboxAnnotationManager;
+import org.apache.james.mailbox.store.StoreRightManager;
+import org.apache.james.mailbox.store.event.DefaultDelegatingMailboxListener;
+import org.apache.james.mailbox.store.event.MailboxEventDispatcher;
 import org.apache.james.mailbox.store.mail.model.DefaultMessageId;
 import org.apache.james.mailbox.store.mail.model.impl.MessageParser;
 import org.junit.After;
 import org.junit.Ignore;
-
-import com.google.common.base.Throwables;
 
 @Ignore("https://issues.apache.org/jira/browse/MAILBOX-293")
 public class HBaseMailboxManagerStressTest extends MailboxManagerStressTest {
@@ -61,22 +64,28 @@ public class HBaseMailboxManagerStressTest extends MailboxManagerStressTest {
         MessageId.Factory messageIdFactory = new DefaultMessageId.Factory();
         HBaseMailboxSessionMapperFactory mapperFactory = new HBaseMailboxSessionMapperFactory(CLUSTER.getConf(),
             uidProvider, modSeqProvider, messageIdFactory);
+        DefaultDelegatingMailboxListener delegatingListener = new DefaultDelegatingMailboxListener();
+        MailboxEventDispatcher mailboxEventDispatcher = new MailboxEventDispatcher(delegatingListener);
+        StoreRightManager storeRightManager = new StoreRightManager(mapperFactory, new UnionMailboxACLResolver(), new SimpleGroupMembershipResolver(), mailboxEventDispatcher);
 
         Authenticator noAuthenticator = null;
         Authorizator noAuthorizator = null;
+        StoreMailboxAnnotationManager annotationManager = new StoreMailboxAnnotationManager(mapperFactory, storeRightManager);
         HBaseMailboxManager manager = new HBaseMailboxManager(mapperFactory,
             noAuthenticator,
             noAuthorizator,
-            new UnionMailboxACLResolver(),
-            new SimpleGroupMembershipResolver(),
+            new JVMMailboxPathLocker(),
             new MessageParser(),
-            messageIdFactory
-        );
+            messageIdFactory,
+            mailboxEventDispatcher,
+            delegatingListener,
+            annotationManager,
+            storeRightManager);
 
         try {
             manager.init();
         } catch (MailboxException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
 
         return manager;
@@ -96,7 +105,7 @@ public class HBaseMailboxManagerStressTest extends MailboxManagerStressTest {
                 new byte[][]{MESSAGES_META_CF, MESSAGE_DATA_HEADERS_CF, MESSAGE_DATA_BODY_CF});
             CLUSTER.ensureTable(SUBSCRIPTIONS_TABLE, new byte[][]{SUBSCRIPTION_CF});
         } catch (Exception e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
     }
 }

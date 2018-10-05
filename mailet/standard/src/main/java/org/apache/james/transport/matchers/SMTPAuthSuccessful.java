@@ -21,12 +21,13 @@
 
 package org.apache.james.transport.matchers;
 
-import com.google.common.collect.ImmutableList;
-import org.apache.mailet.base.GenericMatcher;
-import org.apache.mailet.Mail;
-import org.apache.james.core.MailAddress;
-
 import java.util.Collection;
+
+import org.apache.james.core.MailAddress;
+import org.apache.mailet.Mail;
+import org.apache.mailet.base.GenericMatcher;
+
+import com.google.common.collect.ImmutableList;
 
 /**
  * <P>Matches mails that are sent by an SMTP authenticated user.</P>
@@ -44,6 +45,7 @@ public class SMTPAuthSuccessful extends GenericMatcher {
      * The mail attribute holding the SMTP AUTH user name, if any.
      */
 
+    @Override
     public Collection<MailAddress> match(Mail mail) {
         String authUser = (String) mail.getAttribute(Mail.SMTP_AUTH_USER_ATTRIBUTE_NAME);
         if (authUser != null) {

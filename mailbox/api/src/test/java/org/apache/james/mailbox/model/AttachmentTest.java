@@ -24,15 +24,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 
-import com.google.common.base.Charsets;
-
 public class AttachmentTest {
 
-    private static Charset CHARSET = Charsets.UTF_8;
+    private static Charset CHARSET = StandardCharsets.UTF_8;
 
     @Test
     public void streamShouldBeConsumedOneTime() throws Exception {
@@ -48,7 +47,7 @@ public class AttachmentTest {
     }
 
     @Test
-    public void getByteShouldReturnByteArrayRepresentingTheAttachment() throws Exception {
+    public void getByteShouldReturnByteArrayRepresentingTheAttachment() {
         String input = "mystream";
         Attachment attachment = Attachment.builder()
             .bytes(input.getBytes(CHARSET))
@@ -105,33 +104,20 @@ public class AttachmentTest {
     @Test (expected = IllegalStateException.class)
     public void buildShouldThrowWhenBytesIsNotProvided() {
         Attachment.builder()
-            .attachmentId(AttachmentId.forPayloadAndType("mystream".getBytes(CHARSET), "type"))
+            .attachmentId(AttachmentId.random())
             .build();
     }
 
     @Test (expected = IllegalStateException.class)
     public void buildShouldThrowWhenTypeIsNotProvided() {
         Attachment.builder()
-            .attachmentId(AttachmentId.forPayloadAndType("mystream".getBytes(CHARSET), "type"))
+            .attachmentId(AttachmentId.random())
             .bytes("mystream".getBytes(CHARSET))
             .build();
     }
 
     @Test
-    public void buildShouldSetTheAttachmentId() throws Exception {
-        byte[] bytes = "mystream".getBytes(CHARSET);
-        String type = "content";
-        Attachment attachment = Attachment.builder()
-                .bytes(bytes)
-                .type(type)
-                .build();
-        AttachmentId expected = AttachmentId.forPayloadAndType(bytes, type);
-
-        assertThat(attachment.getAttachmentId()).isEqualTo(expected);
-    }
-
-    @Test
-    public void buildShouldSetTheSize() throws Exception {
+    public void buildShouldSetTheSize() {
         String input = "mystream";
         Attachment attachment = Attachment.builder()
                 .bytes(input.getBytes(CHARSET))
@@ -142,7 +128,7 @@ public class AttachmentTest {
     }
 
     @Test
-    public void toBlobShouldGenerateTheAttachmentBlob() throws Exception {
+    public void toBlobShouldGenerateTheAttachmentBlob() {
         byte[] bytes = "mystream".getBytes(CHARSET);
         String content = "content";
         Attachment attachment = Attachment.builder()
@@ -150,7 +136,7 @@ public class AttachmentTest {
             .type(content)
             .build();
         Blob expected = Blob.builder()
-            .id(BlobId.fromString(attachment.getAttachmentId().getId()))
+            .id(BlobId.fromBytes(bytes))
             .contentType(content)
             .payload(bytes)
             .build();

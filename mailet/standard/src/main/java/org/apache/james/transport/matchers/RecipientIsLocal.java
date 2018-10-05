@@ -21,9 +21,9 @@
 
 package org.apache.james.transport.matchers;
 
-import org.apache.mailet.base.GenericRecipientMatcher;
 import org.apache.james.core.MailAddress;
 import org.apache.mailet.MailetContext;
+import org.apache.mailet.base.GenericRecipientMatcher;
 
 /**
  * Matches mail where the recipient is local.
@@ -31,6 +31,7 @@ import org.apache.mailet.MailetContext;
  */
 public class RecipientIsLocal extends GenericRecipientMatcher {
 
+    @Override
     public boolean matchRecipient(MailAddress recipient) {
         MailetContext mailetContext = getMailetContext();
         //This might change after startup

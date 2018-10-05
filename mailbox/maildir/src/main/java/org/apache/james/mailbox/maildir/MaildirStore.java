@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.Optional;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.james.mailbox.MailboxPathLocker;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MessageUid;
@@ -36,7 +37,6 @@ import org.apache.james.mailbox.store.mail.ModSeqProvider;
 import org.apache.james.mailbox.store.mail.UidProvider;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
-import org.apache.commons.lang.NotImplementedException;
 
 public class MaildirStore implements UidProvider, ModSeqProvider {
 
@@ -77,6 +77,7 @@ public class MaildirStore implements UidProvider, ModSeqProvider {
     public String getMaildirLocation() {
         return maildirLocation;
     }
+    
     /**
      * Create a {@link MaildirFolder} for a mailbox
      * @param mailbox
@@ -113,8 +114,9 @@ public class MaildirStore implements UidProvider, ModSeqProvider {
     throws MailboxNotFoundException, MailboxException {
         MaildirFolder folder = new MaildirFolder(getFolderName(mailboxPath), mailboxPath, locker);
         folder.setMessageNameStrictParse(isMessageNameStrictParse());
-        if (!folder.exists())
+        if (!folder.exists()) {
             throw new MailboxNotFoundException(mailboxPath);
+        }
         return loadMailbox(session, folder.getRootFile(), mailboxPath);
     }
 
@@ -165,8 +167,9 @@ public class MaildirStore implements UidProvider, ModSeqProvider {
     public File getMailboxRootForUser(String user) throws MailboxException {
         String path = userRoot(user);
         File root = new File(path);
-        if (!root.isDirectory())
+        if (!root.isDirectory()) {
             throw new MailboxException("Unable to load Mailbox for user " + user);
+        }
         return root;
     }
     
@@ -193,10 +196,12 @@ public class MaildirStore implements UidProvider, ModSeqProvider {
      */
     public String getMailboxNameFromFolderName(String folderName) {
         String mName;
-        if (folderName.equals("")) mName = MailboxConstants.INBOX;
-        else
-        // remove leading dot
+        if (folderName.equals("")) {
+            mName = MailboxConstants.INBOX;
+        } else {
+            // remove leading dot
             mName = folderName.substring(1);
+        }
         // they are equal, anyways, this might change someday...
         //if (maildirDelimiter != MailboxConstants.DEFAULT_DELIMITER_STRING)
         //    mName = mName.replace(maildirDelimiter, MailboxConstants.DEFAULT_DELIMITER_STRING);
@@ -213,11 +218,13 @@ public class MaildirStore implements UidProvider, ModSeqProvider {
     public String getFolderName(String namespace, String user, String name) {
         String root = userRoot(user);
         // if INBOX => location == maildirLocation
-        if (name.equals(MailboxConstants.INBOX))
+        if (name.equals(MailboxConstants.INBOX)) {
             return root;
+        }
         StringBuilder folder = new StringBuilder(root);
-        if (!root.endsWith(File.pathSeparator))
+        if (!root.endsWith(File.pathSeparator)) {
             folder.append(File.separator);
+        }
         folder.append(".");
         folder.append(name);
         return folder.toString();
@@ -301,11 +308,11 @@ public class MaildirStore implements UidProvider, ModSeqProvider {
 
     @Override
     public MessageUid nextUid(MailboxSession session, MailboxId mailboxId) throws MailboxException {
-        throw new NotImplementedException();
+        throw new NotImplementedException("Not implemented");
     }
 
     @Override
     public long highestModSeq(MailboxSession session, MailboxId mailboxId) throws MailboxException {
-        throw new NotImplementedException();
+        throw new NotImplementedException("Not implemented");
     }
 }

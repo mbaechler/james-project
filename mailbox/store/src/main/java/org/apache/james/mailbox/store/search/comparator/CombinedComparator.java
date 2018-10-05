@@ -22,9 +22,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.james.mailbox.model.SearchQuery.Sort;
 import org.apache.james.mailbox.store.mail.model.MailboxMessage;
-import org.apache.commons.lang.NotImplementedException;
 
 import com.github.steveash.guavate.Guavate;
 import com.google.common.base.Preconditions;
@@ -34,7 +34,7 @@ import com.google.common.base.Preconditions;
  * {@link Comparator} which takes a Array of other {@link Comparator}'s and use them to compare two {@link MailboxMessage} instances till one of them
  * return <> 0
  */
-public class CombinedComparator implements Comparator<MailboxMessage>{
+public class CombinedComparator implements Comparator<MailboxMessage> {
 
     public static CombinedComparator create(List<Sort> sorts) {
         Preconditions.checkNotNull(sorts);

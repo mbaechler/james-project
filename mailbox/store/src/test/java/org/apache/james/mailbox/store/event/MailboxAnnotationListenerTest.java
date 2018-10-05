@@ -18,15 +18,18 @@
  ****************************************************************/
 package org.apache.james.mailbox.store.event;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 
+import org.apache.james.core.quota.QuotaCount;
+import org.apache.james.core.quota.QuotaSize;
 import org.apache.james.mailbox.MailboxListener;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.mock.MockMailboxSession;
@@ -34,6 +37,7 @@ import org.apache.james.mailbox.model.MailboxAnnotation;
 import org.apache.james.mailbox.model.MailboxAnnotationKey;
 import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MailboxPath;
+import org.apache.james.mailbox.model.QuotaRoot;
 import org.apache.james.mailbox.model.TestId;
 import org.apache.james.mailbox.store.MailboxSessionMapperFactory;
 import org.apache.james.mailbox.store.mail.AnnotationMapper;
@@ -66,7 +70,7 @@ public class MailboxAnnotationListenerTest {
     private Mailbox mailbox;
     private EventFactory eventFactory;
     private MailboxAnnotationListener listener;
-    private MailboxListener.Event deleteEvent;
+    private MailboxListener.MailboxEvent deleteEvent;
     private MailboxSession mailboxSession;
 
     @Before
@@ -77,14 +81,17 @@ public class MailboxAnnotationListenerTest {
         eventFactory = new EventFactory();
         mailbox = new SimpleMailbox(MailboxPath.forUser("user", "name"), UID_VALIDITY, mailboxId);
 
-        deleteEvent = eventFactory.mailboxDeleted(mailboxSession, mailbox);
+        QuotaRoot quotaRoot = QuotaRoot.quotaRoot("root", Optional.empty());
+        QuotaCount quotaCount = QuotaCount.count(123);
+        QuotaSize quotaSize = QuotaSize.size(456);
+        deleteEvent = eventFactory.mailboxDeleted(mailboxSession, mailbox, quotaRoot, quotaCount, quotaSize);
 
         when(mailboxSessionMapperFactory.getAnnotationMapper(eq(deleteEvent.getSession()))).thenReturn(annotationMapper);
     }
 
     @Test
     public void eventShouldDoNothingIfDoNotHaveMailboxDeletionEvent() {
-        MailboxListener.Event event = new MailboxListener.Event(null, MAILBOX_PATH) {};
+        MailboxListener.MailboxEvent event = new MailboxListener.MailboxEvent(null, MAILBOX_PATH) {};
         listener.event(event);
 
         verifyNoMoreInteractions(mailboxSessionMapperFactory);
@@ -92,7 +99,7 @@ public class MailboxAnnotationListenerTest {
     }
 
     @Test
-    public void eventShoudlDoNothingIfMailboxDoesNotHaveAnyAnnotation() throws Exception{
+    public void eventShoudlDoNothingIfMailboxDoesNotHaveAnyAnnotation() throws Exception {
         when(annotationMapper.getAllAnnotations(any(MailboxId.class))).thenReturn(ImmutableList.<MailboxAnnotation>of());
 
         listener.event(deleteEvent);
@@ -106,7 +113,7 @@ public class MailboxAnnotationListenerTest {
     }
 
     @Test
-    public void eventShoudlDeleteAllMailboxAnnotation() throws Exception{
+    public void eventShoudlDeleteAllMailboxAnnotation() throws Exception {
         when(annotationMapper.getAllAnnotations(eq(mailboxId))).thenReturn(ANNOTATIONS);
 
         listener.event(deleteEvent);

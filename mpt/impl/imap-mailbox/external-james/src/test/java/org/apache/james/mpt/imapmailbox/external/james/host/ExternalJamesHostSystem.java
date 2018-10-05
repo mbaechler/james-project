@@ -21,12 +21,14 @@ package org.apache.james.mpt.imapmailbox.external.james.host;
 import java.net.InetSocketAddress;
 import java.util.function.Supplier;
 
+import org.apache.commons.lang3.NotImplementedException;
+import org.apache.james.core.quota.QuotaCount;
+import org.apache.james.core.quota.QuotaSize;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mpt.api.ImapFeatures;
 import org.apache.james.mpt.api.ImapFeatures.Feature;
 import org.apache.james.mpt.host.ExternalHostSystem;
 import org.apache.james.mpt.monitor.NullMonitor;
-import org.apache.commons.lang.NotImplementedException;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -62,22 +64,24 @@ public class ExternalJamesHostSystem extends ExternalHostSystem {
         return super.addUser(user, password);
     }
     
+    @Override
     public void beforeTest() throws Exception {
 
     }
 
+    @Override
     public void afterTest() throws Exception {
 
     }
 
     @Override
     public void createMailbox(MailboxPath mailboxPath) {
-        throw new NotImplementedException();
+        throw new NotImplementedException("Not implemented");
     }
 
     @Override
-    public void setQuotaLimits(long maxMessageQuota, long maxStorageQuota) throws Exception {
-        throw new NotImplementedException();
+    public void setQuotaLimits(QuotaCount maxMessageQuota, QuotaSize maxStorageQuota) throws Exception {
+        throw new NotImplementedException("Not implemented");
     }
     
 }

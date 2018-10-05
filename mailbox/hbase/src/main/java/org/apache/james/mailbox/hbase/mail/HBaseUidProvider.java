@@ -21,9 +21,15 @@ package org.apache.james.mailbox.hbase.mail;
 import static org.apache.james.mailbox.hbase.HBaseNames.MAILBOXES_TABLE;
 import static org.apache.james.mailbox.hbase.HBaseNames.MAILBOX_CF;
 import static org.apache.james.mailbox.hbase.HBaseNames.MAILBOX_LASTUID;
+
 import java.io.IOException;
 import java.util.Optional;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.client.Get;
+import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.exception.MailboxException;
@@ -31,11 +37,7 @@ import org.apache.james.mailbox.hbase.HBaseId;
 import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.store.mail.UidProvider;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.client.Get;
-import org.apache.hadoop.hbase.client.HTable;
-import org.apache.hadoop.hbase.client.Result;
-import org.apache.hadoop.hbase.util.Bytes;
+
 /**
  * Message UidProvider for HBase.
  * 
@@ -49,18 +51,10 @@ public class HBaseUidProvider implements UidProvider {
         this.conf = conf;
     }
 
-    /**
-     * Returns the last message uid used in a mailbox.
-     * @param session the session
-     * @param mailbox the mailbox for which to get the last uid
-     * @return the last uid used
-     */
     @Override
     public Optional<MessageUid> lastUid(MailboxSession session, Mailbox mailbox) throws MailboxException {
-        HTable mailboxes = null;
         HBaseId mailboxId = (HBaseId) mailbox.getMailboxId();
-        try {
-            mailboxes = new HTable(conf, MAILBOXES_TABLE);
+        try (HTable mailboxes = new HTable(conf, MAILBOXES_TABLE)) {
             Get get = new Get(mailboxId.toBytes());
             get.addColumn(MAILBOX_CF, MAILBOX_LASTUID);
             get.setMaxVersions(1);
@@ -76,25 +70,9 @@ public class HBaseUidProvider implements UidProvider {
             return Optional.of(MessageUid.of(rawUid));
         } catch (IOException e) {
             throw new MailboxException("lastUid", e);
-        } finally {
-            if (mailboxes != null) {
-                try {
-                    mailboxes.close();
-                } catch (IOException ex) {
-                    throw new MailboxException("Error closing table " + mailboxes, ex);
-                }
-            }
         }
     }
 
-    /**
-     * Returns the next uid. Implemented using HTable.incrementColumnValue(row, family, qualifier, amount).
-     * 
-     * @param session the mailbox session
-     * @param mailbox the mailbox for which we are getting the next uid.
-     * @return the next uid to be used.
-     * @throws MailboxException 
-     */
     @Override
     public MessageUid nextUid(MailboxSession session, Mailbox mailbox) throws MailboxException {
         return nextUid(session, mailbox.getMailboxId());
@@ -103,22 +81,12 @@ public class HBaseUidProvider implements UidProvider {
     @Override
     public MessageUid nextUid(MailboxSession session, MailboxId mailboxId) throws MailboxException {
         HBaseId hbaseId = (HBaseId) mailboxId;
-        HTable mailboxes = null;
-        try {
-            mailboxes = new HTable(conf, MAILBOXES_TABLE);
+        try (HTable mailboxes = new HTable(conf, MAILBOXES_TABLE)) {
             MessageUid newValue = MessageUid.of(mailboxes.incrementColumnValue(hbaseId.toBytes(), MAILBOX_CF, MAILBOX_LASTUID, 1));
             mailboxes.close();
             return newValue;
         } catch (IOException e) {
             throw new MailboxException("lastUid", e);
-        } finally {
-            if (mailboxes != null) {
-                try {
-                    mailboxes.close();
-                } catch (IOException ex) {
-                    throw new MailboxException("Error closing table " + mailboxes, ex);
-                }
-            }
         }
     }
 

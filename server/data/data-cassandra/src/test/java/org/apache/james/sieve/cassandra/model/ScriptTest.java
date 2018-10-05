@@ -21,12 +21,14 @@ package org.apache.james.sieve.cassandra.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.nio.charset.StandardCharsets;
+
+import org.apache.james.sieverepository.api.ScriptContent;
+import org.apache.james.sieverepository.api.ScriptName;
 import org.apache.james.sieverepository.api.ScriptSummary;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-
-import com.google.common.base.Charsets;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 
@@ -72,7 +74,7 @@ public class ScriptTest {
 
     @Test
     public void buildShouldPreserveName() {
-        String name = "name";
+        ScriptName name = new ScriptName("name");
         assertThat(
             Script.builder()
                 .name(name)
@@ -85,7 +87,7 @@ public class ScriptTest {
 
     @Test
     public void buildShouldPreserveContent() {
-        String content = "content";
+        ScriptContent content = new ScriptContent("content");
         assertThat(
             Script.builder()
                 .name("name")
@@ -130,7 +132,7 @@ public class ScriptTest {
                 .isActive(true)
                 .build()
                 .getSize())
-            .isEqualTo(content.getBytes(Charsets.UTF_8).length);
+            .isEqualTo(content.getBytes(StandardCharsets.UTF_8).length);
     }
 
     @Test
@@ -159,7 +161,7 @@ public class ScriptTest {
                 .size(48L)
                 .build()
                 .toSummary())
-            .isEqualTo(new ScriptSummary(name, isActive));
+            .isEqualTo(new ScriptSummary(new ScriptName(name), isActive));
     }
 
     @Test

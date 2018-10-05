@@ -25,6 +25,8 @@ import java.util.Calendar;
 
 import javax.mail.Flags;
 
+import org.apache.james.core.quota.QuotaCount;
+import org.apache.james.core.quota.QuotaSize;
 import org.apache.james.mailbox.FlagsBuilder;
 import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.MailboxSession;
@@ -41,12 +43,14 @@ import org.apache.james.mailbox.quota.QuotaRootResolver;
 /**
  * Provide an initialized Mailbox environment where we can run managers tests
  */
-public class ManagerTestResources {
+public class ManagerTestResources<T extends MailboxManager> {
 
     public static final String USER = "user@domain.org";
     public static final String USER_PASS = "pass";
+    public static final String OTHER_USER = "otherUser@domain.org";
+    public static final String OTHER_USER_PASS = "otherPass";
 
-    private MailboxManager mailboxManager;
+    private T mailboxManager;
 
     private MailboxPath inbox;
     private MessageManager messageManager;
@@ -59,9 +63,9 @@ public class ManagerTestResources {
     private GroupMembershipResolver groupMembershipResolver;
     private QuotaRootResolver quotaRootResolver;
 
-    private IntegrationResources integrationResources;
+    private IntegrationResources<T> integrationResources;
 
-    public ManagerTestResources(IntegrationResources integrationResources) throws Exception {
+    public ManagerTestResources(IntegrationResources<T> integrationResources) throws Exception {
         this.integrationResources = integrationResources;
         maxQuotaManager = integrationResources.createMaxQuotaManager();
         groupMembershipResolver = integrationResources.createGroupMembershipResolver();
@@ -73,8 +77,8 @@ public class ManagerTestResources {
         inbox = MailboxPath.inbox(session);
         subFolder = new MailboxPath(inbox, "INBOX.SUB");
 
-        maxQuotaManager.setDefaultMaxMessage(1000);
-        maxQuotaManager.setDefaultMaxStorage(1000000);
+        maxQuotaManager.setGlobalMaxMessage(QuotaCount.count(1000));
+        maxQuotaManager.setGlobalMaxStorage(QuotaSize.size(1000000));
     }
 
     public void createMailboxes() throws MailboxException {
@@ -119,12 +123,12 @@ public class ManagerTestResources {
         return session;
     }
 
-    public IntegrationResources getIntegrationResources() {
+    public IntegrationResources<T> getIntegrationResources() {
         return integrationResources;
     }
 
     public void fillMailbox() throws MailboxException, UnsupportedEncodingException {
-        for(int i = 0; i < 4; i++) {
+        for (int i = 0; i < 4; i++) {
             provideSomeMessages();
         }
     }

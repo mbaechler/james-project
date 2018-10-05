@@ -21,7 +21,8 @@ package org.apache.james.backends.es;
 
 import java.util.concurrent.TimeUnit;
 
-import org.apache.james.util.streams.SwarmGenericContainer;
+import org.apache.james.util.docker.SwarmGenericContainer;
+import org.awaitility.Awaitility;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.junit.Ignore;
@@ -29,8 +30,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.jayway.awaitility.Awaitility;
 
 @Ignore("JAMES-1952")
 public class ClientProviderImplConnectionTest {
@@ -45,14 +44,15 @@ public class ClientProviderImplConnectionTest {
 
     @Rule
     public SwarmGenericContainer es2 = new SwarmGenericContainer(DOCKER_ES_IMAGE)
-        .withAffinityToContainer();
+        .withAffinityToContainer()
+        .withExposedPorts(ES_APPLICATIVE_PORT);
 
     @Test
     public void connectingASingleServerShouldWork() throws Exception {
         Awaitility.await()
             .atMost(1, TimeUnit.MINUTES)
             .pollInterval(5, TimeUnit.SECONDS)
-            .until(() -> isConnected(ClientProviderImpl.forHost(es1.getHostIp(), 9300)));
+            .until(() -> isConnected(ClientProviderImpl.forHost(es1.getContainerIp(), 9300)));
     }
 
     @Test
@@ -60,10 +60,10 @@ public class ClientProviderImplConnectionTest {
         Awaitility.await()
             .atMost(1, TimeUnit.MINUTES)
             .pollInterval(5, TimeUnit.SECONDS)
-            .until(() ->isConnected(
+            .until(() -> isConnected(
                 ClientProviderImpl.fromHostsString(
-                    es1.getHostIp() + ":" + ES_APPLICATIVE_PORT + ","
-                    + es2.getHostIp() + ":" + ES_APPLICATIVE_PORT)));
+                    es1.getContainerIp() + ":" + ES_APPLICATIVE_PORT + ","
+                    + es2.getContainerIp() + ":" + ES_APPLICATIVE_PORT)));
     }
 
     @Test
@@ -75,8 +75,8 @@ public class ClientProviderImplConnectionTest {
             .pollInterval(5, TimeUnit.SECONDS)
             .until(() -> isConnected(
                 ClientProviderImpl.fromHostsString(
-                    es1.getHostIp() + ":" + ES_APPLICATIVE_PORT + ","
-                    + es2.getHostIp() + ":" + ES_APPLICATIVE_PORT)));
+                    es1.getContainerIp() + ":" + ES_APPLICATIVE_PORT + ","
+                    + es2.getContainerIp() + ":" + ES_APPLICATIVE_PORT)));
     }
 
     private boolean isConnected(ClientProvider clientProvider) {

@@ -21,9 +21,10 @@ package org.apache.james.transport.matchers;
 
 import java.util.Collection;
 
+import org.apache.james.core.Domain;
+import org.apache.james.core.MailAddress;
 import org.apache.mailet.Experimental;
 import org.apache.mailet.Mail;
-import org.apache.james.core.MailAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,18 +36,19 @@ import org.slf4j.LoggerFactory;
 public class SenderInFakeDomain extends AbstractNetworkMatcher {
     private static final Logger LOGGER = LoggerFactory.getLogger(SenderInFakeDomain.class);
 
+    @Override
     public Collection<MailAddress> match(Mail mail) {
         if (mail.getSender() == null) {
             return null;
         }
-        String domain = mail.getSender().getDomain();
+        Domain domain = mail.getSender().getDomain();
         // DNS Lookup for this domain
         @SuppressWarnings("deprecation")
         Collection<String> servers = getMailetContext().getMailServers(domain);
         if (servers.size() == 0) {
             // No records...could not deliver to this domain, so matches
             // criteria.
-            LOGGER.info("No MX, A, or CNAME record found for domain: " + domain);
+            LOGGER.info("No MX, A, or CNAME record found for domain: {}", domain);
             return mail.getRecipients();
         } else if (matchNetwork(servers.iterator().next())) {
             /*
@@ -65,8 +67,8 @@ public class SenderInFakeDomain extends AbstractNetworkMatcher {
              * 203.119.4.6/32          # .PH TLD (.ph)
              *
              */
-            LOGGER.info("Banned IP found for domain: " + domain);
-            LOGGER.info(" --> :" + servers.iterator().next());
+            LOGGER.info("Banned IP found for domain: {}", domain);
+            LOGGER.info(" --> :{}", servers.iterator().next());
             return mail.getRecipients();
         } else {
             // Some servers were found... the domain is not fake.

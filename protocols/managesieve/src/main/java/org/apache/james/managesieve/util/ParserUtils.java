@@ -28,11 +28,11 @@ public class ParserUtils {
         if (args != null && args.length() > 3
             && args.charAt(0) == '{'
             && args.charAt(args.length() - 1) == '}'
-            && args.charAt(args.length() - 2) == '+' ) {
+            && args.charAt(args.length() - 2) == '+') {
             try {
                 return Long.parseLong(args.substring(1, args.length() - 2));
             } catch (NumberFormatException e) {
-                throw new ArgumentException("Size is not a long : " + e.getMessage());
+                throw new ArgumentException("Size is not a long : " + e.getMessage(), e);
             }
         }
         throw new ArgumentException(args + " is an invalid size literal : it should be at least 4 char looking like {_+}");

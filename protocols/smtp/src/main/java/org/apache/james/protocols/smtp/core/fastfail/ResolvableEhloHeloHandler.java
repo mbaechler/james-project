@@ -40,7 +40,7 @@ import org.apache.james.protocols.smtp.hook.RcptHook;
  */
 public class ResolvableEhloHeloHandler implements RcptHook, HeloHook {
 
-    public final static String BAD_EHLO_HELO = "BAD_EHLO_HELO";
+    public static final String BAD_EHLO_HELO = "BAD_EHLO_HELO";
 
     @Override
     public void init(Configuration config) throws ConfigurationException {
@@ -70,11 +70,7 @@ public class ResolvableEhloHeloHandler implements RcptHook, HeloHook {
     protected String resolve(String host) throws UnknownHostException {
         return InetAddress.getByName(host).getHostName();
     }
-    /**
-     * @param session the SMTPSession
-     * @param argument the argument
-     * @return true if the helo is bad.
-     */
+
     protected boolean isBadHelo(SMTPSession session, String argument) {
         // try to resolv the provided helo. If it can not resolved do not
         // accept it.
@@ -96,24 +92,24 @@ public class ResolvableEhloHeloHandler implements RcptHook, HeloHook {
         return true;
     }
 
-    /**
-     * @see org.apache.james.protocols.smtp.hook.RcptHook#doRcpt(org.apache.james.protocols.smtp.SMTPSession, org.apache.mailet.MailAddress, org.apache.mailet.MailAddress)
-     */
+    @Override
     public HookResult doRcpt(SMTPSession session, MailAddress sender, MailAddress rcpt) {
         if (check(session,rcpt)) {
-            return new HookResult(HookReturnCode.DENY,SMTPRetCode.SYNTAX_ERROR_ARGUMENTS,DSNStatus.getStatus(DSNStatus.PERMANENT, DSNStatus.DELIVERY_INVALID_ARG)
-                    + " Provided EHLO/HELO " + session.getAttachment(SMTPSession.CURRENT_HELO_NAME, State.Connection) + " can not resolved.");
+            return HookResult.builder()
+                .hookReturnCode(HookReturnCode.deny())
+                .smtpReturnCode(SMTPRetCode.SYNTAX_ERROR_ARGUMENTS)
+                .smtpDescription(DSNStatus.getStatus(DSNStatus.PERMANENT, DSNStatus.DELIVERY_INVALID_ARG)
+                    + " Provided EHLO/HELO " + session.getAttachment(SMTPSession.CURRENT_HELO_NAME, State.Connection) + " can not resolved.")
+                .build();
         } else {
-            return HookResult.declined();
+            return HookResult.DECLINED;
         }
     }
 
-    /**
-     * @see org.apache.james.protocols.smtp.hook.HeloHook#doHelo(org.apache.james.protocols.smtp.SMTPSession, java.lang.String)
-     */
+    @Override
     public HookResult doHelo(SMTPSession session, String helo) {
         checkEhloHelo(session, helo);
-        return HookResult.declined();
+        return HookResult.DECLINED;
     }
 
 }

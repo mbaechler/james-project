@@ -29,11 +29,11 @@ import java.util.Locale;
 import javax.inject.Inject;
 import javax.mail.MessagingException;
 
+import org.apache.james.core.MailAddress;
 import org.apache.james.dnsservice.api.DNSService;
 import org.apache.james.dnsservice.library.netmatcher.NetMatcher;
 import org.apache.mailet.Experimental;
 import org.apache.mailet.Mail;
-import org.apache.james.core.MailAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,9 +66,7 @@ public class NetworkIsInWhitelist extends AbstractSQLWhitelistMatcher {
         this.dns = dns;
     }
 
-    /**
-     * @see org.apache.james.transport.matchers.AbstractSQLWhitelistMatcher#getSQLSectionName()
-     */
+    @Override
     protected String getSQLSectionName() {
         return "NetworkWhiteList";
     }
@@ -80,17 +78,14 @@ public class NetworkIsInWhitelist extends AbstractSQLWhitelistMatcher {
 
     }
 
-    /**
-     * @see org.apache.james.transport.matchers.AbstractSQLWhitelistMatcher
-     * #matchedWhitelist(org.apache.mailet.MailAddress, org.apache.mailet.Mail)
-     */
+    @Override
     protected boolean matchedWhitelist(MailAddress recipientMailAddress, Mail mail) throws MessagingException {
         Connection conn = null;
         PreparedStatement selectStmt = null;
         ResultSet selectRS = null;
         try {
             String recipientUser = recipientMailAddress.getLocalPart().toLowerCase(Locale.US);
-            String recipientHost = recipientMailAddress.getDomain().toLowerCase(Locale.US);
+            String recipientHost = recipientMailAddress.getDomain().asString();
 
             if (conn == null) {
                 conn = datasource.getConnection();
@@ -140,17 +135,12 @@ public class NetworkIsInWhitelist extends AbstractSQLWhitelistMatcher {
         }
     }
 
-    /**
-     * @see org.apache.james.transport.matchers.AbstractSQLWhitelistMatcher#getTableCreateQueryName()
-     */
+    @Override
     protected String getTableCreateQueryName() {
         return "createNetworkWhiteListTable";
     }
 
-    /**
-     * @see
-     * org.apache.james.transport.matchers.AbstractSQLWhitelistMatcher#getTableName()
-     */
+    @Override
     protected String getTableName() {
         return "networkWhiteListTableName";
     }

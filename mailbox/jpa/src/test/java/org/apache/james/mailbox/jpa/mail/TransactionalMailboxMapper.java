@@ -21,10 +21,12 @@ package org.apache.james.mailbox.jpa.mail;
 
 import java.util.List;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
+import org.apache.james.mailbox.acl.ACLDiff;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.exception.MailboxNotFoundException;
 import org.apache.james.mailbox.model.MailboxACL;
+import org.apache.james.mailbox.model.MailboxACL.Right;
 import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.mail.MailboxMapper;
@@ -40,12 +42,12 @@ public class TransactionalMailboxMapper implements MailboxMapper {
 
     @Override
     public void endRequest() {
-        throw new NotImplementedException();
+        throw new NotImplementedException("not implemented");
     }
 
     @Override
     public <T> T execute(Transaction<T> transaction) throws MailboxException {
-        throw new NotImplementedException();
+        throw new NotImplementedException("not implemented");
     }
 
     @Override
@@ -79,18 +81,23 @@ public class TransactionalMailboxMapper implements MailboxMapper {
     }
 
     @Override
-    public void updateACL(Mailbox mailbox, MailboxACL.ACLCommand mailboxACLCommand) throws MailboxException {
-        wrapped.updateACL(mailbox, mailboxACLCommand);
+    public ACLDiff updateACL(Mailbox mailbox, MailboxACL.ACLCommand mailboxACLCommand) throws MailboxException {
+        return wrapped.updateACL(mailbox, mailboxACLCommand);
     }
 
     @Override
-    public void setACL(Mailbox mailbox, MailboxACL mailboxACL) throws MailboxException {
-        wrapped.setACL(mailbox, mailboxACL);
+    public ACLDiff setACL(Mailbox mailbox, MailboxACL mailboxACL) throws MailboxException {
+        return wrapped.setACL(mailbox, mailboxACL);
     }
 
     @Override
     public List<Mailbox> list() throws MailboxException {
         return wrapped.list();
+    }
+
+    @Override
+    public List<Mailbox> findNonPersonalMailboxes(String userName, Right right) throws MailboxException {
+        return wrapped.findNonPersonalMailboxes(userName, right);
     }
 
 }

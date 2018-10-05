@@ -44,9 +44,10 @@ public class Counter extends GenericMailet {
      *
      * @param mail the mail to process
      */
+    @Override
     public void service(Mail mail) {
         counter++;
-        LOGGER.info(Integer.toString(counter));
+        LOGGER.info("{}", counter);
         mail.setState(Mail.GHOST);
     }
 
@@ -55,6 +56,7 @@ public class Counter extends GenericMailet {
      *
      * @return a string describing this mailet
      */
+    @Override
     public String getMailetInfo() {
         return "Counter Mailet";
     }

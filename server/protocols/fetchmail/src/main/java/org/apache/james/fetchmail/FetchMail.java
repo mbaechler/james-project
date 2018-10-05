@@ -85,7 +85,7 @@ public class FetchMail implements Runnable, Configurable {
     /**
      * Key fields for DynamicAccounts.
      */
-    private final static class DynamicAccountKey {
+    private static final class DynamicAccountKey {
         /**
          * The base user name without prfix or suffix
          */
@@ -112,16 +112,12 @@ public class FetchMail implements Runnable, Configurable {
             setSequenceNumber(sequenceNumber);
         }
 
-        /**
-         * @see java.lang.Object#equals(Object)
-         */
+        @Override
         public boolean equals(Object obj) {
             return null != obj && obj.getClass() == getClass() && (getUserName().equals(((DynamicAccountKey) obj).getUserName()) && getSequenceNumber() == ((DynamicAccountKey) obj).getSequenceNumber());
         }
 
-        /**
-         * @see java.lang.Object#hashCode()
-         */
+        @Override
         public int hashCode() {
             return getUserName().hashCode() ^ getSequenceNumber();
         }
@@ -164,7 +160,7 @@ public class FetchMail implements Runnable, Configurable {
 
     }
 
-    private final static class ParsedDynamicAccountParameters {
+    private static final class ParsedDynamicAccountParameters {
         private String fieldUserPrefix;
         private String fieldUserSuffix;
 
@@ -402,9 +398,8 @@ public class FetchMail implements Runnable, Configurable {
      * a new <code>ParsedConfiguration</code>, an <code>Account</code> for each
      * configured static account and a
      * <code>ParsedDynamicAccountParameters</code> for each dynamic account.
-     *
-     * @see org.apache.james.lifecycle.api.Configurable#configure(HierarchicalConfiguration)
      */
+    @Override
     public void configure(HierarchicalConfiguration configuration) throws ConfigurationException {
         // Set any Session parameters passed in the Configuration
         setSessionParameters(configuration);
@@ -416,14 +411,17 @@ public class FetchMail implements Runnable, Configurable {
 
         // Setup the Accounts
         List<HierarchicalConfiguration> allAccounts = configuration.configurationsAt("accounts");
-        if (allAccounts.size() < 1)
+        if (allAccounts.size() < 1) {
             throw new ConfigurationException("Missing <accounts> section.");
-        if (allAccounts.size() > 1)
+        }
+        if (allAccounts.size() > 1) {
             throw new ConfigurationException("Too many <accounts> sections, there must be exactly one");
+        }
         HierarchicalConfiguration accounts = allAccounts.get(0);
 
-        if (!accounts.getKeys().hasNext())
+        if (!accounts.getKeys().hasNext()) {
             throw new ConfigurationException("Missing <account> section.");
+        }
 
         int i = 0;
         // Create an Account for every configured account
@@ -456,6 +454,7 @@ public class FetchMail implements Runnable, Configurable {
     /**
      * Method target triggered fetches mail for each configured account.
      */
+    @Override
     public void run() {
         // if we are already fetching then just return
         if (isFetching()) {
@@ -480,13 +479,7 @@ public class FetchMail implements Runnable, Configurable {
             mergedAccounts.addAll(getStaticAccounts());
             Collections.sort(mergedAccounts);
 
-            StringBuilder logMessage = new StringBuilder(64);
-            logMessage.append("Processing ");
-            logMessage.append(getStaticAccounts().size());
-            logMessage.append(" static accounts and ");
-            logMessage.append(getDynamicAccounts().size());
-            logMessage.append(" dynamic accounts.");
-            LOGGER.info(logMessage.toString());
+            LOGGER.info("Processing {} static accounts and {} dynamic accounts.", getStaticAccounts().size(), getDynamicAccounts().size());
 
             // Fetch each account
             for (Account mergedAccount : mergedAccounts) {
@@ -664,8 +657,9 @@ public class FetchMail implements Runnable, Configurable {
             throw new ConfigurationException("Unable to acces UsersRepository", e);
         }
         Map<DynamicAccountKey, DynamicAccount> oldAccounts = getDynamicAccountsBasic();
-        if (null == oldAccounts)
+        if (null == oldAccounts) {
             oldAccounts = new HashMap<>(0);
+        }
 
         // Process each ParsedDynamicParameters
         for (ParsedDynamicAccountParameters parsedDynamicAccountParameters : getParsedDynamicAccountParameters()) {
@@ -675,8 +669,9 @@ public class FetchMail implements Runnable, Configurable {
             // newAccounts are created.
             Iterator<DynamicAccountKey> oldAccountsIterator = oldAccounts.keySet().iterator();
             while (oldAccountsIterator.hasNext()) {
-                if (accounts.containsKey(oldAccountsIterator.next()))
+                if (accounts.containsKey(oldAccountsIterator.next())) {
                     oldAccountsIterator.remove();
+                }
             }
             // Add this parameter's accounts to newAccounts
             newAccounts.putAll(accounts);
@@ -850,14 +845,10 @@ public class FetchMail implements Runnable, Configurable {
             Properties properties = getSession().getProperties();
             List<HierarchicalConfiguration> allProperties = configuration.configurationsAt("javaMailProperties.property");
             for (HierarchicalConfiguration propConf : allProperties) {
-                properties.setProperty(propConf.getString("[@name]"), propConf.getString("[@value]"));
-                if (LOGGER.isDebugEnabled()) {
-                    StringBuilder messageBuffer = new StringBuilder("Set property name: ");
-                    messageBuffer.append(propConf.getString("[@name]"));
-                    messageBuffer.append(" to: ");
-                    messageBuffer.append(propConf.getString("[@value]"));
-                    LOGGER.debug(messageBuffer.toString());
-                }
+                String nameProp = propConf.getString("[@name]");
+                String valueProp = propConf.getString("[@value]");
+                properties.setProperty(nameProp, valueProp);
+                LOGGER.debug("Set property name: {} to: {}", nameProp, valueProp);
             }
         }
     }

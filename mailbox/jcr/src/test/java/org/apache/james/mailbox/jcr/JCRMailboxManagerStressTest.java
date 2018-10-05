@@ -20,23 +20,23 @@
 package org.apache.james.mailbox.jcr;
 
 import static org.apache.james.mailbox.jcr.JCRMailboxManagerProvider.JACKRABBIT_HOME;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
 
-import org.apache.james.mailbox.MailboxManager;
-import org.apache.james.mailbox.MailboxManagerStressTest;
 import org.apache.commons.io.FileUtils;
 import org.apache.jackrabbit.core.RepositoryImpl;
+import org.apache.james.mailbox.MailboxManager;
+import org.apache.james.mailbox.MailboxManagerStressTest;
 import org.junit.After;
 import org.junit.Before;
-
-import com.google.common.base.Throwables;
 
 public class JCRMailboxManagerStressTest extends MailboxManagerStressTest {
 
     private Optional<RepositoryImpl> repository = Optional.empty();
 
+    @Override
     @Before
     public void setUp() throws Exception {
         super.setUp();
@@ -62,7 +62,7 @@ public class JCRMailboxManagerStressTest extends MailboxManagerStressTest {
             try {
                 FileUtils.forceDelete(new File(JACKRABBIT_HOME));
             } catch (IOException e) {
-                throw Throwables.propagate(e);
+                throw new RuntimeException(e);
             }
         }
     }

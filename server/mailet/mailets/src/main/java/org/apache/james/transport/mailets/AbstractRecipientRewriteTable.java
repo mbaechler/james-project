@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.StringTokenizer;
 import java.util.regex.PatternSyntaxException;
 
@@ -32,14 +33,17 @@ import javax.inject.Inject;
 import javax.mail.MessagingException;
 import javax.mail.internet.ParseException;
 
-import org.apache.james.server.core.MailImpl;
+import org.apache.james.core.MailAddress;
+import org.apache.james.core.User;
 import org.apache.james.dnsservice.api.DNSService;
 import org.apache.james.domainlist.api.DomainList;
 import org.apache.james.domainlist.api.DomainListException;
-import org.apache.james.rrt.lib.RecipientRewriteTableUtil;
+import org.apache.james.rrt.api.RecipientRewriteTable;
+import org.apache.james.rrt.lib.Mapping;
+import org.apache.james.rrt.lib.UserRewritter;
+import org.apache.james.server.core.MailImpl;
 import org.apache.mailet.Experimental;
 import org.apache.mailet.Mail;
-import org.apache.james.core.MailAddress;
 import org.apache.mailet.base.GenericMailet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,7 +59,7 @@ import org.slf4j.LoggerFactory;
 @Experimental
 public abstract class AbstractRecipientRewriteTable extends GenericMailet {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractRecipientRewriteTable.class);
-    static private final String MARKER = "org.apache.james.transport.mailets.AbstractRecipientRewriteTable.mapped";
+    private static final String MARKER = "org.apache.james.transport.mailets.AbstractRecipientRewriteTable.mapped";
     private DNSService dns;
     private DomainList domainList;
 
@@ -77,6 +81,7 @@ public abstract class AbstractRecipientRewriteTable extends GenericMailet {
      * @param mail
      *            the mail to process
      */
+    @Override
     public void service(Mail mail) throws MessagingException {
         if (mail.getAttribute(MARKER) != null) {
             mail.removeAttribute(MARKER);
@@ -115,16 +120,24 @@ public abstract class AbstractRecipientRewriteTable extends GenericMailet {
 
                         if (targetAddress.startsWith("regex:")) {
                             try {
-                                targetAddress = RecipientRewriteTableUtil.regexMap(source, targetAddress);
+                                Optional<String> maybeTarget = new UserRewritter.RegexRewriter()
+                                    .generateUserRewriter(Mapping.Type.Regex.withoutPrefix(targetAddress))
+                                    .rewrite(User.fromUsername(source.asString()))
+                                    .map(User::asString);
+                                if (!maybeTarget.isPresent()) {
+                                    continue;
+                                }
+                                targetAddress = maybeTarget.get();
                             } catch (PatternSyntaxException e) {
                                 LOGGER.error("Exception during regexMap processing: ", e);
+                            } catch (RecipientRewriteTable.ErrorMappingException e) {
+                                LOGGER.error("Regex mapping should not throw ErrorMappingException", e);
                             }
-                            if (targetAddress == null)
-                                continue;
                         }
 
                         try {
-                            MailAddress target = (targetAddress.indexOf('@') < 0) ? new MailAddress(targetAddress, domainList.getDefaultDomain()) : new MailAddress(targetAddress);
+                            MailAddress target = (targetAddress.indexOf('@') < 0) ?
+                                new MailAddress(targetAddress, domainList.getDefaultDomain().asString()) : new MailAddress(targetAddress);
 
                             // Mark this source address as an address to remove
                             // from the recipient list
@@ -176,7 +189,7 @@ public abstract class AbstractRecipientRewriteTable extends GenericMailet {
 
             // duplicates the Mail object, to be able to modify the new mail
             // keeping the original untouched
-            MailImpl newMail = new MailImpl(mail);
+            MailImpl newMail = MailImpl.duplicate(mail);
             try {
                 try {
                     newMail.setRemoteAddr(dns.getLocalHost().getHostAddress());
@@ -237,7 +250,7 @@ public abstract class AbstractRecipientRewriteTable extends GenericMailet {
             @SuppressWarnings("unused")
             Integer code = Integer.valueOf(error.substring("error:".length(), msgPos));
         } catch (NumberFormatException e) {
-            LOGGER.error("Cannot send DSN.  Exception parsing DSN code from: " + error, e);
+            LOGGER.error("Cannot send DSN.  Exception parsing DSN code from: {}", error, e);
             return;
         }
         @SuppressWarnings("unused")

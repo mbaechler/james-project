@@ -20,7 +20,7 @@
 package org.apache.james.mailbox.store;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -40,23 +40,26 @@ import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.mailbox.model.MessageId.Factory;
 import org.apache.james.mailbox.model.TestId;
+import org.apache.james.mailbox.model.search.MailboxQuery;
+import org.apache.james.mailbox.model.search.PrefixedRegex;
+import org.apache.james.mailbox.store.event.DefaultDelegatingMailboxListener;
+import org.apache.james.mailbox.store.event.MailboxEventDispatcher;
 import org.apache.james.mailbox.store.mail.MailboxMapper;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.impl.MessageParser;
-import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
 import org.junit.Before;
 import org.junit.Test;
 
 public class StoreMailboxManagerTest {
-
     private static final String CURRENT_USER = "user";
     private static final String CURRENT_USER_PASSWORD = "secret";
     private static final String ADMIN = "admin";
     private static final String ADMIN_PASSWORD = "adminsecret";
     private static final MailboxId MAILBOX_ID = TestId.of(123);
-    private static final int UID_VALIDITY = 42;
-    public static final String UNKNOWN_USER = "otheruser";
-    public static final String BAD_PASSWORD = "badpassword";
+    private static final String UNKNOWN_USER = "otheruser";
+    private static final String BAD_PASSWORD = "badpassword";
+    private static final String EMPTY_PREFIX = "";
+
     private StoreMailboxManager storeMailboxManager;
     private MailboxMapper mockedMailboxMapper;
     private MailboxSession mockedMailboxSession;
@@ -72,69 +75,18 @@ public class StoreMailboxManagerTest {
         FakeAuthenticator authenticator = new FakeAuthenticator();
         authenticator.addUser(CURRENT_USER, CURRENT_USER_PASSWORD);
         authenticator.addUser(ADMIN, ADMIN_PASSWORD);
+
+        DefaultDelegatingMailboxListener delegatingListener = new DefaultDelegatingMailboxListener();
+        MailboxEventDispatcher mailboxEventDispatcher = new MailboxEventDispatcher(delegatingListener);
+
+        StoreRightManager storeRightManager = new StoreRightManager(mockedMapperFactory, new UnionMailboxACLResolver(),
+                                                                    new SimpleGroupMembershipResolver(), mailboxEventDispatcher);
+
+        StoreMailboxAnnotationManager annotationManager = new StoreMailboxAnnotationManager(mockedMapperFactory, storeRightManager);
         storeMailboxManager = new StoreMailboxManager(mockedMapperFactory, authenticator, FakeAuthorizator.forUserAndAdmin(ADMIN, CURRENT_USER),
-                new JVMMailboxPathLocker(), new UnionMailboxACLResolver(), new SimpleGroupMembershipResolver(), 
-                new MessageParser(), messageIdFactory);
+                new JVMMailboxPathLocker(), new MessageParser(), messageIdFactory,
+                annotationManager, mailboxEventDispatcher, delegatingListener, storeRightManager);
         storeMailboxManager.init();
-    }
-
-    @Test
-    public void belongsToNamespaceAndUserShouldReturnTrueWithIdenticalMailboxes() {
-        MailboxPath path = new MailboxPath("namespace", CURRENT_USER, "name");
-        assertThat(storeMailboxManager.belongsToNamespaceAndUser(path, new SimpleMailbox(path, UID_VALIDITY))).isTrue();
-    }
-
-    @Test
-    public void belongsToNamespaceAndUserShouldReturnTrueWithIdenticalMailboxesWithNullUser() {
-        MailboxPath path = new MailboxPath("namespace", null, "name");
-        assertThat(storeMailboxManager.belongsToNamespaceAndUser(path, new SimpleMailbox(path, UID_VALIDITY))).isTrue();
-    }
-
-    @Test
-    public void belongsToNamespaceAndUserShouldReturnTrueWithIdenticalMailboxesWithNullNamespace() {
-        MailboxPath path = new MailboxPath(null, CURRENT_USER, "name");
-        assertThat(storeMailboxManager.belongsToNamespaceAndUser(path,
-            new SimpleMailbox(new MailboxPath(null, CURRENT_USER, "name"), UID_VALIDITY))).isTrue();
-    }
-
-    @Test
-    public void belongsToNamespaceAndUserShouldReturnTrueWithMailboxWithSameNamespaceAndUserWithNullUser() {
-        MailboxPath path = new MailboxPath("namespace", null, "name");
-        assertThat(storeMailboxManager.belongsToNamespaceAndUser(path,
-            new SimpleMailbox(new MailboxPath("namespace", null, "name2"), UID_VALIDITY))).isTrue();
-    }
-
-    @Test
-    public void belongsToNamespaceAndUserShouldReturnTrueWithMailboxWithSameNamespaceAndUser() {
-        MailboxPath path = new MailboxPath("namespace", CURRENT_USER, "name");
-        assertThat(storeMailboxManager.belongsToNamespaceAndUser(path,
-            new SimpleMailbox(new MailboxPath("namespace", CURRENT_USER, "name2"), UID_VALIDITY))).isTrue();
-    }
-
-    @Test
-    public void belongsToNamespaceAndUserShouldReturnFalseWithDifferentNamespace() {
-        MailboxPath path = new MailboxPath("namespace", CURRENT_USER, "name");
-        assertThat(storeMailboxManager.belongsToNamespaceAndUser(path,
-            new SimpleMailbox(new MailboxPath("namespace2", CURRENT_USER, "name"), UID_VALIDITY))).isFalse();
-    }
-
-    @Test
-    public void belongsToNamespaceAndUserShouldReturnFalseWithDifferentUser() {
-        MailboxPath path = new MailboxPath("namespace", CURRENT_USER, "name");
-        assertThat(storeMailboxManager.belongsToNamespaceAndUser(path,
-            new SimpleMailbox(new MailboxPath("namespace", "user2", "name"), UID_VALIDITY))).isFalse();
-    }
-    @Test
-    public void belongsToNamespaceAndUserShouldReturnFalseWithOneOfTheUserNull() {
-        MailboxPath path = new MailboxPath("namespace", null, "name");
-        assertThat(storeMailboxManager.belongsToNamespaceAndUser(path,
-            new SimpleMailbox(new MailboxPath("namespace", CURRENT_USER, "name"), UID_VALIDITY))).isFalse();
-    }
-    @Test
-    public void belongsToNamespaceAndUserShouldReturnFalseIfNamespaceAreDifferentWithNullUser() {
-        MailboxPath path = new MailboxPath("namespace", null, "name");
-        assertThat(storeMailboxManager.belongsToNamespaceAndUser(path,
-            new SimpleMailbox(new MailboxPath("namespace2", null, "name"), UID_VALIDITY))).isFalse();
     }
 
     @Test(expected = MailboxNotFoundException.class)
@@ -147,7 +99,8 @@ public class StoreMailboxManagerTest {
     @Test
     public void getMailboxShouldReturnMailboxManagerWhenKnownId() throws Exception {
         Mailbox mockedMailbox = mock(Mailbox.class);
-        when(mockedMailbox.getUser()).thenReturn(CURRENT_USER);
+        when(mockedMailbox.generateAssociatedPath())
+            .thenReturn(MailboxPath.forUser(CURRENT_USER, "mailboxName"));
         when(mockedMailbox.getMailboxId()).thenReturn(MAILBOX_ID);
         when(mockedMailboxMapper.findMailboxById(MAILBOX_ID)).thenReturn(mockedMailbox);
 
@@ -159,7 +112,8 @@ public class StoreMailboxManagerTest {
     @Test
     public void getMailboxShouldReturnMailboxManagerWhenKnownIdAndDifferentCaseUser() throws Exception {
         Mailbox mockedMailbox = mock(Mailbox.class);
-        when(mockedMailbox.getUser()).thenReturn("uSEr");
+        when(mockedMailbox.generateAssociatedPath())
+            .thenReturn(MailboxPath.forUser("uSEr", "mailboxName"));
         when(mockedMailbox.getMailboxId()).thenReturn(MAILBOX_ID);
         when(mockedMailboxMapper.findMailboxById(MAILBOX_ID)).thenReturn(mockedMailbox);
 
@@ -172,7 +126,8 @@ public class StoreMailboxManagerTest {
     public void getMailboxShouldThrowWhenMailboxDoesNotMatchUserWithoutRight() throws Exception {
         Mailbox mockedMailbox = mock(Mailbox.class);
         when(mockedMailbox.getACL()).thenReturn(new MailboxACL());
-        when(mockedMailbox.getUser()).thenReturn("other.user");
+        when(mockedMailbox.generateAssociatedPath())
+            .thenReturn(MailboxPath.forUser("other.user", "mailboxName"));
         when(mockedMailbox.getMailboxId()).thenReturn(MAILBOX_ID);
         when(mockedMailboxMapper.findMailboxById(MAILBOX_ID)).thenReturn(mockedMailbox);
         when(mockedMailboxMapper.findMailboxByPath(any())).thenReturn(mockedMailbox);
@@ -229,6 +184,33 @@ public class StoreMailboxManagerTest {
         MailboxSession expected = storeMailboxManager.loginAsOtherUser(ADMIN, ADMIN_PASSWORD, CURRENT_USER);
 
         assertThat(expected.getUser().getUserName()).isEqualTo(CURRENT_USER);
+    }
+
+    @Test
+    public void getPathLikeShouldReturnUserPathLikeWhenNoPrefixDefined() throws Exception {
+        //Given
+        MailboxSession session = new MockMailboxSession("user");
+        MailboxQuery.Builder testee = MailboxQuery.builder()
+            .expression(new PrefixedRegex(EMPTY_PREFIX, "abc", session.getPathDelimiter()));
+        //When
+        MailboxQuery mailboxQuery = testee.build();
+
+        assertThat(StoreMailboxManager.getPathLike(mailboxQuery, session))
+            .isEqualTo(MailboxPath.forUser("user", "abc%"));
+    }
+
+    @Test
+    public void getPathLikeShouldReturnUserPathLikeWhenPrefixDefined() throws Exception {
+        //Given
+        MailboxSession session = new MockMailboxSession("user");
+        MailboxQuery.Builder testee = MailboxQuery.builder()
+            .expression(new PrefixedRegex("prefix.", "abc", session.getPathDelimiter()));
+
+        //When
+        MailboxQuery mailboxQuery = testee.build();
+
+        assertThat(StoreMailboxManager.getPathLike(mailboxQuery, session))
+            .isEqualTo(MailboxPath.forUser("user", "prefix.abc%"));
     }
 }
 

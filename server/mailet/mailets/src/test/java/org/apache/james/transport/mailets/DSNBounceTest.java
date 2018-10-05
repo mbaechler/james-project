@@ -25,28 +25,32 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Date;
 import java.util.List;
-import java.util.Properties;
 import java.util.TimeZone;
 
 import javax.mail.BodyPart;
 import javax.mail.MessagingException;
-import javax.mail.Session;
 import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMultipart;
+import javax.mail.util.SharedByteArrayInputStream;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.james.core.MailAddress;
+import org.apache.james.core.builder.MimeMessageBuilder;
 import org.apache.james.dnsservice.api.DNSService;
 import org.apache.james.transport.mailets.redirect.SpecialAddress;
+import org.apache.james.util.MimeMessageUtil;
 import org.apache.mailet.Mail;
-import org.apache.james.core.MailAddress;
 import org.apache.mailet.base.DateFormats;
 import org.apache.mailet.base.MailAddressFixture;
 import org.apache.mailet.base.RFC2822Headers;
-import org.apache.mailet.base.mail.MimeMultipartReport;
 import org.apache.mailet.base.test.FakeMail;
 import org.apache.mailet.base.test.FakeMailContext;
 import org.apache.mailet.base.test.FakeMailContext.SentMail;
 import org.apache.mailet.base.test.FakeMailetConfig;
-import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -122,14 +126,13 @@ public class DSNBounceTest {
         dsnBounce.init(mailetConfig);
 
         MailAddress senderMailAddress = new MailAddress("sender@domain.com");
-        MimeMessage mimeMessage = new MimeMessage(Session.getDefaultInstance(new Properties()));
-        mimeMessage.setText("My content");
         FakeMail mail = FakeMail.builder()
                 .sender(senderMailAddress)
-                .mimeMessage(mimeMessage)
+                .mimeMessage(MimeMessageBuilder.mimeMessageBuilder()
+                    .setText("My content"))
                 .name(MAILET_NAME)
-                .recipient(new MailAddress("recipient@domain.com"))
-                .lastUpdated(DateTime.parse("2016-09-08T14:25:52.000Z").toDate())
+                .recipient("recipient@domain.com")
+                .lastUpdated(Date.from(Instant.parse("2016-09-08T14:25:52.000Z")))
                 .build();
 
         dsnBounce.service(mail);
@@ -153,15 +156,14 @@ public class DSNBounceTest {
         dsnBounce.init(mailetConfig);
 
         MailAddress senderMailAddress = new MailAddress("sender@domain.com");
-        MimeMessage mimeMessage = new MimeMessage(Session.getDefaultInstance(new Properties()));
-        mimeMessage.setText("My content");
         FakeMail mail = FakeMail.builder()
                 .sender(senderMailAddress)
                 .attribute("delivery-error", "Delivery error")
-                .mimeMessage(mimeMessage)
+                .mimeMessage(MimeMessageBuilder.mimeMessageBuilder()
+                    .setText("My content"))
                 .name(MAILET_NAME)
-                .recipient(new MailAddress("recipient@domain.com"))
-                .lastUpdated(DateTime.parse("2016-09-08T14:25:52.000Z").toDate())
+                .recipient("recipient@domain.com")
+                .lastUpdated(Date.from(Instant.parse("2016-09-08T14:25:52.000Z")))
                 .build();
 
         dsnBounce.service(mail);
@@ -179,7 +181,7 @@ public class DSNBounceTest {
         assertThat(sentMails).hasSize(1);
         SentMail sentMail = sentMails.get(0);
         MimeMessage sentMessage = sentMail.getMsg();
-        MimeMultipartReport content = (MimeMultipartReport) sentMessage.getContent();
+        MimeMultipart content = (MimeMultipart) sentMessage.getContent();
         BodyPart bodyPart = content.getBodyPart(0);
         assertThat(bodyPart.getContentType()).isEqualTo("text/plain; charset=us-ascii");
         assertThat(bodyPart.getContent()).isEqualTo(expectedContent);
@@ -195,15 +197,14 @@ public class DSNBounceTest {
         dsnBounce.init(mailetConfig);
 
         MailAddress senderMailAddress = new MailAddress("sender@domain.com");
-        MimeMessage mimeMessage = new MimeMessage(Session.getDefaultInstance(new Properties()));
-        mimeMessage.setText("My content");
         FakeMail mail = FakeMail.builder()
                 .sender(senderMailAddress)
                 .attribute("delivery-error", "Delivery error")
-                .mimeMessage(mimeMessage)
+                .mimeMessage(MimeMessageBuilder.mimeMessageBuilder()
+                    .setText("My content"))
                 .name(MAILET_NAME)
-                .recipient(new MailAddress("recipient@domain.com"))
-                .lastUpdated(DateTime.parse("2016-09-08T14:25:52.000Z").toDate())
+                .recipient("recipient@domain.com")
+                .lastUpdated(Date.from(Instant.parse("2016-09-08T14:25:52.000Z")))
                 .build();
 
         dsnBounce.service(mail);
@@ -220,7 +221,7 @@ public class DSNBounceTest {
         assertThat(sentMails).hasSize(1);
         SentMail sentMail = sentMails.get(0);
         MimeMessage sentMessage = sentMail.getMsg();
-        MimeMultipartReport content = (MimeMultipartReport) sentMessage.getContent();
+        MimeMultipart content = (MimeMultipart) sentMessage.getContent();
         BodyPart bodyPart = content.getBodyPart(0);
         assertThat(bodyPart.getContentType()).isEqualTo("text/plain; charset=us-ascii");
         assertThat(bodyPart.getContent()).isEqualTo(expectedContent);
@@ -235,15 +236,14 @@ public class DSNBounceTest {
         dsnBounce.init(mailetConfig);
 
         MailAddress senderMailAddress = new MailAddress("sender@domain.com");
-        MimeMessage mimeMessage = new MimeMessage(Session.getDefaultInstance(new Properties()));
-        mimeMessage.setText("My content");
         FakeMail mail = FakeMail.builder()
                 .sender(senderMailAddress)
                 .attribute("delivery-error", "Delivery error")
-                .mimeMessage(mimeMessage)
+                .mimeMessage(MimeMessageBuilder.mimeMessageBuilder()
+                    .setText("My content"))
                 .name(MAILET_NAME)
-                .recipient(new MailAddress("recipient@domain.com"))
-                .lastUpdated(DateTime.parse("2016-09-08T14:25:52.000Z").toDate())
+                .recipient("recipient@domain.com")
+                .lastUpdated(Date.from(Instant.parse("2016-09-08T14:25:52.000Z")))
                 .remoteAddr("remoteHost")
                 .build();
 
@@ -262,8 +262,9 @@ public class DSNBounceTest {
         assertThat(sentMails).hasSize(1);
         SentMail sentMail = sentMails.get(0);
         MimeMessage sentMessage = sentMail.getMsg();
-        MimeMultipartReport content = (MimeMultipartReport) sentMessage.getContent();
-        assertThat(content.getBodyPart(1).getContent()).isEqualTo(expectedContent);
+        MimeMultipart content = (MimeMultipart) sentMessage.getContent();
+        SharedByteArrayInputStream actualContent = (SharedByteArrayInputStream) content.getBodyPart(1).getContent();
+        assertThat(IOUtils.toString(actualContent, StandardCharsets.UTF_8)).isEqualTo(expectedContent);
     }
 
     @Test
@@ -275,14 +276,13 @@ public class DSNBounceTest {
                 .build();
         dsnBounce.init(mailetConfig);
 
-        MimeMessage mimeMessage = new MimeMessage(Session.getDefaultInstance(new Properties()));
-        mimeMessage.setText("My content");
         FakeMail mail = FakeMail.builder()
                 .attribute("delivery-error", "Delivery error")
-                .mimeMessage(mimeMessage)
+                .mimeMessage(MimeMessageBuilder.mimeMessageBuilder()
+                    .setText("My content"))
                 .name(MAILET_NAME)
-                .recipient(new MailAddress("recipient@domain.com"))
-                .lastUpdated(DateTime.parse("2016-09-08T14:25:52.000Z").toDate())
+                .recipient("recipient@domain.com")
+                .lastUpdated(Date.from(Instant.parse("2016-09-08T14:25:52.000Z")))
                 .remoteAddr("remoteHost")
                 .build();
 
@@ -299,14 +299,13 @@ public class DSNBounceTest {
                 .build();
         dsnBounce.init(mailetConfig);
 
-        MimeMessage mimeMessage = new MimeMessage(Session.getDefaultInstance(new Properties()));
-        mimeMessage.setText("My content");
         FakeMail mail = FakeMail.builder()
                 .attribute("delivery-error", "Delivery error")
-                .mimeMessage(mimeMessage)
+                .mimeMessage(MimeMessageBuilder.mimeMessageBuilder()
+                    .setText("My content"))
                 .name(MAILET_NAME)
-                .recipient(new MailAddress("recipient@domain.com"))
-                .lastUpdated(DateTime.parse("2016-09-08T14:25:52.000Z").toDate())
+                .recipient("recipient@domain.com")
+                .lastUpdated(Date.from(Instant.parse("2016-09-08T14:25:52.000Z")))
                 .remoteAddr("remoteHost")
                 .build();
 
@@ -324,14 +323,13 @@ public class DSNBounceTest {
                 .build();
         dsnBounce.init(mailetConfig);
 
-        MimeMessage mimeMessage = new MimeMessage(Session.getDefaultInstance(new Properties()));
-        mimeMessage.setText("My content");
         FakeMail mail = FakeMail.builder()
                 .attribute("delivery-error", "Delivery error")
-                .mimeMessage(mimeMessage)
+                .mimeMessage(MimeMessageBuilder.mimeMessageBuilder()
+                    .setText("My content"))
                 .name(MAILET_NAME)
-                .recipient(new MailAddress("recipient@domain.com"))
-                .lastUpdated(DateTime.parse("2016-09-08T14:25:52.000Z").toDate())
+                .recipient("recipient@domain.com")
+                .lastUpdated(Date.from(Instant.parse("2016-09-08T14:25:52.000Z")))
                 .remoteAddr("remoteHost")
                 .build();
 
@@ -350,14 +348,13 @@ public class DSNBounceTest {
         dsnBounce.init(mailetConfig);
 
         MailAddress senderMailAddress = new MailAddress("sender@domain.com");
-        MimeMessage mimeMessage = new MimeMessage(Session.getDefaultInstance(new Properties()));
-        mimeMessage.setText("My content");
         FakeMail mail = FakeMail.builder()
                 .sender(senderMailAddress)
-                .mimeMessage(mimeMessage)
+                .mimeMessage(MimeMessageBuilder.mimeMessageBuilder()
+                    .setText("My content"))
                 .name(MAILET_NAME)
-                .recipient(new MailAddress("recipient@domain.com"))
-                .lastUpdated(DateTime.parse("2016-09-08T14:25:52.000Z").toDate())
+                .recipient("recipient@domain.com")
+                .lastUpdated(Date.from(Instant.parse("2016-09-08T14:25:52.000Z")))
                 .build();
 
         dsnBounce.service(mail);
@@ -368,7 +365,7 @@ public class DSNBounceTest {
         assertThat(sentMail.getSender()).isNull();
         assertThat(sentMail.getRecipients()).containsOnly(senderMailAddress);
         MimeMessage sentMessage = sentMail.getMsg();
-        MimeMultipartReport content = (MimeMultipartReport) sentMessage.getContent();
+        MimeMultipart content = (MimeMultipart) sentMessage.getContent();
         assertThat(content.getCount()).isEqualTo(2);
     }
 
@@ -382,15 +379,17 @@ public class DSNBounceTest {
         dsnBounce.init(mailetConfig);
 
         MailAddress senderMailAddress = new MailAddress("sender@domain.com");
-        MimeMessage mimeMessage = new MimeMessage(Session.getDefaultInstance(new Properties()));
-        mimeMessage.setText("My content");
+        MimeMessage mimeMessage = MimeMessageBuilder.mimeMessageBuilder()
+            .setText("My content")
+            .build();
         FakeMail mail = FakeMail.builder()
-                .sender(senderMailAddress)
-                .mimeMessage(mimeMessage)
-                .name(MAILET_NAME)
-                .recipient(new MailAddress("recipient@domain.com"))
-                .lastUpdated(DateTime.parse("2016-09-08T14:25:52.000Z").toDate())
-                .build();
+            .sender(senderMailAddress)
+            .name(MAILET_NAME)
+            .recipient("recipient@domain.com")
+            .lastUpdated(Date.from(Instant.parse("2016-09-08T14:25:52.000Z")))
+            .mimeMessage(mimeMessage)
+            .build();
+        MimeMessage mimeMessageCopy = new MimeMessage(mimeMessage);
 
         dsnBounce.service(mail);
 
@@ -400,8 +399,11 @@ public class DSNBounceTest {
         assertThat(sentMail.getSender()).isNull();
         assertThat(sentMail.getRecipients()).containsOnly(senderMailAddress);
         MimeMessage sentMessage = sentMail.getMsg();
-        MimeMultipartReport content = (MimeMultipartReport) sentMessage.getContent();
-        assertThat(content.getBodyPart(2).getContent()).isEqualTo(mimeMessage);
+        MimeMultipart content = (MimeMultipart) sentMessage.getContent();
+
+        assertThat(sentMail.getMsg().getContentType()).startsWith("multipart/report;");
+        assertThat(MimeMessageUtil.asString((MimeMessage) content.getBodyPart(2).getContent()))
+            .isEqualTo(MimeMessageUtil.asString(mimeMessageCopy));
     }
 
     @Test
@@ -414,16 +416,15 @@ public class DSNBounceTest {
         dsnBounce.init(mailetConfig);
 
         MailAddress senderMailAddress = new MailAddress("sender@domain.com");
-        MimeMessage mimeMessage = new MimeMessage(Session.getDefaultInstance(new Properties()));
-        mimeMessage.setText("My content");
-        mimeMessage.setHeader("myHeader", "myValue");
-        mimeMessage.setSubject("mySubject");
         FakeMail mail = FakeMail.builder()
                 .sender(senderMailAddress)
-                .mimeMessage(mimeMessage)
+                .mimeMessage(MimeMessageBuilder.mimeMessageBuilder()
+                    .setText("My content")
+                    .addHeader("myHeader", "myValue")
+                    .setSubject("mySubject"))
                 .name(MAILET_NAME)
-                .recipient(new MailAddress("recipient@domain.com"))
-                .lastUpdated(DateTime.parse("2016-09-08T14:25:52.000Z").toDate())
+                .recipient("recipient@domain.com")
+                .lastUpdated(Date.from(Instant.parse("2016-09-08T14:25:52.000Z")))
                 .build();
 
         dsnBounce.service(mail);
@@ -434,10 +435,12 @@ public class DSNBounceTest {
         assertThat(sentMail.getSender()).isNull();
         assertThat(sentMail.getRecipients()).containsOnly(senderMailAddress);
         MimeMessage sentMessage = sentMail.getMsg();
-        MimeMultipartReport content = (MimeMultipartReport) sentMessage.getContent();
+        MimeMultipart content = (MimeMultipart) sentMessage.getContent();
         BodyPart bodyPart = content.getBodyPart(2);
-        assertThat(bodyPart.getContent()).isEqualTo("Subject: mySubject\r\n" +
-                "myHeader: myValue\r\n");
+        SharedByteArrayInputStream actualContent = (SharedByteArrayInputStream) bodyPart.getContent();
+        assertThat(IOUtils.toString(actualContent, StandardCharsets.UTF_8))
+            .contains("Subject: mySubject")
+            .contains("myHeader: myValue");
         assertThat(bodyPart.getContentType()).isEqualTo("text/rfc822-headers; name=mySubject");
     }
 
@@ -450,14 +453,13 @@ public class DSNBounceTest {
         dsnBounce.init(mailetConfig);
 
         MailAddress senderMailAddress = new MailAddress("sender@domain.com");
-        MimeMessage mimeMessage = new MimeMessage(Session.getDefaultInstance(new Properties()));
-        mimeMessage.setText("My content");
         FakeMail mail = FakeMail.builder()
                 .sender(senderMailAddress)
-                .mimeMessage(mimeMessage)
+                .mimeMessage(MimeMessageBuilder.mimeMessageBuilder()
+                    .setText("My content"))
                 .name(MAILET_NAME)
-                .recipient(new MailAddress("recipient@domain.com"))
-                .lastUpdated(DateTime.parse("2016-09-08T14:25:52.000Z").toDate())
+                .recipient("recipient@domain.com")
+                .lastUpdated(Date.from(Instant.parse("2016-09-08T14:25:52.000Z")))
                 .build();
 
         dsnBounce.service(mail);
@@ -480,16 +482,15 @@ public class DSNBounceTest {
         dsnBounce.init(mailetConfig);
 
         MailAddress senderMailAddress = new MailAddress("sender@domain.com");
-        MimeMessage mimeMessage = new MimeMessage(Session.getDefaultInstance(new Properties()));
-        mimeMessage.setText("My content");
         String expectedDate = "Wed, 28 Sep 2016 14:25:52 +0000 (UTC)";
-        mimeMessage.setHeader(RFC2822Headers.DATE, expectedDate);
         FakeMail mail = FakeMail.builder()
                 .sender(senderMailAddress)
-                .mimeMessage(mimeMessage)
+                .mimeMessage(MimeMessageBuilder.mimeMessageBuilder()
+                    .setText("My content")
+                    .addHeader(RFC2822Headers.DATE, expectedDate))
                 .name(MAILET_NAME)
-                .recipient(new MailAddress("recipient@domain.com"))
-                .lastUpdated(DateTime.parse("2016-09-08T14:25:52.000Z").toDate())
+                .recipient("recipient@domain.com")
+                .lastUpdated(Date.from(Instant.parse("2016-09-08T14:25:52.000Z")))
                 .build();
 
         dsnBounce.service(mail);
@@ -512,12 +513,11 @@ public class DSNBounceTest {
                 .build();
         dsnBounce.init(mailetConfig);
 
-        MimeMessage mimeMessage = new MimeMessage(Session.getDefaultInstance(new Properties()));
-        mimeMessage.setSubject("My subject");
         FakeMail mail = FakeMail.builder()
                 .name(MAILET_NAME)
                 .sender(MailAddressFixture.ANY_AT_JAMES)
-                .mimeMessage(mimeMessage)
+                .mimeMessage(MimeMessageBuilder.mimeMessageBuilder()
+                    .setSubject("My subject"))
                 .build();
 
         dsnBounce.service(mail);

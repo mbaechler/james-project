@@ -28,8 +28,8 @@ import java.util.Optional;
 import javax.mail.Flags;
 
 import org.apache.james.backends.cassandra.CassandraCluster;
-import org.apache.james.backends.cassandra.DockerCassandraRule;
-import org.apache.james.backends.cassandra.init.CassandraModuleComposite;
+import org.apache.james.backends.cassandra.CassandraClusterExtension;
+import org.apache.james.backends.cassandra.components.CassandraModule;
 import org.apache.james.mailbox.FlagsBuilder;
 import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.cassandra.ids.CassandraId;
@@ -47,10 +47,9 @@ import org.apache.james.mailbox.model.UpdatedFlags;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.MailboxMessage;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import com.github.steveash.guavate.Guavate;
 
@@ -62,9 +61,15 @@ public class CassandraIndexTableHandlerTest {
     public static final int UID_VALIDITY = 15;
     public static final long MODSEQ = 17;
 
-    @ClassRule public static DockerCassandraRule cassandraServer = new DockerCassandraRule();
-    
-    private CassandraCluster cassandra;
+    @RegisterExtension
+    static CassandraClusterExtension cassandraCluster = new CassandraClusterExtension(
+        CassandraModule.aggregateModules(
+            CassandraMailboxCounterModule.MODULE,
+            CassandraMailboxRecentsModule.MODULE,
+            CassandraFirstUnseenModule.MODULE,
+            CassandraApplicableFlagsModule.MODULE,
+            CassandraDeletedMessageModule.MODULE));
+
     private CassandraMailboxCounterDAO mailboxCounterDAO;
     private CassandraMailboxRecentsDAO mailboxRecentsDAO;
     private CassandraApplicableFlagDAO applicableFlagDAO;
@@ -73,15 +78,8 @@ public class CassandraIndexTableHandlerTest {
     private CassandraDeletedMessageDAO deletedMessageDAO;
     private Mailbox mailbox;
 
-    @Before
-    public void setUp() {
-        cassandra = CassandraCluster.create(
-            new CassandraModuleComposite(
-                new CassandraMailboxCounterModule(),
-                new CassandraMailboxRecentsModule(),
-                new CassandraFirstUnseenModule(),
-                new CassandraApplicableFlagsModule(),
-                new CassandraDeletedMessageModule()), cassandraServer.getIp(), cassandraServer.getBindingPort());
+    @BeforeEach
+    void setUp(CassandraCluster cassandra) {
         mailboxCounterDAO = new CassandraMailboxCounterDAO(cassandra.getConf());
         mailboxRecentsDAO = new CassandraMailboxRecentsDAO(cassandra.getConf());
         firstUnseenDAO = new CassandraFirstUnseenDAO(cassandra.getConf());
@@ -99,13 +97,8 @@ public class CassandraIndexTableHandlerTest {
             MAILBOX_ID);
     }
 
-    @After
-    public void tearDown() {
-        cassandra.close();
-    }
-
     @Test
-    public void updateIndexOnAddShouldIncrementMessageCount() throws Exception {
+    void updateIndexOnAddShouldIncrementMessageCount() throws Exception {
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(new Flags());
         when(message.getUid()).thenReturn(MESSAGE_UID);
@@ -118,7 +111,7 @@ public class CassandraIndexTableHandlerTest {
     }
 
     @Test
-    public void updateIndexOnAddShouldIncrementUnseenMessageCountWhenUnseen() throws Exception {
+    void updateIndexOnAddShouldIncrementUnseenMessageCountWhenUnseen() throws Exception {
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(new Flags());
         when(message.getUid()).thenReturn(MESSAGE_UID);
@@ -131,7 +124,7 @@ public class CassandraIndexTableHandlerTest {
     }
 
     @Test
-    public void updateIndexOnAddShouldNotIncrementUnseenMessageCountWhenSeen() throws Exception {
+    void updateIndexOnAddShouldNotIncrementUnseenMessageCountWhenSeen() throws Exception {
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(new Flags(Flags.Flag.SEEN));
         when(message.getUid()).thenReturn(MESSAGE_UID);
@@ -144,7 +137,7 @@ public class CassandraIndexTableHandlerTest {
     }
 
     @Test
-    public void updateIndexOnAddShouldNotAddRecentWhenNoRecent() throws Exception {
+    void updateIndexOnAddShouldNotAddRecentWhenNoRecent() {
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(new Flags());
         when(message.getUid()).thenReturn(MESSAGE_UID);
@@ -157,7 +150,7 @@ public class CassandraIndexTableHandlerTest {
     }
 
     @Test
-    public void updateIndexOnAddShouldAddRecentWhenRecent() throws Exception {
+    void updateIndexOnAddShouldAddRecentWhenRecent() {
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(new Flags(Flags.Flag.RECENT));
         when(message.getUid()).thenReturn(MESSAGE_UID);
@@ -170,7 +163,7 @@ public class CassandraIndexTableHandlerTest {
     }
 
     @Test
-    public void updateIndexOnDeleteShouldDecrementMessageCount() throws Exception {
+    void updateIndexOnDeleteShouldDecrementMessageCount() throws Exception {
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(new Flags());
         when(message.getUid()).thenReturn(MESSAGE_UID);
@@ -188,7 +181,7 @@ public class CassandraIndexTableHandlerTest {
     }
 
     @Test
-    public void updateIndexOnDeleteShouldDecrementUnseenMessageCountWhenUnseen() throws Exception {
+    void updateIndexOnDeleteShouldDecrementUnseenMessageCountWhenUnseen() throws Exception {
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(new Flags());
         when(message.getUid()).thenReturn(MESSAGE_UID);
@@ -206,7 +199,7 @@ public class CassandraIndexTableHandlerTest {
     }
 
     @Test
-    public void updateIndexOnDeleteShouldNotDecrementUnseenMessageCountWhenSeen() throws Exception {
+    void updateIndexOnDeleteShouldNotDecrementUnseenMessageCountWhenSeen() throws Exception {
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(new Flags());
         when(message.getUid()).thenReturn(MESSAGE_UID);
@@ -224,7 +217,7 @@ public class CassandraIndexTableHandlerTest {
     }
 
     @Test
-    public void updateIndexOnDeleteShouldRemoveRecentWhenRecent() throws Exception {
+    void updateIndexOnDeleteShouldRemoveRecentWhenRecent() {
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(new Flags(Flags.Flag.RECENT));
         when(message.getUid()).thenReturn(MESSAGE_UID);
@@ -242,7 +235,7 @@ public class CassandraIndexTableHandlerTest {
     }
 
     @Test
-    public void updateIndexOnDeleteShouldRemoveUidFromRecentAnyway() throws Exception {
+    void updateIndexOnDeleteShouldRemoveUidFromRecentAnyway() {
         // Clean up strategy if some flags updates missed
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(new Flags(Flags.Flag.RECENT));
@@ -261,7 +254,7 @@ public class CassandraIndexTableHandlerTest {
     }
 
     @Test
-    public void updateIndexOnDeleteShouldDeleteMessageFromDeletedMessage() throws Exception {
+    void updateIndexOnDeleteShouldDeleteMessageFromDeletedMessage() {
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.getUid()).thenReturn(MESSAGE_UID);
         deletedMessageDAO.addDeleted(MAILBOX_ID, MESSAGE_UID).join();
@@ -273,15 +266,15 @@ public class CassandraIndexTableHandlerTest {
             MAILBOX_ID).join();
 
         assertThat(
-            deletedMessageDAO.
-                retrieveDeletedMessage(MAILBOX_ID, MessageRange.all())
+            deletedMessageDAO
+                .retrieveDeletedMessage(MAILBOX_ID, MessageRange.all())
                 .join()
                 .collect(Guavate.toImmutableList()))
             .isEmpty();
     }
 
     @Test
-    public void updateIndexOnFlagsUpdateShouldNotChangeMessageCount() throws Exception {
+    void updateIndexOnFlagsUpdateShouldNotChangeMessageCount() throws Exception {
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(new Flags());
         when(message.getUid()).thenReturn(MESSAGE_UID);
@@ -300,7 +293,7 @@ public class CassandraIndexTableHandlerTest {
     }
 
     @Test
-    public void updateIndexOnFlagsUpdateShouldDecrementUnseenMessageCountWhenSeenIsSet() throws Exception {
+    void updateIndexOnFlagsUpdateShouldDecrementUnseenMessageCountWhenSeenIsSet() throws Exception {
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(new Flags());
         when(message.getUid()).thenReturn(MESSAGE_UID);
@@ -319,7 +312,7 @@ public class CassandraIndexTableHandlerTest {
     }
 
     @Test
-    public void updateIndexOnFlagsUpdateShouldSaveMessageInDeletedMessageWhenDeletedFlagIsSet() throws Exception {
+    void updateIndexOnFlagsUpdateShouldSaveMessageInDeletedMessageWhenDeletedFlagIsSet() {
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(new Flags());
         when(message.getUid()).thenReturn(MESSAGE_UID);
@@ -333,15 +326,15 @@ public class CassandraIndexTableHandlerTest {
             .build()).join();
 
         assertThat(
-            deletedMessageDAO.
-                retrieveDeletedMessage(MAILBOX_ID, MessageRange.all())
+            deletedMessageDAO
+                .retrieveDeletedMessage(MAILBOX_ID, MessageRange.all())
                 .join()
                 .collect(Guavate.toImmutableList()))
             .containsExactly(MESSAGE_UID);
     }
 
     @Test
-    public void updateIndexOnFlagsUpdateShouldRemoveMessageInDeletedMessageWhenDeletedFlagIsUnset() throws Exception {
+    void updateIndexOnFlagsUpdateShouldRemoveMessageInDeletedMessageWhenDeletedFlagIsUnset() {
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(new Flags());
         when(message.getUid()).thenReturn(MESSAGE_UID);
@@ -357,15 +350,15 @@ public class CassandraIndexTableHandlerTest {
             .build()).join();
 
         assertThat(
-            deletedMessageDAO.
-                retrieveDeletedMessage(MAILBOX_ID, MessageRange.all())
+            deletedMessageDAO
+                .retrieveDeletedMessage(MAILBOX_ID, MessageRange.all())
                 .join()
                 .collect(Guavate.toImmutableList()))
             .isEmpty();
     }
 
     @Test
-    public void updateIndexOnFlagsUpdateShouldNotRemoveMessageInDeletedMessageWhenDeletedFlagIsNotUnset() throws Exception {
+    void updateIndexOnFlagsUpdateShouldNotRemoveMessageInDeletedMessageWhenDeletedFlagIsNotUnset() {
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(new Flags());
         when(message.getUid()).thenReturn(MESSAGE_UID);
@@ -381,15 +374,15 @@ public class CassandraIndexTableHandlerTest {
             .build()).join();
 
         assertThat(
-            deletedMessageDAO.
-                retrieveDeletedMessage(MAILBOX_ID, MessageRange.all())
+            deletedMessageDAO
+                .retrieveDeletedMessage(MAILBOX_ID, MessageRange.all())
                 .join()
                 .collect(Guavate.toImmutableList()))
             .containsExactly(MESSAGE_UID);
     }
 
     @Test
-    public void updateIndexOnFlagsUpdateShouldNotSaveMessageInDeletedMessageWhenDeletedFlagIsNotSet() throws Exception {
+    void updateIndexOnFlagsUpdateShouldNotSaveMessageInDeletedMessageWhenDeletedFlagIsNotSet() {
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(new Flags());
         when(message.getUid()).thenReturn(MESSAGE_UID);
@@ -403,15 +396,15 @@ public class CassandraIndexTableHandlerTest {
             .build()).join();
 
         assertThat(
-            deletedMessageDAO.
-                retrieveDeletedMessage(MAILBOX_ID, MessageRange.all())
+            deletedMessageDAO
+                .retrieveDeletedMessage(MAILBOX_ID, MessageRange.all())
                 .join()
                 .collect(Guavate.toImmutableList()))
             .isEmpty();
     }
 
     @Test
-    public void updateIndexOnFlagsUpdateShouldIncrementUnseenMessageCountWhenSeenIsUnset() throws Exception {
+    void updateIndexOnFlagsUpdateShouldIncrementUnseenMessageCountWhenSeenIsUnset() throws Exception {
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(new Flags(Flags.Flag.SEEN));
         when(message.getUid()).thenReturn(MESSAGE_UID);
@@ -430,7 +423,7 @@ public class CassandraIndexTableHandlerTest {
     }
 
     @Test
-    public void updateIndexOnFlagsUpdateShouldNotChangeUnseenCountWhenBothSeen() throws Exception {
+    void updateIndexOnFlagsUpdateShouldNotChangeUnseenCountWhenBothSeen() throws Exception {
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(new Flags(Flags.Flag.SEEN));
         when(message.getUid()).thenReturn(MESSAGE_UID);
@@ -449,7 +442,7 @@ public class CassandraIndexTableHandlerTest {
     }
 
     @Test
-    public void updateIndexOnFlagsUpdateShouldNotChangeUnseenCountWhenBothUnSeen() throws Exception {
+    void updateIndexOnFlagsUpdateShouldNotChangeUnseenCountWhenBothUnSeen() throws Exception {
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(new Flags());
         when(message.getUid()).thenReturn(MESSAGE_UID);
@@ -468,7 +461,7 @@ public class CassandraIndexTableHandlerTest {
     }
 
     @Test
-    public void updateIndexOnFlagsUpdateShouldAddRecentOnSettingRecentFlag() throws Exception {
+    void updateIndexOnFlagsUpdateShouldAddRecentOnSettingRecentFlag() {
         // Clean up strategy if some flags updates missed
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(new Flags());
@@ -488,7 +481,7 @@ public class CassandraIndexTableHandlerTest {
     }
 
     @Test
-    public void updateIndexOnFlagsUpdateShouldRemoveRecentOnUnsettingRecentFlag() throws Exception {
+    void updateIndexOnFlagsUpdateShouldRemoveRecentOnUnsettingRecentFlag() {
         // Clean up strategy if some flags updates missed
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(new Flags(Flags.Flag.RECENT));
@@ -508,7 +501,7 @@ public class CassandraIndexTableHandlerTest {
     }
 
     @Test
-    public void updateIndexOnAddShouldUpdateFirstUnseenWhenUnseen() throws Exception {
+    void updateIndexOnAddShouldUpdateFirstUnseenWhenUnseen() {
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(new Flags());
         when(message.getUid()).thenReturn(MESSAGE_UID);
@@ -520,37 +513,37 @@ public class CassandraIndexTableHandlerTest {
     }
 
     @Test
-    public void updateIndexOnAddShouldSaveMessageInDeletedWhenDeleted() throws Exception {
+    void updateIndexOnAddShouldSaveMessageInDeletedWhenDeleted() {
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(new Flags(Flags.Flag.DELETED));
         when(message.getUid()).thenReturn(MESSAGE_UID);
         testee.updateIndexOnAdd(message, MAILBOX_ID).join();
 
         assertThat(
-            deletedMessageDAO.
-                retrieveDeletedMessage(MAILBOX_ID, MessageRange.all())
+            deletedMessageDAO
+                .retrieveDeletedMessage(MAILBOX_ID, MessageRange.all())
                 .join()
                 .collect(Guavate.toImmutableList()))
             .containsExactly(MESSAGE_UID);
     }
 
     @Test
-    public void updateIndexOnAddShouldNotSaveMessageInDeletedWhenNotDeleted() throws Exception {
+    void updateIndexOnAddShouldNotSaveMessageInDeletedWhenNotDeleted() {
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(new Flags());
         when(message.getUid()).thenReturn(MESSAGE_UID);
         testee.updateIndexOnAdd(message, MAILBOX_ID).join();
 
         assertThat(
-            deletedMessageDAO.
-                retrieveDeletedMessage(MAILBOX_ID, MessageRange.all())
+            deletedMessageDAO
+                .retrieveDeletedMessage(MAILBOX_ID, MessageRange.all())
                 .join()
                 .collect(Guavate.toImmutableList()))
             .isEmpty();
     }
 
     @Test
-    public void updateIndexOnAddShouldNotUpdateFirstUnseenWhenSeen() throws Exception {
+    void updateIndexOnAddShouldNotUpdateFirstUnseenWhenSeen() {
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(new Flags(Flags.Flag.SEEN));
         when(message.getUid()).thenReturn(MESSAGE_UID);
@@ -561,7 +554,7 @@ public class CassandraIndexTableHandlerTest {
     }
 
     @Test
-    public void updateIndexOnFlagsUpdateShouldUpdateLastUnseenWhenSetToSeen() throws Exception {
+    void updateIndexOnFlagsUpdateShouldUpdateLastUnseenWhenSetToSeen() {
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(new Flags());
         when(message.getUid()).thenReturn(MESSAGE_UID);
@@ -579,7 +572,7 @@ public class CassandraIndexTableHandlerTest {
     }
 
     @Test
-    public void updateIndexOnFlagsUpdateShouldUpdateLastUnseenWhenSetToUnseen() throws Exception {
+    void updateIndexOnFlagsUpdateShouldUpdateLastUnseenWhenSetToUnseen() {
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(new Flags(Flags.Flag.SEEN));
         when(message.getUid()).thenReturn(MESSAGE_UID);
@@ -598,7 +591,7 @@ public class CassandraIndexTableHandlerTest {
     }
 
     @Test
-    public void updateIndexOnFlagsUpdateShouldNotUpdateLastUnseenWhenKeepUnseen() throws Exception {
+    void updateIndexOnFlagsUpdateShouldNotUpdateLastUnseenWhenKeepUnseen() {
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(new Flags());
         when(message.getUid()).thenReturn(MESSAGE_UID);
@@ -617,7 +610,7 @@ public class CassandraIndexTableHandlerTest {
     }
 
     @Test
-    public void updateIndexOnFlagsUpdateShouldNotUpdateLastUnseenWhenKeepSeen() throws Exception {
+    void updateIndexOnFlagsUpdateShouldNotUpdateLastUnseenWhenKeepSeen() {
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(new Flags(Flags.Flag.SEEN));
         when(message.getUid()).thenReturn(MESSAGE_UID);
@@ -635,7 +628,7 @@ public class CassandraIndexTableHandlerTest {
     }
 
     @Test
-    public void updateIndexOnDeleteShouldUpdateFirstUnseenWhenUnseen() throws Exception {
+    void updateIndexOnDeleteShouldUpdateFirstUnseenWhenUnseen() {
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(new Flags());
         when(message.getUid()).thenReturn(MESSAGE_UID);
@@ -651,7 +644,7 @@ public class CassandraIndexTableHandlerTest {
     }
 
     @Test
-    public void updateIndexOnAddShouldUpdateApplicableFlag() throws Exception {
+    void updateIndexOnAddShouldUpdateApplicableFlag() {
         Flags customFlags = new Flags("custom");
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(customFlags);
@@ -664,7 +657,7 @@ public class CassandraIndexTableHandlerTest {
     }
 
     @Test
-    public void updateIndexOnFlagsUpdateShouldUnionApplicableFlag() throws Exception {
+    void updateIndexOnFlagsUpdateShouldUnionApplicableFlag() {
         Flags customFlag = new Flags("custom");
         MailboxMessage message = mock(MailboxMessage.class);
         when(message.createFlags()).thenReturn(customFlag);
@@ -685,7 +678,7 @@ public class CassandraIndexTableHandlerTest {
     }
 
     @Test
-    public void applicableFlagShouldKeepAllFlagsEvenTheMessageRemovesFlag() throws Exception {
+    void applicableFlagShouldKeepAllFlagsEvenTheMessageRemovesFlag() {
         Flags messageFlags = FlagsBuilder.builder()
             .add("custom1", "custom2", "custom3")
             .build();

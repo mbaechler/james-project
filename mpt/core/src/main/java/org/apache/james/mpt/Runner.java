@@ -61,6 +61,7 @@ public class Runner {
     public ProtocolInteractor getPreElements() {
         return preElements;
     }
+
     /**
      * Gets protocol session run on test.
      * @return not null
@@ -85,6 +86,7 @@ public class Runner {
 
             public ProtocolSession session;
 
+            @Override
             public void doContinue() {
                 if (session != null) {
                     session.doContinue();
@@ -92,6 +94,7 @@ public class Runner {
             }
 
         }
+        
         SessionContinuation continuation = new SessionContinuation();
 
         Session[] sessions = new Session[testElements
@@ -122,8 +125,7 @@ public class Runner {
      * @return a <code>String</code> representation 
      * of this object.
      */
-    public String toString()
-    {
+    public String toString() {
         final String TAB = " ";
 
         return "Runner ( "

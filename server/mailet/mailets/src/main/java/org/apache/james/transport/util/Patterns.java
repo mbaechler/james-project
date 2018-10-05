@@ -1,7 +1,5 @@
 package org.apache.james.transport.util;
 
-import com.google.common.base.Throwables;
-
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -11,7 +9,7 @@ public class Patterns {
         try {
             return Pattern.compile(pattern);
         } catch (PatternSyntaxException mpe) {
-            throw Throwables.propagate(mpe);
+            throw new RuntimeException(mpe);
         }
     }
 }

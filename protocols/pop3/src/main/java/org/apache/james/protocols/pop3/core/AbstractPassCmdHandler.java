@@ -44,6 +44,7 @@ public abstract class AbstractPassCmdHandler extends RsetCmdHandler {
      * Handler method called upon receipt of a PASS command. Reads in and
      * validates the password.
      */
+    @Override
     public Response onCommand(POP3Session session, Request request) {
         String parameters = request.getArgument();
         if (session.getHandlerState() == POP3Session.AUTHENTICATION_USERSET && parameters != null) {
@@ -81,15 +82,13 @@ public abstract class AbstractPassCmdHandler extends RsetCmdHandler {
                 return AUTH_FAILED;
             }
         } catch (Exception e) {
-            LOGGER.error("Unexpected error accessing mailbox for " + session.getUser(), e);
+            LOGGER.error("Unexpected error accessing mailbox for {}", session.getUser(), e);
             session.setHandlerState(POP3Session.AUTHENTICATION_READY);
             return UNEXPECTED_ERROR;
         }
     }
 
-    /**
-     * @see org.apache.james.protocols.api.handler.CommandHandler#getImplCommands()
-     */
+    @Override
     public Collection<String> getImplCommands() {
         return COMMANDS;
     }

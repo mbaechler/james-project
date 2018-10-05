@@ -25,13 +25,12 @@ import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.lang.NotImplementedException;
-import org.apache.commons.lang.mutable.MutableInt;
+import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.james.mpt.api.Monitor;
 import org.apache.james.mpt.api.Session;
-
-import com.jayway.awaitility.Awaitility;
-import com.jayway.awaitility.Duration;
+import org.awaitility.Awaitility;
+import org.awaitility.Duration;
 
 public final class ExternalSession implements Session {
 
@@ -65,6 +64,7 @@ public final class ExternalSession implements Session {
         this.shabang = shabang;
     }
 
+    @Override
     public String readLine() throws Exception {
         StringBuffer buffer = new StringBuffer();
         readlineInto(buffer);
@@ -74,8 +74,7 @@ public final class ExternalSession implements Session {
             monitor.note("<-" + buffer.toString());
             result = shabang;
             first = false;
-        }
-        else {
+        } else {
             result = buffer.toString();
             monitor.note("<-" + result);
         }
@@ -85,8 +84,9 @@ public final class ExternalSession implements Session {
     private void readlineInto(StringBuffer buffer) throws Exception {
         monitor.debug("[Reading line]");
         readBuffer.flip();
-        while (oneFromLine(buffer))
+        while (oneFromLine(buffer)) {
             ;
+        }
         // May have partial read
         readBuffer.compact();
         monitor.debug("[Done]");
@@ -100,20 +100,17 @@ public final class ExternalSession implements Session {
                 monitor.debug("[LF]");
                 // Reached end of the line
                 result = false;
-            }
-            else if (next == '\r') {
+            } else if (next == '\r') {
                 // CRLF line endings so drop
                 monitor.debug("[CR]");
                 result = true;
-            }
-            else {
+            } else {
                 // Load buffer
                 monitor.debug(next);
                 buffer.append(next);
                 result = true;
             }
-        }
-        else {
+        } else {
             monitor.debug("[Reading into buffer]");
             readBuffer.clear();
             result = tryReadFromSocket();
@@ -141,6 +138,7 @@ public final class ExternalSession implements Session {
         return true;
     }
 
+    @Override
     public void start() throws Exception {
         while (!socket.finishConnect()) {
             monitor.note("connecting...");
@@ -148,15 +146,18 @@ public final class ExternalSession implements Session {
         }
     }
 
+    @Override
     public void restart() throws Exception {
         throw new NotImplementedException("Restart is not implemented for ExternalSession");
     }
 
+    @Override
     public void stop() throws Exception {
         monitor.note("closing");
         socket.close();
     }
 
+    @Override
     public void writeLine(String line) throws Exception {
         monitor.note("-> " + line);
         monitor.debug("[Writing line]");

@@ -21,9 +21,11 @@ package org.apache.james.mailbox.tika;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.james.util.streams.SwarmGenericContainer;
+import org.apache.james.util.docker.Images;
+import org.apache.james.util.docker.RateLimiters;
+import org.apache.james.util.docker.SwarmGenericContainer;
 import org.junit.rules.ExternalResource;
-import org.testcontainers.containers.wait.Wait;
+import org.testcontainers.containers.wait.strategy.Wait;
 
 import com.google.common.primitives.Ints;
 
@@ -35,9 +37,9 @@ public class TikaContainer extends ExternalResource {
     private final SwarmGenericContainer tika;
 
     public TikaContainer() {
-        tika = new SwarmGenericContainer("logicalspark/docker-tikaserver:1.15rc2")
+        tika = new SwarmGenericContainer(Images.TIKA)
                 .withExposedPorts(DEFAULT_TIKA_PORT)
-                .waitingFor(Wait.forHttp("/tika"))
+                .waitingFor(Wait.forHttp("/tika").withRateLimiter(RateLimiters.DEFAULT))
                 .withStartupTimeout(Duration.ofSeconds(30));
     }
 
@@ -46,7 +48,7 @@ public class TikaContainer extends ExternalResource {
         start();
     }
 
-    public void start() throws Exception {
+    public void start() {
         tika.start();
     }
 

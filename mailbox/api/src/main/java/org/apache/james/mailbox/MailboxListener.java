@@ -20,11 +20,17 @@
 package org.apache.james.mailbox;
 
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 
-import org.apache.james.mailbox.model.MailboxACL;
+import org.apache.james.core.quota.QuotaCount;
+import org.apache.james.core.quota.QuotaSize;
+import org.apache.james.mailbox.acl.ACLDiff;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.model.MessageMetaData;
+import org.apache.james.mailbox.model.Quota;
+import org.apache.james.mailbox.model.QuotaRoot;
 import org.apache.james.mailbox.model.UpdatedFlags;
 
 
@@ -47,7 +53,9 @@ public interface MailboxListener {
 
     ListenerType getType();
 
-    ExecutionMode getExecutionMode();
+    default ExecutionMode getExecutionMode() {
+        return ExecutionMode.SYNCHRONOUS;
+    }
 
     /**
      * Informs this listener about the given event.
@@ -56,25 +64,88 @@ public interface MailboxListener {
      *            not null
      */
     void event(Event event);
+    
+    interface QuotaEvent extends Event {
+        QuotaRoot getQuotaRoot();
+    }
+
+    class QuotaUsageUpdatedEvent implements QuotaEvent, Serializable {
+        private final MailboxSession session;
+        private final QuotaRoot quotaRoot;
+        private final Quota<QuotaCount> countQuota;
+        private final Quota<QuotaSize> sizeQuota;
+        private final Instant instant;
+
+        public QuotaUsageUpdatedEvent(MailboxSession session, QuotaRoot quotaRoot, Quota<QuotaCount> countQuota, Quota<QuotaSize> sizeQuota, Instant instant) {
+            this.session = session;
+            this.quotaRoot = quotaRoot;
+            this.countQuota = countQuota;
+            this.sizeQuota = sizeQuota;
+            this.instant = instant;
+        }
+
+        @Override
+        public MailboxSession getSession() {
+            return session;
+        }
+
+        public Quota<QuotaCount> getCountQuota() {
+            return countQuota;
+        }
+
+        public Quota<QuotaSize> getSizeQuota() {
+            return sizeQuota;
+        }
+
+        @Override
+        public QuotaRoot getQuotaRoot() {
+            return quotaRoot;
+        }
+
+        public Instant getInstant() {
+            return instant;
+        }
+
+        @Override
+        public final boolean equals(Object o) {
+            if (o instanceof QuotaUsageUpdatedEvent) {
+                QuotaUsageUpdatedEvent that = (QuotaUsageUpdatedEvent) o;
+
+                return Objects.equals(this.session, that.session)
+                    && Objects.equals(this.quotaRoot, that.quotaRoot)
+                    && Objects.equals(this.countQuota, that.countQuota)
+                    && Objects.equals(this.sizeQuota, that.sizeQuota)
+                    && Objects.equals(this.instant, that.instant);
+            }
+            return false;
+        }
+
+        @Override
+        public final int hashCode() {
+            return Objects.hash(session, quotaRoot, countQuota, sizeQuota, instant);
+        }
+
+    }
 
     /**
      * A mailbox event.
      */
-    abstract class Event implements Serializable {
+    abstract class MailboxEvent implements Event, Serializable {
         private final MailboxSession session;
         private final MailboxPath path;
 
-        public Event(MailboxSession session, MailboxPath path) {
+        public MailboxEvent(MailboxSession session, MailboxPath path) {
             this.session = session;
             this.path = path;
         }
 
         /**
-         * Gets the {@link MailboxSession} in which's context the {@link Event}
+         * Gets the {@link MailboxSession} in which's context the {@link MailboxEvent}
          * happened
          * 
          * @return session
          */
+        @Override
         public MailboxSession getSession() {
             return session;
         }
@@ -92,22 +163,41 @@ public interface MailboxListener {
     /**
      * Indicates that mailbox has been deleted.
      */
-    class MailboxDeletion extends Event {
+    class MailboxDeletion extends MailboxEvent {
 
         /**
          * 
          */
         private static final long serialVersionUID = 1L;
 
-        public MailboxDeletion(MailboxSession session, MailboxPath path) {
+        private final QuotaRoot quotaRoot;
+        private final QuotaCount deletedMessageCOunt;
+        private final QuotaSize totalDeletedSize;
+
+        public MailboxDeletion(MailboxSession session, MailboxPath path, QuotaRoot quotaRoot, QuotaCount deletedMessageCOunt, QuotaSize totalDeletedSize) {
             super(session, path);
+            this.quotaRoot = quotaRoot;
+            this.deletedMessageCOunt = deletedMessageCOunt;
+            this.totalDeletedSize = totalDeletedSize;
+        }
+
+        public QuotaRoot getQuotaRoot() {
+            return quotaRoot;
+        }
+
+        public QuotaCount getDeletedMessageCount() {
+            return deletedMessageCOunt;
+        }
+
+        public QuotaSize getTotalDeletedSize() {
+            return totalDeletedSize;
         }
     }
 
     /**
      * Indicates that a mailbox has been Added.
      */
-    class MailboxAdded extends Event {
+    class MailboxAdded extends MailboxEvent {
         /**
          * 
          */
@@ -121,7 +211,7 @@ public interface MailboxListener {
     /**
      * Indicates that a mailbox has been renamed.
      */
-    abstract class MailboxRenamed extends Event {
+    abstract class MailboxRenamed extends MailboxEvent {
         /**
          * 
          */
@@ -143,24 +233,25 @@ public interface MailboxListener {
     /**
      * A mailbox event related to updated ACL
      */
-    abstract class MailboxACLUpdated extends MessageEvent {
-
-        /**
-         * 
-         */
+    class MailboxACLUpdated extends MailboxEvent {
+        private final ACLDiff aclDiff;
         private static final long serialVersionUID = 1L;
 
-        public MailboxACLUpdated(MailboxSession session, MailboxPath path) {
+        public MailboxACLUpdated(MailboxSession session, MailboxPath path, ACLDiff aclDiff) {
             super(session, path);
+            this.aclDiff = aclDiff;
         }
 
-        public abstract MailboxACL getUpdatedACL();
+        public ACLDiff getAclDiff() {
+            return aclDiff;
+        }
+
     }
     
     /**
      * A mailbox event related to a message.
      */
-    abstract class MessageEvent extends Event {
+    abstract class MessageEvent extends MailboxEvent {
 
         /**
          * 
@@ -210,6 +301,7 @@ public interface MailboxListener {
          * 
          * @return flags
          */
+        @Override
         public abstract MessageMetaData getMetaData(MessageUid uid);
     }
 
@@ -249,6 +341,7 @@ public interface MailboxListener {
          * 
          * @return flags
          */
+        @Override
         public abstract MessageMetaData getMetaData(MessageUid uid);
         
     }

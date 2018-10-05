@@ -20,13 +20,13 @@
 package org.apache.james.mailbox.store.extractor;
 
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.Optional;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.james.mailbox.extractor.ParsedContent;
 import org.apache.james.mailbox.extractor.TextExtractor;
-
-import com.google.common.base.Charsets;
 
 /**
  * A default text extractor that is directly based on the input file provided.
@@ -37,10 +37,10 @@ public class DefaultTextExtractor implements TextExtractor {
 
     @Override
     public ParsedContent extractContent(InputStream inputStream, String contentType) throws Exception {
-        if(contentType != null && contentType.startsWith("text/") ) {
-            return new ParsedContent(IOUtils.toString(inputStream, Charsets.UTF_8), new HashMap<>());
+        if (contentType != null && contentType.startsWith("text/")) {
+            return new ParsedContent(Optional.ofNullable(IOUtils.toString(inputStream, StandardCharsets.UTF_8)), new HashMap<>());
         } else {
-            return new ParsedContent(null, new HashMap<>());
+            return new ParsedContent(Optional.empty(), new HashMap<>());
         }
     }
 }

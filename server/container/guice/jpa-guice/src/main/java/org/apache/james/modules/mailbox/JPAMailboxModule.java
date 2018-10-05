@@ -18,16 +18,8 @@
  ****************************************************************/
 package org.apache.james.modules.mailbox;
 
-import java.io.FileNotFoundException;
-import java.util.HashMap;
-
 import javax.inject.Singleton;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
 
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.james.JPAConfiguration;
 import org.apache.james.adapter.mailbox.store.UserRepositoryAuthenticator;
 import org.apache.james.adapter.mailbox.store.UserRepositoryAuthorizator;
 import org.apache.james.mailbox.MailboxManager;
@@ -46,6 +38,8 @@ import org.apache.james.mailbox.jpa.mail.JPAUidProvider;
 import org.apache.james.mailbox.jpa.openjpa.OpenJPAMailboxManager;
 import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MessageId;
+import org.apache.james.mailbox.quota.QuotaManager;
+import org.apache.james.mailbox.quota.QuotaRootResolver;
 import org.apache.james.mailbox.store.Authenticator;
 import org.apache.james.mailbox.store.Authorizator;
 import org.apache.james.mailbox.store.JVMMailboxPathLocker;
@@ -55,9 +49,10 @@ import org.apache.james.mailbox.store.mail.MessageMapperFactory;
 import org.apache.james.mailbox.store.mail.ModSeqProvider;
 import org.apache.james.mailbox.store.mail.UidProvider;
 import org.apache.james.mailbox.store.mail.model.DefaultMessageId;
+import org.apache.james.mailbox.store.quota.ListeningCurrentQuotaUpdater;
 import org.apache.james.modules.Names;
+import org.apache.james.modules.data.JPAEntityManagerModule;
 import org.apache.james.utils.MailboxManagerDefinition;
-import org.apache.james.utils.PropertiesProvider;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -71,6 +66,8 @@ public class JPAMailboxModule extends AbstractModule {
     @Override
     protected void configure() {
         install(new JpaQuotaModule());
+        install(new JPAQuotaSearchModule());
+        install(new JPAEntityManagerModule());
 
         bind(JPAMailboxSessionMapperFactory.class).in(Scopes.SINGLETON);
         bind(OpenJPAMailboxManager.class).in(Scopes.SINGLETON);
@@ -104,8 +101,14 @@ public class JPAMailboxModule extends AbstractModule {
         Multibinder.newSetBinder(binder(), MailboxManagerDefinition.class).addBinding().to(JPAMailboxManagerDefinition.class);
     }
 
-    @Provides @Named(Names.MAILBOXMANAGER_NAME) @Singleton
-    public MailboxManager provideMailboxManager(OpenJPAMailboxManager jpaMailboxManager) throws MailboxException {
+    @Provides
+    @Named(Names.MAILBOXMANAGER_NAME)
+    @Singleton
+    public MailboxManager provideMailboxManager(OpenJPAMailboxManager jpaMailboxManager, ListeningCurrentQuotaUpdater quotaUpdater,
+                                                QuotaManager quotaManager, QuotaRootResolver quotaRootResolver) throws MailboxException {
+        jpaMailboxManager.setQuotaRootResolver(quotaRootResolver);
+        jpaMailboxManager.setQuotaManager(quotaManager);
+        jpaMailboxManager.setQuotaUpdater(quotaUpdater);
         jpaMailboxManager.init();
         return jpaMailboxManager;
     }
@@ -116,27 +119,5 @@ public class JPAMailboxModule extends AbstractModule {
         private JPAMailboxManagerDefinition(OpenJPAMailboxManager manager) {
             super("jpa-mailboxmanager", manager);
         }
-    }
-    
-    @Provides
-    @Singleton
-    public EntityManagerFactory provideEntityManagerFactory(JPAConfiguration jpaConfiguration) {
-        HashMap<String, String> properties = new HashMap<>();
-        
-        properties.put("openjpa.ConnectionDriverName", jpaConfiguration.getDriverName());
-        properties.put("openjpa.ConnectionURL", jpaConfiguration.getDriverURL());
-
-        return Persistence.createEntityManagerFactory("Global", properties);
-
-    }
-
-    @Provides
-    @Singleton
-    JPAConfiguration provideConfiguration(PropertiesProvider propertiesProvider) throws FileNotFoundException, ConfigurationException{
-        PropertiesConfiguration dataSource = propertiesProvider.getConfiguration("james-database");
-        return JPAConfiguration.builder()
-                .driverName(dataSource.getString("database.driverClassName"))
-                .driverURL(dataSource.getString("database.url"))
-                .build();
     }
 }

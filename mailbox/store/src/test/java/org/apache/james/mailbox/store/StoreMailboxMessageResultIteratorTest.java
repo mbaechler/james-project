@@ -20,6 +20,7 @@
 package org.apache.james.mailbox.store;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -28,9 +29,11 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
+
 import javax.mail.Flags;
 import javax.mail.util.SharedByteArrayInputStream;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MailboxCounters;
@@ -45,7 +48,6 @@ import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.MailboxMessage;
 import org.apache.james.mailbox.store.mail.model.impl.PropertyBuilder;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailboxMessage;
-import org.apache.commons.lang.NotImplementedException;
 import org.junit.Test;
 
 import com.google.common.collect.Iterables;
@@ -185,7 +187,7 @@ public class StoreMailboxMessageResultIteratorTest {
 
         @Override
         public Flags getApplicableFlag(Mailbox mailbox) throws MailboxException {
-            throw new NotImplementedException();
+            throw new NotImplementedException("Not implemented");
         }
     }
 
@@ -196,7 +198,7 @@ public class StoreMailboxMessageResultIteratorTest {
         StoreMessageResultIterator it = new StoreMessageResultIterator(new TestMessageMapper(MessageRange.all()), null, range, batchSize, new TestFetchGroup());
 
         assertThat(it).extracting(input -> input.getUid().asLong())
-            .containsExactly(1l, 2l, 3l, 4l, 5l, 6l, 7l, 8l, 9l, 10l);
+            .containsExactly(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L);
     }
 
     @Test
@@ -207,7 +209,7 @@ public class StoreMailboxMessageResultIteratorTest {
         assertThat(iterator.next()).isNotNull();
     }
     
-    @Test(expected=NoSuchElementException.class)
+    @Test(expected = NoSuchElementException.class)
     public void nextShouldThrowWhenNoElement() {
         MessageRange messages = MessageUid.of(1).toRange();
         MessageRange findRange = MessageUid.of(2).toRange();

@@ -35,7 +35,6 @@ import javax.mail.Flags;
 import javax.mail.Flags.Flag;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.exception.MailboxException;
@@ -58,7 +57,7 @@ import org.apache.james.mailbox.store.mail.utils.ApplicableFlagCalculator;
 public class MaildirMessageMapper extends AbstractMessageMapper {
 
     private final MaildirStore maildirStore;
-    private final static int BUF_SIZE = 2048;
+    private static final int BUF_SIZE = 2048;
 
     public MaildirMessageMapper(MailboxSession session, MaildirStore maildirStore) {
         super(session, maildirStore, maildirStore);
@@ -72,9 +71,10 @@ public class MaildirMessageMapper extends AbstractMessageMapper {
         File curFolder = folder.getCurFolder();
         File[] newFiles = newFolder.listFiles();
         File[] curFiles = curFolder.listFiles();
-        if (newFiles == null || curFiles == null)
+        if (newFiles == null || curFiles == null) {
             throw new MailboxException("Unable to count messages in Mailbox " + mailbox, new IOException(
-                    "Not a valid Maildir folder: " + maildirStore.getFolderName(mailbox)));
+                "Not a valid Maildir folder: " + maildirStore.getFolderName(mailbox)));
+        }
         return newFiles.length + curFiles.length;
     }
 
@@ -85,9 +85,10 @@ public class MaildirMessageMapper extends AbstractMessageMapper {
         File curFolder = folder.getCurFolder();
         String[] unseenMessages = curFolder.list(MaildirMessageName.FILTER_UNSEEN_MESSAGES);
         String[] newUnseenMessages = newFolder.list(MaildirMessageName.FILTER_UNSEEN_MESSAGES);
-        if (newUnseenMessages == null || unseenMessages == null)
+        if (newUnseenMessages == null || unseenMessages == null) {
             throw new MailboxException("Unable to count unseen messages in Mailbox " + mailbox, new IOException(
-                    "Not a valid Maildir folder: " + maildirStore.getFolderName(mailbox)));
+                "Not a valid Maildir folder: " + maildirStore.getFolderName(mailbox)));
+        }
         return newUnseenMessages.length + unseenMessages.length;
     }
 
@@ -145,11 +146,6 @@ public class MaildirMessageMapper extends AbstractMessageMapper {
         }
     }
 
-    /**
-     * @see org.apache.james.mailbox.store.mail.MessageMapper#updateFlags(org.apache.james.mailbox.store.mail.model.Mailbox,
-     *      javax.mail.Flags, boolean, boolean,
-     *      org.apache.james.mailbox.model.MessageRange)
-     */
     @Override
     public Iterator<UpdatedFlags> updateFlags(Mailbox mailbox, FlagsUpdateCalculator flagsUpdateCalculator, MessageRange set) throws MailboxException {
         final List<UpdatedFlags> updatedFlags = new ArrayList<>();
@@ -245,12 +241,6 @@ public class MaildirMessageMapper extends AbstractMessageMapper {
         return uids;
     }
 
-    /**
-     * (non-Javadoc)
-     * 
-     * @see org.apache.james.mailbox.store.mail.MessageMapper#move(org.apache.james.mailbox.store.mail.model.Mailbox,
-     *      MailboxMessage)
-     */
     @Override
     public MessageMetaData move(Mailbox mailbox, MailboxMessage original) throws MailboxException {
         throw new UnsupportedOperationException("Not implemented - see https://issues.apache.org/jira/browse/IMAP-370");
@@ -259,17 +249,13 @@ public class MaildirMessageMapper extends AbstractMessageMapper {
     @Override
     protected MessageMetaData copy(Mailbox mailbox, MessageUid uid, long modSeq, MailboxMessage original)
             throws MailboxException {
-        SimpleMailboxMessage theCopy = SimpleMailboxMessage.copy(mailbox.getMailboxId(), original);
+        SimpleMailboxMessage theCopy = SimpleMailboxMessage.copyWithoutAttachments(mailbox.getMailboxId(), original);
         Flags flags = theCopy.createFlags();
         flags.add(Flag.RECENT);
         theCopy.setFlags(flags);
         return save(mailbox, theCopy);
     }
 
-    /**
-     * @see org.apache.james.mailbox.store.mail.AbstractMessageMapper#save(org.apache.james.mailbox.store.mail.model.Mailbox,
-     *      MailboxMessage)
-     */
     @Override
     protected MessageMetaData save(Mailbox mailbox, MailboxMessage message) throws MailboxException {
         MaildirFolder folder = maildirStore.createMaildirFolder(mailbox);
@@ -290,32 +276,29 @@ public class MaildirMessageMapper extends AbstractMessageMapper {
         // billion years...
         MaildirMessageName messageName = MaildirMessageName.createUniqueName(folder, message.getFullContentOctets());
         File messageFile = new File(tmpFolder, messageName.getFullName());
-        FileOutputStream fos = null;
-        InputStream input = null;
         try {
-            if (!messageFile.createNewFile())
+            if (!messageFile.createNewFile()) {
                 throw new IOException("Could not create file " + messageFile);
-            fos = new FileOutputStream(messageFile);
-            input = message.getFullContent();
-            byte[] b = new byte[BUF_SIZE];
-            int len = 0;
-            while ((len = input.read(b)) != -1)
-                fos.write(b, 0, len);
+            }
+            try (FileOutputStream fos = new FileOutputStream(messageFile);
+                InputStream input = message.getFullContent()) {
+                byte[] b = new byte[BUF_SIZE];
+                int len = 0;
+                while ((len = input.read(b)) != -1) {
+                    fos.write(b, 0, len);
+                }
+            }
         } catch (IOException ioe) {
             throw new MailboxException("Failure while save MailboxMessage " + message + " in Mailbox " + mailbox, ioe);
-        } finally {
-            IOUtils.closeQuietly(fos);
-            IOUtils.closeQuietly(input);
         }
         File newMessageFile = null;
         // delivered via SMTP, goes to ./new without flags
         if (message.isRecent()) {
             messageName.setFlags(message.createFlags());
             newMessageFile = new File(folder.getNewFolder(), messageName.getFullName());
-        }
-        // appended via IMAP (might already have flags etc, goes to ./cur
-        // directly)
-        else {
+        } else {
+            // appended via IMAP (might already have flags etc, goes to ./cur
+            // directly)
             messageName.setFlags(message.createFlags());
             newMessageFile = new File(folder.getCurFolder(), messageName.getFullName());
         }
@@ -343,9 +326,6 @@ public class MaildirMessageMapper extends AbstractMessageMapper {
             .computeApplicableFlags();
     }
 
-    /**
-     * @see org.apache.james.mailbox.store.transaction.TransactionalMapper#endRequest()
-     */
     @Override
     public void endRequest() {
         // not used
@@ -375,18 +355,20 @@ public class MaildirMessageMapper extends AbstractMessageMapper {
         int cur = 0;
         SortedMap<MessageUid, MaildirMessageName> uidMap = null;
         try {
-            if (filter != null)
+            if (filter != null) {
                 uidMap = folder.getUidMap(mailboxSession, filter, from, to);
-            else
+            } else {
                 uidMap = folder.getUidMap(mailboxSession, from, to);
+            }
 
             ArrayList<MailboxMessage> messages = new ArrayList<>();
             for (Entry<MessageUid, MaildirMessageName> entry : uidMap.entrySet()) {
                 messages.add(new MaildirMailboxMessage(mailbox, entry.getKey(), entry.getValue()));
                 if (max != -1) {
                     cur++;
-                    if (cur >= max)
+                    if (cur >= max) {
                         break;
+                    }
                 }
             }
             return messages;
@@ -403,8 +385,9 @@ public class MaildirMessageMapper extends AbstractMessageMapper {
             SortedMap<MessageUid, MaildirMessageName> uidMap = folder.getUidMap(mailboxSession, filter, limit);
 
             ArrayList<MailboxMessage> filtered = new ArrayList<>(uidMap.size());
-            for (Entry<MessageUid, MaildirMessageName> entry : uidMap.entrySet())
+            for (Entry<MessageUid, MaildirMessageName> entry : uidMap.entrySet()) {
                 filtered.add(new MaildirMailboxMessage(mailbox, entry.getKey(), entry.getValue()));
+            }
             return filtered;
         } catch (IOException e) {
             throw new MailboxException("Failure while search for Messages in Mailbox " + mailbox, e);
@@ -429,25 +412,16 @@ public class MaildirMessageMapper extends AbstractMessageMapper {
 
     }
 
-    /**
-     * @see org.apache.james.mailbox.store.transaction.TransactionalMapper#begin()
-     */
     @Override
     protected void begin() throws MailboxException {
         // nothing to do
     }
 
-    /**
-     * @see org.apache.james.mailbox.store.transaction.TransactionalMapper#commit()
-     */
     @Override
     protected void commit() throws MailboxException {
         // nothing to do
     }
 
-    /**
-     * @see org.apache.james.mailbox.store.transaction.TransactionalMapper#rollback()
-     */
     @Override
     protected void rollback() throws MailboxException {
         // nothing to do

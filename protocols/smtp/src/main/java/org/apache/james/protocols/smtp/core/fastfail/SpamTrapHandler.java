@@ -68,23 +68,21 @@ public class SpamTrapHandler implements RcptHook {
         this.blockTime = blockTime;
     }
     
-    /**
-     * @see org.apache.james.protocols.smtp.hook.RcptHook#doRcpt(org.apache.james.protocols.smtp.SMTPSession, org.apache.mailet.MailAddress, org.apache.mailet.MailAddress)
-     */
+    @Override
     public HookResult doRcpt(SMTPSession session, MailAddress sender, MailAddress rcpt) {
         String address = session.getRemoteAddress().getAddress().getHostAddress();
         if (isBlocked(address, session)) {
-            return HookResult.deny();
+            return HookResult.DENY;
         } else {
          
-            if (spamTrapRecips.contains(rcpt.toString().toLowerCase(Locale.US))){
+            if (spamTrapRecips.contains(rcpt.toString().toLowerCase(Locale.US))) {
         
                 addIp(address, session);
             
-                return HookResult.deny();
+                return HookResult.DENY;
             }
         }
-        return HookResult.declined();
+        return HookResult.DECLINED;
     }
     
     
@@ -102,12 +100,12 @@ public class SpamTrapHandler implements RcptHook {
             long blockTime = rawTime.longValue();
            
             if (blockTime > System.currentTimeMillis()) {
-                LOGGER.debug("BlockList contain Ip " + ip);
+                LOGGER.debug("BlockList contain Ip {}", ip);
                 return true;
             } else {
-                LOGGER.debug("Remove ip " + ip + " from blockList");
+                LOGGER.debug("Remove ip {} from blockList", ip);
                
-                synchronized(blockedIps) {
+                synchronized (blockedIps) {
                     blockedIps.remove(ip);
                 }
             }
@@ -124,9 +122,9 @@ public class SpamTrapHandler implements RcptHook {
     private void addIp(String ip, SMTPSession session) {
         long bTime = System.currentTimeMillis() + blockTime;
         
-        LOGGER.debug("Add ip " + ip + " for " + bTime + " to blockList");
+        LOGGER.debug("Add ip {} for {} to blockList", ip, bTime);
     
-        synchronized(blockedIps) {
+        synchronized (blockedIps) {
             blockedIps.put(ip, Long.valueOf(bTime));
         }
     

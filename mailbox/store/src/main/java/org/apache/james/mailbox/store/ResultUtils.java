@@ -55,13 +55,13 @@ public class ResultUtils {
 
     public static List<MessageResult.Header> createHeaders(MailboxMessage document) throws IOException {
         final List<MessageResult.Header> results = new ArrayList<>();
-        MimeConfig config = MimeConfig.custom().setMaxLineLen(-1).setMaxHeaderLen(-1).build();
-        final MimeStreamParser parser = new MimeStreamParser(config);
+        final MimeStreamParser parser = new MimeStreamParser(MimeConfig.PERMISSIVE);
         parser.setContentHandler(new AbstractContentHandler() {
             @Override
             public void endHeader() {
                 parser.stop();
             }
+            
             @Override
             public void field(Field field) throws MimeException {
                 String fieldValue;
@@ -70,7 +70,9 @@ public class ResultUtils {
                     ByteSequence raw = field.getRaw();
                     int len = raw.length();
                     int off = ((RawField) field).getDelimiterIdx() + 1;
-                    if (len > off + 1 && (raw.byteAt(off) & 0xff) == 0x20) off++;
+                    if (len > off + 1 && (raw.byteAt(off) & 0xff) == 0x20) {
+                        off++;
+                    }
                 
                     fieldValue = ContentUtil.decode(raw, off, len - off);
                 } else {

@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.james</groupId>
         <artifactId>apache-james-mpt</artifactId>
-        <version>3.1.0-SNAPSHOT</version>
+        <version>3.2.0-SNAPSHOT</version>
         <relativePath>../..</relativePath>
     </parent>
 
@@ -46,76 +46,64 @@
         <module>maildir</module>
     </modules>
 
-    <properties>
-        <cassandra.includes>empty</cassandra.includes>
-        <hbase.includes>empty</hbase.includes>
-        <inmemory.includes>empty</inmemory.includes>
-        <jcr.includes>empty</jcr.includes>
-        <jpa.includes>empty</jpa.includes>
-        <maildir.includes>empty</maildir.includes>
-        <cyrus.includes>empty</cyrus.includes>
-        <elasticsearch.includes>empty</elasticsearch.includes>
-        <jpa-lucene.includes>empty</jpa-lucene.includes>
-    </properties>
-
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>${project.groupId}</groupId>
+                <groupId>${james.groupId}</groupId>
                 <artifactId>apache-james-mpt-imapmailbox-cassandra</artifactId>
                 <version>${project.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>${project.groupId}</groupId>
+                <groupId>${james.groupId}</groupId>
                 <artifactId>apache-james-mpt-imapmailbox-core</artifactId>
                 <version>${project.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>${project.groupId}</groupId>
+                <groupId>${james.groupId}</groupId>
                 <artifactId>apache-james-mpt-imapmailbox-cyrus</artifactId>
                 <version>${project.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>${project.groupId}</groupId>
+                <groupId>${james.groupId}</groupId>
                 <artifactId>apache-james-mpt-imapmailbox-elasticsearch</artifactId>
                 <version>${project.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>${project.groupId}</groupId>
+                <groupId>${james.groupId}</groupId>
                 <artifactId>apache-james-mpt-imapmailbox-hbase</artifactId>
                 <version>${project.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>${project.groupId}</groupId>
+                <groupId>${james.groupId}</groupId>
                 <artifactId>apache-james-mpt-imapmailbox-inmemory</artifactId>
                 <version>${project.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>${project.groupId}</groupId>
+                <groupId>${james.groupId}</groupId>
                 <artifactId>apache-james-mpt-imapmailbox-jcr</artifactId>
                 <version>${project.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>${project.groupId}</groupId>
+                <groupId>${james.groupId}</groupId>
                 <artifactId>apache-james-mpt-imapmailbox-jpa</artifactId>
                 <version>${project.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>${project.groupId}</groupId>
+                <groupId>${james.groupId}</groupId>
                 <artifactId>apache-james-mpt-imapmailbox-jpa-lucene</artifactId>
                 <version>${project.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>${project.groupId}</groupId>
+                <groupId>${james.groupId}</groupId>
                 <artifactId>apache-james-mpt-imapmailbox-maildir</artifactId>
                 <version>${project.version}</version>
                 <scope>test</scope>
@@ -123,81 +111,4 @@
         </dependencies>
     </dependencyManagement>
 
-    <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <configuration>
-                        <excludes>
-                            <exclude>**/suite/*.java</exclude>
-                            <exclude>**/suite/**/*.java</exclude>
-                        </excludes>
-                        <includes>
-                            <include>${cassandra.includes}, ${hbase.includes}, ${inmemory.includes}, ${jcr.includes}, ${jpa.includes}, ${maildir.includes}, ${cyrus.includes}, 
-${elasticsearch.includes}, ${jpa-lucene.includes}</include>
-                        </includes>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-    </build>
-
-    <profiles>
-        <profile>
-            <id>cassandra</id>
-            <properties>
-                <cassandra.includes>**/cassandra/**/*.java</cassandra.includes>
-            </properties>
-        </profile>
-        <profile>
-            <id>hbase</id>
-            <properties>
-                <hbase.includes>**/hbase/**/*.java</hbase.includes>
-            </properties>
-        </profile>
-        <profile>
-            <id>inmemory</id>
-            <properties>
-                <inmemory.includes>**/inmemory/**/*.java</inmemory.includes>
-            </properties>
-        </profile>
-        <profile>
-            <id>jcr</id>
-            <properties>
-                <jcr.includes>**/jcr/**/*.java</jcr.includes>
-            </properties>
-        </profile>
-        <profile>
-            <id>jpa</id>
-            <properties>
-                <jpa.includes>**/jpa/**/*.java</jpa.includes>
-            </properties>
-        </profile>
-        <profile>
-            <id>jpa-lucene</id>
-            <properties>
-                <jpa-lucene.includes>**/lucenesearch/**/*.java</jpa-lucene.includes>
-            </properties>
-        </profile>
-        <profile>
-            <id>maildir</id>
-            <properties>
-                <maildir.includes>**/maildir/**/*.java</maildir.includes>
-            </properties>
-        </profile>
-        <profile>
-            <id>cyrus</id>
-            <properties>
-                <cyrus.includes>**/cyrus/**/*.java</cyrus.includes>
-            </properties>
-        </profile>
-        <profile>
-            <id>elasticsearch</id>
-            <properties>
-                <elasticsearch.includes>**/elasticsearch/**/*.java</elasticsearch.includes>
-            </properties>
-        </profile>
-    </profiles>
 </project>

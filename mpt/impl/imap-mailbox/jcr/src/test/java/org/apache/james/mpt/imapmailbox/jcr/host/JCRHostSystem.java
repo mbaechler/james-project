@@ -24,10 +24,13 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.jackrabbit.core.RepositoryImpl;
 import org.apache.jackrabbit.core.config.RepositoryConfig;
+import org.apache.james.core.quota.QuotaCount;
+import org.apache.james.core.quota.QuotaSize;
 import org.apache.james.imap.api.process.ImapProcessor;
 import org.apache.james.imap.encode.main.DefaultImapEncoderFactory;
 import org.apache.james.imap.main.DefaultImapDecoderFactory;
 import org.apache.james.imap.processor.main.DefaultImapProcessorFactory;
+import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.acl.GroupMembershipResolver;
 import org.apache.james.mailbox.acl.MailboxACLResolver;
@@ -40,17 +43,19 @@ import org.apache.james.mailbox.jcr.JCRSubscriptionManager;
 import org.apache.james.mailbox.jcr.JCRUtils;
 import org.apache.james.mailbox.jcr.mail.JCRModSeqProvider;
 import org.apache.james.mailbox.jcr.mail.JCRUidProvider;
-import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.JVMMailboxPathLocker;
+import org.apache.james.mailbox.store.StoreMailboxAnnotationManager;
+import org.apache.james.mailbox.store.StoreRightManager;
+import org.apache.james.mailbox.store.event.DefaultDelegatingMailboxListener;
+import org.apache.james.mailbox.store.event.MailboxEventDispatcher;
 import org.apache.james.mailbox.store.mail.model.DefaultMessageId;
 import org.apache.james.mailbox.store.mail.model.impl.MessageParser;
-import org.apache.james.mailbox.store.quota.DefaultQuotaRootResolver;
+import org.apache.james.mailbox.store.quota.DefaultUserQuotaRootResolver;
 import org.apache.james.mailbox.store.quota.NoQuotaManager;
 import org.apache.james.metrics.logger.DefaultMetricFactory;
 import org.apache.james.mpt.api.ImapFeatures;
 import org.apache.james.mpt.api.ImapFeatures.Feature;
 import org.apache.james.mpt.host.JamesImapHostSystem;
-import org.apache.james.mpt.imapmailbox.MailboxCreationDelegate;
 import org.xml.sax.InputSource;
 
 public class JCRHostSystem extends JamesImapHostSystem {
@@ -92,15 +97,20 @@ public class JCRHostSystem extends JamesImapHostSystem {
             GroupMembershipResolver groupMembershipResolver = new SimpleGroupMembershipResolver();
             MessageParser messageParser = new MessageParser();
 
-            mailboxManager = new JCRMailboxManager(mf, authenticator, authorizator, aclResolver, groupMembershipResolver, messageParser,
-                    new DefaultMessageId.Factory());
+            DefaultDelegatingMailboxListener delegatingListener = new DefaultDelegatingMailboxListener();
+            MailboxEventDispatcher mailboxEventDispatcher = new MailboxEventDispatcher(delegatingListener);
+            StoreRightManager storeRightManager = new StoreRightManager(mf, aclResolver, groupMembershipResolver, mailboxEventDispatcher);
+            StoreMailboxAnnotationManager annotationManager = new StoreMailboxAnnotationManager(mf, storeRightManager);
+            mailboxManager = new JCRMailboxManager(mf, authenticator, authorizator, new JVMMailboxPathLocker(), messageParser,
+                    new DefaultMessageId.Factory(), mailboxEventDispatcher, delegatingListener,
+                    annotationManager, storeRightManager);
             mailboxManager.init();
 
             final ImapProcessor defaultImapProcessorFactory = 
                     DefaultImapProcessorFactory.createDefaultProcessor(mailboxManager, 
                             new JCRSubscriptionManager(mf), 
                             new NoQuotaManager(), 
-                            new DefaultQuotaRootResolver(mf),
+                            new DefaultUserQuotaRootResolver(mf),
                             new DefaultMetricFactory());
             resetUserMetaData();
             MailboxSession session = mailboxManager.createSystemSession("test");
@@ -135,17 +145,19 @@ public class JCRHostSystem extends JamesImapHostSystem {
         shutdownRepository();
     }
     
-    private void shutdownRepository() throws Exception{
+    private void shutdownRepository() throws Exception {
         if (repository != null) {
             repository.shutdown();
             repository = null;
         }
     }
     
-    private void delete(File home) throws Exception{
+    private void delete(File home) throws Exception {
         if (home.exists()) {
             File[] files = home.listFiles();
-            if (files == null) return;
+            if (files == null) {
+                return;
+            }
             for (File f : files) {
                 if (f.isDirectory()) {
                     delete(f);
@@ -158,18 +170,18 @@ public class JCRHostSystem extends JamesImapHostSystem {
     }
 
     @Override
-    public void createMailbox(MailboxPath mailboxPath) throws Exception {
-        new MailboxCreationDelegate(mailboxManager).createMailbox(mailboxPath);
+    protected MailboxManager getMailboxManager() {
+        return mailboxManager;
     }
-    
+
     @Override
     public boolean supports(Feature... features) {
         return SUPPORTED_FEATURES.supports(features);
     }
 
     @Override
-    public void setQuotaLimits(long maxMessageQuota, long maxStorageQuota) throws Exception {
+    public void setQuotaLimits(QuotaCount maxMessageQuota, QuotaSize maxStorageQuota) throws Exception {
         throw new NotImplementedException();
     }
-    
+
 }

@@ -27,7 +27,7 @@ import org.apache.james.imap.api.message.response.ImapResponseMessage;
  * A <code>SEARCH</code> response.
  */
 public class SearchResponse implements ImapResponseMessage {
-    private final long ids[];
+    private final long[] ids;
     private final Long highestModSeq;
 
     /**
@@ -60,32 +60,30 @@ public class SearchResponse implements ImapResponseMessage {
     public final Long getHighestModSeq() {
         return highestModSeq;
     }
-    
 
-    /**
-     * @see java.lang.Object#hashCode()
-     */
-    // @Override
+    @Override
     public int hashCode() {
         return ids.length;
     }
 
-    /**
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
-    // @Override
+    @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         final SearchResponse other = (SearchResponse) obj;
-        if (!Arrays.equals(ids, other.ids))
+        if (!Arrays.equals(ids, other.ids)) {
             return false;
-        if (highestModSeq != other.highestModSeq) 
+        }
+        if (highestModSeq != other.highestModSeq) {
             return false;
+        }
         return true;
     }
 

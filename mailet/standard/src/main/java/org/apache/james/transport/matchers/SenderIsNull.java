@@ -19,11 +19,11 @@
 
 package org.apache.james.transport.matchers;
 
-import org.apache.mailet.base.GenericMatcher;
-import org.apache.mailet.Mail;
-import org.apache.james.core.MailAddress;
-
 import java.util.Collection;
+
+import org.apache.james.core.MailAddress;
+import org.apache.mailet.Mail;
+import org.apache.mailet.base.GenericMatcher;
 
 /**
  * <P>Matches mails that are sent by a null sender.</P>
@@ -36,6 +36,7 @@ import java.util.Collection;
  */
 public class SenderIsNull extends GenericMatcher {
 
+    @Override
     public Collection<MailAddress> match(Mail mail) {
         if (mail.getSender() == null) {
             return mail.getRecipients();

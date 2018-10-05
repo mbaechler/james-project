@@ -32,7 +32,7 @@ import org.apache.james.imap.encode.ImapResponseComposer;
  * encoded by this Implementation or should get passed to the next
  * {@link ImapEncoder} in the chain
  */
-abstract public class AbstractChainedImapEncoder implements ImapEncoder {
+public abstract class AbstractChainedImapEncoder implements ImapEncoder {
 
     private final ImapEncoder next;
 
@@ -45,6 +45,7 @@ abstract public class AbstractChainedImapEncoder implements ImapEncoder {
      * Encode the {@link ImapMessage} if {@link #isAcceptable(ImapMessage)}
      * return true, if not pass it to the next encoder in the chain
      */
+    @Override
     public void encode(ImapMessage message, ImapResponseComposer composer, ImapSession session) throws IOException {
         final boolean isAcceptable = isAcceptable(message);
         if (isAcceptable) {
@@ -73,7 +74,7 @@ abstract public class AbstractChainedImapEncoder implements ImapEncoder {
      *            <code>ImapMessage</code>, not null
      * @return true if the given message is encodable by this encoder
      */
-    abstract protected boolean isAcceptable(ImapMessage message);
+    protected abstract boolean isAcceptable(ImapMessage message);
 
     /**
      * Processes an acceptable message. Only messages passing
@@ -86,5 +87,5 @@ abstract public class AbstractChainedImapEncoder implements ImapEncoder {
      * @param session
      *            TODO
      */
-    abstract protected void doEncode(ImapMessage acceptableMessage, ImapResponseComposer composer, ImapSession session) throws IOException;
+    protected abstract void doEncode(ImapMessage acceptableMessage, ImapResponseComposer composer, ImapSession session) throws IOException;
 }

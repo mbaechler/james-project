@@ -12,8 +12,12 @@
                 </encoder>
         </appender>
 
-        <root level="INFO">
+        <root level="WARN">
                 <appender-ref ref="CONSOLE" />
         </root>
+
+        <logger name="org.apache.james.backends.cassandra.DockerCassandraRule" level="WARN" >
+                <appender-ref ref="CONSOLE" />
+        </logger>
 
 </configuration>

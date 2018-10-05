@@ -58,6 +58,7 @@ public class SimpleMailboxMetaData implements MailboxMetaData, Comparable<Mailbo
      * 
      * @return true if marked, false otherwise
      */
+    @Override
     public final Children inferiors() {
         return inferiors;
     }
@@ -65,20 +66,17 @@ public class SimpleMailboxMetaData implements MailboxMetaData, Comparable<Mailbo
     /**
      * Gets the RFC3501 Selectability flag.
      */
+    @Override
     public final Selectability getSelectability() {
         return selectability;
     }
 
-    /**
-     * @see org.apache.james.mailbox.model.MailboxMetaData#getHierarchyDelimiter()
-     */
+    @Override
     public char getHierarchyDelimiter() {
         return delimiter;
     }
 
-    /**
-     * @see org.apache.james.mailbox.model.MailboxMetaData#getPath()
-     */
+    @Override
     public MailboxPath getPath() {
         return path;
     }
@@ -88,16 +86,12 @@ public class SimpleMailboxMetaData implements MailboxMetaData, Comparable<Mailbo
         return mailboxId;
     }
 
-    /**
-     * @see java.lang.Object#toString()
-     */
+    @Override
     public String toString() {
         return "ListResult: " + path;
     }
 
-    /**
-     * @see java.lang.Object#hashCode()
-     */
+    @Override
     public int hashCode() {
         final int PRIME = 31;
         int result = 1;
@@ -105,28 +99,29 @@ public class SimpleMailboxMetaData implements MailboxMetaData, Comparable<Mailbo
         return result;
     }
 
-    /**
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
+    @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         final SimpleMailboxMetaData other = (SimpleMailboxMetaData) obj;
         if (path == null) {
-            if (other.path != null)
+            if (other.path != null) {
                 return false;
-        } else if (!path.equals(other.path))
+            }
+        } else if (!path.equals(other.path)) {
             return false;
+        }
         return true;
     }
 
-    /**
-     * @see java.lang.Comparable#compareTo(java.lang.Object)
-     */
+    @Override
     public int compareTo(MailboxMetaData o) {
         return StandardMailboxMetaDataComparator.order(this, o);
     }

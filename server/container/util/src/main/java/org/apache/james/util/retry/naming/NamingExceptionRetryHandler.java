@@ -34,7 +34,7 @@ import org.apache.james.util.retry.api.RetrySchedule;
  * @see org.apache.james.user.ldap.ExceptionRetryHandler
  * 
  */
-abstract public class NamingExceptionRetryHandler extends ExceptionRetryHandler {
+public abstract class NamingExceptionRetryHandler extends ExceptionRetryHandler {
 
     /**
      * Creates a new instance of NamingExceptionRetryHandler.
@@ -49,8 +49,6 @@ abstract public class NamingExceptionRetryHandler extends ExceptionRetryHandler 
         super(exceptionClasses, proxy, schedule, maxRetries);
     }
 
-    /**
-     */
     @Override
     public Object perform() throws NamingException {
         try {
@@ -63,15 +61,12 @@ abstract public class NamingExceptionRetryHandler extends ExceptionRetryHandler 
         }
     }
 
-    /**
-     */
     @Override
     public void postFailure(Exception ex, int retryCount) {
         postFailure(((NamingException) ex), retryCount);        
     }
 
-    public void postFailure(NamingException ex, int retryCount)
-    {
+    public void postFailure(NamingException ex, int retryCount) {
         // no-op
     }
 }

@@ -33,8 +33,8 @@ public enum CmdType {
     LISTDOMAINS("ListDomains"),
     LISTMAPPINGS("ListMappings"),
     LISTUSERDOMAINMAPPINGS("ListUserDomainMappings", "user","domain"),
-    ADDADDRESSMAPPING("AddAddressMapping", "user","domain", "fromAddress"),
-    REMOVEADDRESSMAPPING("RemoveAddressMapping", "user","domain", "fromAddress"),
+    ADDADDRESSMAPPING("AddAddressMapping", "fromUser","fromDomain", "toAddress"),
+    REMOVEADDRESSMAPPING("RemoveAddressMapping", "fromUser","fromDomain", "toAddress"),
     ADDREGEXMAPPING("AddRegexMapping", "user","domain", "regex"),
     REMOVEREGEXMAPPING("RemoveRegexMapping", "user","domain", "regex"),
     SETPASSWORD("SetPassword", "username","password"),
@@ -51,10 +51,10 @@ public enum CmdType {
     GETMAXMESSAGECOUNTQUOTA("GetMaxMessageCountQuota", "quotaroot"),
     SETMAXSTORAGEQUOTA("SetMaxStorageQuota", "quotaroot", "maxMessageCount"),
     SETMAXMESSAGECOUNTQUOTA("SetMaxMessageCountQuota", "quotaroot", "maxStorage"),
-    SETDEFAULTMAXSTORAGEQUOTA("SetDefaultMaxStorageQuota", "maxStorage"),
-    SETDEFAULTMAXMESSAGECOUNTQUOTA("SetDefaultMaxMessageCountQuota", "maxMessageCount"),
-    GETDEFAULTMAXSTORAGEQUOTA("GetDefaultMaxStorageQuota"),
-    GETDEFAULTMAXMESSAGECOUNTQUOTA("GetDefaultMaxMessageCountQuota"),
+    SETGLOBALMAXSTORAGEQUOTA("SetGlobalMaxStorageQuota", "maxStorage"),
+    SETGLOBALMAXMESSAGECOUNTQUOTA("SetGlobalMaxMessageCountQuota", "maxMessageCount"),
+    GETGLOBALMAXSTORAGEQUOTA("GetGlobalMaxStorageQuota"),
+    GETGLOBALMAXMESSAGECOUNTQUOTA("GetGlobalMaxMessageCountQuota"),
     REINDEXMAILBOX("ReindexMailbox", "namespace", "user", "name"),
     REINDEXALL("ReindexAll"),
     GETSIEVEQUOTA("GetSieveQuota"),
@@ -122,7 +122,7 @@ public enum CmdType {
 
     public String getUsage() {
         StringBuilder stringBuilder = new StringBuilder(command);
-        for(String argument : arguments) {
+        for (String argument : arguments) {
             stringBuilder.append(" <" + argument + ">");
         }
         return stringBuilder.toString();

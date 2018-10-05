@@ -112,9 +112,7 @@ public class TopCmdHandler extends RetrCmdHandler implements CapaCapability {
 
     }
 
-    /**
-     * @see org.apache.james.pop3server.core.CapaCapability#getImplementedCapabilities(org.apache.james.pop3server.POP3Session)
-     */
+    @Override
     @SuppressWarnings("unchecked")
     public Set<String> getImplementedCapabilities(POP3Session session) {
         if (session.getHandlerState() == POP3Session.TRANSACTION) {
@@ -124,9 +122,6 @@ public class TopCmdHandler extends RetrCmdHandler implements CapaCapability {
         }
     }
 
-    /**
-     * @see org.apache.james.protocols.api.handler.CommandHandler#getImplCommands()
-     */
     @Override
     public Collection<String> getImplCommands() {
         return COMMANDS;
@@ -165,19 +160,19 @@ public class TopCmdHandler extends RetrCmdHandler implements CapaCapability {
 
                     // check for empty line
                     if (!isBody && isEmptyLine && lastChar == '\r' && a == '\n') {
-                    	// reached body
-                    	isBody = true;
+                        // reached body
+                        isBody = true;
                     }
 
                     if (lastChar == '\r' && a == '\n') {
-                    	// reset empty line flag
-                    	isEmptyLine = true;
+                        // reset empty line flag
+                        isEmptyLine = true;
 
-                    	if (isBody) {
-                    		count++;
-                    	}
+                        if (isBody) {
+                            count++;
+                        }
                     } else if (lastChar == '\n' && a != '\r') {
-                    	isEmptyLine = false;
+                        isEmptyLine = false;
                     }
 
                     lastChar = a;

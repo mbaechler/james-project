@@ -19,16 +19,16 @@
 
 package org.apache.james.webadmin.swagger.routes;
 
-
 import javax.inject.Inject;
 
-import org.apache.james.webadmin.Routes;
+import org.apache.james.webadmin.PublicRoutes;
 import org.apache.james.webadmin.WebAdminConfiguration;
 import org.apache.james.webadmin.swagger.SwaggerParser;
+import org.eclipse.jetty.http.HttpStatus;
 
 import spark.Service;
 
-public class SwaggerRoutes implements Routes {
+public class SwaggerRoutes implements PublicRoutes {
     public static final String SWAGGER_ENDPOINT = "/james-swagger";
     private static final String APP_PACKAGE = "org.apache.james.webadmin.routes";
     private final WebAdminConfiguration webAdminConfiguration;
@@ -39,9 +39,14 @@ public class SwaggerRoutes implements Routes {
     }
 
     @Override
+    public String getBasePath() {
+        return SWAGGER_ENDPOINT;
+    }
+
+    @Override
     public void define(Service service) {
         service.get(SWAGGER_ENDPOINT, (request, response) -> {
-            response.status(200);
+            response.status(HttpStatus.OK_200);
             return SwaggerParser.getSwaggerJson(APP_PACKAGE, webAdminConfiguration);
         });
     }

@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
-import javax.mail.Flags;
 
 import org.apache.james.jmap.methods.GetMessagesMethod;
 import org.apache.james.jmap.methods.JmapResponseWriterImpl;
@@ -66,13 +65,13 @@ public class Message {
         private final ImmutableList.Builder<Emailer> replyTo;
         private String subject;
         private Instant date;
-        private Long size;
+        private Number size;
         private String preview;
         private Optional<String> textBody = Optional.empty();
         private Optional<String> htmlBody = Optional.empty();
         private final ImmutableList.Builder<Attachment> attachments;
         private final ImmutableMap.Builder<BlobId, SubMessage> attachedMessages;
-        private Optional<Flags> flags = Optional.empty();
+        private Optional<Keywords> keywords = Optional.empty();
 
         private Builder() {
             to = ImmutableList.builder();
@@ -118,8 +117,8 @@ public class Message {
             return this;
         }
 
-        public Builder flags(Flags flags) {
-            this.flags = Optional.ofNullable(flags);
+        public Builder keywords(Keywords keywords) {
+            this.keywords = Optional.ofNullable(keywords);
             return this;
         }
 
@@ -164,7 +163,7 @@ public class Message {
         }
 
         public Builder size(long size) {
-            this.size = size;
+            this.size = Number.BOUND_SANITIZING_FACTORY.from(size);
             return this;
         }
 
@@ -206,15 +205,11 @@ public class Message {
             ImmutableMap<BlobId, SubMessage> attachedMessages = this.attachedMessages.build();
             Preconditions.checkState(areAttachedMessagesKeysInAttachments(attachments, attachedMessages), "'attachedMessages' keys must be in 'attachements'");
             boolean hasAttachment = hasAttachment(attachments);
-            Keywords keywords = flags.map(flag -> Keywords.factory()
-                    .filterImapNonExposedKeywords()
-                    .fromFlags(flag))
-                .orElse(Keywords.DEFAULT_VALUE);
 
             return new Message(id, blobId, threadId, mailboxIds, Optional.ofNullable(inReplyToMessageId),
                 hasAttachment, headers, Optional.ofNullable(from),
                 to.build(), cc.build(), bcc.build(), replyTo.build(), subject, date, size, preview, textBody, htmlBody, attachments, attachedMessages,
-                keywords);
+                keywords.orElse(Keywords.DEFAULT_VALUE));
         }
     }
 
@@ -249,7 +244,7 @@ public class Message {
     private final ImmutableList<Emailer> replyTo;
     private final String subject;
     private final Instant date;
-    private final long size;
+    private final Number size;
     private final String preview;
     private final Optional<String> textBody;
     private final Optional<String> htmlBody;
@@ -271,7 +266,7 @@ public class Message {
                                ImmutableList<Emailer> replyTo,
                                String subject,
                                Instant date,
-                               long size,
+                               Number size,
                                String preview,
                                Optional<String> textBody,
                                Optional<String> htmlBody,
@@ -337,6 +332,10 @@ public class Message {
         return keywords.contains(Keyword.DRAFT);
     }
 
+    public boolean isIsForwarded() {
+        return keywords.contains(Keyword.FORWARDED);
+    }
+
     public boolean isHasAttachment() {
         return hasAttachment;
     }
@@ -373,7 +372,7 @@ public class Message {
         return date;
     }
 
-    public long getSize() {
+    public Number getSize() {
         return size;
     }
 

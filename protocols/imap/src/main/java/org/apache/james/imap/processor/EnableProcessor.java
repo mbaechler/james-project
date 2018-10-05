@@ -48,9 +48,9 @@ import com.google.common.collect.ImmutableList;
 public class EnableProcessor extends AbstractMailboxProcessor<EnableRequest> implements CapabilityImplementingProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(EnableProcessor.class);
 
-    private final static List<PermitEnableCapabilityProcessor> capabilities = new ArrayList<>();
-    public final static String ENABLED_CAPABILITIES = "ENABLED_CAPABILITIES";
-    private final static List<String> CAPS = ImmutableList.of(SUPPORTS_ENABLE);
+    private static final List<PermitEnableCapabilityProcessor> capabilities = new ArrayList<>();
+    public static final String ENABLED_CAPABILITIES = "ENABLED_CAPABILITIES";
+    private static final List<String> CAPS = ImmutableList.of(SUPPORTS_ENABLE);
     private final CapabilityProcessor capabilityProcessor;
 
     public EnableProcessor(ImapProcessor next, MailboxManager mailboxManager, StatusResponseFactory factory, List<PermitEnableCapabilityProcessor> capabilities,
@@ -67,12 +67,7 @@ public class EnableProcessor extends AbstractMailboxProcessor<EnableRequest> imp
     }
 
 
-    /**
-     * @see org.apache.james.imap.processor.AbstractMailboxProcessor
-     * #doProcess(org.apache.james.imap.api.message.request.ImapRequest,
-     * org.apache.james.imap.api.process.ImapSession, java.lang.String,
-     * org.apache.james.imap.api.ImapCommand, org.apache.james.imap.api.process.ImapProcessor.Responder)
-     */
+    @Override
     protected void doProcess(EnableRequest request, ImapSession session, String tag, ImapCommand command, Responder responder) {
         try {
 
@@ -83,16 +78,14 @@ public class EnableProcessor extends AbstractMailboxProcessor<EnableRequest> imp
             unsolicitedResponses(session, responder, false);
             okComplete(command, tag, responder);
         } catch (EnableException e) {
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info("Unable to enable extension", e);
-            }
+            LOGGER.info("Unable to enable extension", e);
             taggedBad(command, tag, responder, HumanReadableText.FAILED);
         }
     }
    
     public Set<String> enable(ImapRequest request, Responder responder, ImapSession session, Iterator<String> caps) throws EnableException {
         Set<String> enabledCaps = new HashSet<>();
-        while(caps.hasNext()) {
+        while (caps.hasNext()) {
             String cap = caps.next();
             // Check if the CAPABILITY is supported at all
             if (capabilityProcessor.getSupportedCapabilities(session).contains(cap)) {
@@ -134,10 +127,7 @@ public class EnableProcessor extends AbstractMailboxProcessor<EnableRequest> imp
         return caps;
     }
     
-    /**
-     * @see org.apache.james.imap.processor.CapabilityImplementingProcessor
-     * #getImplementedCapabilities(org.apache.james.imap.api.process.ImapSession)
-     */
+    @Override
     public List<String> getImplementedCapabilities(ImapSession session) {
         return CAPS;
     }

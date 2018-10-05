@@ -19,16 +19,14 @@
 
 package org.apache.james.webadmin.routes;
 
-import static com.jayway.restassured.RestAssured.when;
-import static com.jayway.restassured.RestAssured.with;
-import static com.jayway.restassured.config.EncoderConfig.encoderConfig;
-import static com.jayway.restassured.config.RestAssuredConfig.newConfig;
+import static io.restassured.RestAssured.when;
+import static io.restassured.RestAssured.with;
 import static org.apache.james.webadmin.Constants.SEPARATOR;
 import static org.apache.james.webadmin.WebAdminServer.NO_CONFIGURATION;
 import static org.apache.james.webadmin.routes.UserMailboxesRoutes.USERS_BASE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.is;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -37,49 +35,39 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.james.mailbox.MailboxManager;
-import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.acl.SimpleGroupMembershipResolver;
-import org.apache.james.mailbox.acl.UnionMailboxACLResolver;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.exception.MailboxExistsException;
 import org.apache.james.mailbox.exception.MailboxNotFoundException;
 import org.apache.james.mailbox.inmemory.InMemoryId;
-import org.apache.james.mailbox.inmemory.InMemoryMailboxManager;
-import org.apache.james.mailbox.inmemory.InMemoryMailboxSessionMapperFactory;
+import org.apache.james.mailbox.inmemory.manager.InMemoryIntegrationResources;
+import org.apache.james.mailbox.mock.MockMailboxSession;
 import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MailboxPath;
-import org.apache.james.mailbox.model.MailboxQuery;
-import org.apache.james.mailbox.model.MessageId;
-import org.apache.james.mailbox.store.FakeAuthorizator;
-import org.apache.james.mailbox.store.JVMMailboxPathLocker;
+import org.apache.james.mailbox.model.search.MailboxQuery;
 import org.apache.james.mailbox.store.SimpleMailboxMetaData;
-import org.apache.james.mailbox.store.mail.model.DefaultMessageId;
-import org.apache.james.mailbox.store.mail.model.impl.MessageParser;
 import org.apache.james.metrics.logger.DefaultMetricFactory;
 import org.apache.james.user.api.UsersRepository;
 import org.apache.james.webadmin.WebAdminServer;
 import org.apache.james.webadmin.WebAdminUtils;
 import org.apache.james.webadmin.service.UserMailboxesService;
 import org.apache.james.webadmin.utils.JsonTransformer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.eclipse.jetty.http.HttpStatus;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
-import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.jayway.restassured.RestAssured;
-import com.jayway.restassured.builder.RequestSpecBuilder;
-import com.jayway.restassured.http.ContentType;
 
-import de.bechte.junit.runners.context.HierarchicalContextRunner;
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
 
-@RunWith(HierarchicalContextRunner.class)
-public class UserMailboxesRoutesTest {
+class UserMailboxesRoutesTest {
 
-    public static final String USERNAME = "username";
-    public static final String MAILBOX_NAME = "myMailboxName";
+    private static final String USERNAME = "username";
+    private static final String MAILBOX_NAME = "myMailboxName";
     private WebAdminServer webAdminServer;
     private UsersRepository usersRepository;
 
@@ -93,215 +81,373 @@ public class UserMailboxesRoutesTest {
         webAdminServer.configure(NO_CONFIGURATION);
         webAdminServer.await();
 
-        RestAssured.requestSpecification = new RequestSpecBuilder()
-            .setContentType(ContentType.JSON)
-            .setAccept(ContentType.JSON)
+        RestAssured.requestSpecification = WebAdminUtils.buildRequestSpecification(webAdminServer)
             .setBasePath(USERS_BASE + SEPARATOR + USERNAME + SEPARATOR + UserMailboxesRoutes.MAILBOXES)
-            .setPort(webAdminServer.getPort().toInt())
-            .setConfig(newConfig().encoderConfig(encoderConfig().defaultContentCharset(Charsets.UTF_8)))
             .build();
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         webAdminServer.destroy();
     }
 
-    public class NormalBehaviour {
+    @Nested
+    class NormalBehaviour {
 
-        @Before
-        public void setUp() throws Exception {
-            MessageId.Factory messageIdFactory = new DefaultMessageId.Factory();
-            InMemoryMailboxManager mailboxManager = new InMemoryMailboxManager(new InMemoryMailboxSessionMapperFactory(),
-                (userid, passwd) -> true,
-                FakeAuthorizator.defaultReject(),
-                new JVMMailboxPathLocker(),
-                new UnionMailboxACLResolver(),
-                new SimpleGroupMembershipResolver(),
-                new MessageParser(),
-                messageIdFactory);
-            mailboxManager.init();
+        @BeforeEach
+        void setUp() throws Exception {
+            InMemoryIntegrationResources inMemoryIntegrationResources = new InMemoryIntegrationResources();
 
-            createServer(mailboxManager);
+            createServer(inMemoryIntegrationResources.createMailboxManager(new SimpleGroupMembershipResolver()));
         }
 
         @Test
-        public void getMailboxesShouldUserErrorFoundWithNonExistingUser() throws Exception {
+        void getMailboxesShouldUserErrorFoundWithNonExistingUser() throws Exception {
             when(usersRepository.contains(USERNAME)).thenReturn(false);
 
-            when()
+            Map<String, Object> errors = when()
                 .get()
             .then()
-                .statusCode(404);
+                .statusCode(HttpStatus.NOT_FOUND_404)
+                .contentType(ContentType.JSON)
+                .extract()
+                .body()
+                .jsonPath()
+                .getMap(".");
+
+            assertThat(errors)
+                .containsEntry("statusCode", HttpStatus.NOT_FOUND_404)
+                .containsEntry("type", "InvalidArgument")
+                .containsEntry("message", "Invalid get on user mailboxes");
         }
 
         @Test
-        public void getShouldReturnNotFoundWithNonExistingUser() throws Exception {
+        void getShouldReturnNotFoundWithNonExistingUser() throws Exception {
             when(usersRepository.contains(USERNAME)).thenReturn(false);
 
-            when()
+            Map<String, Object> errors = when()
                 .get(MAILBOX_NAME)
             .then()
-                .statusCode(404);
+                .statusCode(HttpStatus.NOT_FOUND_404)
+                .contentType(ContentType.JSON)
+                .extract()
+                .body()
+                .jsonPath()
+                .getMap(".");
+
+            assertThat(errors)
+                .containsEntry("statusCode", HttpStatus.NOT_FOUND_404)
+                .containsEntry("type", "InvalidArgument")
+                .containsEntry("message", "Invalid get on user mailboxes");
         }
 
         @Test
-        public void putShouldReturnNotFoundWithNonExistingUser() throws Exception {
+        void putShouldReturnNotFoundWithNonExistingUser() throws Exception {
             when(usersRepository.contains(USERNAME)).thenReturn(false);
 
-            when()
+            Map<String, Object> errors = when()
                 .put(MAILBOX_NAME)
             .then()
-                .statusCode(404);
+                .statusCode(HttpStatus.NOT_FOUND_404)
+                .contentType(ContentType.JSON)
+                .extract()
+                .body()
+                .jsonPath()
+                .getMap(".");
+
+            assertThat(errors)
+                .containsEntry("statusCode", HttpStatus.NOT_FOUND_404)
+                .containsEntry("type", "InvalidArgument")
+                .containsEntry("message", "Invalid get on user mailboxes");
         }
 
         @Test
-        public void deleteShouldReturnNotFoundWithNonExistingUser() throws Exception {
+        void deleteShouldReturnNotFoundWithNonExistingUser() throws Exception {
             when(usersRepository.contains(USERNAME)).thenReturn(false);
 
-            when()
+            Map<String, Object> errors = when()
                 .put(MAILBOX_NAME)
             .then()
-                .statusCode(404);
+                .statusCode(HttpStatus.NOT_FOUND_404)
+                .contentType(ContentType.JSON)
+                .extract()
+                .body()
+                .jsonPath()
+                .getMap(".");
+
+            assertThat(errors)
+                .containsEntry("statusCode", HttpStatus.NOT_FOUND_404)
+                .containsEntry("type", "InvalidArgument")
+                .containsEntry("message", "Invalid get on user mailboxes");
         }
 
         @Test
-        public void getShouldReturnUserErrorWithInvalidWildcardMailboxName() throws Exception {
+        void getShouldReturnUserErrorWithInvalidWildcardMailboxName() throws Exception {
             when(usersRepository.contains(USERNAME)).thenReturn(false);
 
-            when()
+            Map<String, Object> errors = when()
                 .get(MAILBOX_NAME + "*")
             .then()
-                .statusCode(400);
+                .statusCode(HttpStatus.BAD_REQUEST_400)
+                .contentType(ContentType.JSON)
+                .extract()
+                .body()
+                .jsonPath()
+                .getMap(".");
+
+            assertThat(errors)
+                .containsEntry("statusCode", HttpStatus.BAD_REQUEST_400)
+                .containsEntry("type", "InvalidArgument")
+                .containsEntry("message", "Attempt to create an invalid mailbox");
         }
 
         @Test
-        public void putShouldReturnUserErrorWithInvalidWildcardMailboxName() throws Exception {
+        void putShouldReturnUserErrorWithInvalidWildcardMailboxName() throws Exception {
             when(usersRepository.contains(USERNAME)).thenReturn(false);
 
-            when()
-                .put(MAILBOX_NAME+ "*")
-            .then()
-                .statusCode(400);
-        }
-
-        @Test
-        public void deleteShouldReturnUserErrorWithInvalidWildcardMailboxName() throws Exception {
-            when(usersRepository.contains(USERNAME)).thenReturn(false);
-
-            when()
+            Map<String, Object> errors = when()
                 .put(MAILBOX_NAME + "*")
             .then()
-                .statusCode(400);
+                .statusCode(HttpStatus.BAD_REQUEST_400)
+                .contentType(ContentType.JSON)
+                .extract()
+                .body()
+                .jsonPath()
+                .getMap(".");
+
+            assertThat(errors)
+                .containsEntry("statusCode", HttpStatus.BAD_REQUEST_400)
+                .containsEntry("type", "InvalidArgument")
+                .containsEntry("message", "Attempt to create an invalid mailbox");
         }
 
         @Test
-        public void getShouldReturnUserErrorWithInvalidPercentMailboxName() throws Exception {
+        void deleteShouldReturnUserErrorWithInvalidWildcardMailboxName() throws Exception {
             when(usersRepository.contains(USERNAME)).thenReturn(false);
 
-            when()
+            Map<String, Object> errors = when()
+                .put(MAILBOX_NAME + "*")
+            .then()
+                .statusCode(HttpStatus.BAD_REQUEST_400)
+                .contentType(ContentType.JSON)
+                .extract()
+                .body()
+                .jsonPath()
+                .getMap(".");
+
+            assertThat(errors)
+                .containsEntry("statusCode", HttpStatus.BAD_REQUEST_400)
+                .containsEntry("type", "InvalidArgument")
+                .containsEntry("message", "Attempt to create an invalid mailbox");
+        }
+
+        @Test
+        void getShouldReturnUserErrorWithInvalidPercentMailboxName() throws Exception {
+            when(usersRepository.contains(USERNAME)).thenReturn(false);
+
+            Map<String, Object> errors = when()
                 .get(MAILBOX_NAME + "%")
             .then()
-                .statusCode(400);
+                .statusCode(HttpStatus.BAD_REQUEST_400)
+                .contentType(ContentType.JSON)
+                .extract()
+                .body()
+                .jsonPath()
+                .getMap(".");
+
+            assertThat(errors)
+                .containsEntry("statusCode", HttpStatus.BAD_REQUEST_400)
+                .containsEntry("type", "InvalidArgument")
+                .containsEntry("message", "Attempt to create an invalid mailbox");
         }
 
         @Test
-        public void putShouldReturnUserErrorWithInvalidPercentMailboxName() throws Exception {
+        void putShouldReturnUserErrorWithInvalidPercentMailboxName() throws Exception {
             when(usersRepository.contains(USERNAME)).thenReturn(false);
 
-            when()
-                .put(MAILBOX_NAME+ "%")
-            .then()
-                .statusCode(400);
-        }
-
-        @Test
-        public void deleteShouldReturnUserErrorWithInvalidPercentMailboxName() throws Exception {
-            when(usersRepository.contains(USERNAME)).thenReturn(false);
-
-            when()
+            Map<String, Object> errors = when()
                 .put(MAILBOX_NAME + "%")
             .then()
-                .statusCode(400);
+                .statusCode(HttpStatus.BAD_REQUEST_400)
+                .contentType(ContentType.JSON)
+                .extract()
+                .body()
+                .jsonPath()
+                .getMap(".");
+
+            assertThat(errors)
+                .containsEntry("statusCode", HttpStatus.BAD_REQUEST_400)
+                .containsEntry("type", "InvalidArgument")
+                .containsEntry("message", "Attempt to create an invalid mailbox");
         }
 
         @Test
-        public void getShouldReturnUserErrorWithInvalidSharpMailboxName() throws Exception {
+        void deleteShouldReturnUserErrorWithInvalidPercentMailboxName() throws Exception {
             when(usersRepository.contains(USERNAME)).thenReturn(false);
 
-            when()
+            Map<String, Object> errors = when()
+                .put(MAILBOX_NAME + "%")
+            .then()
+                .statusCode(HttpStatus.BAD_REQUEST_400)
+                .contentType(ContentType.JSON)
+                .extract()
+                .body()
+                .jsonPath()
+                .getMap(".");
+
+            assertThat(errors)
+                .containsEntry("statusCode", HttpStatus.BAD_REQUEST_400)
+                .containsEntry("type", "InvalidArgument")
+                .containsEntry("message", "Attempt to create an invalid mailbox");
+        }
+
+        @Test
+        void getShouldReturnUserErrorWithInvalidSharpMailboxName() throws Exception {
+            when(usersRepository.contains(USERNAME)).thenReturn(false);
+
+            Map<String, Object> errors = when()
                 .get(MAILBOX_NAME + "#")
             .then()
-                .statusCode(400);
+                .statusCode(HttpStatus.BAD_REQUEST_400)
+                .contentType(ContentType.JSON)
+                .extract()
+                .body()
+                .jsonPath()
+                .getMap(".");
+
+            assertThat(errors)
+                .containsEntry("statusCode", HttpStatus.BAD_REQUEST_400)
+                .containsEntry("type", "InvalidArgument")
+                .containsEntry("message", "Attempt to create an invalid mailbox");
         }
 
         @Test
-        public void putShouldReturnUserErrorWithInvalidSharpMailboxName() throws Exception {
+        void putShouldReturnUserErrorWithInvalidSharpMailboxName() throws Exception {
             when(usersRepository.contains(USERNAME)).thenReturn(false);
 
-            when()
-                .put(MAILBOX_NAME+ "#")
-            .then()
-                .statusCode(400);
-        }
-
-        @Test
-        public void deleteShouldReturnUserErrorWithInvalidSharpMailboxName() throws Exception {
-            when(usersRepository.contains(USERNAME)).thenReturn(false);
-
-            when()
+            Map<String, Object> errors = when()
                 .put(MAILBOX_NAME + "#")
             .then()
-                .statusCode(400);
+                .statusCode(HttpStatus.BAD_REQUEST_400)
+                .contentType(ContentType.JSON)
+                .extract()
+                .body()
+                .jsonPath()
+                .getMap(".");
+
+            assertThat(errors)
+                .containsEntry("statusCode", HttpStatus.BAD_REQUEST_400)
+                .containsEntry("type", "InvalidArgument")
+                .containsEntry("message", "Attempt to create an invalid mailbox");
         }
 
         @Test
-        public void getShouldReturnUserErrorWithInvalidAndMailboxName() throws Exception {
+        void deleteShouldReturnUserErrorWithInvalidSharpMailboxName() throws Exception {
             when(usersRepository.contains(USERNAME)).thenReturn(false);
 
-            when()
+            Map<String, Object> errors = when()
+                .put(MAILBOX_NAME + "#")
+            .then()
+                .statusCode(HttpStatus.BAD_REQUEST_400)
+                .contentType(ContentType.JSON)
+                .extract()
+                .body()
+                .jsonPath()
+                .getMap(".");
+
+            assertThat(errors)
+                .containsEntry("statusCode", HttpStatus.BAD_REQUEST_400)
+                .containsEntry("type", "InvalidArgument")
+                .containsEntry("message", "Attempt to create an invalid mailbox");
+        }
+
+        @Test
+        void getShouldReturnUserErrorWithInvalidAndMailboxName() throws Exception {
+            when(usersRepository.contains(USERNAME)).thenReturn(false);
+
+            Map<String, Object> errors = when()
                 .get(MAILBOX_NAME + "&")
             .then()
-                .statusCode(400);
+                .statusCode(HttpStatus.BAD_REQUEST_400)
+                .contentType(ContentType.JSON)
+                .extract()
+                .body()
+                .jsonPath()
+                .getMap(".");
+
+            assertThat(errors)
+                .containsEntry("statusCode", HttpStatus.BAD_REQUEST_400)
+                .containsEntry("type", "InvalidArgument")
+                .containsEntry("message", "Attempt to create an invalid mailbox");
         }
 
         @Test
-        public void putShouldReturnUserErrorWithInvalidAndMailboxName() throws Exception {
+        void putShouldReturnUserErrorWithInvalidAndMailboxName() throws Exception {
             when(usersRepository.contains(USERNAME)).thenReturn(false);
 
-            when()
-                .put(MAILBOX_NAME+ "&")
-            .then()
-                .statusCode(400);
-        }
-
-        @Test
-        public void deleteShouldReturnUserErrorWithInvalidAndMailboxName() throws Exception {
-            when(usersRepository.contains(USERNAME)).thenReturn(false);
-
-            when()
+            Map<String, Object> errors = when()
                 .put(MAILBOX_NAME + "&")
             .then()
-                .statusCode(400);
+                .statusCode(HttpStatus.BAD_REQUEST_400)
+                .contentType(ContentType.JSON)
+                .extract()
+                .body()
+                .jsonPath()
+                .getMap(".");
+
+            assertThat(errors)
+                .containsEntry("statusCode", HttpStatus.BAD_REQUEST_400)
+                .containsEntry("type", "InvalidArgument")
+                .containsEntry("message", "Attempt to create an invalid mailbox");
         }
 
         @Test
-        public void deleteMailboxesShouldReturnUserErrorWithNonExistingUser() throws Exception {
+        void deleteShouldReturnUserErrorWithInvalidAndMailboxName() throws Exception {
             when(usersRepository.contains(USERNAME)).thenReturn(false);
 
-            when()
-                .delete()
+            Map<String, Object> errors = when()
+                .put(MAILBOX_NAME + "&")
             .then()
-                .statusCode(404);
+                .statusCode(HttpStatus.BAD_REQUEST_400)
+                .contentType(ContentType.JSON)
+                .extract()
+                .body()
+                .jsonPath()
+                .getMap(".");
+
+            assertThat(errors)
+                .containsEntry("statusCode", HttpStatus.BAD_REQUEST_400)
+                .containsEntry("type", "InvalidArgument")
+                .containsEntry("message", "Attempt to create an invalid mailbox");
         }
 
         @Test
-        public void getMailboxesShouldReturnEmptyListByDefault() {
+        void deleteMailboxesShouldReturnUserErrorWithNonExistingUser() throws Exception {
+            when(usersRepository.contains(USERNAME)).thenReturn(false);
+
+            Map<String, Object> errors = when()
+                .delete()
+            .then()
+                .statusCode(HttpStatus.NOT_FOUND_404)
+                .contentType(ContentType.JSON)
+                .extract()
+                .body()
+                .jsonPath()
+                .getMap(".");
+
+            assertThat(errors)
+                .containsEntry("statusCode", HttpStatus.NOT_FOUND_404)
+                .containsEntry("type", "InvalidArgument")
+                .containsEntry("message", "Invalid delete on user mailboxes");
+        }
+
+        @Test
+        void getMailboxesShouldReturnEmptyListByDefault() {
             List<Object> list =
                 when()
                     .get()
                 .then()
-                    .statusCode(200)
+                    .statusCode(HttpStatus.OK_200)
                     .contentType(ContentType.JSON)
                     .extract()
                     .body()
@@ -312,125 +458,145 @@ public class UserMailboxesRoutesTest {
         }
 
         @Test
-        public void putShouldReturnNotFoundWhenNoMailboxName() {
+        void putShouldReturnNotFoundWhenNoMailboxName() {
             when()
                 .put()
             .then()
-                .statusCode(404);
+                .statusCode(HttpStatus.NOT_FOUND_404);
         }
 
         @Test
-        public void putShouldReturnNotFoundWhenJustSeparator() {
+        void putShouldReturnNotFoundWhenJustSeparator() {
             when()
                 .put(SEPARATOR)
             .then()
-                .statusCode(404);
+                .statusCode(HttpStatus.NOT_FOUND_404);
         }
 
         @Test
-        public void putShouldReturnOk() {
+        void putShouldReturnOk() {
             when()
                 .put(MAILBOX_NAME)
             .then()
-                .statusCode(204);
+                .statusCode(HttpStatus.NO_CONTENT_204);
         }
 
         @Test
-        public void putShouldReturnOkWhenIssuedTwoTimes() {
+        void putShouldReturnOkWhenIssuedTwoTimes() {
             with()
                 .put(MAILBOX_NAME);
 
             when()
                 .put(MAILBOX_NAME)
             .then()
-                .statusCode(204);
+                .statusCode(HttpStatus.NO_CONTENT_204);
         }
 
         @Test
-        public void putShouldAddAMailbox() {
+        void putShouldAddAMailbox() {
             with()
                 .put(MAILBOX_NAME);
 
             when()
                 .get()
             .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.OK_200)
                 .body(is("[{\"mailboxName\":\"myMailboxName\"}]"));
         }
 
         @Test
-        public void getShouldReturnNotFoundWhenMailboxDoesNotExist() {
-            when()
+        void getShouldReturnNotFoundWhenMailboxDoesNotExist() {
+            Map<String, Object> errors = when()
                 .get(MAILBOX_NAME)
             .then()
-                .statusCode(404);
+                .statusCode(HttpStatus.NOT_FOUND_404)
+                .contentType(ContentType.JSON)
+                .extract()
+                .body()
+                .jsonPath()
+                .getMap(".");
+
+            assertThat(errors)
+                .containsEntry("statusCode", HttpStatus.NOT_FOUND_404)
+                .containsEntry("type", "InvalidArgument")
+                .containsEntry("message", "Invalid get on user mailboxes");
         }
 
         @Test
-        public void getShouldReturnOkWhenMailboxExists() {
+        void getShouldReturnOkWhenMailboxExists() {
             with()
                 .put(MAILBOX_NAME);
 
             when()
                 .get(MAILBOX_NAME)
             .then()
-                .statusCode(204);
+                .statusCode(HttpStatus.NO_CONTENT_204);
         }
 
         @Test
-        public void deleteShouldReturnOkWhenMailboxDoesNotExist() {
+        void deleteShouldReturnOkWhenMailboxDoesNotExist() {
             when()
                 .delete(MAILBOX_NAME)
             .then()
-                .statusCode(204);
+                .statusCode(HttpStatus.NO_CONTENT_204);
         }
 
         @Test
-        public void deleteShouldReturnOkWhenMailboxExists() {
+        void deleteShouldReturnOkWhenMailboxExists() {
             with()
                 .put(MAILBOX_NAME);
 
             when()
                 .delete(MAILBOX_NAME)
             .then()
-                .statusCode(204);
+                .statusCode(HttpStatus.NO_CONTENT_204);
         }
 
         @Test
-        public void deleteShouldRemoveMailbox() {
+        void deleteShouldRemoveMailbox() {
             with()
                 .put(MAILBOX_NAME);
 
             with()
                 .delete(MAILBOX_NAME);
 
-            when()
+            Map<String, Object> errors = when()
                 .get(MAILBOX_NAME)
             .then()
-                .statusCode(404);
+                .statusCode(HttpStatus.NOT_FOUND_404)
+                .contentType(ContentType.JSON)
+                .extract()
+                .body()
+                .jsonPath()
+                .getMap(".");
+
+            assertThat(errors)
+                .containsEntry("statusCode", HttpStatus.NOT_FOUND_404)
+                .containsEntry("type", "InvalidArgument")
+                .containsEntry("message", "Invalid get on user mailboxes");
         }
 
         @Test
-        public void deleteMailboxesShouldReturnOkWhenNoMailboxes() {
+        void deleteMailboxesShouldReturnOkWhenNoMailboxes() {
             when()
                 .delete()
             .then()
-                .statusCode(204);
+                .statusCode(HttpStatus.NO_CONTENT_204);
         }
 
         @Test
-        public void deleteMailboxesShouldReturnOkWhenMailboxes() {
+        void deleteMailboxesShouldReturnOkWhenMailboxes() {
             with()
                 .put(MAILBOX_NAME);
 
             when()
                 .delete()
                 .then()
-                .statusCode(204);
+                .statusCode(HttpStatus.NO_CONTENT_204);
         }
 
         @Test
-        public void deleteMailboxesShouldRemoveAllUserMailboxes() {
+        void deleteMailboxesShouldRemoveAllUserMailboxes() {
             with()
                 .put(MAILBOX_NAME);
 
@@ -444,7 +610,7 @@ public class UserMailboxesRoutesTest {
                 when()
                     .get()
                 .then()
-                    .statusCode(200)
+                    .statusCode(HttpStatus.OK_200)
                     .contentType(ContentType.JSON)
                     .extract()
                     .body()
@@ -455,7 +621,7 @@ public class UserMailboxesRoutesTest {
         }
 
         @Test
-        public void deleteShouldReturnOkWhenMailboxHasChildren() {
+        void deleteShouldReturnOkWhenMailboxHasChildren() {
             with()
                 .put(MAILBOX_NAME);
 
@@ -465,11 +631,11 @@ public class UserMailboxesRoutesTest {
             when()
                 .delete(MAILBOX_NAME)
             .then()
-                .statusCode(204);
+                .statusCode(HttpStatus.NO_CONTENT_204);
         }
 
         @Test
-        public void deleteShouldDeleteAMailboxAndItsChildren() {
+        void deleteShouldDeleteAMailboxAndItsChildren() {
             with()
                 .put(MAILBOX_NAME);
 
@@ -483,7 +649,7 @@ public class UserMailboxesRoutesTest {
                 when()
                     .get()
                 .then()
-                    .statusCode(200)
+                    .statusCode(HttpStatus.OK_200)
                     .contentType(ContentType.JSON)
                     .extract()
                     .body()
@@ -494,7 +660,7 @@ public class UserMailboxesRoutesTest {
         }
 
         @Test
-        public void deleteShouldNotDeleteUnrelatedMailbox() {
+        void deleteShouldNotDeleteUnrelatedMailbox() {
             String mailboxName = MAILBOX_NAME + "!child";
             with()
                 .put(MAILBOX_NAME);
@@ -509,7 +675,7 @@ public class UserMailboxesRoutesTest {
                 when()
                     .get()
                 .then()
-                    .statusCode(200)
+                    .statusCode(HttpStatus.OK_200)
                     .contentType(ContentType.JSON)
                     .extract()
                     .body()
@@ -520,7 +686,7 @@ public class UserMailboxesRoutesTest {
         }
 
         @Test
-        public void deleteShouldReturnOkWhenDeletingChildMailboxes() {
+        void deleteShouldReturnOkWhenDeletingChildMailboxes() {
             with()
                 .put(MAILBOX_NAME);
 
@@ -530,11 +696,11 @@ public class UserMailboxesRoutesTest {
             when()
                 .delete(MAILBOX_NAME + ".child")
             .then()
-                .statusCode(204);
+                .statusCode(HttpStatus.NO_CONTENT_204);
         }
 
         @Test
-        public void deleteShouldBeAbleToRemoveChildMailboxes() {
+        void deleteShouldBeAbleToRemoveChildMailboxes() {
             with()
                 .put(MAILBOX_NAME);
 
@@ -548,7 +714,7 @@ public class UserMailboxesRoutesTest {
                 when()
                     .get()
                 .then()
-                    .statusCode(200)
+                    .statusCode(HttpStatus.OK_200)
                     .contentType(ContentType.JSON)
                     .extract()
                     .body()
@@ -559,50 +725,51 @@ public class UserMailboxesRoutesTest {
         }
     }
 
-    public class ExceptionHandling {
+    @Nested
+    class ExceptionHandling {
 
         private MailboxManager mailboxManager;
 
-        @Before
-        public void setUp() throws Exception {
+        @BeforeEach
+        void setUp() throws Exception {
             mailboxManager = mock(MailboxManager.class);
-            when(mailboxManager.createSystemSession(any())).thenReturn(mock(MailboxSession.class));
+            when(mailboxManager.createSystemSession(any())).thenReturn(new MockMailboxSession(USERNAME));
 
             createServer(mailboxManager);
         }
 
         @Test
-        public void putShouldGenerateInternalErrorOnUnknownException() throws Exception {
+        void putShouldGenerateInternalErrorOnUnknownException() throws Exception {
             doThrow(new RuntimeException()).when(mailboxManager).createMailbox(any(), any());
 
             when()
                 .put(MAILBOX_NAME)
             .then()
-                .statusCode(500);
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
-        public void putShouldGenerateInternalErrorOnUnknownMailboxException() throws Exception {
+        void putShouldGenerateInternalErrorOnUnknownMailboxException() throws Exception {
             doThrow(new MailboxException()).when(mailboxManager).createMailbox(any(), any());
 
             when()
                 .put(MAILBOX_NAME)
             .then()
-                .statusCode(500);
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
-        public void putShouldReturnOkOnMailboxExists() throws Exception {
+        void putShouldReturnOkOnMailboxExists() throws Exception {
             doThrow(new MailboxExistsException(MAILBOX_NAME)).when(mailboxManager).createMailbox(any(), any());
 
             when()
                 .put(MAILBOX_NAME)
             .then()
-                .statusCode(204);
+                .statusCode(HttpStatus.NO_CONTENT_204);
         }
 
         @Test
-        public void deleteShouldGenerateInternalErrorOnUnknownExceptionOnDelete() throws Exception {
+        void deleteShouldGenerateInternalErrorOnUnknownExceptionOnDelete() throws Exception {
             MailboxId mailboxId = InMemoryId.of(12);
             when(mailboxManager.search(any(MailboxQuery.class), any()))
                 .thenReturn(
@@ -614,21 +781,21 @@ public class UserMailboxesRoutesTest {
             when()
                 .delete(MAILBOX_NAME)
             .then()
-                .statusCode(500);
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
-        public void deleteShouldGenerateInternalErrorOnUnknownExceptionOnSearch() throws Exception {
+        void deleteShouldGenerateInternalErrorOnUnknownExceptionOnSearch() throws Exception {
             when(mailboxManager.search(any(MailboxQuery.class), any())).thenThrow(new RuntimeException());
 
             when()
                 .delete(MAILBOX_NAME)
             .then()
-                .statusCode(500);
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
-        public void deleteShouldGenerateInternalErrorOnUnknownMailboxExceptionOnDelete() throws Exception {
+        void deleteShouldGenerateInternalErrorOnUnknownMailboxExceptionOnDelete() throws Exception {
             MailboxId mailboxId = InMemoryId.of(12);
             when(mailboxManager.search(any(MailboxQuery.class), any()))
                 .thenReturn(
@@ -639,52 +806,52 @@ public class UserMailboxesRoutesTest {
             when()
                 .delete(MAILBOX_NAME)
             .then()
-                .statusCode(500);
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
-        public void deleteShouldGenerateInternalErrorOnUnknownMailboxExceptionOnSearch() throws Exception {
+        void deleteShouldGenerateInternalErrorOnUnknownMailboxExceptionOnSearch() throws Exception {
             when(mailboxManager.search(any(MailboxQuery.class), any())).thenThrow(new MailboxException());
 
             when()
                 .delete(MAILBOX_NAME)
             .then()
-                .statusCode(500);
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
-        public void deleteShouldReturnOkOnMailboxDoesNotExists() throws Exception {
+        void deleteShouldReturnOkOnMailboxDoesNotExists() throws Exception {
             doThrow(new MailboxNotFoundException(MAILBOX_NAME)).when(mailboxManager).deleteMailbox(any(), any());
 
             when()
                 .delete(MAILBOX_NAME)
             .then()
-                .statusCode(204);
+                .statusCode(HttpStatus.NO_CONTENT_204);
         }
 
         @Test
-        public void deleteShouldGenerateInternalErrorOnUnknownExceptionWhenListingMailboxes() throws Exception {
+        void deleteShouldGenerateInternalErrorOnUnknownExceptionWhenListingMailboxes() throws Exception {
             doThrow(new RuntimeException()).when(mailboxManager).search(any(MailboxQuery.class), any());
 
             when()
                 .delete()
             .then()
-                .statusCode(500);
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
-        public void deleteShouldGenerateInternalErrorOnMailboxExceptionWhenListingMailboxes() throws Exception {
+        void deleteShouldGenerateInternalErrorOnMailboxExceptionWhenListingMailboxes() throws Exception {
             doThrow(new MailboxException()).when(mailboxManager).search(any(MailboxQuery.class), any());
 
             when()
                 .delete()
-                .then()
-                .statusCode(500);
+            .then()
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
 
         @Test
-        public void deleteShouldGenerateInternalErrorOnUnknownExceptionWhenRemovingMailboxes() throws Exception {
+        void deleteShouldGenerateInternalErrorOnUnknownExceptionWhenRemovingMailboxes() throws Exception {
             MailboxId mailboxId = InMemoryId.of(12);
             when(mailboxManager.search(any(MailboxQuery.class), any()))
                 .thenReturn(
@@ -695,11 +862,11 @@ public class UserMailboxesRoutesTest {
             when()
                 .delete()
             .then()
-                .statusCode(500);
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
-        public void deleteShouldReturnOkOnMailboxNotFoundExceptionWhenRemovingMailboxes() throws Exception {
+        void deleteShouldReturnOkOnMailboxNotFoundExceptionWhenRemovingMailboxes() throws Exception {
             MailboxId mailboxId = InMemoryId.of(12);
             when(mailboxManager.search(any(MailboxQuery.class), any()))
                 .thenReturn(
@@ -709,11 +876,11 @@ public class UserMailboxesRoutesTest {
             when()
                 .delete()
             .then()
-                .statusCode(204);
+                .statusCode(HttpStatus.NO_CONTENT_204);
         }
 
         @Test
-        public void deleteShouldReturnInternalErrorOnMailboxExceptionWhenRemovingMailboxes() throws Exception {
+        void deleteShouldReturnInternalErrorOnMailboxExceptionWhenRemovingMailboxes() throws Exception {
             MailboxId mailboxId = InMemoryId.of(12);
             when(mailboxManager.search(any(MailboxQuery.class), any()))
                 .thenReturn(
@@ -723,97 +890,97 @@ public class UserMailboxesRoutesTest {
             when()
                 .delete()
             .then()
-                .statusCode(500);
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
-        public void getShouldGenerateInternalErrorOnUnknownException() throws Exception {
+        void getShouldGenerateInternalErrorOnUnknownException() throws Exception {
             doThrow(new RuntimeException()).when(mailboxManager).mailboxExists(any(), any());
 
             when()
                 .get(MAILBOX_NAME)
             .then()
-                .statusCode(500);
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
-        public void getShouldGenerateInternalErrorOnUnknownMailboxException() throws Exception {
+        void getShouldGenerateInternalErrorOnUnknownMailboxException() throws Exception {
             doThrow(new MailboxException()).when(mailboxManager).mailboxExists(any(), any());
 
             when()
                 .get(MAILBOX_NAME)
             .then()
-                .statusCode(500);
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
-        public void getMailboxesShouldGenerateInternalErrorOnUnknownException() throws Exception {
+        void getMailboxesShouldGenerateInternalErrorOnUnknownException() throws Exception {
             doThrow(new RuntimeException()).when(mailboxManager).search(any(MailboxQuery.class), any());
 
             when()
                 .get()
             .then()
-                .statusCode(500);
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
-        public void getMailboxesShouldGenerateInternalErrorOnUnknownMailboxException() throws Exception {
+        void getMailboxesShouldGenerateInternalErrorOnUnknownMailboxException() throws Exception {
             doThrow(new MailboxException()).when(mailboxManager).search(any(MailboxQuery.class), any());
 
             when()
                 .get()
             .then()
-                .statusCode(500);
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
-        public void getMailboxesShouldGenerateInternalErrorOnRepositoryException() throws Exception {
+        void getMailboxesShouldGenerateInternalErrorOnRepositoryException() throws Exception {
             doThrow(new RuntimeException()).when(usersRepository).contains(USERNAME);
 
             when()
                 .get()
             .then()
-                .statusCode(500);
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
-        public void getShouldGenerateInternalErrorOnRepositoryException() throws Exception {
+        void getShouldGenerateInternalErrorOnRepositoryException() throws Exception {
             doThrow(new RuntimeException()).when(usersRepository).contains(USERNAME);
 
             when()
                 .get(MAILBOX_NAME)
             .then()
-                .statusCode(500);
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
-        public void putShouldGenerateInternalErrorOnRepositoryException() throws Exception {
+        void putShouldGenerateInternalErrorOnRepositoryException() throws Exception {
             doThrow(new RuntimeException()).when(usersRepository).contains(USERNAME);
 
             when()
                 .put(MAILBOX_NAME)
             .then()
-                .statusCode(500);
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
-        public void deleteShouldGenerateInternalErrorOnRepositoryException() throws Exception {
+        void deleteShouldGenerateInternalErrorOnRepositoryException() throws Exception {
             doThrow(new RuntimeException()).when(usersRepository).contains(USERNAME);
 
             when()
                 .delete(MAILBOX_NAME)
             .then()
-                .statusCode(500);
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
-        public void deleteMailboxesShouldGenerateInternalErrorOnRepositoryException() throws Exception {
+        void deleteMailboxesShouldGenerateInternalErrorOnRepositoryException() throws Exception {
             doThrow(new RuntimeException()).when(usersRepository).contains(USERNAME);
 
             when()
                 .delete()
-                .then()
-                .statusCode(500);
+            .then()
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
     }

@@ -34,6 +34,8 @@ import javax.inject.Inject;
 import javax.mail.MessagingException;
 import javax.sql.DataSource;
 
+import org.apache.james.core.Domain;
+import org.apache.james.core.MailAddress;
 import org.apache.james.filesystem.api.FileSystem;
 import org.apache.james.transport.mailets.WhiteListManager;
 import org.apache.james.user.api.UsersRepository;
@@ -42,7 +44,6 @@ import org.apache.james.util.sql.JDBCUtil;
 import org.apache.james.util.sql.SqlResources;
 import org.apache.mailet.Experimental;
 import org.apache.mailet.Mail;
-import org.apache.james.core.MailAddress;
 import org.apache.mailet.base.GenericMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -117,7 +118,7 @@ public abstract class AbstractSQLWhitelistMatcher extends GenericMatcher {
             repositoryPath = st.nextToken().trim();
         }
         if (repositoryPath != null) {
-            LOGGER.info("repositoryPath: " + repositoryPath);
+            LOGGER.info("repositoryPath: {}", repositoryPath);
         } else {
             throw new MessagingException("repositoryPath is null");
         }
@@ -131,6 +132,7 @@ public abstract class AbstractSQLWhitelistMatcher extends GenericMatcher {
         super.init();
     }
 
+    @Override
     public Collection<MailAddress> match(Mail mail) throws MessagingException {
         // check if it's a local sender
         MailAddress senderMailAddress = mail.getSender();
@@ -143,10 +145,8 @@ public abstract class AbstractSQLWhitelistMatcher extends GenericMatcher {
         }
 
         String senderUser = senderMailAddress.getLocalPart();
-        String senderHost = senderMailAddress.getDomain();
 
         senderUser = senderUser.toLowerCase(Locale.US);
-        senderHost = senderHost.toLowerCase(Locale.US);
 
         Collection<MailAddress> recipients = mail.getRecipients();
 
@@ -154,7 +154,7 @@ public abstract class AbstractSQLWhitelistMatcher extends GenericMatcher {
 
         for (MailAddress recipientMailAddress : recipients) {
             String recipientUser = recipientMailAddress.getLocalPart().toLowerCase(Locale.US);
-            String recipientHost = recipientMailAddress.getDomain().toLowerCase(Locale.US);
+            Domain recipientHost = recipientMailAddress.getDomain();
 
             if (!getMailetContext().isLocalServer(recipientHost)) {
                 // not a local recipient, so skip
@@ -261,9 +261,7 @@ public abstract class AbstractSQLWhitelistMatcher extends GenericMatcher {
             createStatement = conn.prepareStatement(sqlQueries.getSqlString(createSqlStringName, true));
             createStatement.execute();
 
-            StringBuffer logBuffer;
-            logBuffer = new StringBuffer(64).append("Created table '").append(tableName).append("' using sqlResources string '").append(createSqlStringName).append("'.");
-            LOGGER.info(logBuffer.toString());
+            LOGGER.info("Created table '{}' using sqlResources string '{}'.", tableName, createSqlStringName);
 
         } finally {
             theJDBCUtil.closeJDBCStatement(createStatement);

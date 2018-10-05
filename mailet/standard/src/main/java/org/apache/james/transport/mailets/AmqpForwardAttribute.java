@@ -37,6 +37,7 @@ import com.github.fge.lambdas.Throwing;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -112,9 +113,11 @@ public class AmqpForwardAttribute extends GenericMailet {
         try {
             sendContent(content);
         } catch (IOException e) {
-            LOGGER.error("IOException while writing to AMQP: " + e.getMessage(), e);
+            LOGGER.error("IOException while writing to AMQP: {}", e.getMessage(), e);
         } catch (TimeoutException e) {
-            LOGGER.error("TimeoutException while writing to AMQP: " + e.getMessage(), e);
+            LOGGER.error("TimeoutException while writing to AMQP: {}", e.getMessage(), e);
+        } catch (AlreadyClosedException e) {
+            LOGGER.error("AlreadyClosedException while writing to AMQP: {}", e.getMessage(), e);
         }
     }
 

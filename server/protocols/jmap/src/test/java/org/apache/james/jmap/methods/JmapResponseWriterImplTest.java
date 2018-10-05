@@ -55,7 +55,7 @@ public class JmapResponseWriterImplTest {
     }
 
     @Ignore
-    @Test(expected=IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void formatMethodResponseShouldWorkWhenNullJmapResponse() {
         String expectedMethod = "nwonMethod";
         String expectedClientId = "#1";
@@ -158,6 +158,7 @@ public class JmapResponseWriterImplTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void formatMethodResponseShouldFilterRightFieldsForEachResponse() {
         ObjectResponseClass responseClass = new ObjectResponseClass();
         responseClass.list = ImmutableList.of(new ObjectResponseClass.Foo("id", "name"));
@@ -195,11 +196,13 @@ public class JmapResponseWriterImplTest {
         private static class Foo {
             public String id;
             public String name;
+            
             public Foo(String id, String name) {
                 this.id = id;
                 this.name = name;
             }
         }
+        
         public List<Foo> list;
     }
 
@@ -211,7 +214,7 @@ public class JmapResponseWriterImplTest {
         parameters.put("id", "myId");
         JsonNode[] nodes = new JsonNode[] { new ObjectNode(new JsonNodeFactory(false)).textNode("unknwonMethod"),
                 parameters,
-                new ObjectNode(new JsonNodeFactory(false)).textNode(expectedClientId)} ;
+                new ObjectNode(new JsonNodeFactory(false)).textNode(expectedClientId)};
 
         List<ProtocolResponse> response = testee.formatMethodResponse(
                 Stream.of(JmapResponse
@@ -234,7 +237,7 @@ public class JmapResponseWriterImplTest {
         parameters.put("id", "myId");
         JsonNode[] nodes = new JsonNode[] { new ObjectNode(new JsonNodeFactory(false)).textNode("unknwonMethod"),
                 parameters,
-                new ObjectNode(new JsonNodeFactory(false)).textNode(expectedClientId)} ;
+                new ObjectNode(new JsonNodeFactory(false)).textNode(expectedClientId)};
 
         List<ProtocolResponse> response = testee.formatMethodResponse(
                 Stream.of(JmapResponse

@@ -19,11 +19,12 @@
 
 package org.apache.james.imap.processor;
 
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+
 import java.util.Optional;
 
 import org.apache.james.imap.api.ImapCommand;
@@ -48,10 +49,10 @@ import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.model.MessageRange;
 import org.apache.james.mailbox.store.MailboxMetaData;
 import org.apache.james.metrics.api.NoopMetricFactory;
-
-import com.google.common.collect.Lists;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.google.common.collect.Lists;
 
 public class CopyProcessorTest {
 
@@ -83,7 +84,6 @@ public class CopyProcessorTest {
 
         MailboxSession.User user = mock(MailboxSession.User.class);
         when(user.getUserName()).thenReturn("username");
-        when(mockMailboxSession.getPersonalSpace()).thenReturn("");
         when(mockMailboxSession.getUser()).thenReturn(user);
         when(mockMailboxSession.getSessionId()).thenReturn(42L);
         when(mockImapSession.getState()).thenReturn(ImapSessionState.SELECTED);
@@ -122,7 +122,6 @@ public class CopyProcessorTest {
 
         MailboxSession.User user = mock(MailboxSession.User.class);
         when(user.getUserName()).thenReturn("username");
-        when(mockMailboxSession.getPersonalSpace()).thenReturn("");
         when(mockMailboxSession.getUser()).thenReturn(user);
         when(mockMailboxSession.getSessionId()).thenReturn(42L);
         when(mockImapSession.getState()).thenReturn(ImapSessionState.SELECTED);
@@ -160,7 +159,6 @@ public class CopyProcessorTest {
 
         MailboxSession.User user = mock(MailboxSession.User.class);
         when(user.getUserName()).thenReturn("username");
-        when(mockMailboxSession.getPersonalSpace()).thenReturn("");
         when(mockMailboxSession.getUser()).thenReturn(user);
         when(mockMailboxSession.getSessionId()).thenReturn(42L);
         when(mockImapSession.getState()).thenReturn(ImapSessionState.SELECTED);
@@ -192,7 +190,6 @@ public class CopyProcessorTest {
 
         MailboxSession.User user = mock(MailboxSession.User.class);
         when(user.getUserName()).thenReturn("username");
-        when(mockMailboxSession.getPersonalSpace()).thenReturn("");
         when(mockMailboxSession.getUser()).thenReturn(user);
         when(mockMailboxSession.getSessionId()).thenReturn(42L);
         when(mockImapSession.getState()).thenReturn(ImapSessionState.SELECTED);
@@ -219,7 +216,7 @@ public class CopyProcessorTest {
     }
 
     @Test
-    public void processShouldNotHandleMoveRequests() throws Exception {
+    public void processShouldNotHandleMoveRequests() {
         MoveRequest moveRequest = new MoveRequest(ImapCommand.anyStateCommand("Name"), new IdRange[] {new IdRange(4, 6)}, ImapConstants.INBOX_NAME, true, TAG);
 
         testee.process(moveRequest, mockResponder, mockImapSession);

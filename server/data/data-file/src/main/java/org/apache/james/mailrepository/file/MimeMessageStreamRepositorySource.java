@@ -19,11 +19,11 @@
 
 package org.apache.james.mailrepository.file;
 
-import org.apache.james.server.core.MimeMessageSource;
-import org.apache.james.repository.api.StreamRepository;
-
 import java.io.IOException;
 import java.io.InputStream;
+
+import org.apache.james.repository.api.StreamRepository;
+import org.apache.james.server.core.MimeMessageSource;
 
 public class MimeMessageStreamRepositorySource extends MimeMessageSource {
 
@@ -73,28 +73,24 @@ public class MimeMessageStreamRepositorySource extends MimeMessageSource {
      * 
      * @return the String ID
      */
+    @Override
     public String getSourceId() {
         return repositoryName + "/" + key;
     }
 
-    /**
-     * Return the InputStream
-     * 
-     * @return stream return the InputStream
-     */
+    @Override
     public InputStream getInputStream() throws IOException {
         return sr.get(key);
     }
 
-    /**
-     * @see org.apache.james.server.core.MimeMessageSource#getMessageSize()
-     */
+    @Override
     public long getMessageSize() throws IOException {
         if (size == -1) {
             if (sr instanceof org.apache.james.repository.file.FilePersistentStreamRepository) {
                 size = ((org.apache.james.repository.file.FilePersistentStreamRepository) sr).getSize(key);
-            } else
+            } else {
                 size = super.getMessageSize();
+            }
         }
         return size;
     }

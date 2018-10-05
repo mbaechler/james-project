@@ -26,9 +26,10 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Optional;
+
 import javax.mail.MessagingException;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.mailet.Mail;
 import org.apache.mailet.Mailet;
 import org.apache.mailet.MailetConfig;
@@ -63,6 +64,7 @@ public abstract class GenericMailet implements Mailet, MailetConfig {
      * Called by the mailer container to indicate to a mailet that the
      * mailet is being taken out of service.
      */
+    @Override
     public void destroy() {
         //Do nothing
     }
@@ -122,6 +124,7 @@ public abstract class GenericMailet implements Mailet, MailetConfig {
      * @param name - a String specifying the name of the initialization parameter
      * @return a String containing the value of the initalization parameter
      */
+    @Override
     public String getInitParameter(String name) {
         return config.getInitParameter(name);
     }
@@ -158,6 +161,7 @@ public abstract class GenericMailet implements Mailet, MailetConfig {
      * @return an Iterator of String objects containing the names of
      *          the mailet's initialization parameters
      */
+    @Override
     public Iterator<String> getInitParameterNames() {
         return config.getInitParameterNames();
     }
@@ -167,6 +171,7 @@ public abstract class GenericMailet implements Mailet, MailetConfig {
      *
      * @return the MailetConfig object that initialized this mailet
      */
+    @Override
     public MailetConfig getMailetConfig() {
         return config;
     }
@@ -177,6 +182,7 @@ public abstract class GenericMailet implements Mailet, MailetConfig {
      *
      * @return the MailetContext object passed to this mailet by the init method
      */
+    @Override
     public MailetContext getMailetContext() {
         return getMailetConfig().getMailetContext();
     }
@@ -188,6 +194,7 @@ public abstract class GenericMailet implements Mailet, MailetConfig {
      *
      * @return information about this mailet, by default an empty string
      */
+    @Override
     public String getMailetInfo() {
         return "";
     }
@@ -197,6 +204,7 @@ public abstract class GenericMailet implements Mailet, MailetConfig {
      *
      * @return the name of this mailet instance
      */
+    @Override
     public String getMailetName() {
         return config.getMailetName();
     }
@@ -215,6 +223,7 @@ public abstract class GenericMailet implements Mailet, MailetConfig {
      * @throws MessagingException
      *          if an exception occurs that interrupts the mailet's normal operation
      */
+    @Override
     public void init(MailetConfig newConfig) throws MessagingException {
         config = newConfig;
         init();
@@ -269,6 +278,7 @@ public abstract class GenericMailet implements Mailet, MailetConfig {
      *          routing information
      * @throws javax.mail.MessagingException - if an exception occurs that interferes with the mailet's normal operation
      */
+    @Override
     public abstract void service(Mail mail) throws javax.mail.MessagingException;
     
     

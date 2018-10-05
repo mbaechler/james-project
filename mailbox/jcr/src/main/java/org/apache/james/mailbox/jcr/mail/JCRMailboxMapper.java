@@ -34,16 +34,20 @@ import org.apache.jackrabbit.commons.JcrUtils;
 import org.apache.jackrabbit.util.ISO9075;
 import org.apache.jackrabbit.util.Text;
 import org.apache.james.mailbox.MailboxSession;
+import org.apache.james.mailbox.acl.ACLDiff;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.exception.MailboxNotFoundException;
 import org.apache.james.mailbox.jcr.AbstractJCRScalingMapper;
 import org.apache.james.mailbox.jcr.MailboxSessionJCRRepository;
 import org.apache.james.mailbox.jcr.mail.model.JCRMailbox;
 import org.apache.james.mailbox.model.MailboxACL;
+import org.apache.james.mailbox.model.MailboxACL.Right;
 import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.mail.MailboxMapper;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
+
+import com.google.common.collect.ImmutableList;
 
 /**
  * JCR implementation of a MailboxMapper
@@ -59,13 +63,7 @@ public class JCRMailboxMapper extends AbstractJCRScalingMapper implements Mailbo
         super(repos, session, scaling);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * org.apache.james.mailbox.store.mail.MailboxMapper#delete(org.apache.james
-     * .imap.store.mail.model.Mailbox)
-     */
+    @Override
     public void delete(Mailbox mailbox) throws MailboxException {
         try {
             Node node = getSession().getNodeByIdentifier(((JCRMailbox) mailbox).getMailboxId().serialize());
@@ -79,15 +77,12 @@ public class JCRMailboxMapper extends AbstractJCRScalingMapper implements Mailbo
         }
     }
 
-    /*
-     * (non-Javadoc)
-     * @see org.apache.james.mailbox.store.mail.MailboxMapper#findMailboxByPath(org.apache.james.imap.api.MailboxPath)
-     */
+    @Override
     public Mailbox findMailboxByPath(MailboxPath path) throws MailboxException, MailboxNotFoundException {
         try {
             String name = Text.escapeIllegalXpathSearchChars(path.getName());
             String user = path.getUser();
-            if (user == null ) {
+            if (user == null) {
                 user = "";
             }
             user = Text.escapeIllegalXpathSearchChars(user);
@@ -95,7 +90,7 @@ public class JCRMailboxMapper extends AbstractJCRScalingMapper implements Mailbo
             
             QueryManager manager = getSession().getWorkspace().getQueryManager();
 
-            String queryString = "/jcr:root/" + MAILBOXES_PATH + "/" + ISO9075.encodePath(path.getNamespace())  + "//element(*,jamesMailbox:mailbox)[@" + JCRMailbox.NAME_PROPERTY + "='" + name+ "' and @" + JCRMailbox.NAMESPACE_PROPERTY +"='" + namespace + "' and @" + JCRMailbox.USER_PROPERTY + "='" + user + "']";
+            String queryString = "/jcr:root/" + MAILBOXES_PATH + "/" + ISO9075.encodePath(path.getNamespace())  + "//element(*,jamesMailbox:mailbox)[@" + JCRMailbox.NAME_PROPERTY + "='" + name + "' and @" + JCRMailbox.NAMESPACE_PROPERTY + "='" + namespace + "' and @" + JCRMailbox.USER_PROPERTY + "='" + user + "']";
             QueryResult result = manager.createQuery(queryString, XPATH_LANGUAGE).execute();
             NodeIterator it = result.getNodes();
             if (it.hasNext()) {
@@ -115,30 +110,27 @@ public class JCRMailboxMapper extends AbstractJCRScalingMapper implements Mailbo
             Node node = getSession().getNodeByIdentifier(id.serialize());
             return new JCRMailbox(node);
         } catch (PathNotFoundException e) {
-            throw new MailboxNotFoundException(id.serialize());
+            throw new MailboxNotFoundException(id);
         } catch (RepositoryException e) {
             throw new MailboxException("Unable to find mailbox " + id.serialize(), e);
         }
     }
 
 
-    /*
-     * (non-Javadoc)
-     * @see org.apache.james.mailbox.store.mail.MailboxMapper#findMailboxWithPathLike(org.apache.james.imap.api.MailboxPath)
-     */
+    @Override
     public List<Mailbox> findMailboxWithPathLike(MailboxPath path) throws MailboxException {
         List<Mailbox> mailboxList = new ArrayList<>();
         try {
             String name = Text.escapeIllegalXpathSearchChars(path.getName());
             String user = path.getUser();
-            if (user == null ) {
+            if (user == null) {
                 user = "";
             }
             user = Text.escapeIllegalXpathSearchChars(user);
             String namespace = Text.escapeIllegalXpathSearchChars(path.getNamespace());
             
             QueryManager manager = getSession().getWorkspace().getQueryManager();
-            String queryString = "/jcr:root/" + MAILBOXES_PATH + "/" + ISO9075.encodePath(path.getNamespace()) + "//element(*,jamesMailbox:mailbox)[jcr:like(@" + JCRMailbox.NAME_PROPERTY + ",'%" + name + "%') and @" + JCRMailbox.NAMESPACE_PROPERTY +"='" + namespace + "' and @" + JCRMailbox.USER_PROPERTY + "='" + user + "']";
+            String queryString = "/jcr:root/" + MAILBOXES_PATH + "/" + ISO9075.encodePath(path.getNamespace()) + "//element(*,jamesMailbox:mailbox)[jcr:like(@" + JCRMailbox.NAME_PROPERTY + ",'%" + name + "%') and @" + JCRMailbox.NAMESPACE_PROPERTY + "='" + namespace + "' and @" + JCRMailbox.USER_PROPERTY + "='" + user + "']";
             QueryResult result = manager.createQuery(queryString, XPATH_LANGUAGE).execute();
             NodeIterator it = result.getNodes();
             while (it.hasNext()) {
@@ -152,13 +144,7 @@ public class JCRMailboxMapper extends AbstractJCRScalingMapper implements Mailbo
         return mailboxList;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * org.apache.james.mailbox.store.mail.MailboxMapper#save(org.apache.james.
-     * imap.store.mail.model.Mailbox)
-     */
+    @Override
     public MailboxId save(Mailbox mailbox) throws MailboxException {
         
         try {
@@ -198,18 +184,13 @@ public class JCRMailboxMapper extends AbstractJCRScalingMapper implements Mailbo
         }
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.apache.james.mailbox.store.mail.MailboxMapper#hasChildren(org.apache.james.
-     * imap.store.mail.model.Mailbox)
-     */
+    @Override
     public boolean hasChildren(Mailbox mailbox, char delimiter)
             throws MailboxException, MailboxNotFoundException {
         try {
             String name = Text.escapeIllegalXpathSearchChars(mailbox.getName());
             String user = mailbox.getUser();
-            if (user == null ) {
+            if (user == null) {
                 user = "";
             }
             user = Text.escapeIllegalXpathSearchChars(user);
@@ -219,7 +200,7 @@ public class JCRMailboxMapper extends AbstractJCRScalingMapper implements Mailbo
                     .getQueryManager();
             String queryString = "/jcr:root/" + MAILBOXES_PATH + "/" + ISO9075.encodePath(mailbox.getNamespace()) 
                     + "//element(*,jamesMailbox:mailbox)[jcr:like(@"
-                    + JCRMailbox.NAME_PROPERTY + ",'" + name + delimiter + "%') and @" + JCRMailbox.NAMESPACE_PROPERTY +"='" + namespace + "' and @" + JCRMailbox.USER_PROPERTY + "='" + user + "']";
+                    + JCRMailbox.NAME_PROPERTY + ",'" + name + delimiter + "%') and @" + JCRMailbox.NAMESPACE_PROPERTY + "='" + namespace + "' and @" + JCRMailbox.USER_PROPERTY + "='" + user + "']";
             QueryResult result = manager.createQuery(queryString, XPATH_LANGUAGE)
                     .execute();
             NodeIterator it = result.getNodes();
@@ -229,10 +210,7 @@ public class JCRMailboxMapper extends AbstractJCRScalingMapper implements Mailbo
         }
     }
 
-    /*
-     * (non-Javadoc)
-     * @see org.apache.james.mailbox.store.mail.MailboxMapper#list()
-     */
+    @Override
     public List<Mailbox> list() throws MailboxException {
         try {
             List<Mailbox> mList = new ArrayList<>();
@@ -251,12 +229,22 @@ public class JCRMailboxMapper extends AbstractJCRScalingMapper implements Mailbo
     }
 
     @Override
-    public void updateACL(Mailbox mailbox, MailboxACL.ACLCommand mailboxACLCommand) throws MailboxException {
-        mailbox.setACL(mailbox.getACL().apply(mailboxACLCommand));
+    public ACLDiff updateACL(Mailbox mailbox, MailboxACL.ACLCommand mailboxACLCommand) throws MailboxException {
+        MailboxACL oldACL = mailbox.getACL();
+        MailboxACL newACL = mailbox.getACL().apply(mailboxACLCommand);
+        mailbox.setACL(newACL);
+        return ACLDiff.computeDiff(oldACL, newACL);
     }
 
     @Override
-    public void setACL(Mailbox mailbox, MailboxACL mailboxACL) throws MailboxException {
+    public ACLDiff setACL(Mailbox mailbox, MailboxACL mailboxACL) throws MailboxException {
+        MailboxACL oldMailboxAcl = mailbox.getACL();
         mailbox.setACL(mailboxACL);
+        return ACLDiff.computeDiff(oldMailboxAcl, mailboxACL);
+    }
+
+    @Override
+    public List<Mailbox> findNonPersonalMailboxes(String userName, Right right) throws MailboxException {
+        return ImmutableList.of();
     }
 }

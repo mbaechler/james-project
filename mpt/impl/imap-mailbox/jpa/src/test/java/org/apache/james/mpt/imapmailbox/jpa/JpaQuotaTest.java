@@ -20,21 +20,18 @@
 package org.apache.james.mpt.imapmailbox.jpa;
 
 import org.apache.james.mpt.api.ImapHostSystem;
+import org.apache.james.mpt.imapmailbox.jpa.host.JPAHostSystem;
 import org.apache.james.mpt.imapmailbox.suite.QuotaTest;
-import org.junit.After;
 import org.junit.Before;
-
-import com.google.inject.Guice;
-import com.google.inject.Injector;
 
 public class JpaQuotaTest extends QuotaTest {
 
     private ImapHostSystem system;
 
+    @Override
     @Before
     public void setUp() throws Exception {
-        Injector injector = Guice.createInjector(new JpaMailboxTestModule());
-        system = injector.getInstance(ImapHostSystem.class);
+        system = JPAHostSystem.build();
         system.beforeTest();
         super.setUp();
     }
@@ -44,9 +41,5 @@ public class JpaQuotaTest extends QuotaTest {
         return system;
     }
 
-    @After
-    public void tearDown() throws Exception {
-        system.afterTest();
-    }
     
 }

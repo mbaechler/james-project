@@ -19,22 +19,22 @@
 
 package org.apache.james.mailbox.elasticsearch.search;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.stream.Stream;
-import javax.inject.Inject;
 
+import org.apache.james.backends.es.AliasName;
+import org.apache.james.backends.es.ReadAliasName;
+import org.apache.james.backends.es.TypeName;
 import org.apache.james.backends.es.search.ScrollIterable;
-import org.apache.james.mailbox.MailboxSession.User;
 import org.apache.james.mailbox.MessageUid;
-import org.apache.james.mailbox.elasticsearch.MailboxElasticsearchConstants;
 import org.apache.james.mailbox.elasticsearch.json.JsonMessageConstants;
 import org.apache.james.mailbox.elasticsearch.query.QueryConverter;
 import org.apache.james.mailbox.elasticsearch.query.SortConverter;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MessageId;
-import org.apache.james.mailbox.model.MultimailboxesSearchQuery;
+import org.apache.james.mailbox.model.SearchQuery;
 import org.apache.james.mailbox.store.search.MessageSearchIndex;
 import org.apache.james.util.streams.Iterators;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -48,42 +48,48 @@ import org.slf4j.LoggerFactory;
 
 public class ElasticSearchSearcher {
 
+    public static final int DEFAULT_SEARCH_SIZE = 100;
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchSearcher.class);
     private static final TimeValue TIMEOUT = new TimeValue(60000);
-    public static final int DEFAULT_SIZE = 100;
 
     private final Client client;
     private final QueryConverter queryConverter;
     private final int size;
     private final MailboxId.Factory mailboxIdFactory;
     private final MessageId.Factory messageIdFactory;
+    private final AliasName aliasName;
+    private final TypeName typeName;
 
-    @Inject
-    public ElasticSearchSearcher(Client client, QueryConverter queryConverter, MailboxId.Factory mailboxIdFactory, MessageId.Factory messageIdFactory) {
-        this(client, queryConverter, DEFAULT_SIZE, mailboxIdFactory, messageIdFactory);
-    }
-
-    public ElasticSearchSearcher(Client client, QueryConverter queryConverter, int size, MailboxId.Factory mailboxIdFactory, MessageId.Factory messageIdFactory) {
+    public ElasticSearchSearcher(Client client, QueryConverter queryConverter, int size,
+                                 MailboxId.Factory mailboxIdFactory, MessageId.Factory messageIdFactory,
+                                 ReadAliasName aliasName, TypeName typeName) {
         this.client = client;
         this.queryConverter = queryConverter;
         this.size = size;
         this.mailboxIdFactory = mailboxIdFactory;
         this.messageIdFactory = messageIdFactory;
+        this.aliasName = aliasName;
+        this.typeName = typeName;
     }
-    
-    public Stream<MessageSearchIndex.SearchResult> search(List<User> users, MultimailboxesSearchQuery query, Optional<Long> limit) throws MailboxException {
-        Stream<MessageSearchIndex.SearchResult> pairStream = new ScrollIterable(client, getSearchRequestBuilder(client, users, query, limit)).stream()
+
+    public Stream<MessageSearchIndex.SearchResult> search(Collection<MailboxId> mailboxIds, SearchQuery query,
+                                                          Optional<Long> limit) throws MailboxException {
+        SearchRequestBuilder searchRequestBuilder = getSearchRequestBuilder(client, mailboxIds, query, limit);
+        Stream<MessageSearchIndex.SearchResult> pairStream = new ScrollIterable(client, searchRequestBuilder).stream()
             .flatMap(this::transformResponseToUidStream);
+
         return limit.map(pairStream::limit)
             .orElse(pairStream);
     }
-    
-    private SearchRequestBuilder getSearchRequestBuilder(Client client, List<User> users, MultimailboxesSearchQuery query, Optional<Long> limit) {
-        return query.getSearchQuery().getSorts()
+
+    private SearchRequestBuilder getSearchRequestBuilder(Client client, Collection<MailboxId> users,
+                                                         SearchQuery query, Optional<Long> limit) {
+        return query.getSorts()
             .stream()
             .reduce(
-                client.prepareSearch(MailboxElasticsearchConstants.MAILBOX_INDEX.getValue())
-                    .setTypes(MailboxElasticsearchConstants.MESSAGE_TYPE.getValue())
+                client.prepareSearch(aliasName.getValue())
+                    .setTypes(typeName.getValue())
                     .setScroll(TIMEOUT)
                     .addFields(JsonMessageConstants.UID, JsonMessageConstants.MAILBOX_ID, JsonMessageConstants.MESSAGE_ID)
                     .setQuery(queryConverter.from(users, query))
@@ -116,7 +122,7 @@ public class ElasticSearchSearcher {
                     mailboxIdFactory.fromString(mailboxId.getValue()),
                     MessageUid.of(uidAsNumber.longValue())));
         } else {
-            LOGGER.warn("Can not extract UID, MessageID and/or MailboxId for search result " + hit.getId());
+            LOGGER.warn("Can not extract UID, MessageID and/or MailboxId for search result {}", hit.getId());
             return Optional.empty();
         }
     }

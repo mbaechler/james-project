@@ -28,27 +28,32 @@ import java.util.Random;
 
 import org.apache.james.mailbox.MailboxSession;
 
-public class MockMailboxSession implements MailboxSession{
-
+public class MockMailboxSession implements MailboxSession {
     private final User user;
-    private boolean close;
     private final Map<Object, Object> attrs = new HashMap<>();
-    private final static Random RANDOM = new Random();
-
-    private final long sessionId = RANDOM.nextLong();
-    private SessionType type = SessionType.User;
+    private static final Random RANDOM = new Random();
+    private final long sessionId;
+    private final SessionType type;
+    private boolean open;
     
-    public MockMailboxSession(final String username) {
+    public MockMailboxSession(String username) {
+        this(username, RANDOM.nextLong());
+    }
+
+    public MockMailboxSession(String username, long sessionId) {
         this.user = new User() {
-            
+
+            @Override
             public String getUserName() {
                 return username;
             }
-            
+
+            @Override
             public String getPassword() {
                 return null;
             }
-            
+
+            @Override
             public List<Locale> getLocalePreferences() {
                 return new ArrayList<>();
             }
@@ -61,50 +66,58 @@ public class MockMailboxSession implements MailboxSession{
                 return username.equalsIgnoreCase(other);
             }
         };
+        this.sessionId = sessionId;
+        this.open = true;
+        type = SessionType.User;
     }
 
-    public MockMailboxSession(final String username, SessionType type) {
-        this(username);
-        this.type = type;
-    }
+    @Override
     public void close() {
-        this.close = true;
+        this.open = false;
     }
 
+    @Override
     public Map<Object, Object> getAttributes() {
         return attrs;
     }
 
+    @Override
     public String getOtherUsersSpace() {
         return null;
     }
 
+    @Override
     public String getPersonalSpace() {
         return "";
     }
 
+    @Override
     public long getSessionId() {
         return sessionId;
     }
 
+    @Override
     public Collection<String> getSharedSpaces() {
         return new ArrayList<>();
     }
 
+    @Override
     public User getUser() {
         return user;
     }
 
+    @Override
     public boolean isOpen() {
-        return close == false;
+        return open;
     }
 
-	public char getPathDelimiter() {
-		return '.';
-	}
+    @Override
+    public char getPathDelimiter() {
+        return '.';
+    }
 
+    @Override
     public SessionType getType() {
         return type;
     }
-
 }

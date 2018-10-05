@@ -21,7 +21,7 @@ package org.apache.james.mailbox.store;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -82,7 +82,7 @@ public class StoreBlobManagerTest {
 
         assertThat(blobManager.retrieve(BLOB_ID_ATTACHMENT, session))
             .isEqualTo(Blob.builder()
-                .id(BLOB_ID_ATTACHMENT)
+                .id(BlobId.fromString("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"))
                 .contentType(CONTENT_TYPE)
                 .payload(BYTES)
                 .build());

@@ -23,13 +23,14 @@ import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.delete;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
-
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static org.apache.james.sieve.cassandra.tables.CassandraSieveActiveTable.DATE;
-import static org.apache.james.sieve.cassandra.tables.CassandraSieveActiveTable.TABLE_NAME;
 import static org.apache.james.sieve.cassandra.tables.CassandraSieveActiveTable.SCRIPT_NAME;
+import static org.apache.james.sieve.cassandra.tables.CassandraSieveActiveTable.TABLE_NAME;
 import static org.apache.james.sieve.cassandra.tables.CassandraSieveActiveTable.USER_NAME;
 
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -37,7 +38,9 @@ import java.util.concurrent.CompletableFuture;
 import javax.inject.Inject;
 
 import org.apache.james.backends.cassandra.utils.CassandraAsyncExecutor;
+import org.apache.james.core.User;
 import org.apache.james.sieve.cassandra.model.ActiveScriptInfo;
+import org.apache.james.sieverepository.api.ScriptName;
 
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Session;
@@ -63,26 +66,26 @@ public class CassandraActiveScriptDAO {
             .where(eq(USER_NAME, bindMarker(USER_NAME))));
     }
 
-    public CompletableFuture<Optional<ActiveScriptInfo>> getActiveSctiptInfo(String username) {
+    public CompletableFuture<Optional<ActiveScriptInfo>> getActiveSctiptInfo(User user) {
         return cassandraAsyncExecutor.executeSingleRow(
             selectActiveName.bind()
-                .setString(USER_NAME, username))
+                .setString(USER_NAME, user.asString()))
             .thenApply(rowOptional -> rowOptional.map(row -> new ActiveScriptInfo(
-                row.getString(SCRIPT_NAME),
-                row.getTimestamp(DATE))));
+                new ScriptName(row.getString(SCRIPT_NAME)),
+                ZonedDateTime.ofInstant(row.getTimestamp(DATE).toInstant(), ZoneOffset.UTC))));
     }
 
-    public CompletableFuture<Void> unactivate(String username) {
+    public CompletableFuture<Void> unactivate(User user) {
         return cassandraAsyncExecutor.executeVoid(
             deleteActive.bind()
-                .setString(USER_NAME, username));
+                .setString(USER_NAME, user.asString()));
     }
 
-    public CompletableFuture<Void> activate(String username, String scriptName) {
+    public CompletableFuture<Void> activate(User user, ScriptName scriptName) {
         return cassandraAsyncExecutor.executeVoid(
             insertActive.bind()
-                .setString(USER_NAME, username)
-                .setString(SCRIPT_NAME, scriptName)
+                .setString(USER_NAME, user.asString())
+                .setString(SCRIPT_NAME, scriptName.getValue())
                 .setTimestamp(DATE, new Date()));
     }
 }

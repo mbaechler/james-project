@@ -26,6 +26,7 @@ import java.util.Optional;
 import javax.inject.Inject;
 
 import org.apache.james.jmap.exceptions.MailboxHasChildException;
+import org.apache.james.jmap.exceptions.MailboxNotOwnedException;
 import org.apache.james.jmap.exceptions.MailboxParentNotFoundException;
 import org.apache.james.jmap.exceptions.SystemMailboxNotUpdatableException;
 import org.apache.james.jmap.model.MailboxFactory;
@@ -35,11 +36,14 @@ import org.apache.james.jmap.model.SetMailboxesResponse;
 import org.apache.james.jmap.model.SetMailboxesResponse.Builder;
 import org.apache.james.jmap.model.mailbox.Mailbox;
 import org.apache.james.jmap.model.mailbox.MailboxUpdateRequest;
-import org.apache.james.jmap.model.mailbox.Role;
+import org.apache.james.jmap.model.mailbox.Rights.Username;
 import org.apache.james.jmap.utils.MailboxUtils;
 import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.MailboxSession;
+import org.apache.james.mailbox.MessageManager;
+import org.apache.james.mailbox.Role;
 import org.apache.james.mailbox.SubscriptionManager;
+import org.apache.james.mailbox.exception.DifferentDomainException;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.exception.MailboxExistsException;
 import org.apache.james.mailbox.exception.MailboxNameException;
@@ -49,12 +53,14 @@ import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.metrics.api.MetricFactory;
 import org.apache.james.metrics.api.TimeMetric;
+import org.apache.james.util.OptionalUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.fge.lambdas.Throwing;
 import com.github.fge.lambdas.functions.ThrowingFunction;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 
@@ -92,7 +98,8 @@ public class SetMailboxesUpdateProcessor implements SetMailboxesProcessor {
         try {
             validateMailboxName(updateRequest, mailboxSession);
             Mailbox mailbox = getMailbox(mailboxId, mailboxSession);
-            checkRole(mailbox.getRole());
+            assertNotSharedOutboxOrDraftMailbox(mailbox, updateRequest);
+            assertSystemMailboxesAreNotUpdated(mailbox, updateRequest);
             validateParent(mailbox, updateRequest, mailboxSession);
 
             updateMailbox(mailbox, updateRequest, mailboxSession);
@@ -100,52 +107,84 @@ public class SetMailboxesUpdateProcessor implements SetMailboxesProcessor {
 
         } catch (SystemMailboxNotUpdatableException e) {
             responseBuilder.notUpdated(mailboxId, SetError.builder()
-                    .type("invalidArguments")
+                    .type(SetError.Type.INVALID_ARGUMENTS)
                     .description("Cannot update a system mailbox.")
                     .build());
         } catch (TooLongMailboxNameException e) {
             responseBuilder.notUpdated(mailboxId, SetError.builder()
-                .type("invalidArguments")
+                .type(SetError.Type.INVALID_ARGUMENTS)
                 .description("The mailbox name length is too long")
                 .build());
         } catch (MailboxNameException e) {
             responseBuilder.notUpdated(mailboxId, SetError.builder()
-                    .type("invalidArguments")
+                    .type(SetError.Type.INVALID_ARGUMENTS)
                     .description(e.getMessage())
                     .build());
         } catch (MailboxNotFoundException e) {
             responseBuilder.notUpdated(mailboxId, SetError.builder()
-                    .type("notFound")
+                    .type(SetError.Type.NOT_FOUND)
                     .description(String.format("The mailbox '%s' was not found", mailboxId.serialize()))
                     .build());
         } catch (MailboxParentNotFoundException e) {
             responseBuilder.notUpdated(mailboxId, SetError.builder()
-                    .type("notFound")
+                    .type(SetError.Type.NOT_FOUND)
                     .description(String.format("The parent mailbox '%s' was not found.", e.getParentId()))
                     .build());
         } catch (MailboxHasChildException e) {
             responseBuilder.notUpdated(mailboxId, SetError.builder()
-                    .type("invalidArguments")
+                    .type(SetError.Type.INVALID_ARGUMENTS)
                     .description("Cannot update a parent mailbox.")
+                    .build());
+        } catch (MailboxNotOwnedException e) {
+            responseBuilder.notUpdated(mailboxId, SetError.builder()
+                    .type(SetError.Type.INVALID_ARGUMENTS)
+                    .description("Parent mailbox is not owned.")
                     .build());
         } catch (MailboxExistsException e) {
             responseBuilder.notUpdated(mailboxId, SetError.builder()
-                    .type("invalidArguments")
+                    .type(SetError.Type.INVALID_ARGUMENTS)
                     .description("Cannot rename a mailbox to an already existing mailbox.")
                     .build());
+        } catch (DifferentDomainException e) {
+            responseBuilder.notUpdated(mailboxId, SetError.builder()
+                .type(SetError.Type.INVALID_ARGUMENTS)
+                .description("Cannot share a mailbox to another domain")
+                .build());
+        } catch (IllegalArgumentException e) {
+            responseBuilder.notUpdated(mailboxId, SetError.builder()
+                .type(SetError.Type.INVALID_ARGUMENTS)
+                .description(e.getMessage())
+                .build());
         } catch (MailboxException e) {
             LOGGER.error("Error while updating mailbox", e);
             responseBuilder.notUpdated(mailboxId, SetError.builder()
-                    .type( "anErrorOccurred")
+                    .type(SetError.Type.ERROR)
                     .description("An error occurred when updating the mailbox")
                     .build());
         }
    }
 
-    private void checkRole(Optional<Role> role) throws SystemMailboxNotUpdatableException {
-        if (role.map(Role::isSystemRole).orElse(false)) {
-            throw new SystemMailboxNotUpdatableException();
+    private void assertNotSharedOutboxOrDraftMailbox(Mailbox mailbox, MailboxUpdateRequest updateRequest) {
+        Preconditions.checkArgument(!updateRequest.getSharedWith().isPresent() || !mailbox.hasRole(Role.OUTBOX), "Sharing 'Outbox' is forbidden");
+        Preconditions.checkArgument(!updateRequest.getSharedWith().isPresent() || !mailbox.hasRole(Role.DRAFTS), "Sharing 'Draft' is forbidden");
+    }
+
+    private void assertSystemMailboxesAreNotUpdated(Mailbox mailbox, MailboxUpdateRequest updateRequest) throws SystemMailboxNotUpdatableException {
+        if (mailbox.hasSystemRole()) {
+            if (OptionalUtils.containsDifferent(updateRequest.getName(), mailbox.getName())
+                || requestChanged(updateRequest.getParentId(), mailbox.getParentId())
+                || requestChanged(updateRequest.getRole(), mailbox.getRole())
+                || OptionalUtils.containsDifferent(updateRequest.getSortOrder(), mailbox.getSortOrder())) {
+                throw new SystemMailboxNotUpdatableException();
+            }
         }
+    }
+
+    @VisibleForTesting
+    <T> boolean requestChanged(Optional<T> requestValue, Optional<T> storeValue) {
+        return requestValue
+            .filter(value -> !requestValue.equals(storeValue))
+            .isPresent();
     }
 
     private Mailbox getMailbox(MailboxId mailboxId, MailboxSession mailboxSession) throws MailboxNotFoundException {
@@ -153,7 +192,7 @@ public class SetMailboxesUpdateProcessor implements SetMailboxesProcessor {
                 .id(mailboxId)
                 .session(mailboxSession)
                 .build()
-                .orElseThrow(() -> new MailboxNotFoundException(mailboxId.serialize()));
+                .orElseThrow(() -> new MailboxNotFoundException(mailboxId));
     }
 
     private void validateMailboxName(MailboxUpdateRequest updateRequest, MailboxSession mailboxSession) throws MailboxNameException {
@@ -177,21 +216,37 @@ public class SetMailboxesUpdateProcessor implements SetMailboxesProcessor {
     private boolean nameContainsPathDelimiter(MailboxUpdateRequest updateRequest, char pathDelimiter) {
         return updateRequest.getName()
                 .filter(name -> name.contains(String.valueOf(pathDelimiter)))
-                .isPresent() ;
+                .isPresent();
     }
 
     private void validateParent(Mailbox mailbox, MailboxUpdateRequest updateRequest, MailboxSession mailboxSession) throws MailboxException, MailboxHasChildException {
-
         if (isParentIdInRequest(updateRequest)) {
             MailboxId newParentId = updateRequest.getParentId().get();
-            try {
-                mailboxManager.getMailbox(newParentId, mailboxSession);
-            } catch (MailboxNotFoundException e) {
-                throw new MailboxParentNotFoundException(newParentId);
+            MessageManager parent = retrieveParent(mailboxSession, newParentId);
+            if (mustChangeParent(mailbox.getParentId(), newParentId)) {
+                assertNoChildren(mailbox, mailboxSession);
+                assertOwned(mailboxSession, parent);
             }
-            if (mustChangeParent(mailbox.getParentId(), newParentId) && mailboxUtils.hasChildren(mailbox.getId(), mailboxSession)) {
-                throw new MailboxHasChildException();
-            }
+        }
+    }
+
+    private void assertNoChildren(Mailbox mailbox, MailboxSession mailboxSession) throws MailboxException, MailboxHasChildException {
+        if (mailboxUtils.hasChildren(mailbox.getId(), mailboxSession)) {
+            throw new MailboxHasChildException();
+        }
+    }
+
+    private void assertOwned(MailboxSession mailboxSession, MessageManager parent) throws MailboxException {
+        if (!parent.getMailboxPath().belongsTo(mailboxSession)) {
+            throw new MailboxNotOwnedException();
+        }
+    }
+
+    private MessageManager retrieveParent(MailboxSession mailboxSession, MailboxId newParentId) throws MailboxException {
+        try {
+            return mailboxManager.getMailbox(newParentId, mailboxSession);
+        } catch (MailboxNotFoundException e) {
+            throw new MailboxParentNotFoundException(newParentId);
         }
     }
 
@@ -210,7 +265,12 @@ public class SetMailboxesUpdateProcessor implements SetMailboxesProcessor {
         MailboxPath originMailboxPath = mailboxManager.getMailbox(mailbox.getId(), mailboxSession).getMailboxPath();
         MailboxPath destinationMailboxPath = computeNewMailboxPath(mailbox, originMailboxPath, updateRequest, mailboxSession);
         if (updateRequest.getSharedWith().isPresent()) {
-            mailboxManager.setRights(originMailboxPath, updateRequest.getSharedWith().get().toMailboxAcl(), mailboxSession);
+            mailboxManager.setRights(originMailboxPath,
+                updateRequest.getSharedWith()
+                    .get()
+                    .removeEntriesFor(Username.forMailboxPath(originMailboxPath))
+                    .toMailboxAcl(),
+                mailboxSession);
         }
         if (!originMailboxPath.equals(destinationMailboxPath)) {
             mailboxManager.renameMailbox(originMailboxPath, destinationMailboxPath, mailboxSession);
@@ -223,9 +283,9 @@ public class SetMailboxesUpdateProcessor implements SetMailboxesProcessor {
     private MailboxPath computeNewMailboxPath(Mailbox mailbox, MailboxPath originMailboxPath, MailboxUpdateRequest updateRequest, MailboxSession mailboxSession) throws MailboxException {
         Optional<MailboxId> parentId = updateRequest.getParentId();
         if (parentId == null) {
-            return new MailboxPath(mailboxSession.getPersonalSpace(), 
-                    mailboxSession.getUser().getUserName(), 
-                    updateRequest.getName().orElse(mailbox.getName()));
+            return MailboxPath.forUser(
+                mailboxSession.getUser().getUserName(),
+                updateRequest.getName().orElse(mailbox.getName()));
         }
 
         MailboxPath modifiedMailboxPath = updateRequest.getName()

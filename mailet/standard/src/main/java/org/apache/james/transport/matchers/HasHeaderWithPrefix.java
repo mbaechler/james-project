@@ -25,9 +25,9 @@ import java.util.List;
 import javax.mail.Header;
 import javax.mail.MessagingException;
 
+import org.apache.james.core.MailAddress;
 import org.apache.james.transport.mailets.utils.MimeMessageUtils;
 import org.apache.mailet.Mail;
-import org.apache.james.core.MailAddress;
 import org.apache.mailet.base.GenericMatcher;
 
 import com.google.common.base.Strings;
@@ -52,6 +52,7 @@ public class HasHeaderWithPrefix extends GenericMatcher {
         }
     }
 
+    @Override
     public String getMatcherInfo() {
         return "HasHeaderWithPrefix Matcher";
     }

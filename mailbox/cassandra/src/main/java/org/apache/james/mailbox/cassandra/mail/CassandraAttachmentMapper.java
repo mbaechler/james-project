@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import org.apache.james.blob.api.BlobStore;
 import org.apache.james.mailbox.cassandra.mail.CassandraAttachmentDAOV2.DAOAttachment;
 import org.apache.james.mailbox.exception.AttachmentNotFoundException;
 import org.apache.james.mailbox.exception.MailboxException;
@@ -37,7 +38,6 @@ import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.mailbox.store.mail.AttachmentMapper;
 import org.apache.james.mailbox.store.mail.model.Username;
 import org.apache.james.util.FluentFutureStream;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,15 +50,15 @@ public class CassandraAttachmentMapper implements AttachmentMapper {
 
     private final CassandraAttachmentDAO attachmentDAO;
     private final CassandraAttachmentDAOV2 attachmentDAOV2;
-    private final CassandraBlobsDAO blobsDAO;
+    private final BlobStore blobStore;
     private final CassandraAttachmentMessageIdDAO attachmentMessageIdDAO;
     private final CassandraAttachmentOwnerDAO ownerDAO;
 
     @Inject
-    public CassandraAttachmentMapper(CassandraAttachmentDAO attachmentDAO, CassandraAttachmentDAOV2 attachmentDAOV2, CassandraBlobsDAO blobsDAO, CassandraAttachmentMessageIdDAO attachmentMessageIdDAO, final CassandraAttachmentOwnerDAO ownerDAO) {
+    public CassandraAttachmentMapper(CassandraAttachmentDAO attachmentDAO, CassandraAttachmentDAOV2 attachmentDAOV2, BlobStore blobStore, CassandraAttachmentMessageIdDAO attachmentMessageIdDAO, CassandraAttachmentOwnerDAO ownerDAO) {
         this.attachmentDAO = attachmentDAO;
         this.attachmentDAOV2 = attachmentDAOV2;
-        this.blobsDAO = blobsDAO;
+        this.blobStore = blobStore;
         this.attachmentMessageIdDAO = attachmentMessageIdDAO;
         this.ownerDAO = ownerDAO;
     }
@@ -80,13 +80,12 @@ public class CassandraAttachmentMapper implements AttachmentMapper {
             .orElseThrow(() -> new AttachmentNotFoundException(attachmentId.getId()));
     }
 
-    @Nullable
     private CompletionStage<Optional<Attachment>> retrievePayload(Optional<DAOAttachment> daoAttachmentOptional) {
         if (!daoAttachmentOptional.isPresent()) {
             return CompletableFuture.completedFuture(Optional.empty());
         }
         DAOAttachment daoAttachment = daoAttachmentOptional.get();
-        return blobsDAO.read(daoAttachment.getBlobId())
+        return blobStore.readBytes(daoAttachment.getBlobId())
             .thenApply(bytes -> Optional.of(daoAttachment.toAttachment(bytes)));
     }
 
@@ -104,8 +103,7 @@ public class CassandraAttachmentMapper implements AttachmentMapper {
                 .map(id -> getAttachmentInternal(id)
                     .thenApply(finalValue -> logNotFound(id, finalValue)));
 
-        return FluentFutureStream
-            .ofOptionals(attachments)
+        return FluentFutureStream.of(attachments, FluentFutureStream::unboxOptional)
             .collect(Guavate.toImmutableList());
     }
 
@@ -125,7 +123,7 @@ public class CassandraAttachmentMapper implements AttachmentMapper {
     @Override
     public void storeAttachmentForOwner(Attachment attachment, Username owner) throws MailboxException {
         ownerDAO.addOwner(attachment.getAttachmentId(), owner)
-            .thenCompose(any -> blobsDAO.save(attachment.getBytes()))
+            .thenCompose(any -> blobStore.save(attachment.getBytes()))
             .thenApply(blobId -> CassandraAttachmentDAOV2.from(attachment, blobId))
             .thenCompose(attachmentDAOV2::storeAttachment)
             .join();
@@ -147,11 +145,11 @@ public class CassandraAttachmentMapper implements AttachmentMapper {
 
     @Override
     public Collection<Username> getOwners(AttachmentId attachmentId) throws MailboxException {
-        return ownerDAO.retrieveOwners(attachmentId).join();
+        return ownerDAO.retrieveOwners(attachmentId).join().collect(Guavate.toImmutableList());
     }
 
     public CompletableFuture<Void> storeAttachmentAsync(Attachment attachment, MessageId ownerMessageId) {
-        return blobsDAO.save(attachment.getBytes())
+        return blobStore.save(attachment.getBytes())
             .thenApply(blobId -> CassandraAttachmentDAOV2.from(attachment, blobId))
             .thenCompose(daoAttachment -> storeAttachmentWithIndex(daoAttachment, ownerMessageId));
     }

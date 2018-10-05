@@ -30,11 +30,14 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 
+import org.apache.james.mailbox.DefaultMailboxes;
 import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MailboxSession.User;
+import org.apache.james.mailbox.SubscriptionManager;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.exception.MailboxExistsException;
+import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.metrics.api.MetricFactory;
 import org.apache.james.metrics.api.TimeMetric;
@@ -42,22 +45,26 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Throwables;
 
 public class DefaultMailboxesProvisioningFilter implements Filter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultMailboxesProvisioningFilter.class);
     private final MailboxManager mailboxManager;
+    private final SubscriptionManager subscriptionManager;
     private final MetricFactory metricFactory;
 
     @Inject
-    @VisibleForTesting DefaultMailboxesProvisioningFilter(MailboxManager mailboxManager, MetricFactory metricFactory) {
+    @VisibleForTesting
+    DefaultMailboxesProvisioningFilter(MailboxManager mailboxManager,
+                                       SubscriptionManager subscriptionManager,
+                                       MetricFactory metricFactory) {
         this.mailboxManager = mailboxManager;
+        this.subscriptionManager = subscriptionManager;
         this.metricFactory = metricFactory;
     }
     
     @Override
-    public void init(FilterConfig filterConfig) throws ServletException {
+    public void init(FilterConfig filterConfig) {
     }
     
     @Override
@@ -74,7 +81,7 @@ public class DefaultMailboxesProvisioningFilter implements Filter {
             User user = session.getUser();
             createDefaultMailboxes(user);
         } catch (MailboxException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         } finally {
             timeMetric.stopAndPublish();
         }
@@ -92,21 +99,25 @@ public class DefaultMailboxesProvisioningFilter implements Filter {
         try {
             return !mailboxManager.mailboxExists(mailboxPath, session);
         } catch (MailboxException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
     }
 
     private Function<String, MailboxPath> toMailboxPath(MailboxSession session) {
-        return mailbox -> new MailboxPath(session.getPersonalSpace(), session.getUser().getUserName(), mailbox);
+        return mailbox -> MailboxPath.forUser(session.getUser().getUserName(), mailbox);
     }
     
     private void createMailbox(MailboxPath mailboxPath, MailboxSession session) {
         try {
-            mailboxManager.createMailbox(mailboxPath, session);
+            Optional<MailboxId> mailboxId = mailboxManager.createMailbox(mailboxPath, session);
+            if (mailboxId.isPresent()) {
+                subscriptionManager.subscribe(session, mailboxPath.getName());
+            }
+            LOGGER.info("Provisioning {}. {} created.", mailboxPath, mailboxId);
         } catch (MailboxExistsException e) {
             LOGGER.info("Mailbox {} have been created concurrently", mailboxPath);
         } catch (MailboxException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
     }
 

@@ -21,8 +21,8 @@
 
 package org.apache.james.transport.mailets.debug;
 
-import org.apache.mailet.base.GenericMailet;
 import org.apache.mailet.Mail;
+import org.apache.mailet.base.GenericMailet;
 
 /**
  * Opposite of Null Mailet. It let any incoming mail untouched. Used only for
@@ -30,20 +30,12 @@ import org.apache.mailet.Mail;
  */
 public class Identity extends GenericMailet {
 
-    /**
-     * Do nothing.
-     *
-     * @param mail the mail to be processed
-     */
+    @Override
     public void service(Mail mail) {
         //Do nothing
     }
 
-    /**
-     * Return a string describing this mailet.
-     *
-     * @return a string describing this mailet
-     */
+    @Override
     public String getMailetInfo() {
         return "Identity Mailet";
     }

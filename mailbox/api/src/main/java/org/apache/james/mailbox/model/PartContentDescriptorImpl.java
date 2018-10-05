@@ -19,6 +19,8 @@
 
 package org.apache.james.mailbox.model;
 
+import java.util.Objects;
+
 import org.apache.james.mailbox.model.MessageResult.FetchGroup.PartContentDescriptor;
 import org.apache.james.mailbox.model.MessageResult.MimePath;
 
@@ -44,35 +46,26 @@ public class PartContentDescriptorImpl implements PartContentDescriptor {
         this.content = this.content | content;
     }
 
+    @Override
     public int content() {
         return content;
     }
 
+    @Override
     public MimePath path() {
         return path;
     }
 
     public int hashCode() {
-        final int PRIME = 31;
-        int result = 1;
-        result = PRIME * result + ((path == null) ? 0 : path.hashCode());
-        return result;
+        return Objects.hash(path);
     }
 
     public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        final PartContentDescriptor other = (PartContentDescriptor) obj;
-        if (path == null) {
-            if (other.path() != null)
-                return false;
-        } else if (!path.equals(other.path()))
-            return false;
-        return true;
+        if (obj instanceof PartContentDescriptorImpl) {
+            PartContentDescriptorImpl that = (PartContentDescriptorImpl) obj;
+            return Objects.equals(this.path, that.path);
+        }
+        return false;
     }
 
 }

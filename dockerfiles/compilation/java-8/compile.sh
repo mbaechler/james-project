@@ -6,6 +6,9 @@ printUsage() {
    echo "./compile.sh [-s | --skipTests] SHA1"
    echo "    -s: Skip test"
    echo "    SHA1: SHA1 to build (optional)"
+   echo ""
+   echo "Environment:"
+   echo " - MVN_ADDITIONAL_ARG_LINE: Allow passing additional command arguments to the maven command"
    exit 1
 }
 
@@ -13,6 +16,7 @@ ORIGIN=/origin
 CASSANDRA_DESTINATION=/cassandra/destination
 JPA_DESTINATION=/jpa/destination
 SPRING_DESTINATION=/spring/destination
+SWAGGER_DESTINATION=/swagger
 
 for arg in "$@"
 do
@@ -46,9 +50,9 @@ git checkout $SHA1
 # Compilation
 
 if [ "$SKIPTESTS" = "skipTests" ]; then
-   mvn package -DskipTests -Pcassandra,inmemory,jpa,elasticsearch,lucene,with-assembly,with-jetm
+   mvn package -DskipTests ${MVN_ADDITIONAL_ARG_LINE}
 else
-   mvn package -Pcassandra,inmemory,jpa,elasticsearch,lucene,with-assembly,with-jetm
+   mvn package ${MVN_ADDITIONAL_ARG_LINE}
 fi
 
 # Retrieve result
@@ -76,5 +80,11 @@ if [ $? -eq 0 ]; then
    if [ -d "$SPRING_DESTINATION" ]; then
       echo "Copying SPRING jars"
       cp server/app/target/james-server-app-*-app.zip $SPRING_DESTINATION
+   fi
+
+   if [ -d "$SWAGGER_DESTINATION" ]; then
+      cp server/protocols/webadmin/webadmin-data/target/webadmin-data.json $SWAGGER_DESTINATION || true
+      cp server/protocols/webadmin/webadmin-mailbox/target/webadmin-mailbox.json $SWAGGER_DESTINATION || true
+      cp server/protocols/webadmin/webadmin-swagger/target/webadmin-swagger.json $SWAGGER_DESTINATION || true
    fi
 fi

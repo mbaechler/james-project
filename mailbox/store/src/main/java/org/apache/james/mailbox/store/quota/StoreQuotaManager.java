@@ -19,14 +19,16 @@
 
 package org.apache.james.mailbox.store.quota;
 
-import org.apache.james.mailbox.quota.CurrentQuotaManager;
-import org.apache.james.mailbox.quota.MaxQuotaManager;
-import org.apache.james.mailbox.quota.QuotaManager;
+import javax.inject.Inject;
+
+import org.apache.james.core.quota.QuotaCount;
+import org.apache.james.core.quota.QuotaSize;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.Quota;
 import org.apache.james.mailbox.model.QuotaRoot;
-
-import javax.inject.Inject;
+import org.apache.james.mailbox.quota.CurrentQuotaManager;
+import org.apache.james.mailbox.quota.MaxQuotaManager;
+import org.apache.james.mailbox.quota.QuotaManager;
 
 /**
  * Default implementation for the Quota Manager.
@@ -36,7 +38,6 @@ import javax.inject.Inject;
 public class StoreQuotaManager implements QuotaManager {
     private final CurrentQuotaManager currentQuotaManager;
     private final MaxQuotaManager maxQuotaManager;
-    private boolean calculateWhenUnlimited = false;
 
     @Inject
     public StoreQuotaManager(CurrentQuotaManager currentQuotaManager, MaxQuotaManager maxQuotaManager) {
@@ -44,25 +45,23 @@ public class StoreQuotaManager implements QuotaManager {
         this.maxQuotaManager = maxQuotaManager;
     }
 
-    public void setCalculateWhenUnlimited(boolean calculateWhenUnlimited) {
-        this.calculateWhenUnlimited = calculateWhenUnlimited;
-    }
-
-    public Quota getMessageQuota(QuotaRoot quotaRoot) throws MailboxException {
-        long maxValue = maxQuotaManager.getMaxMessage(quotaRoot);
-        if(maxValue == Quota.UNLIMITED && !calculateWhenUnlimited) {
-            return QuotaImpl.quota(Quota.UNKNOWN, Quota.UNLIMITED);
-        }
-        return QuotaImpl.quota(currentQuotaManager.getCurrentMessageCount(quotaRoot), maxValue);
+    @Override
+    public Quota<QuotaCount> getMessageQuota(QuotaRoot quotaRoot) throws MailboxException {
+        return Quota.<QuotaCount>builder()
+            .used(currentQuotaManager.getCurrentMessageCount(quotaRoot))
+            .computedLimit(maxQuotaManager.getMaxMessage(quotaRoot).orElse(QuotaCount.unlimited()))
+            .limitsByScope(maxQuotaManager.listMaxMessagesDetails(quotaRoot))
+            .build();
     }
 
 
-    public Quota getStorageQuota(QuotaRoot quotaRoot) throws MailboxException {
-        long maxValue = maxQuotaManager.getMaxStorage(quotaRoot);
-        if(maxValue == Quota.UNLIMITED && !calculateWhenUnlimited) {
-            return QuotaImpl.quota(Quota.UNKNOWN, Quota.UNLIMITED);
-        }
-        return QuotaImpl.quota(currentQuotaManager.getCurrentStorage(quotaRoot), maxValue);
+    @Override
+    public Quota<QuotaSize> getStorageQuota(QuotaRoot quotaRoot) throws MailboxException {
+        return Quota.<QuotaSize>builder()
+            .used(currentQuotaManager.getCurrentStorage(quotaRoot))
+            .computedLimit(maxQuotaManager.getMaxStorage(quotaRoot).orElse(QuotaSize.unlimited()))
+            .limitsByScope(maxQuotaManager.listMaxStorageDetails(quotaRoot))
+            .build();
     }
 
 }

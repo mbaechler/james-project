@@ -19,10 +19,11 @@
 
 package org.apache.james.mailbox.store.event;
 
+import org.apache.james.mailbox.Event;
 import org.apache.james.mailbox.MailboxListener;
 
 public interface EventDelivery {
 
-    void deliver(MailboxListener mailboxListener, MailboxListener.Event event);
+    void deliver(MailboxListener mailboxListener, Event event);
 
 }

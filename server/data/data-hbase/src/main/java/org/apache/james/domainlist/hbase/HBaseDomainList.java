@@ -21,7 +21,6 @@ package org.apache.james.domainlist.hbase;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 import javax.inject.Inject;
 
@@ -33,6 +32,7 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.james.core.Domain;
 import org.apache.james.dnsservice.api.DNSService;
 import org.apache.james.domainlist.api.DomainListException;
 import org.apache.james.domainlist.hbase.def.HDomainList;
@@ -56,15 +56,10 @@ public class HBaseDomainList extends AbstractDomainList {
         super(dns);
     }
 
-    /**
-     * @see org.apache.james.domainlist.api.DomainList#containsDomain(String)
-     */
     @Override
-    protected boolean containsDomainInternal(String domain) throws DomainListException {
-        HTableInterface table = null;
-        try {
-            table = TablePool.getInstance().getDomainlistTable();
-            Get get = new Get(Bytes.toBytes(domain.toLowerCase(Locale.US)));
+    protected boolean containsDomainInternal(Domain domain) throws DomainListException {
+        try (HTableInterface table = TablePool.getInstance().getDomainlistTable()) {
+            Get get = new Get(Bytes.toBytes(domain.asString()));
             Result result = table.get(get);
             if (!result.isEmpty()) {
                 return true;
@@ -72,102 +67,54 @@ public class HBaseDomainList extends AbstractDomainList {
         } catch (IOException e) {
             log.error("Error while counting domains from HBase", e);
             throw new DomainListException("Error while counting domains from HBase", e);
-        } finally {
-            if (table != null) {
-                try {
-                    table.close();
-                } catch (IOException e) {
-                    // Do nothing, we can't get access to the HBaseSchema.
-                }
-            }
         }
         return false;
     }
 
-    /**
-     * @see org.apache.james.domainlist.api.DomainList#addDomain(String)
-     */
     @Override
-    public void addDomain(String domain) throws DomainListException {
-        String lowerCasedDomain = domain.toLowerCase(Locale.US);
-        if (containsDomain(lowerCasedDomain)) {
-            throw new DomainListException(lowerCasedDomain + " already exists.");
+    public void addDomain(Domain domain) throws DomainListException {
+        if (containsDomain(domain)) {
+            throw new DomainListException(domain.name() + " already exists.");
         }
-        HTableInterface table = null;
-        try {
-            table = TablePool.getInstance().getDomainlistTable();
-            Put put = new Put(Bytes.toBytes(lowerCasedDomain));
+        try (HTableInterface table = TablePool.getInstance().getDomainlistTable()) {
+            Put put = new Put(Bytes.toBytes(domain.asString()));
             put.add(HDomainList.COLUMN_FAMILY_NAME, HDomainList.COLUMN.DOMAIN, null);
             table.put(put);
             table.flushCommits();
         } catch (IOException e) {
             log.error("Error while adding domain in HBase", e);
             throw new DomainListException("Error while adding domain in HBase", e);
-        } finally {
-            if (table != null) {
-                try {
-                    table.close();
-                } catch (IOException e) {
-                    // Do nothing, we can't get access to the HBaseSchema.
-                }
-            }
         }
     }
 
     @Override
-    public void removeDomain(String domain) throws DomainListException {
-        HTableInterface table = null;
-        try {
-            table = TablePool.getInstance().getDomainlistTable();
-            Delete delete = new Delete(Bytes.toBytes(domain.toLowerCase(Locale.US)));
+    public void removeDomain(Domain domain) throws DomainListException {
+        try (HTableInterface table = TablePool.getInstance().getDomainlistTable()) {
+            Delete delete = new Delete(Bytes.toBytes(domain.asString()));
             table.delete(delete);
             table.flushCommits();
         } catch (IOException e) {
             log.error("Error while deleting user from HBase", e);
             throw new DomainListException("Error while deleting domain from HBase", e);
-        } finally {
-            if (table != null) {
-                try {
-                    table.close();
-                } catch (IOException e) {
-                    // Do nothing, we can't get access to the HBaseSchema.
-                }
-            }
         }
     }
 
-    /**
-     * @see org.apache.james.domainlist.lib.AbstractDomainList#getDomainListInternal()
-     */
     @Override
-    protected List<String> getDomainListInternal() throws DomainListException {
-        List<String> list = new ArrayList<>();
-        HTableInterface table = null;
-        ResultScanner resultScanner = null;
-        try {
-            table = TablePool.getInstance().getDomainlistTable();
+    protected List<Domain> getDomainListInternal() throws DomainListException {
+        List<Domain> list = new ArrayList<>();
+        try (HTableInterface table = TablePool.getInstance().getDomainlistTable()) {
             Scan scan = new Scan();
             scan.addFamily(HDomainList.COLUMN_FAMILY_NAME);
             scan.setCaching(table.getConfiguration().getInt("hbase.client.scanner.caching", 1) * 2);
-            resultScanner = table.getScanner(scan);
-            Result result;
-            while ((result = resultScanner.next()) != null) {
-                list.add(Bytes.toString(result.getRow()));
+            try (ResultScanner resultScanner = table.getScanner(scan)) {
+                Result result;
+                while ((result = resultScanner.next()) != null) {
+                    list.add(Domain.of(Bytes.toString(result.getRow())));
+                }
             }
         } catch (IOException e) {
             log.error("Error while counting domains from HBase", e);
             throw new DomainListException("Error while counting domains from HBase", e);
-        } finally {
-            if (resultScanner != null) {
-                resultScanner.close();
-            }
-            if (table != null) {
-                try {
-                    table.close();
-                } catch (IOException e) {
-                    // Do nothing, we can't get access to the HBaseSchema.
-                }
-            }
         }
         return list;
     }

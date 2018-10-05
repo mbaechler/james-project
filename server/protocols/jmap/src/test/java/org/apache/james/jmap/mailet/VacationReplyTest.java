@@ -20,29 +20,26 @@
 package org.apache.james.jmap.mailet;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.argThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.hamcrest.MockitoHamcrest.argThat;
 
 import java.util.Optional;
-import java.util.Properties;
 
 import javax.mail.MessagingException;
-import javax.mail.Session;
 import javax.mail.internet.MimeMessage;
 
+import org.apache.james.core.MailAddress;
 import org.apache.james.jmap.api.vacation.Vacation;
 import org.apache.james.jmap.utils.MimeMessageBodyGenerator;
-import org.apache.james.core.MailAddress;
+import org.apache.james.util.MimeMessageUtil;
 import org.apache.mailet.base.test.FakeMail;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.google.common.base.Throwables;
 
 public class VacationReplyTest {
 
@@ -62,12 +59,13 @@ public class VacationReplyTest {
         originalRecipient = new MailAddress("benwa@apache.org");
 
         mail = FakeMail.builder()
-                .mimeMessage(new MimeMessage(Session.getInstance(new Properties()), ClassLoader.getSystemResourceAsStream("spamMail.eml")))
+                .mimeMessage(
+                    MimeMessageUtil.mimeMessageFromStream(ClassLoader.getSystemResourceAsStream("spamMail.eml")))
                 .sender(originalSender)
                 .build();
 
         mimeMessageBodyGenerator = mock(MimeMessageBodyGenerator.class);
-        generatedBody = new MimeMessage(Session.getInstance(new Properties()));
+        generatedBody = MimeMessageUtil.defaultMimeMessage();
         when(mimeMessageBodyGenerator.from(any(MimeMessage.class), any(), any())).thenReturn(generatedBody);
     }
 
@@ -140,7 +138,7 @@ public class VacationReplyTest {
                 try {
                     return mimeMessage.getSubject().equals(expectedSubject);
                 } catch (MessagingException e) {
-                    throw Throwables.propagate(e);
+                    throw new RuntimeException(e);
                 }
             }
 

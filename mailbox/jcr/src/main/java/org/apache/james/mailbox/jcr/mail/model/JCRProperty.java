@@ -41,10 +41,10 @@ public class JCRProperty implements JCRImapConstants, Persistent, Property {
     private String value;
     private int order;
 
-    public final static String NAMESPACE_PROPERTY = "jamesMailbox:propertyNamespace";
-    public final static String LOCALNAME_PROPERTY =  "jamesMailbox:propertyLocalName";
-    public final static String VALUE_PROPERTY =  "jamesMailbox:propertyValue";
-    public final static String ORDER_PROPERTY =  "jamesMailbox:propertyOrder";
+    public static final String NAMESPACE_PROPERTY = "jamesMailbox:propertyNamespace";
+    public static final String LOCALNAME_PROPERTY =  "jamesMailbox:propertyLocalName";
+    public static final String VALUE_PROPERTY =  "jamesMailbox:propertyValue";
+    public static final String ORDER_PROPERTY =  "jamesMailbox:propertyOrder";
 
     public JCRProperty(Node node) {
         this.node = node;
@@ -59,13 +59,7 @@ public class JCRProperty implements JCRImapConstants, Persistent, Property {
     public JCRProperty(Property property) {
         this(property.getNamespace(), property.getLocalName(), property.getValue());
     }
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * org.apache.james.mailbox.store.mail.model.AbstractComparableProperty#getOrder
-     * ()
-     */
+    
     public int getOrder() {
         if (isPersistent()) {
             try {
@@ -78,20 +72,12 @@ public class JCRProperty implements JCRImapConstants, Persistent, Property {
         return order;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.apache.james.mailbox.jcr.IsPersistent#getNode()
-     */
+    @Override
     public Node getNode() {
         return node;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.apache.james.mailbox.store.mail.model.Property#getLocalName()
-     */
+    @Override
     public String getLocalName() {
         if (isPersistent()) {
             try {
@@ -104,11 +90,7 @@ public class JCRProperty implements JCRImapConstants, Persistent, Property {
         return localName;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.apache.james.mailbox.store.mail.model.Property#getNamespace()
-     */
+    @Override
     public String getNamespace() {
         if (isPersistent()) {
             try {
@@ -121,11 +103,7 @@ public class JCRProperty implements JCRImapConstants, Persistent, Property {
         return namespace;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.apache.james.mailbox.store.mail.model.Property#getValue()
-     */
+    @Override
     public String getValue() {
         if (isPersistent()) {
             try {
@@ -138,20 +116,12 @@ public class JCRProperty implements JCRImapConstants, Persistent, Property {
         return value;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.apache.james.mailbox.jcr.IsPersistent#isPersistent()
-     */
+    @Override
     public boolean isPersistent() {
         return node != null;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.apache.james.mailbox.jcr.IsPersistent#merge(javax.jcr.Node)
-     */
+    @Override
     public void merge(Node node) throws RepositoryException {
         node.setProperty(NAMESPACE_PROPERTY, getNamespace());
         node.setProperty(ORDER_PROPERTY, getOrder());
@@ -180,34 +150,43 @@ public class JCRProperty implements JCRImapConstants, Persistent, Property {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         final JCRProperty other = (JCRProperty) obj;
         
         if (getLocalName() != null) {
-            if (!getLocalName().equals(other.getLocalName()))
-        	return false;
+            if (!getLocalName().equals(other.getLocalName())) {
+                return false;
+            }
         } else {
-            if (other.getLocalName() != null)
-        	return false;
+            if (other.getLocalName() != null) {
+                return false;
+            }
         }
         if (getNamespace() != null) {
-            if (!getNamespace().equals(other.getNamespace()))
-        	return false;
+            if (!getNamespace().equals(other.getNamespace())) {
+                return false;
+            }
         } else {
-            if (other.getNamespace() != null)
-        	return false;
+            if (other.getNamespace() != null) {
+                return false;
+            }
         }
         if (getValue() != null) {
-            if (!getValue().equals(other.getValue()))
-        	return false;
+            if (!getValue().equals(other.getValue())) {
+                return false;
+            }
         } else {
-            if (other.getValue() != null)
-        	return false;
+            if (other.getValue() != null) {
+                return false;
+            }
         }
         return true;
     }

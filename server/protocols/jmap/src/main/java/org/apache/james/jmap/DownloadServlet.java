@@ -74,7 +74,7 @@ public class DownloadServlet extends HttpServlet {
         try {
             respondAttachmentAccessToken(getMailboxSession(req), DownloadPath.from(pathInfo), resp);
         } catch (IllegalArgumentException e) {
-            LOGGER.error(String.format("Error while generating attachment access token '%s'", pathInfo), e);
+            LOGGER.error("Error while generating attachment access token '{}'", pathInfo, e);
             resp.setStatus(SC_BAD_REQUEST);
         } finally {
             timeMetric.stopAndPublish();
@@ -115,7 +115,7 @@ public class DownloadServlet extends HttpServlet {
         try {
             download(getMailboxSession(req), DownloadPath.from(pathInfo), resp);
         } catch (IllegalArgumentException e) {
-            LOGGER.error(String.format("Error while downloading '%s'", pathInfo), e);
+            LOGGER.error("Error while downloading '{}'", pathInfo, e);
             resp.setStatus(SC_BAD_REQUEST);
         }
     }
@@ -123,15 +123,14 @@ public class DownloadServlet extends HttpServlet {
     @VisibleForTesting void download(MailboxSession mailboxSession, DownloadPath downloadPath, HttpServletResponse resp) {
         String blobId = downloadPath.getBlobId();
         try {
-            addContentDispositionHeader(downloadPath.getName(), resp);
-
             Blob blob = blobManager.retrieve(BlobId.fromString(blobId), mailboxSession);
-            IOUtils.copy(blob.getStream(), resp.getOutputStream());
 
+            addContentDispositionHeader(downloadPath.getName(), resp);
             resp.setHeader("Content-Length", String.valueOf(blob.getSize()));
             resp.setStatus(SC_OK);
+            IOUtils.copy(blob.getStream(), resp.getOutputStream());
         } catch (BlobNotFoundException e) {
-            LOGGER.info(String.format("Attachment '%s' not found", blobId), e);
+            LOGGER.info("Attachment '{}' not found", blobId, e);
             resp.setStatus(SC_NOT_FOUND);
         } catch (MailboxException | IOException e) {
             LOGGER.error("Error while downloading", e);
@@ -144,7 +143,7 @@ public class DownloadServlet extends HttpServlet {
     }
 
     private void addContentDispositionHeaderRegardingEncoding(String name, HttpServletResponse resp) {
-        if (CharMatcher.ASCII.matchesAllOf(name)) {
+        if (CharMatcher.ascii().matchesAllOf(name)) {
             resp.addHeader("Content-Disposition", "attachment; filename=\"" + name + "\"");
         } else {
             resp.addHeader("Content-Disposition", "attachment; filename*=\"" + EncoderUtil.encodeEncodedWord(name, Usage.TEXT_TOKEN) + "\"");

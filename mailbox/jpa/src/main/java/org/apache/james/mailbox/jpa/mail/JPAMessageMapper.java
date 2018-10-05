@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
 import javax.mail.Flags;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceException;
@@ -85,11 +86,6 @@ public class JPAMessageMapper extends JPATransactionalMapper implements MessageM
         return Iterators.transform(findInMailbox(mailbox, MessageRange.all(), FetchType.Full, UNLIMITED), MailboxMessage::getUid);
     }
 
-    /**
-     * @see org.apache.james.mailbox.store.mail.MessageMapper#findInMailbox(org.apache.james.mailbox.store.mail.model.Mailbox,
-     *      org.apache.james.mailbox.model.MessageRange,
-     *      org.apache.james.mailbox.store.mail.MessageMapper.FetchType, int)
-     */
     @Override
     public Iterator<MailboxMessage> findInMailbox(Mailbox mailbox, MessageRange set, FetchType fType, int max)
             throws MailboxException {
@@ -123,9 +119,7 @@ public class JPAMessageMapper extends JPATransactionalMapper implements MessageM
         }
     }
 
-    /**
-     * @see org.apache.james.mailbox.store.mail.MessageMapper#countMessagesInMailbox(Mailbox)
-     */
+    @Override
     public long countMessagesInMailbox(Mailbox mailbox) throws MailboxException {
         try {
             JPAId mailboxId = (JPAId) mailbox.getMailboxId();
@@ -136,9 +130,7 @@ public class JPAMessageMapper extends JPATransactionalMapper implements MessageM
         }
     }
 
-    /**
-     * @see org.apache.james.mailbox.store.mail.MessageMapper#countUnseenMessagesInMailbox(Mailbox)
-     */
+    @Override
     public long countUnseenMessagesInMailbox(Mailbox mailbox) throws MailboxException {
         try {
             JPAId mailboxId = (JPAId) mailbox.getMailboxId();
@@ -149,10 +141,7 @@ public class JPAMessageMapper extends JPATransactionalMapper implements MessageM
         }
     }
 
-    /**
-     * @see org.apache.james.mailbox.store.mail.MessageMapper#delete(org.apache.james.mailbox.store.mail.model.Mailbox,
-     *      MailboxMessage)
-     */
+    @Override
     public void delete(Mailbox mailbox, MailboxMessage message) throws MailboxException {
         try {
             AbstractJPAMailboxMessage jpaMessage = getEntityManager().find(AbstractJPAMailboxMessage.class, buildKey(mailbox, message));
@@ -190,6 +179,7 @@ public class JPAMessageMapper extends JPATransactionalMapper implements MessageM
         }
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public List<MessageUid> findRecentMessageUidsInMailbox(Mailbox mailbox) throws MailboxException {
         try {
@@ -247,12 +237,6 @@ public class JPAMessageMapper extends JPATransactionalMapper implements MessageM
         }
     }
 
-    /**
-     * (non-Javadoc)
-     * 
-     * @see org.apache.james.mailbox.store.mail.MessageMapper#move(org.apache.james.mailbox.store.mail.model.Mailbox,
-     *      MailboxMessage)
-     */
     @Override
     public MessageMetaData move(Mailbox mailbox, MailboxMessage original) throws MailboxException {
         throw new UnsupportedOperationException("Not implemented - see https://issues.apache.org/jira/browse/IMAP-370");
@@ -350,8 +334,9 @@ public class JPAMessageMapper extends JPATransactionalMapper implements MessageM
         Query query = getEntityManager().createNamedQuery("findMessagesInMailboxAfterUID")
                 .setParameter("idParam", mailboxId.getRawId()).setParameter("uidParam", from.asLong());
 
-        if (batchSize > 0)
+        if (batchSize > 0) {
             query.setMaxResults(batchSize);
+        }
 
         return query.getResultList();
     }
@@ -370,8 +355,9 @@ public class JPAMessageMapper extends JPATransactionalMapper implements MessageM
                 .setParameter("idParam", mailboxId.getRawId()).setParameter("fromParam", from.asLong())
                 .setParameter("toParam", to.asLong());
 
-        if (batchSize > 0)
+        if (batchSize > 0) {
             query.setMaxResults(batchSize);
+        }
 
         return query.getResultList();
     }
@@ -380,8 +366,9 @@ public class JPAMessageMapper extends JPATransactionalMapper implements MessageM
     private List<MailboxMessage> findMessagesInMailbox(JPAId mailboxId, int batchSize) {
         Query query = getEntityManager().createNamedQuery("findMessagesInMailbox").setParameter("idParam",
                 mailboxId.getRawId());
-        if (batchSize > 0)
+        if (batchSize > 0) {
             query.setMaxResults(batchSize);
+        }
         return query.getResultList();
     }
 

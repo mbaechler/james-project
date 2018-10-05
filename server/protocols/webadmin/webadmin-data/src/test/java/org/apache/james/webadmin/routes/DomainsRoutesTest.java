@@ -19,23 +19,22 @@
 
 package org.apache.james.webadmin.routes;
 
-import static com.jayway.restassured.RestAssured.given;
-import static com.jayway.restassured.RestAssured.when;
-import static com.jayway.restassured.RestAssured.with;
-import static com.jayway.restassured.config.EncoderConfig.encoderConfig;
-import static com.jayway.restassured.config.RestAssuredConfig.newConfig;
+import static io.restassured.RestAssured.given;
+import static io.restassured.RestAssured.when;
+import static io.restassured.RestAssured.with;
 import static org.apache.james.webadmin.Constants.SEPARATOR;
 import static org.apache.james.webadmin.WebAdminServer.NO_CONFIGURATION;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.net.InetAddress;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.james.core.Domain;
 import org.apache.james.dnsservice.api.DNSService;
 import org.apache.james.domainlist.api.DomainList;
 import org.apache.james.domainlist.api.DomainListException;
@@ -44,18 +43,16 @@ import org.apache.james.metrics.logger.DefaultMetricFactory;
 import org.apache.james.webadmin.WebAdminServer;
 import org.apache.james.webadmin.WebAdminUtils;
 import org.apache.james.webadmin.utils.JsonTransformer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.eclipse.jetty.http.HttpStatus;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
-import com.jayway.restassured.RestAssured;
-import com.jayway.restassured.builder.RequestSpecBuilder;
-import com.jayway.restassured.http.ContentType;
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
 
-import de.bechte.junit.runners.context.HierarchicalContextRunner;
 
-@RunWith(HierarchicalContextRunner.class)
 public class DomainsRoutesTest {
     public static final String DOMAIN = "domain";
 
@@ -68,25 +65,21 @@ public class DomainsRoutesTest {
         webAdminServer.configure(NO_CONFIGURATION);
         webAdminServer.await();
 
-        RestAssured.requestSpecification = new RequestSpecBuilder()
-        		.setContentType(ContentType.JSON)
-        		.setAccept(ContentType.JSON)
-        		.setConfig(newConfig().encoderConfig(encoderConfig().defaultContentCharset(StandardCharsets.UTF_8)))
-        		.setPort(webAdminServer.getPort().toInt())
-        		.setBasePath(DomainsRoutes.DOMAINS)
-        		.build();
-
+        RestAssured.requestSpecification = WebAdminUtils.buildRequestSpecification(webAdminServer)
+            .setBasePath(DomainsRoutes.DOMAINS)
+            .build();
     }
 
-    @After
-    public void stop() {
+    @AfterEach
+    void stop() {
         webAdminServer.destroy();
     }
 
-    public class NormalBehaviour {
+    @Nested
+    class NormalBehaviour {
 
-        @Before
-        public void setUp() throws Exception {
+        @BeforeEach
+        void setUp() throws Exception {
             DNSService dnsService = mock(DNSService.class);
             when(dnsService.getHostName(any())).thenReturn("localhost");
             when(dnsService.getLocalHost()).thenReturn(InetAddress.getByName("localhost"));
@@ -97,12 +90,12 @@ public class DomainsRoutesTest {
         }
 
         @Test
-        public void getDomainsShouldBeEmptyByDefault() {
+        void getDomainsShouldBeEmptyByDefault() {
             List<String> domains =
                 given()
                     .get()
                 .then()
-                    .statusCode(200)
+                    .statusCode(HttpStatus.OK_200)
                     .contentType(ContentType.JSON)
                     .extract()
                     .body()
@@ -113,31 +106,31 @@ public class DomainsRoutesTest {
         }
 
         @Test
-        public void putShouldReturnErrorWhenUsedWithEmptyDomain() {
+        void putShouldReturnErrorWhenUsedWithEmptyDomain() {
             given()
                 .put(SEPARATOR)
             .then()
-                .statusCode(404);
+                .statusCode(HttpStatus.NOT_FOUND_404);
         }
 
         @Test
-        public void deleteShouldReturnErrorWhenUsedWithEmptyDomain() {
+        void deleteShouldReturnErrorWhenUsedWithEmptyDomain() {
             given()
                 .delete(SEPARATOR)
             .then()
-                .statusCode(404);
+                .statusCode(HttpStatus.NOT_FOUND_404);
         }
 
         @Test
-        public void putShouldBeOk() {
+        void putShouldBeOk() {
             given()
                 .put(DOMAIN)
             .then()
-                .statusCode(204);
+                .statusCode(HttpStatus.NO_CONTENT_204);
         }
 
         @Test
-        public void getDomainsShouldDisplayAddedDomains() {
+        void getDomainsShouldDisplayAddedDomains() {
             with()
                 .put(DOMAIN);
 
@@ -146,7 +139,7 @@ public class DomainsRoutesTest {
                     .get()
                 .then()
                     .contentType(ContentType.JSON)
-                    .statusCode(200)
+                    .statusCode(HttpStatus.OK_200)
                     .extract()
                     .body()
                     .jsonPath()
@@ -156,58 +149,77 @@ public class DomainsRoutesTest {
         }
 
         @Test
-        public void putShouldReturnUserErrorWhenNameContainsAT() {
-            when()
+        void putShouldReturnUserErrorWhenNameContainsAT() {
+            Map<String, Object> errors = when()
                 .put(DOMAIN + "@" + DOMAIN)
             .then()
-                .statusCode(400);
+                .statusCode(HttpStatus.BAD_REQUEST_400)
+                .contentType(ContentType.JSON)
+                .extract()
+                .body()
+                .jsonPath()
+                .getMap(".");
+
+            assertThat(errors)
+                .containsEntry("statusCode", HttpStatus.BAD_REQUEST_400)
+                .containsEntry("type", "InvalidArgument")
+                .containsEntry("message", "Invalid request for domain creation domain@domain");
         }
 
         @Test
-        public void putShouldReturnUserErrorWhenNameContainsUrlSeparator() {
+        void putShouldReturnUserErrorWhenNameContainsUrlSeparator() {
             when()
                 .put(DOMAIN + "/" + DOMAIN)
             .then()
-                .statusCode(404);
+                .statusCode(HttpStatus.NOT_FOUND_404);
         }
 
         @Test
-        public void putShouldReturnUserErrorWhenNameIsTooLong() {
-            when()
+        void putShouldReturnUserErrorWhenNameIsTooLong() {
+            Map<String, Object> errors = when()
                 .put(DOMAIN + "0123456789.0123456789.0123456789.0123456789.0123456789.0123456789.0123456789.0123456789.0123456789.0123456789." +
                     "0123456789.0123456789.0123456789.0123456789.0123456789.0123456789.0123456789.0123456789.0123456789.0123456789." +
                     "0123456789.0123456789.0123456789.")
             .then()
-                .statusCode(400);
+                .statusCode(HttpStatus.BAD_REQUEST_400)
+                .contentType(ContentType.JSON)
+                .extract()
+                .body()
+                .jsonPath()
+                .getMap(".");
+
+            assertThat(errors)
+                .containsEntry("statusCode", HttpStatus.BAD_REQUEST_400)
+                .containsEntry("type", "InvalidArgument");
         }
 
         @Test
-        public void putShouldWorkOnTheSecondTimeForAGivenValue() {
+        void putShouldWorkOnTheSecondTimeForAGivenValue() {
             with()
                 .put(DOMAIN);
 
             when()
                 .put(DOMAIN)
             .then()
-                .statusCode(204);
+                .statusCode(HttpStatus.NO_CONTENT_204);
         }
 
         @Test
-        public void deleteShouldRemoveTheGivenDomain() {
+        void deleteShouldRemoveTheGivenDomain() {
             with()
                 .put(DOMAIN);
 
             when()
                 .delete(DOMAIN)
             .then()
-                .statusCode(204);
+                .statusCode(HttpStatus.NO_CONTENT_204);
 
             List<String> domains =
                 when()
                     .get()
                 .then()
                     .contentType(ContentType.JSON)
-                    .statusCode(200)
+                    .statusCode(HttpStatus.OK_200)
                     .extract()
                     .body()
                     .jsonPath()
@@ -217,124 +229,125 @@ public class DomainsRoutesTest {
         }
 
         @Test
-        public void deleteShouldBeOkWhenTheDomainIsNotPresent() {
+        void deleteShouldBeOkWhenTheDomainIsNotPresent() {
             given()
                 .delete(DOMAIN)
             .then()
-                .statusCode(204);
+                .statusCode(HttpStatus.NO_CONTENT_204);
         }
 
         @Test
-        public void getDomainShouldReturnOkWhenTheDomainIsPresent() {
+        void getDomainShouldReturnOkWhenTheDomainIsPresent() {
             with()
                 .put(DOMAIN);
 
             when()
                 .get(DOMAIN)
             .then()
-                .statusCode(204);
+                .statusCode(HttpStatus.NO_CONTENT_204);
         }
 
         @Test
-        public void getDomainShouldReturnNotFoundWhenTheDomainIsAbsent() {
+        void getDomainShouldReturnNotFoundWhenTheDomainIsAbsent() {
             given()
                 .get(DOMAIN)
             .then()
-                .statusCode(404);
+                .statusCode(HttpStatus.NOT_FOUND_404);
         }
 
     }
 
-    public class ExceptionHandling {
+    @Nested
+    class ExceptionHandling {
 
         private DomainList domainList;
-        private String domain;
+        private Domain domain;
 
-        @Before
-        public void setUp() throws Exception {
+        @BeforeEach
+        void setUp() throws Exception {
             domainList = mock(DomainList.class);
             createServer(domainList);
-            domain = "domain";
+            domain = Domain.of("domain");
         }
 
         @Test
-        public void deleteShouldReturnErrorOnUnknownException() throws Exception {
+        void deleteShouldReturnErrorOnUnknownException() throws Exception {
             doThrow(new RuntimeException()).when(domainList).removeDomain(domain);
 
             when()
                 .delete(DOMAIN)
             .then()
-                .statusCode(500);
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
-        public void putShouldReturnErrorOnUnknownException() throws Exception {
+        void putShouldReturnErrorOnUnknownException() throws Exception {
             doThrow(new RuntimeException()).when(domainList).addDomain(domain);
 
             when()
                 .put(DOMAIN)
             .then()
-                .statusCode(500);
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
-        public void getDomainShouldReturnErrorOnUnknownException() throws Exception {
+        void getDomainShouldReturnErrorOnUnknownException() throws Exception {
             when(domainList.containsDomain(domain)).thenThrow(new RuntimeException());
 
             when()
                 .get(DOMAIN)
             .then()
-                .statusCode(500);
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
-        public void getDomainsShouldReturnErrorOnUnknownException() throws Exception {
+        void getDomainsShouldReturnErrorOnUnknownException() throws Exception {
             when(domainList.getDomains()).thenThrow(new RuntimeException());
 
             when()
                 .get()
             .then()
-                .statusCode(500);
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
-        public void deleteShouldReturnOkWhenDomainListException() throws Exception {
+        void deleteShouldReturnOkWhenDomainListException() throws Exception {
             doThrow(new DomainListException("message")).when(domainList).removeDomain(domain);
 
             when()
                 .delete(DOMAIN)
             .then()
-                .statusCode(204);
+                .statusCode(HttpStatus.NO_CONTENT_204);
         }
 
         @Test
-        public void putShouldReturnOkWhenDomainListException() throws Exception {
+        void putShouldReturnOkWhenDomainListException() throws Exception {
             doThrow(new DomainListException("message")).when(domainList).addDomain(domain);
 
             when()
                 .put(DOMAIN)
             .then()
-                .statusCode(204);
+                .statusCode(HttpStatus.NO_CONTENT_204);
         }
 
         @Test
-        public void getDomainShouldReturnErrorOnDomainListException() throws Exception {
+        void getDomainShouldReturnErrorOnDomainListException() throws Exception {
             when(domainList.containsDomain(domain)).thenThrow(new DomainListException("message"));
 
             when()
                 .get(DOMAIN)
             .then()
-                .statusCode(500);
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
-        public void getDomainsShouldReturnErrorOnDomainListException() throws Exception {
+        void getDomainsShouldReturnErrorOnDomainListException() throws Exception {
             when(domainList.getDomains()).thenThrow(new DomainListException("message"));
 
             when()
                 .get()
             .then()
-                .statusCode(500);
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
     }

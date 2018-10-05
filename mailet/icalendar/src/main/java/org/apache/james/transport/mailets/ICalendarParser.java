@@ -21,6 +21,7 @@ package org.apache.james.transport.mailets;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -39,7 +40,6 @@ import com.google.common.base.Strings;
 import net.fortuna.ical4j.data.CalendarBuilder;
 import net.fortuna.ical4j.data.ParserException;
 import net.fortuna.ical4j.model.Calendar;
-import net.fortuna.ical4j.util.CompatibilityHints;
 
 /**
  * <p>
@@ -73,12 +73,7 @@ public class ICalendarParser extends GenericMailet {
     public static final String DESTINATION_ATTRIBUTE_PARAMETER_DEFAULT_VALUE = "calendars";
 
     static {
-        CompatibilityHints.setHintEnabled(CompatibilityHints.KEY_RELAXED_PARSING, true);
-        CompatibilityHints.setHintEnabled(CompatibilityHints.KEY_RELAXED_UNFOLDING, true);
-        CompatibilityHints.setHintEnabled(CompatibilityHints.KEY_RELAXED_VALIDATION, true);
-        CompatibilityHints.setHintEnabled(CompatibilityHints.KEY_OUTLOOK_COMPATIBILITY, true);
-        CompatibilityHints.setHintEnabled(CompatibilityHints.KEY_NOTES_COMPATIBILITY, true);
-        CompatibilityHints.setHintEnabled(CompatibilityHints.KEY_VCARD_COMPATIBILITY, true);
+        ICal4JConfigurator.configure();
     }
 
     private String sourceAttributeName;
@@ -134,11 +129,16 @@ public class ICalendarParser extends GenericMailet {
             ByteArrayInputStream inputStream = new ByteArrayInputStream(icsContent);
             return Stream.of(Pair.of(key, builder.build(inputStream)));
         } catch (IOException e) {
-            LOGGER.error("Error while reading input: " + icsContent, e);
+            if (LOGGER.isErrorEnabled()) {
+                LOGGER.error("Error while reading input: " + new String(icsContent, StandardCharsets.UTF_8), e);
+            }
             return Stream.of();
         } catch (ParserException e) {
-            LOGGER.error("Error while parsing ICal object: " + icsContent, e);
+            if (LOGGER.isErrorEnabled()) {
+                LOGGER.error("Error while parsing ICal object: " + new String(icsContent, StandardCharsets.UTF_8), e);
+            }
             return Stream.of();
         }
     }
+
 }

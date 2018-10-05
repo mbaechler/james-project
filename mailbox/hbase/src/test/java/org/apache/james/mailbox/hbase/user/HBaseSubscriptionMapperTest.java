@@ -29,10 +29,7 @@ import static org.apache.james.mailbox.hbase.HBaseNames.MESSAGE_DATA_HEADERS_CF;
 import static org.apache.james.mailbox.hbase.HBaseNames.SUBSCRIPTIONS;
 import static org.apache.james.mailbox.hbase.HBaseNames.SUBSCRIPTIONS_TABLE;
 import static org.apache.james.mailbox.hbase.HBaseNames.SUBSCRIPTION_CF;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -99,7 +96,8 @@ public class HBaseSubscriptionMapperTest {
     private static void fillSubscriptionList() throws SubscriptionException {
         LOG.info("Creating subscription list");
         SimpleSubscription subscription;
-        String user, mailbox;
+        String user;
+        String mailbox;
         subscriptionList = new HashMap<>();
         for (int i = 0; i < USERS; i++) {
             user = "user" + i;
@@ -118,7 +116,7 @@ public class HBaseSubscriptionMapperTest {
                 subscription = new SimpleSubscription(user, mailbox);
                 mailboxes.add(subscription);
                 mapper.save(subscription);
-                LOG.info("Adding subscription " + subscription);
+                LOG.info("Adding subscription {}", subscription);
             }
         }
     }
@@ -138,12 +136,12 @@ public class HBaseSubscriptionMapperTest {
             LOG.info("Searching for all subscriptions for user:{}", user);
             for (SimpleSubscription subscription : subscriptionList.get(user)) {
                 final Subscription result = mapper.findMailboxSubscriptionForUser(user, subscription.getMailbox());
-                assertEquals(subscription.getMailbox(), result.getMailbox());
-                assertEquals(subscription.getUser(), result.getUser());
+                assertThat(result.getMailbox()).isEqualTo(subscription.getMailbox());
+                assertThat(result.getUser()).isEqualTo(subscription.getUser());
             }
         }
-        assertNull(mapper.findMailboxSubscriptionForUser(fake1.getUser(), fake1.getMailbox()));
-        assertNull(mapper.findMailboxSubscriptionForUser(fake2.getUser(), fake2.getMailbox()));
+        assertThat(mapper.findMailboxSubscriptionForUser(fake1.getUser(), fake1.getMailbox())).isNull();
+        assertThat(mapper.findMailboxSubscriptionForUser(fake2.getUser(), fake2.getMailbox())).isNull();
     }
 
     /**
@@ -159,7 +157,7 @@ public class HBaseSubscriptionMapperTest {
             get.addFamily(SUBSCRIPTION_CF);
             final Result result = subscriptions.get(get);
             for (Subscription subscription : subscriptionList.get(user)) {
-                assertTrue(result.containsColumn(SUBSCRIPTION_CF, Bytes.toBytes(subscription.getMailbox())));
+                assertThat(result.containsColumn(SUBSCRIPTION_CF, Bytes.toBytes(subscription.getMailbox()))).isTrue();
             }
         }
         subscriptions.close();
@@ -175,9 +173,9 @@ public class HBaseSubscriptionMapperTest {
         @SuppressWarnings("unused") final SimpleSubscription fake1 = new SimpleSubscription("user1", "FAKEBOX");
         final SimpleSubscription fake2 = new SimpleSubscription("fakeUser", "INBOX");
         for (String user : subscriptionList.keySet()) {
-            LOG.info("Searching for all subscriptions for user: " + user);
+            LOG.info("Searching for all subscriptions for user: {}", user);
             final List<Subscription> found = mapper.findSubscriptionsForUser(user);
-            assertEquals(subscriptionList.get(user).size(), found.size());
+            assertThat(found.size()).isEqualTo(subscriptionList.get(user).size());
             // TODO: patch Subscription to implement equals
             //assertTrue(subscriptionList.get(user).containsAll(foundSubscriptions));
             //assertTrue(foundSubscriptions.containsAll(subscriptionList.get(user)));
@@ -185,7 +183,7 @@ public class HBaseSubscriptionMapperTest {
             //assertFalse(foundSubscriptions.contains(fake2));
         }
         //TODO: check what value we should return in case of no subscriptions: null or empty list
-        assertEquals(mapper.findSubscriptionsForUser(fake2.getMailbox()).size(), 0);
+        assertThat(0).isEqualTo(mapper.findSubscriptionsForUser(fake2.getMailbox()).size());
 
     }
 
@@ -198,13 +196,13 @@ public class HBaseSubscriptionMapperTest {
         final HTable subscriptions = new HTable(mapperFactory.getClusterConfiguration(), SUBSCRIPTIONS_TABLE);
 
         for (String user : subscriptionList.keySet()) {
-            LOG.info("Deleting subscriptions for user: " + user);
+            LOG.info("Deleting subscriptions for user: {}", user);
             for (SimpleSubscription subscription : subscriptionList.get(user)) {
-                LOG.info("Deleting subscription : " + subscription);
+                LOG.info("Deleting subscription : {}", subscription);
                 mapper.delete(subscription);
                 final Get get = new Get(Bytes.toBytes(subscription.getUser()));
                 final Result result = subscriptions.get(get);
-                assertFalse(result.containsColumn(SUBSCRIPTION_CF, Bytes.toBytes(subscription.getMailbox())));
+                assertThat(result.containsColumn(SUBSCRIPTION_CF, Bytes.toBytes(subscription.getMailbox()))).isFalse();
             }
         }
         subscriptions.close();
