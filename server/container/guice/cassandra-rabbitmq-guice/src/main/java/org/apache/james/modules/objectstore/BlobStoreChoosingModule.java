@@ -20,7 +20,6 @@
 package org.apache.james.modules.objectstore;
 
 import java.io.FileNotFoundException;
-import java.util.function.Supplier;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
