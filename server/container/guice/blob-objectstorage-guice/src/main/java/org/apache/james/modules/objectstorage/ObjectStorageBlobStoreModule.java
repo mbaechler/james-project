@@ -19,14 +19,24 @@
 
 package org.apache.james.modules.objectstorage;
 
+import java.io.FileNotFoundException;
+
+import javax.inject.Singleton;
+
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.james.blob.api.BlobStore;
 import org.apache.james.blob.objectstorage.ObjectStorageBlobsDAO;
 import org.apache.james.blob.objectstorage.PayloadCodec;
+import org.apache.james.utils.PropertiesProvider;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
 import com.google.inject.Scopes;
 
 public class ObjectStorageBlobStoreModule extends AbstractModule {
+
+    private static final String OBJECTSTORAGE_CONFIGURATION_NAME = "objectstorage";
 
     @Override
     protected void configure() {
@@ -34,4 +44,16 @@ public class ObjectStorageBlobStoreModule extends AbstractModule {
         bind(ObjectStorageBlobsDAO.class).toProvider(ObjectStorageBlobsDAOProvider.class).in(Scopes.SINGLETON);
         bind(BlobStore.class).toProvider(ObjectStorageBlobsDAOProvider.class).in(Scopes.SINGLETON);
     }
+
+    @Provides
+    @Singleton
+    private ObjectStorageBlobConfiguration getMailQueueConfiguration(PropertiesProvider propertiesProvider) throws ConfigurationException {
+        try {
+            Configuration configuration = propertiesProvider.getConfiguration(OBJECTSTORAGE_CONFIGURATION_NAME);
+            return ObjectStorageBlobConfiguration.from(configuration);
+        } catch (FileNotFoundException e) {
+            throw new ConfigurationException(OBJECTSTORAGE_CONFIGURATION_NAME + " configuration " + "was not found");
+        }
+    }
+
 }
