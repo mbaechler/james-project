@@ -19,11 +19,6 @@
 
 package org.apache.james.modules.objectstorage;
 
-import static org.apache.james.modules.objectstorage.ObjectStorageBlobsDAOProvider.OBJECTSTORAGE_CONFIGURATION_NAME;
-import static org.apache.james.modules.objectstorage.ObjectStorageBlobsDAOProvider.OBJECTSTORAGE_NAMESPACE;
-import static org.apache.james.modules.objectstorage.ObjectStorageBlobsDAOProvider.OBJECTSTORAGE_PROVIDER;
-import static org.apache.james.modules.objectstorage.ObjectStorageBlobsDAOProvider.OBJECTSTORAGE_PROVIDER_SWIFT;
-import static org.apache.james.modules.objectstorage.ObjectStorageBlobsDAOProvider.OBJECTSTORAGE_SWIFT_AUTH_API;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.UUID;
@@ -34,10 +29,18 @@ import org.apache.james.blob.objectstorage.ContainerName;
 import org.apache.james.blob.objectstorage.DockerSwift;
 import org.apache.james.blob.objectstorage.DockerSwiftExtension;
 import org.apache.james.blob.objectstorage.ObjectStorageBlobsDAO;
+import org.apache.james.blob.objectstorage.swift.Credentials;
+import org.apache.james.blob.objectstorage.swift.DomainName;
+import org.apache.james.blob.objectstorage.swift.IdentityV3;
+import org.apache.james.blob.objectstorage.swift.PassHeaderName;
+import org.apache.james.blob.objectstorage.swift.Project;
+import org.apache.james.blob.objectstorage.swift.ProjectName;
 import org.apache.james.blob.objectstorage.swift.SwiftKeystone2ObjectStorage;
 import org.apache.james.blob.objectstorage.swift.SwiftKeystone3ObjectStorage;
 import org.apache.james.blob.objectstorage.swift.SwiftTempAuthObjectStorage;
-import org.apache.james.utils.PropertiesProvider;
+import org.apache.james.blob.objectstorage.swift.TenantName;
+import org.apache.james.blob.objectstorage.swift.UserHeaderName;
+import org.apache.james.blob.objectstorage.swift.UserName;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -56,53 +59,24 @@ class ObjectStorageBlobsDAOProviderTest {
 
     public static final HashBlobId.Factory BLOB_ID_FACTORY = new HashBlobId.Factory();
 
-
-    private PropertiesProvider tempAuthPropertiesProvider() {
-        return FakePropertiesProvider.builder()
-            .register(OBJECTSTORAGE_CONFIGURATION_NAME,
-                swiftConfigBuilder()
-                    .put(OBJECTSTORAGE_SWIFT_AUTH_API, SwiftTempAuthObjectStorage.AUTH_API_NAME)
-                    .put(SwiftConfigurationReader.OBJECTSTORAGE_SWIFT_ENDPOINT, dockerSwift.swiftEndpoint().toString())
-                    .put(SwiftConfigurationReader.OBJECTSTORAGE_SWIFT_CREDENTIALS, "testing")
-                    .put(SwiftTmpAuthConfigurationReader.OBJECTSTORAGE_SWIFT_TEMPAUTH_USERNAME, "tester")
-                    .put(SwiftTmpAuthConfigurationReader.OBJECTSTORAGE_SWIFT_TEMPAUTH_TENANTNAME, "test")
-                    .put(SwiftTmpAuthConfigurationReader.OBJECTSTORAGE_SWIFT_TEMPAUTH_PASS_HEADER_NAME, "X-Storage-Pass")
-                    .put(SwiftTmpAuthConfigurationReader.OBJECTSTORAGE_SWIFT_TEMPAUTH_USER_HEADER_NAME, "X-Storage-User")
-                    .build())
-            .build();
-    }
-
-    private PropertiesProvider keystone2PropertiesProvider() {
-        return FakePropertiesProvider.builder()
-            .register(OBJECTSTORAGE_CONFIGURATION_NAME,
-                swiftConfigBuilder()
-                    .put(OBJECTSTORAGE_SWIFT_AUTH_API, SwiftKeystone2ObjectStorage.AUTH_API_NAME)
-                    .put(SwiftConfigurationReader.OBJECTSTORAGE_SWIFT_ENDPOINT, dockerSwift.keystoneV2Endpoint().toString())
-                    .put(SwiftConfigurationReader.OBJECTSTORAGE_SWIFT_CREDENTIALS, "demo")
-                    .put(SwiftKeystone2ConfigurationReader.OBJECTSTORAGE_SWIFT_KEYSTONE_2_USERNAME, "demo")
-                    .put(SwiftKeystone2ConfigurationReader.OBJECTSTORAGE_SWIFT_KEYSTONE_2_TENANTNAME, "test")
-                    .build())
-            .build();
-    }
-
-    private final PropertiesProvider keystone3PropertiesProvider() {
-        return FakePropertiesProvider.builder()
-            .register(OBJECTSTORAGE_CONFIGURATION_NAME,
-                swiftConfigBuilder()
-                    .put(OBJECTSTORAGE_SWIFT_AUTH_API, SwiftKeystone3ObjectStorage.AUTH_API_NAME)
-                    .put(SwiftConfigurationReader.OBJECTSTORAGE_SWIFT_ENDPOINT, dockerSwift.keystoneV3Endpoint().toString())
-                    .put(SwiftConfigurationReader.OBJECTSTORAGE_SWIFT_CREDENTIALS, "demo")
-                    .put(SwiftKeystone3ConfigurationReader.OBJECTSTORAGE_SWIFT_KEYSTONE_3_USER_NAME, "demo")
-                    .put(SwiftKeystone3ConfigurationReader.OBJECTSTORAGE_SWIFT_KEYSTONE_3_USER_DOMAIN, "Default")
-                    .put(SwiftKeystone3ConfigurationReader.OBJECTSTORAGE_SWIFT_KEYSTONE_3_PROJECT_NAME, "test")
-                    .build())
-            .build();
-    }
-
+/*
     @Test
     void providesTempauthBackedBlobstoreDao() throws ConfigurationException {
         ObjectStorageBlobsDAOProvider objectStorageBlobsDAOProvider =
-            new ObjectStorageBlobsDAOProvider(tempAuthPropertiesProvider(), BLOB_ID_FACTORY);
+            new ObjectStorageBlobsDAOProvider(
+                ObjectStorageBlobConfiguration.builder()
+                    .swift()
+                    .container(containerName)
+                    .tempAuth(SwiftTempAuthObjectStorage.configBuilder()
+                        .endpoint(dockerSwift.swiftEndpoint())
+                        .credentials(Credentials.of("testing"))
+                        .userName(UserName.of("tester"))
+                        .tenantName(TenantName.of("test"))
+                        .tempAuthHeaderUserName(UserHeaderName.of("X-Storage-User"))
+                        .tempAuthHeaderPassName(PassHeaderName.of("X-Storage-Pass"))
+                        .build())
+                    .build(),
+                BLOB_ID_FACTORY);
         ObjectStorageBlobsDAO objectStorageBlobsDAO = objectStorageBlobsDAOProvider.get();
         assertThat(objectStorageBlobsDAO).isNotNull();
     }
@@ -110,7 +84,17 @@ class ObjectStorageBlobsDAOProviderTest {
     @Test
     void providesKeystone2BackedBlobstoreDao() throws ConfigurationException {
         ObjectStorageBlobsDAOProvider objectStorageBlobsDAOProvider =
-            new ObjectStorageBlobsDAOProvider(keystone2PropertiesProvider(),
+            new ObjectStorageBlobsDAOProvider(
+                ObjectStorageBlobConfiguration.builder()
+                    .swift()
+                    .container(containerName)
+                    .keystone2(SwiftKeystone2ObjectStorage.configBuilder()
+                        .endpoint(dockerSwift.keystoneV2Endpoint())
+                        .credentials(Credentials.of("creds"))
+                        .userName(UserName.of("demo"))
+                        .tenantName(TenantName.of("test"))
+                        .build())
+                    .build(),
                 BLOB_ID_FACTORY);
         ObjectStorageBlobsDAO objectStorageBlobsDAO = objectStorageBlobsDAOProvider.get();
         assertThat(objectStorageBlobsDAO).isNotNull();
@@ -119,20 +103,20 @@ class ObjectStorageBlobsDAOProviderTest {
     @Test
     void providesKeystone3BackedBlobstoreDao() throws ConfigurationException {
         ObjectStorageBlobsDAOProvider objectStorageBlobsDAOProvider =
-            new ObjectStorageBlobsDAOProvider(keystone3PropertiesProvider(),
+            new ObjectStorageBlobsDAOProvider(
+                ObjectStorageBlobConfiguration.builder()
+                    .swift()
+                    .container(containerName)
+                    .keystone3(SwiftKeystone3ObjectStorage.configBuilder()
+                        .endpoint(dockerSwift.keystoneV3Endpoint())
+                        .credentials(Credentials.of("creds"))
+                        .project(Project.of(ProjectName.of("test")))
+                        .identity(IdentityV3.of(DomainName.of("Default"), UserName.of("demo")))
+                        .build())
+                    .build(),
                 BLOB_ID_FACTORY);
         ObjectStorageBlobsDAO objectStorageBlobsDAO = objectStorageBlobsDAOProvider.get();
         assertThat(objectStorageBlobsDAO).isNotNull();
     }
-
-    private static MapConfigurationBuilder swiftConfigBuilder() {
-        return newConfigBuilder()
-            .put(PayloadCodecProvider.OBJECTSTORAGE_PAYLOAD_CODEC, PayloadCodecs.DEFAULT.name())
-            .put(OBJECTSTORAGE_PROVIDER, OBJECTSTORAGE_PROVIDER_SWIFT)
-            .put(OBJECTSTORAGE_NAMESPACE, "foo");
-    }
-
-    private static MapConfigurationBuilder newConfigBuilder() {
-        return new MapConfigurationBuilder();
-    }
+*/
 }

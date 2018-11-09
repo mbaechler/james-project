@@ -34,7 +34,7 @@ import org.apache.james.blob.objectstorage.swift.Credentials;
 import org.apache.james.blob.objectstorage.swift.SwiftKeystone2ObjectStorage;
 import org.apache.james.blob.objectstorage.swift.TenantName;
 import org.apache.james.blob.objectstorage.swift.UserName;
-import org.apache.james.modules.objectstorage.PayloadCodecs;
+import org.apache.james.modules.objectstorage.PayloadCodecFactory;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.testcontainers.containers.GenericContainer;
@@ -47,17 +47,21 @@ public class DockerSwiftTestRule implements GuiceModuleTestRule {
 
     private org.apache.james.blob.objectstorage.DockerSwiftRule swiftContainer =
         new org.apache.james.blob.objectstorage.DockerSwiftRule();
-    private final PayloadCodec payloadCodec;
+    private PayloadCodec payloadCodec;
 
     public DockerSwiftTestRule() {
-        this(PayloadCodecs.DEFAULT);
+        this(PayloadCodecFactory.DEFAULT);
     }
 
-    public DockerSwiftTestRule(PayloadCodecs payloadCodec) {
+    public DockerSwiftTestRule(PayloadCodecFactory payloadCodec) {
+        //FIXME
+        /*
         Map<String, Object> payloadCodecConfig = new HashMap<>();
-        payloadCodecConfig.put(PayloadCodecs.OBJECTSTORAGE_AES256_HEXSALT, "c603a7327ee3dcbc031d8d34b1096c605feca5e1");
-        payloadCodecConfig.put(PayloadCodecs.OBJECTSTORAGE_AES256_PASSWORD, "dockerSwiftEncryption");
-        this.payloadCodec = payloadCodec.codec(new MapConfiguration(payloadCodecConfig));
+        payloadCodecConfig.put(PayloadCodecFactory.OBJECTSTORAGE_AES256_HEXSALT, "c603a7327ee3dcbc031d8d34b1096c605feca5e1");
+        payloadCodecConfig.put(PayloadCodecFactory.OBJECTSTORAGE_AES256_PASSWORD, "dockerSwiftEncryption");
+
+        this.payloadCodec = payloadCodec.create(new MapConfiguration(payloadCodecConfig));
+        */
     }
 
     @Override
