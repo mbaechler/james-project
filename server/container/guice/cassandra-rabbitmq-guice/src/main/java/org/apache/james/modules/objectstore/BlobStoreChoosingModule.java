@@ -61,23 +61,23 @@ public class BlobStoreChoosingModule extends AbstractModule {
     @Provides
     @Singleton
     BlobStore provideBlobStore(PropertiesProvider propertiesProvider,
-                               Provider<CassandraBlobsDAO> cassandraBlobStoreFactoryProvider,
-                               Provider<ObjectStorageBlobsDAO> swiftBlobStoreFactoryProvider) throws ConfigurationException {
+                               Provider<CassandraBlobsDAO> cassandraBlobStoreProvider,
+                               Provider<ObjectStorageBlobsDAO> swiftBlobStoreProvider) throws ConfigurationException {
         try {
             Configuration configuration = propertiesProvider.getConfiguration(BLOBSTORE_CONFIGURATION_NAME);
             BlobStoreChoosingConfiguration choosingConfiguration = BlobStoreChoosingConfiguration.from(configuration);
             switch (choosingConfiguration.getImplementation()) {
                 case SWIFT:
-                    return swiftBlobStoreFactoryProvider.get();
+                    return swiftBlobStoreProvider.get();
                 case CASSANDRA:
-                    return cassandraBlobStoreFactoryProvider.get();
+                    return cassandraBlobStoreProvider.get();
                 default:
                     throw new RuntimeException(String.format("can not get the right blobstore provider with configuration %s",
                         choosingConfiguration.toString()));
             }
         } catch (FileNotFoundException e) {
             LOGGER.warn("Could not find " + BLOBSTORE_CONFIGURATION_NAME + " configuration file, using cassandra blobstore as the default");
-            return cassandraBlobStoreFactoryProvider.get();
+            return cassandraBlobStoreProvider.get();
         }
     }
 }
