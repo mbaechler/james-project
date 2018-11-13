@@ -39,7 +39,7 @@ public class ObjectStorageBlobConfiguration {
     private static final String OBJECTSTORAGE_NAMESPACE = "objectstorage.namespace";
     private static final String OBJECTSTORAGE_PROVIDER = "objectstorage.provider";
     private static final String OBJECTSTORAGE_SWIFT_AUTH_API = "objectstorage.swift.authapi";
-    private static final String OBJECTSTORAGE_PAYLOAD_CODEC = "objectstorage.payload.codec";;
+    private static final String OBJECTSTORAGE_PAYLOAD_CODEC = "objectstorage.payload.codec";
     public static final String OBJECTSTORAGE_AES256_HEXSALT = "objectstorage.aes256.hexsalt";
     public static final String OBJECTSTORAGE_AES256_PASSWORD = "objectstorage.aes256.password";
 
@@ -267,8 +267,12 @@ public class ObjectStorageBlobConfiguration {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         ObjectStorageBlobConfiguration that = (ObjectStorageBlobConfiguration) o;
         return Objects.equals(payloadCodec, that.payloadCodec) &&
             Objects.equals(authApi, that.authApi) &&
