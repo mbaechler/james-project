@@ -31,6 +31,7 @@ import org.apache.james.blob.objectstorage.swift.SwiftKeystone3ObjectStorage;
 import org.apache.james.blob.objectstorage.swift.SwiftTempAuthObjectStorage;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 
 public class ObjectStorageBlobConfiguration {
@@ -292,17 +293,16 @@ public class ObjectStorageBlobConfiguration {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("ObjectStorageBlobConfiguration{");
-        sb.append("payloadCodecFactory=").append(payloadCodec);
-        sb.append(", authApi='").append(authApi).append('\'');
-        sb.append(", namespace=").append(namespace);
-        sb.append(", provider='").append(provider).append('\'');
-        sb.append(", tempAuth=").append(tempAuth);
-        sb.append(", keystone2Configuration=").append(keystone2Configuration);
-        sb.append(", keystone3Configuration=").append(keystone3Configuration);
-        sb.append(", aesSalt=").append(aesSalt);
-        sb.append(", aesPassword=").append(aesPassword);
-        sb.append('}');
-        return sb.toString();
+        return MoreObjects.toStringHelper(this)
+            .add("payloadCodec", payloadCodec)
+            .add("authApi", authApi)
+            .add("namespace", namespace)
+            .add("provider", provider)
+            .add("tempAuth", tempAuth)
+            .add("keystone2Configuration", keystone2Configuration)
+            .add("keystone3Configuration", keystone3Configuration)
+            .add("aesSalt", aesSalt)
+            .add("aesPassword", aesPassword)
+            .toString();
     }
 }
