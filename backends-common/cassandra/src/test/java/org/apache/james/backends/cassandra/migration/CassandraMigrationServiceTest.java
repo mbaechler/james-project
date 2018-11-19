@@ -207,7 +207,7 @@ public class CassandraMigrationServiceTest {
         private SchemaVersion currentVersion;
 
         public InMemorySchemaDAO(SchemaVersion currentVersion) {
-            super(mock(Session.class), null);
+            super(mock(Session.class));
             this.currentVersion = currentVersion;
         }
 
