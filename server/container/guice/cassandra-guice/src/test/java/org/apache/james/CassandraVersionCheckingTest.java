@@ -82,7 +82,7 @@ class CassandraVersionCheckingTest {
     @Test
     void serverShouldStartSuccessfullyWhenMaxVersion(GuiceJamesServer server) throws Exception {
         when(versionDAO.getCurrentSchemaVersion())
-            .thenReturn(CompletableFuture.completedFuture(Optional.of(MAX_VERSION)));
+            .thenReturn(Optional.of(MAX_VERSION));
 
         assertThatServerStartCorrectly(server);
     }
@@ -90,7 +90,7 @@ class CassandraVersionCheckingTest {
     @Test
     void serverShouldStartSuccessfullyWhenBetweenMinAndMaxVersion(GuiceJamesServer server) throws Exception {
         when(versionDAO.getCurrentSchemaVersion())
-            .thenReturn(CompletableFuture.completedFuture(Optional.of(MIN_VERSION.next())));
+            .thenReturn(Optional.of(MIN_VERSION.next()));
 
         assertThatServerStartCorrectly(server);
     }
@@ -98,7 +98,7 @@ class CassandraVersionCheckingTest {
     @Test
     void serverShouldStartSuccessfullyWhenMinVersion(GuiceJamesServer server) throws Exception {
         when(versionDAO.getCurrentSchemaVersion())
-            .thenReturn(CompletableFuture.completedFuture(Optional.of(MIN_VERSION)));
+            .thenReturn(Optional.of(MIN_VERSION));
 
         assertThatServerStartCorrectly(server);
     }
@@ -106,7 +106,7 @@ class CassandraVersionCheckingTest {
     @Test
     void serverShouldNotStartWhenUnderMinVersion(GuiceJamesServer server) {
         when(versionDAO.getCurrentSchemaVersion())
-            .thenReturn(CompletableFuture.completedFuture(Optional.of(MIN_VERSION.previous())));
+            .thenReturn(Optional.of(MIN_VERSION.previous()));
 
         assertThatThrownBy(server::start).isInstanceOf(IllegalStateException.class);
     }
@@ -114,7 +114,7 @@ class CassandraVersionCheckingTest {
     @Test
     void serverShouldNotStartWhenAboveMaxVersion(GuiceJamesServer server) {
         when(versionDAO.getCurrentSchemaVersion())
-            .thenReturn(CompletableFuture.completedFuture(Optional.of(MAX_VERSION.next())));
+            .thenReturn(Optional.of(MAX_VERSION.next()));
 
         assertThatThrownBy(server::start).isInstanceOf(IllegalStateException.class);
     }

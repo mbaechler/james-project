@@ -110,7 +110,7 @@ public class CassandraMigrationRoutesTest {
 
     @Test
     public void getShouldReturnTheCurrentVersion() throws Exception {
-        when(schemaVersionDAO.getCurrentSchemaVersion()).thenReturn(CompletableFuture.completedFuture(Optional.of(CURRENT_VERSION)));
+        when(schemaVersionDAO.getCurrentSchemaVersion()).thenReturn(Optional.of(CURRENT_VERSION));
 
         Integer version =
             when()
@@ -152,7 +152,7 @@ public class CassandraMigrationRoutesTest {
 
     @Test
     public void postShouldReturnErrorCodeWhenInvalidVersion() throws Exception {
-        when(schemaVersionDAO.getCurrentSchemaVersion()).thenReturn(CompletableFuture.completedFuture(Optional.of(OLDER_VERSION)));
+        when(schemaVersionDAO.getCurrentSchemaVersion()).thenReturn(Optional.of(OLDER_VERSION));
 
         Map<String, Object> errors = given()
             .body("NonInt")
@@ -177,7 +177,7 @@ public class CassandraMigrationRoutesTest {
 
     @Test
     public void postShouldDoMigrationToNewVersion() throws Exception {
-        when(schemaVersionDAO.getCurrentSchemaVersion()).thenReturn(CompletableFuture.completedFuture(Optional.of(OLDER_VERSION)));
+        when(schemaVersionDAO.getCurrentSchemaVersion()).thenReturn(Optional.of(OLDER_VERSION));
 
         String taskId = with()
             .body(String.valueOf(CURRENT_VERSION.getValue()))
@@ -199,7 +199,7 @@ public class CassandraMigrationRoutesTest {
 
     @Test
     public void postShouldCreateTaskWhenCurrentVersionIsNewerThan() throws Exception {
-        when(schemaVersionDAO.getCurrentSchemaVersion()).thenReturn(CompletableFuture.completedFuture(Optional.of(CURRENT_VERSION)));
+        when(schemaVersionDAO.getCurrentSchemaVersion()).thenReturn(Optional.of(CURRENT_VERSION));
 
         String taskId =  given()
             .body(String.valueOf(OLDER_VERSION.getValue()))
@@ -218,7 +218,7 @@ public class CassandraMigrationRoutesTest {
 
     @Test
     public void postShouldNotUpdateVersionWhenCurrentVersionIsNewerThan() throws Exception {
-        when(schemaVersionDAO.getCurrentSchemaVersion()).thenReturn(CompletableFuture.completedFuture(Optional.of(CURRENT_VERSION)));
+        when(schemaVersionDAO.getCurrentSchemaVersion()).thenReturn(Optional.of(CURRENT_VERSION));
 
         String taskId =  given()
             .body(String.valueOf(OLDER_VERSION.getValue()))
@@ -237,7 +237,7 @@ public class CassandraMigrationRoutesTest {
 
     @Test
     public void postShouldDoMigrationToLatestVersion() throws Exception {
-        when(schemaVersionDAO.getCurrentSchemaVersion()).thenReturn(CompletableFuture.completedFuture(Optional.of(OLDER_VERSION)));
+        when(schemaVersionDAO.getCurrentSchemaVersion()).thenReturn(Optional.of(OLDER_VERSION));
 
         String taskId = with()
             .post("/upgrade/latest")
@@ -256,7 +256,7 @@ public class CassandraMigrationRoutesTest {
 
     @Test
     public void postShouldReturnTaskIdAndLocation() throws Exception {
-        when(schemaVersionDAO.getCurrentSchemaVersion()).thenReturn(CompletableFuture.completedFuture(Optional.of(OLDER_VERSION)));
+        when(schemaVersionDAO.getCurrentSchemaVersion()).thenReturn(Optional.of(OLDER_VERSION));
 
         when()
             .post("/upgrade/latest")
@@ -267,7 +267,7 @@ public class CassandraMigrationRoutesTest {
 
     @Test
     public void createdTaskShouldHaveDetails() throws Exception {
-        when(schemaVersionDAO.getCurrentSchemaVersion()).thenReturn(CompletableFuture.completedFuture(Optional.of(OLDER_VERSION)));
+        when(schemaVersionDAO.getCurrentSchemaVersion()).thenReturn(Optional.of(OLDER_VERSION));
 
         String taskId = with()
             .post("/upgrade/latest")
@@ -290,7 +290,7 @@ public class CassandraMigrationRoutesTest {
 
     @Test
     public void postShouldCreateTaskWhenItIsUpToDate() throws Exception {
-        when(schemaVersionDAO.getCurrentSchemaVersion()).thenReturn(CompletableFuture.completedFuture(Optional.of(LATEST_VERSION)));
+        when(schemaVersionDAO.getCurrentSchemaVersion()).thenReturn(Optional.of(LATEST_VERSION));
 
         String taskId = with()
             .post("/upgrade/latest")
@@ -307,7 +307,7 @@ public class CassandraMigrationRoutesTest {
 
     @Test
     public void postShouldNotUpdateVersionWhenItIsUpToDate() throws Exception {
-        when(schemaVersionDAO.getCurrentSchemaVersion()).thenReturn(CompletableFuture.completedFuture(Optional.of(LATEST_VERSION)));
+        when(schemaVersionDAO.getCurrentSchemaVersion()).thenReturn(Optional.of(LATEST_VERSION));
 
         String taskId = with()
             .post("/upgrade/latest")

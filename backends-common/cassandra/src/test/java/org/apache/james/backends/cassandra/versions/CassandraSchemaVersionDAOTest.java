@@ -43,7 +43,7 @@ class CassandraSchemaVersionDAOTest {
 
     @Test
     void getCurrentSchemaVersionShouldReturnEmptyWhenTableIsEmpty() {
-        assertThat(testee.getCurrentSchemaVersion().join())
+        assertThat(testee.getCurrentSchemaVersion())
             .isEqualTo(Optional.empty());
     }
 
@@ -53,7 +53,7 @@ class CassandraSchemaVersionDAOTest {
 
         testee.updateVersion(version).join();
 
-        assertThat(testee.getCurrentSchemaVersion().join()).contains(version);
+        assertThat(testee.getCurrentSchemaVersion()).contains(version);
     }
 
     @Test
@@ -63,6 +63,6 @@ class CassandraSchemaVersionDAOTest {
         testee.updateVersion(version.next()).join();
         testee.updateVersion(version).join();
 
-        assertThat(testee.getCurrentSchemaVersion().join()).contains(version.next());
+        assertThat(testee.getCurrentSchemaVersion()).contains(version.next());
     }
 }

@@ -68,7 +68,6 @@ public class CassandraSchemaVersionManager {
     public SchemaVersion computeVersion() {
         return schemaVersionDAO
             .getCurrentSchemaVersion()
-            .join()
             .orElseGet(() -> {
                 LOGGER.warn("No schema version information found on Cassandra, we assume schema is at version {}",
                     CassandraSchemaVersionManager.DEFAULT_VERSION);

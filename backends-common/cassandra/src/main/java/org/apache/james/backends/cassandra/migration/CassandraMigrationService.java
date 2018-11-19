@@ -49,7 +49,7 @@ public class CassandraMigrationService {
     }
 
     public Optional<SchemaVersion> getCurrentVersion() {
-        return schemaVersionDAO.getCurrentSchemaVersion().join();
+        return schemaVersionDAO.getCurrentSchemaVersion();
     }
 
     public Optional<SchemaVersion> getLatestVersion() {
