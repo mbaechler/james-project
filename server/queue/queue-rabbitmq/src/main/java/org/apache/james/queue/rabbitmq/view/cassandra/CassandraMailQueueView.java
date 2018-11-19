@@ -20,7 +20,6 @@
 package org.apache.james.queue.rabbitmq.view.cassandra;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
@@ -32,7 +31,6 @@ import org.apache.james.queue.rabbitmq.view.api.MailQueueView;
 import org.apache.james.queue.rabbitmq.view.cassandra.configuration.CassandraMailQueueViewConfiguration;
 import org.apache.james.queue.rabbitmq.view.cassandra.configuration.EventsourcingConfigurationManagement;
 import org.apache.james.queue.rabbitmq.view.cassandra.model.EnqueuedItemWithSlicingContext;
-import org.apache.james.util.FluentFutureStream;
 import org.apache.mailet.Mail;
 
 public class CassandraMailQueueView implements MailQueueView {
@@ -92,28 +90,23 @@ public class CassandraMailQueueView implements MailQueueView {
     public ManageableMailQueue.MailQueueIterator browse() {
         return new CassandraMailQueueBrowser.CassandraMailQueueIterator(
             cassandraMailQueueBrowser.browse(mailQueueName)
-                .join()
                 .iterator());
     }
 
     @Override
     public long getSize() {
-        return cassandraMailQueueBrowser.browseReferences(mailQueueName)
-                .join()
-                .count();
+        return cassandraMailQueueBrowser.browseReferences(mailQueueName).count();
     }
 
     @Override
-    public CompletableFuture<Long> delete(DeleteCondition deleteCondition) {
-        CompletableFuture<Long> result = cassandraMailQueueBrowser.browseReferences(mailQueueName)
+    public long delete(DeleteCondition deleteCondition) {
+        long result = cassandraMailQueueBrowser.browseReferences(mailQueueName)
             .map(EnqueuedItemWithSlicingContext::getEnqueuedItem)
             .filter(mailReference -> deleteCondition.shouldBeDeleted(mailReference.getMail()))
-            .map(mailReference -> cassandraMailQueueMailDelete.considerDeleted(mailReference.getMail(), mailQueueName),
-                FluentFutureStream::unboxFuture)
-            .completableFuture()
-            .thenApply(Stream::count);
+            .map(mailReference -> cassandraMailQueueMailDelete.considerDeleted(mailReference.getMail(), mailQueueName).join())
+            .count();
 
-        result.thenRunAsync(() -> cassandraMailQueueMailDelete.updateBrowseStart(mailQueueName));
+        cassandraMailQueueMailDelete.updateBrowseStart(mailQueueName);
 
         return result;
     }
