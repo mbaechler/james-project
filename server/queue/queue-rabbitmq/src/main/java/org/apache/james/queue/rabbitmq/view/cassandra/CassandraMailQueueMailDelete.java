@@ -23,7 +23,6 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
@@ -63,22 +62,21 @@ public class CassandraMailQueueMailDelete {
         return deletedMailsDao.isDeleted(mailQueueName, MailKey.fromMail(mail));
     }
 
-    CompletableFuture<Void> updateBrowseStart(MailQueueName mailQueueName) {
-        return findNewBrowseStart(mailQueueName)
-            .thenCompose(newBrowseStart -> updateNewBrowseStart(mailQueueName, newBrowseStart));
+    void updateBrowseStart(MailQueueName mailQueueName) {
+        Optional<Instant> newBrowseStart = findNewBrowseStart(mailQueueName);
+        updateNewBrowseStart(mailQueueName, newBrowseStart);
     }
 
     private void maybeUpdateBrowseStart(MailQueueName mailQueueName) {
         if (shouldUpdateBrowseStart()) {
-            updateBrowseStart(mailQueueName).join();
+            updateBrowseStart(mailQueueName);
         }
     }
 
-    private CompletableFuture<Optional<Instant>> findNewBrowseStart(MailQueueName mailQueueName) {
+    private Optional<Instant> findNewBrowseStart(MailQueueName mailQueueName) {
         return cassandraMailQueueBrowser.browseReferences(mailQueueName)
             .map(enqueuedItem -> enqueuedItem.getSlicingContext().getTimeRangeStart())
-            .completableFuture()
-            .thenApply(Stream::findFirst);
+            .findFirst();
     }
 
     private CompletableFuture<Void> updateNewBrowseStart(MailQueueName mailQueueName, Optional<Instant> maybeNewBrowseStart) {

@@ -38,7 +38,7 @@ class CassandraSchemaVersionDAOTest {
 
     @BeforeEach
     void setUp(CassandraCluster cassandra) {
-        testee = new CassandraSchemaVersionDAO(cassandra.getConf(), CassandraUtils.WITH_DEFAULT_CONFIGURATION);
+        testee = new CassandraSchemaVersionDAO(cassandra.getConf());
     }
 
     @Test
