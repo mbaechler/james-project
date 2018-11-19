@@ -25,7 +25,6 @@ import java.util.Objects;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 
 public class BucketedSlices {
