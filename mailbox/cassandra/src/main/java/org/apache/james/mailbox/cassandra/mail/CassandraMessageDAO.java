@@ -185,8 +185,8 @@ public class CassandraMessageDAO {
             byte[] headerContent = IOUtils.toByteArray(message.getHeaderContent());
             byte[] bodyContent = IOUtils.toByteArray(message.getBodyContent());
 
-            CompletableFuture<BlobId> bodyFuture = blobStore.save(bodyContent);
-            CompletableFuture<BlobId> headerFuture = blobStore.save(headerContent);
+            CompletableFuture<BlobId> bodyFuture = blobStore.save(bodyContent).toFuture();
+            CompletableFuture<BlobId> headerFuture = blobStore.save(headerContent).toFuture();
 
             return headerFuture.thenCombine(bodyFuture, Pair::of);
         } catch (IOException e) {
@@ -371,7 +371,7 @@ public class CassandraMessageDAO {
     }
 
     private CompletableFuture<byte[]> getFieldContent(String field, Row row) {
-        return blobStore.readBytes(blobIdFactory.from(row.getString(field)));
+        return blobStore.readBytes(blobIdFactory.from(row.getString(field))).toFuture();
     }
 
     public static MessageResult notFound(ComposedMessageIdWithMetaData id) {

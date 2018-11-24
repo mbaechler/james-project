@@ -59,7 +59,7 @@ public class AttachmentV2Migration implements Migration {
 
     private Result migrateAttachment(Attachment attachment) {
         try {
-            blobStore.save(attachment.getBytes())
+            blobStore.save(attachment.getBytes()).toFuture()
                 .thenApply(blobId -> CassandraAttachmentDAOV2.from(attachment, blobId))
                 .thenCompose(attachmentDAOV2::storeAttachment)
                 .thenCompose(any -> attachmentDAOV1.deleteAttachment(attachment.getAttachmentId()))

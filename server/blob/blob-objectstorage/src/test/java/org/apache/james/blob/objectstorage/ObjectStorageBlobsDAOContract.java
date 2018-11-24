@@ -27,6 +27,8 @@ import java.nio.charset.StandardCharsets;
 
 import org.apache.james.blob.api.BlobId;
 
+import reactor.core.publisher.Mono;
+
 
 public interface ObjectStorageBlobsDAOContract {
 
@@ -38,7 +40,7 @@ public interface ObjectStorageBlobsDAOContract {
         ObjectStorageBlobsDAO dao = builder.build();
         dao.createContainer(containerName());
 
-        BlobId blobId = dao.save(BYTES).join();
+        BlobId blobId = dao.save(BYTES).block();
 
         InputStream inputStream = dao.read(blobId);
         assertThat(inputStream).hasSameContentAs(new ByteArrayInputStream(BYTES));

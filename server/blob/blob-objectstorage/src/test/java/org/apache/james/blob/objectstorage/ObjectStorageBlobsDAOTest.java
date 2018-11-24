@@ -26,7 +26,6 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.james.blob.api.BlobId;
@@ -48,6 +47,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import com.google.common.base.Strings;
+import reactor.core.publisher.Mono;
 
 @ExtendWith(DockerSwiftExtension.class)
 public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract {
@@ -108,7 +108,7 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract {
     @Test
     void createContainerShouldMakeTheContainerToExist() throws Exception {
         ContainerName containerName = ContainerName.of(UUID.randomUUID().toString());
-        objectStorageBlobsDAO.createContainer(containerName).get();
+        objectStorageBlobsDAO.createContainer(containerName).block();
         assertThat(blobStore.containerExists(containerName.value())).isTrue();
     }
 
@@ -116,8 +116,8 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract {
     void createContainerShouldNotFailWithRuntimeExceptionWhenCreateContainerTwice() throws Exception {
         ContainerName containerName = ContainerName.of(UUID.randomUUID().toString());
 
-        objectStorageBlobsDAO.createContainer(containerName).get();
-        assertThatCode(() -> objectStorageBlobsDAO.createContainer(containerName).get())
+        objectStorageBlobsDAO.createContainer(containerName).block();
+        assertThatCode(() -> objectStorageBlobsDAO.createContainer(containerName).block())
             .doesNotThrowAnyException();
     }
 
@@ -130,7 +130,7 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract {
             .payloadCodec(new AESPayloadCodec(CRYPTO_CONFIG))
             .build();
         byte[] bytes = "James is the best!".getBytes(StandardCharsets.UTF_8);
-        BlobId blobId = encryptedDao.save(bytes).join();
+        BlobId blobId = encryptedDao.save(bytes).block();
 
         InputStream read = encryptedDao.read(blobId);
         assertThat(read).hasSameContentAs(new ByteArrayInputStream(bytes));
@@ -145,7 +145,7 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract {
             .payloadCodec(new AESPayloadCodec(CRYPTO_CONFIG))
             .build();
         byte[] bytes = "James is the best!".getBytes(StandardCharsets.UTF_8);
-        BlobId blobId = encryptedDao.save(bytes).join();
+        BlobId blobId = encryptedDao.save(bytes).block();
 
         InputStream encryptedIs = testee.read(blobId);
         assertThat(encryptedIs).isNotNull();
@@ -166,23 +166,23 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract {
     @Test
     void saveBytesShouldNotCompleteWhenDoesNotAwait() {
         // String need to be big enough to get async thread busy hence could not return result instantly
-        CompletableFuture<BlobId> blobIdFuture = testee.save(BIG_STRING.getBytes(StandardCharsets.UTF_8));
-        assertThat(blobIdFuture)
+        Mono<BlobId> blobIdFuture = testee.save(BIG_STRING.getBytes(StandardCharsets.UTF_8));
+        assertThat(blobIdFuture.toFuture())
             .isNotCompleted();
     }
 
     @Test
     void saveInputStreamShouldNotCompleteWhenDoesNotAwait() {
-        CompletableFuture<BlobId> blobIdFuture = testee.save(new ByteArrayInputStream(BIG_STRING.getBytes(StandardCharsets.UTF_8)));
-        assertThat(blobIdFuture)
+        Mono<BlobId> blobIdFuture = testee.save(new ByteArrayInputStream(BIG_STRING.getBytes(StandardCharsets.UTF_8)));
+        assertThat(blobIdFuture.toFuture())
             .isNotCompleted();
     }
 
     @Test
     void readBytesShouldNotCompleteWhenDoesNotAwait() {
-        BlobId blobId = testee().save(BIG_STRING.getBytes(StandardCharsets.UTF_8)).join();
-        CompletableFuture<byte[]> resultFuture = testee.readBytes(blobId);
-        assertThat(resultFuture)
+        BlobId blobId = testee().save(BIG_STRING.getBytes(StandardCharsets.UTF_8)).block();
+        Mono<byte[]> resultFuture = testee.readBytes(blobId);
+        assertThat(resultFuture.toFuture())
             .isNotCompleted();
     }
 }

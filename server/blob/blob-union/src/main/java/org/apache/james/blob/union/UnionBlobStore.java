@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -35,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import com.github.fge.lambdas.Throwing;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
+import reactor.core.publisher.Mono;
 
 public class UnionBlobStore implements BlobStore {
 
@@ -80,7 +80,7 @@ public class UnionBlobStore implements BlobStore {
     }
 
     @Override
-    public CompletableFuture<BlobId> save(byte[] data) {
+    public Mono<BlobId> save(byte[] data) {
         try {
             return saveToCurrentFallbackIfFails(
                 currentBlobStore.save(data),
@@ -92,7 +92,7 @@ public class UnionBlobStore implements BlobStore {
     }
 
     @Override
-    public CompletableFuture<BlobId> save(InputStream data) {
+    public Mono<BlobId> save(InputStream data) {
         try {
             return saveToCurrentFallbackIfFails(
                 currentBlobStore.save(data),
@@ -104,7 +104,7 @@ public class UnionBlobStore implements BlobStore {
     }
 
     @Override
-    public CompletableFuture<byte[]> readBytes(BlobId blobId) {
+    public Mono<byte[]> readBytes(BlobId blobId) {
         try {
             return readBytesFallBackIfFailsOrEmptyResult(blobId);
         } catch (Exception e) {
@@ -141,39 +141,39 @@ public class UnionBlobStore implements BlobStore {
         return false;
     }
 
-    private CompletableFuture<byte[]> readBytesFallBackIfFailsOrEmptyResult(BlobId blobId) {
+    private Mono<byte[]> readBytesFallBackIfFailsOrEmptyResult(BlobId blobId) {
         return currentBlobStore.readBytes(blobId)
-            .thenApply(Optional::ofNullable)
-            .exceptionally(this::logAndReturnEmptyOptional)
-            .thenCompose(maybeBytes -> readFromLegacyIfNeeded(maybeBytes, blobId));
+            .map(Optional::ofNullable)
+            .onErrorResume(this::logAndReturnEmptyOptional)
+            .flatMap(maybeBytes -> readFromLegacyIfNeeded(maybeBytes, blobId));
     }
 
-    private CompletableFuture<BlobId> saveToCurrentFallbackIfFails(
-        CompletableFuture<BlobId> currentSavingOperation,
-        Supplier<CompletableFuture<BlobId>> fallbackSavingOperationSupplier) {
+    private Mono<BlobId> saveToCurrentFallbackIfFails(
+        Mono<BlobId> currentSavingOperation,
+        Supplier<Mono<BlobId>> fallbackSavingOperationSupplier) {
 
         return currentSavingOperation
-            .thenApply(Optional::ofNullable)
-            .exceptionally(this::logAndReturnEmptyOptional)
-            .thenCompose(maybeBlobId -> saveToLegacyIfNeeded(maybeBlobId, fallbackSavingOperationSupplier));
+            .map(Optional::ofNullable)
+            .onErrorResume(this::logAndReturnEmptyOptional)
+            .flatMap(maybeBlobId -> saveToLegacyIfNeeded(maybeBlobId, fallbackSavingOperationSupplier));
     }
 
-    private <T> Optional<T> logAndReturnEmptyOptional(Throwable throwable) {
+    private <T> Mono<Optional<T>> logAndReturnEmptyOptional(Throwable throwable) {
         LOGGER.error("error happens from current blob store, fall back to legacy blob store", throwable);
-        return Optional.empty();
+        return Mono.just(Optional.empty());
     }
 
-    private CompletableFuture<BlobId> saveToLegacyIfNeeded(Optional<BlobId> maybeBlobId,
-                                                           Supplier<CompletableFuture<BlobId>> saveToLegacySupplier) {
+    private Mono<BlobId> saveToLegacyIfNeeded(Optional<BlobId> maybeBlobId,
+                                              Supplier<Mono<BlobId>> saveToLegacySupplier) {
         return maybeBlobId
-            .map(CompletableFuture::completedFuture)
+            .map(Mono::just)
             .orElseGet(saveToLegacySupplier);
     }
 
-    private CompletableFuture<byte[]> readFromLegacyIfNeeded(Optional<byte[]> readFromCurrentResult, BlobId blodId) {
+    private Mono<byte[]> readFromLegacyIfNeeded(Optional<byte[]> readFromCurrentResult, BlobId blodId) {
         return readFromCurrentResult
             .filter(this::hasContent)
-            .map(CompletableFuture::completedFuture)
+            .map(Mono::just)
             .orElseGet(() -> legacyBlobStore.readBytes(blodId));
     }
 

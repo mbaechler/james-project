@@ -52,25 +52,25 @@ public interface BlobStoreContract {
 
     @Test
     default void saveShouldSaveEmptyData() throws Exception {
-        BlobId blobId = testee().save(new byte[]{}).join();
+        BlobId blobId = testee().save(new byte[]{}).block();
 
-        byte[] bytes = testee().readBytes(blobId).join();
+        byte[] bytes = testee().readBytes(blobId).block();
 
         assertThat(new String(bytes, StandardCharsets.UTF_8)).isEmpty();
     }
 
     @Test
     default void saveShouldSaveEmptyInputStream() throws Exception {
-        BlobId blobId = testee().save(new ByteArrayInputStream(new byte[]{})).join();
+        BlobId blobId = testee().save(new ByteArrayInputStream(new byte[]{})).block();
 
-        byte[] bytes = testee().readBytes(blobId).join();
+        byte[] bytes = testee().readBytes(blobId).block();
 
         assertThat(new String(bytes, StandardCharsets.UTF_8)).isEmpty();
     }
 
     @Test
     default void saveShouldReturnBlobId() throws Exception {
-        BlobId blobId = testee().save("toto".getBytes(StandardCharsets.UTF_8)).join();
+        BlobId blobId = testee().save("toto".getBytes(StandardCharsets.UTF_8)).block();
 
         assertThat(blobId).isEqualTo(blobIdFactory().from("31f7a65e315586ac198bd798b6629ce4903d0899476d5741a9f32e2e521b6a66"));
     }
@@ -78,23 +78,23 @@ public interface BlobStoreContract {
     @Test
     default void saveShouldReturnBlobIdOfInputStream() throws Exception {
         BlobId blobId =
-            testee().save(new ByteArrayInputStream("toto".getBytes(StandardCharsets.UTF_8))).join();
+            testee().save(new ByteArrayInputStream("toto".getBytes(StandardCharsets.UTF_8))).block();
 
         assertThat(blobId).isEqualTo(blobIdFactory().from("31f7a65e315586ac198bd798b6629ce4903d0899476d5741a9f32e2e521b6a66"));
     }
 
     @Test
     default void readBytesShouldBeEmptyWhenNoExisting() throws IOException {
-        byte[] bytes = testee().readBytes(blobIdFactory().from("unknown")).join();
+        byte[] bytes = testee().readBytes(blobIdFactory().from("unknown")).block();
 
         assertThat(bytes).isEmpty();
     }
 
     @Test
     default void readBytesShouldReturnSavedData() throws IOException {
-        BlobId blobId = testee().save("toto".getBytes(StandardCharsets.UTF_8)).join();
+        BlobId blobId = testee().save("toto".getBytes(StandardCharsets.UTF_8)).block();
 
-        byte[] bytes = testee().readBytes(blobId).join();
+        byte[] bytes = testee().readBytes(blobId).block();
 
         assertThat(new String(bytes, StandardCharsets.UTF_8)).isEqualTo("toto");
     }
@@ -102,9 +102,9 @@ public interface BlobStoreContract {
     @Test
     default void readBytesShouldReturnLongSavedData() throws IOException {
         String longString = Strings.repeat("0123456789\n", 1000);
-        BlobId blobId = testee().save(longString.getBytes(StandardCharsets.UTF_8)).join();
+        BlobId blobId = testee().save(longString.getBytes(StandardCharsets.UTF_8)).block();
 
-        byte[] bytes = testee().readBytes(blobId).join();
+        byte[] bytes = testee().readBytes(blobId).block();
 
         assertThat(new String(bytes, StandardCharsets.UTF_8)).isEqualTo(longString);
     }
@@ -113,9 +113,9 @@ public interface BlobStoreContract {
     default void readBytesShouldReturnBigSavedData() throws IOException {
         // 12 MB of text
         String bigString = Strings.repeat("0123456789\r\n", 1024 * 1024);
-        BlobId blobId = testee().save(bigString.getBytes(StandardCharsets.UTF_8)).join();
+        BlobId blobId = testee().save(bigString.getBytes(StandardCharsets.UTF_8)).block();
 
-        byte[] bytes = testee().readBytes(blobId).join();
+        byte[] bytes = testee().readBytes(blobId).block();
 
         assertThat(new String(bytes, StandardCharsets.UTF_8)).isEqualTo(bigString);
     }
@@ -130,7 +130,7 @@ public interface BlobStoreContract {
     @Test
     default void readShouldReturnSavedData() throws IOException {
         byte[] bytes = "toto".getBytes(StandardCharsets.UTF_8);
-        BlobId blobId = testee().save(bytes).join();
+        BlobId blobId = testee().save(bytes).block();
 
         InputStream read = testee().read(blobId);
 
@@ -141,7 +141,7 @@ public interface BlobStoreContract {
     default void readShouldReturnLongSavedData() throws IOException {
         String longString = Strings.repeat("0123456789\n", 1000);
         byte[] bytes = longString.getBytes(StandardCharsets.UTF_8);
-        BlobId blobId = testee().save(bytes).join();
+        BlobId blobId = testee().save(bytes).block();
 
         InputStream read = testee().read(blobId);
 
@@ -153,7 +153,7 @@ public interface BlobStoreContract {
         // 12 MB of text
         String bigString = Strings.repeat("0123456789\r\n", 1024 * 1024);
         byte[] bytes = bigString.getBytes(StandardCharsets.UTF_8);
-        BlobId blobId = testee().save(bytes).join();
+        BlobId blobId = testee().save(bytes).block();
 
         InputStream read = testee().read(blobId);
 

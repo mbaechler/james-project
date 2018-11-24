@@ -29,15 +29,16 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.Pipe;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.IntStream;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.james.backends.cassandra.init.configuration.CassandraConfiguration;
 import org.apache.james.backends.cassandra.utils.CassandraAsyncExecutor;
 import org.apache.james.blob.api.BlobId;
@@ -46,7 +47,6 @@ import org.apache.james.blob.api.HashBlobId;
 import org.apache.james.blob.api.ObjectStoreException;
 import org.apache.james.blob.cassandra.BlobTable.BlobParts;
 import org.apache.james.blob.cassandra.utils.DataChunker;
-import org.apache.james.util.FluentFutureStream;
 import org.apache.james.util.OptionalUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +61,9 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.Bytes;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 public class CassandraBlobsDAO implements BlobStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(CassandraBlobsDAO.class);
@@ -118,24 +121,24 @@ public class CassandraBlobsDAO implements BlobStore {
     }
 
     @Override
-    public CompletableFuture<BlobId> save(byte[] data) {
+    public Mono<BlobId> save(byte[] data) {
         Preconditions.checkNotNull(data);
 
         HashBlobId blobId = blobIdFactory.forPayload(data);
         return saveBlobParts(data, blobId)
-            .thenCompose(numberOfChunk -> saveBlobPartsReferences(blobId, numberOfChunk))
-            .thenApply(any -> blobId);
+            .map(numberOfChunk -> Mono.fromCompletionStage(saveBlobPartsReferences(blobId, numberOfChunk)))
+            .map(any -> blobId);
     }
 
-    private CompletableFuture<Integer> saveBlobParts(byte[] data, HashBlobId blobId) {
-        return FluentFutureStream.of(
-            dataChunker.chunk(data, configuration.getBlobPartSize())
-                .map(pair -> writePart(pair.getRight(), blobId, pair.getKey())
-                    .thenApply(partId -> Pair.of(pair.getKey(), partId))))
-            .completableFuture()
-            .thenApply(stream ->
-                getLastOfStream(stream)
-                    .map(numOfChunkAndPartId -> numOfChunkAndPartId.getLeft() + 1)
+    private Mono<Integer> saveBlobParts(byte[] data, HashBlobId blobId) {
+        return Flux.fromStream(dataChunker.chunk(data, configuration.getBlobPartSize()))
+            .flatMapSequential(pair -> Mono
+                .fromCompletionStage(writePart(pair.getRight(), blobId, pair.getLeft()))
+                .map(ignored -> pair.getLeft()))
+            .collect(Collectors.maxBy(Comparator.naturalOrder()))
+            .map(maybeNumOfChunkAndPartId ->
+                maybeNumOfChunkAndPartId
+                    .map(numOfChunkAndPartId -> numOfChunkAndPartId + 1)
                     .orElse(0));
     }
 
@@ -158,36 +161,35 @@ public class CassandraBlobsDAO implements BlobStore {
     }
 
     @Override
-    public CompletableFuture<byte[]> readBytes(BlobId blobId) {
-        return cassandraAsyncExecutor.executeSingleRow(
+    public Mono<byte[]> readBytes(BlobId blobId) {
+        return Mono.fromCompletionStage(cassandraAsyncExecutor.executeSingleRow(
             select.bind()
-                .setString(BlobTable.ID, blobId.asString()))
-            .thenCompose(row -> toDataParts(row, blobId))
-            .thenApply(this::concatenateDataParts);
+                .setString(BlobTable.ID, blobId.asString())))
+            .flatMapMany(row -> toDataParts(row, blobId))
+            .collectList()
+            .publishOn(Schedulers.elastic())
+            .map(this::concatenateDataParts);
     }
 
-    private CompletableFuture<Stream<BlobPart>> toDataParts(Optional<Row> blobRowOptional, BlobId blobId) {
+    private Flux<BlobPart> toDataParts(Optional<Row> blobRowOptional, BlobId blobId) {
         return blobRowOptional.map(blobRow -> {
             int numOfChunk = blobRow.getInt(BlobTable.NUMBER_OF_CHUNK);
-            return FluentFutureStream.of(
-                IntStream.range(0, numOfChunk)
-                    .mapToObj(position -> readPart(blobId, position)))
-                .completableFuture();
+            return Flux.range(0, numOfChunk)
+                    .flatMapSequential(position -> Mono.fromCompletionStage(readPart(blobId, position)));
         }).orElseGet(() -> {
             LOGGER.warn("Could not retrieve blob metadata for {}", blobId);
-            return CompletableFuture.completedFuture(Stream.empty());
+            return Flux.empty();
         });
     }
 
-    private byte[] concatenateDataParts(Stream<BlobPart> blobParts) {
-        ImmutableList<byte[]> parts = blobParts
+    private byte[] concatenateDataParts(List<BlobPart> blobParts) {
+        ImmutableList<byte[]> parts = blobParts.stream()
             .map(blobPart -> OptionalUtils.executeIfEmpty(
                 blobPart.row,
                 () -> LOGGER.warn("Missing blob part for blobId {} and position {}", blobPart.blobId, blobPart.position)))
             .flatMap(OptionalUtils::toStream)
             .map(this::rowToData)
             .collect(Guavate.toImmutableList());
-
         return Bytes.concat(parts.toArray(new byte[parts.size()][]));
     }
 
@@ -231,8 +233,15 @@ public class CassandraBlobsDAO implements BlobStore {
                 }
             );
             readBytes(blobId)
-                .thenApply(ByteBuffer::wrap)
-                .thenAccept(consumer.sneakyThrow());
+                .map(ByteBuffer::wrap)
+                .flatMap(bytes -> {
+                    try (Pipe.SinkChannel sink = pipe.sink()) {
+                        sink.write(bytes);
+                        return Mono.empty();
+                    } catch (IOException e) {
+                        return Mono.error(e);
+                    }
+                }).flux().publish();
             return Channels.newInputStream(pipe.source());
         } catch (IOException cause) {
             throw new ObjectStoreException(
@@ -242,10 +251,9 @@ public class CassandraBlobsDAO implements BlobStore {
     }
 
     @Override
-    public CompletableFuture<BlobId> save(InputStream data) {
+    public Mono<BlobId> save(InputStream data) {
         Preconditions.checkNotNull(data);
-        return CompletableFuture
-            .supplyAsync(Throwing.supplier(() -> IOUtils.toByteArray(data)).sneakyThrow())
-            .thenCompose(this::save);
+        return Mono.fromSupplier(Throwing.supplier(() -> IOUtils.toByteArray(data)).sneakyThrow())
+            .flatMap(this::save);
     }
 }

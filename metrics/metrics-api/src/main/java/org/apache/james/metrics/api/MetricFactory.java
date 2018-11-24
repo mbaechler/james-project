@@ -22,6 +22,8 @@ package org.apache.james.metrics.api;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
+import reactor.core.publisher.Mono;
+
 public interface MetricFactory {
 
     Metric generate(String name);
@@ -47,5 +49,11 @@ public interface MetricFactory {
     default <T> CompletableFuture<T> runPublishingTimerMetric(String name, CompletableFuture<T> future) {
         TimeMetric timer = timer(name);
         return future.whenComplete((result, throwable) -> timer.stopAndPublish());
+    }
+
+
+    default <T> Mono<T> runPublishingTimerMetric(String name, Mono<T> mono) {
+        TimeMetric timer = timer(name);
+        return mono.doOnTerminate(timer::stopAndPublish);
     }
 }
