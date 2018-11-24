@@ -26,6 +26,8 @@ import javax.inject.Inject;
 import org.apache.james.task.Task;
 import org.apache.james.util.Runnables;
 
+import reactor.core.publisher.Flux;
+
 public class CleanupTasksPerformer {
 
     public interface CleanupTask extends Task {
@@ -40,10 +42,12 @@ public class CleanupTasksPerformer {
     }
 
     public void clean() {
+        int parallel = cleanupTasks.size();
         Runnables
-            .runParrallelStream(
-                cleanupTasks.stream()
-                    .map(cleanupTask -> cleanupTask::run));
+            .runParallel(
+                Flux.fromIterable(cleanupTasks)
+                    .map(cleanupTask -> cleanupTask::run),
+                parallel);
     }
 
 }
