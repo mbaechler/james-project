@@ -22,7 +22,6 @@ package org.apache.james.blob.objectstorage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.concurrent.CompletableFuture;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.james.blob.api.BlobId;
@@ -42,6 +41,7 @@ import com.github.fge.lambdas.Throwing;
 import com.google.common.base.Preconditions;
 import com.google.common.hash.Hashing;
 import com.google.common.hash.HashingInputStream;
+import reactor.core.publisher.Mono;
 
 public class ObjectStorageBlobsDAO implements BlobStore {
     private static final InputStream EMPTY_STREAM = new ByteArrayInputStream(new byte[0]);
@@ -75,53 +75,50 @@ public class ObjectStorageBlobsDAO implements BlobStore {
         return SwiftKeystone3ObjectStorage.daoBuilder(testConfig);
     }
 
-    public CompletableFuture<ContainerName> createContainer(ContainerName name) {
-        return CompletableFuture.supplyAsync(() -> blobStore.createContainerInLocation(DEFAULT_LOCATION, name.value()))
-            .thenApply(created -> {
+    public Mono<ContainerName> createContainer(ContainerName name) {
+        return Mono.fromCallable(() -> blobStore.createContainerInLocation(DEFAULT_LOCATION, name.value()))
+            .doOnNext(created -> {
                 if (!created) {
                     LOGGER.debug("{} already existed", name);
                 }
-                return name;
-            });
+            }).map(ignored -> name);
     }
 
     @Override
-    public CompletableFuture<BlobId> save(byte[] data) {
+    public Mono<BlobId> save(byte[] data) {
         return save(new ByteArrayInputStream(data));
     }
 
     @Override
-    public CompletableFuture<BlobId> save(InputStream data) {
+    public Mono<BlobId> save(InputStream data) {
         Preconditions.checkNotNull(data);
 
         BlobId tmpId = blobIdFactory.randomId();
         return save(data, tmpId)
-            .thenCompose(id -> updateBlobId(tmpId, id));
+            .flatMap(id -> updateBlobId(tmpId, id));
     }
 
-    private CompletableFuture<BlobId> updateBlobId(BlobId from, BlobId to) {
+    private Mono<BlobId> updateBlobId(BlobId from, BlobId to) {
         String containerName = this.containerName.value();
-        return CompletableFuture
-            .supplyAsync(() -> blobStore.copyBlob(containerName, from.asString(), containerName, to.asString(), CopyOptions.NONE))
-            .thenAcceptAsync(any -> blobStore.removeBlob(containerName, from.asString()))
-            .thenApply(any -> to);
+        return Mono
+            .fromCallable(() -> blobStore.copyBlob(containerName, from.asString(), containerName, to.asString(), CopyOptions.NONE))
+            .doOnNext(ignored -> blobStore.removeBlob(containerName, from.asString()))
+            .map(ignored -> to);
     }
 
-    private CompletableFuture<BlobId> save(InputStream data, BlobId id) {
+    private Mono<BlobId> save(InputStream data, BlobId id) {
         String containerName = this.containerName.value();
         HashingInputStream hashingInputStream = new HashingInputStream(Hashing.sha256(), data);
         Payload payload = payloadCodec.write(hashingInputStream);
         Blob blob = blobStore.blobBuilder(id.asString()).payload(payload).build();
 
-        return CompletableFuture
-            .supplyAsync(() -> blobStore.putBlob(containerName, blob))
-            .thenApply(any -> blobIdFactory.from(hashingInputStream.hash().toString()));
+        return Mono.fromCallable(() -> blobStore.putBlob(containerName, blob))
+            .map(ignored -> blobIdFactory.from(hashingInputStream.hash().toString()));
     }
 
     @Override
-    public CompletableFuture<byte[]> readBytes(BlobId blobId) {
-        return CompletableFuture
-            .supplyAsync(Throwing.supplier(() -> IOUtils.toByteArray(read(blobId))).sneakyThrow());
+    public Mono<byte[]> readBytes(BlobId blobId) {
+        return Mono.fromSupplier(Throwing.supplier(() -> IOUtils.toByteArray(read(blobId))).sneakyThrow());
     }
 
     @Override

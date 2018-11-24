@@ -85,7 +85,7 @@ public class CassandraAttachmentMapper implements AttachmentMapper {
             return CompletableFuture.completedFuture(Optional.empty());
         }
         DAOAttachment daoAttachment = daoAttachmentOptional.get();
-        return blobStore.readBytes(daoAttachment.getBlobId())
+        return blobStore.readBytes(daoAttachment.getBlobId()).toFuture()
             .thenApply(bytes -> Optional.of(daoAttachment.toAttachment(bytes)));
     }
 
@@ -123,7 +123,7 @@ public class CassandraAttachmentMapper implements AttachmentMapper {
     @Override
     public void storeAttachmentForOwner(Attachment attachment, Username owner) throws MailboxException {
         ownerDAO.addOwner(attachment.getAttachmentId(), owner)
-            .thenCompose(any -> blobStore.save(attachment.getBytes()))
+            .thenCompose(any -> blobStore.save(attachment.getBytes()).toFuture())
             .thenApply(blobId -> CassandraAttachmentDAOV2.from(attachment, blobId))
             .thenCompose(attachmentDAOV2::storeAttachment)
             .join();
@@ -149,7 +149,7 @@ public class CassandraAttachmentMapper implements AttachmentMapper {
     }
 
     public CompletableFuture<Void> storeAttachmentAsync(Attachment attachment, MessageId ownerMessageId) {
-        return blobStore.save(attachment.getBytes())
+        return blobStore.save(attachment.getBytes()).toFuture()
             .thenApply(blobId -> CassandraAttachmentDAOV2.from(attachment, blobId))
             .thenCompose(daoAttachment -> storeAttachmentWithIndex(daoAttachment, ownerMessageId));
     }
