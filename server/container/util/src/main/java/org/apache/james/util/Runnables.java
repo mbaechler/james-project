@@ -24,6 +24,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import reactor.core.publisher.Flux;
+import reactor.core.scheduler.Schedulers;
+
 public class Runnables {
     public static void runParallel(Runnable... runnables) {
         Stream<Runnable> stream = Arrays.stream(runnables);
@@ -31,9 +34,9 @@ public class Runnables {
     }
 
     public static void runParrallelStream(Stream<Runnable> stream) {
-        FluentFutureStream.of(stream
-                .map(runnable -> CompletableFuture.supplyAsync(toVoidSupplier(runnable))))
-            .join();
+        Flux.fromStream(stream)
+            .publishOn(Schedulers.elastic())
+            .blockLast();
     }
 
     private static Supplier<Void> toVoidSupplier(Runnable runnable) {
