@@ -89,7 +89,7 @@ public class AttachmentLoader {
         if (attachmentIds.isEmpty()) {
             return CompletableFuture.completedFuture(ImmutableMap.of());
         }
-        return attachmentMapper.getAttachmentsAsFuture(attachmentIds)
+        return attachmentMapper.getAttachmentsAsFuture(attachmentIds).toFuture()
             .thenApply(attachments -> attachments
                 .stream()
                 .collect(Guavate.toImmutableMap(Attachment::getAttachmentId, Function.identity())));

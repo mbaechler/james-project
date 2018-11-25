@@ -26,7 +26,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 
 import org.apache.james.mailbox.model.Attachment;
 import org.apache.james.mailbox.model.AttachmentId;
@@ -38,6 +37,7 @@ import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import reactor.core.publisher.Mono;
 
 public class AttachmentLoaderTest {
 
@@ -61,7 +61,7 @@ public class AttachmentLoaderTest {
             .type("type")
             .build();
         when(attachmentMapper.getAttachmentsAsFuture(attachmentIds))
-            .thenReturn(CompletableFuture.completedFuture(ImmutableList.of(attachment)));
+            .thenReturn(Mono.just(ImmutableList.of(attachment)));
 
         Optional<String> name = Optional.of("name1");
         Optional<Cid> cid = Optional.empty();
@@ -87,7 +87,7 @@ public class AttachmentLoaderTest {
             .type("type")
             .build();
         when(attachmentMapper.getAttachmentsAsFuture(attachmentIds))
-            .thenReturn(CompletableFuture.completedFuture(ImmutableList.of(attachment)));
+            .thenReturn(Mono.just(ImmutableList.of(attachment)));
 
         Optional<String> name1 = Optional.of("name1");
         Optional<String> name2 = Optional.of("name2");
@@ -121,7 +121,7 @@ public class AttachmentLoaderTest {
             .type("type")
             .build();
         when(attachmentMapper.getAttachmentsAsFuture(attachmentIds))
-            .thenReturn(CompletableFuture.completedFuture(ImmutableList.of(attachment1, attachment2)));
+            .thenReturn(Mono.just(ImmutableList.of(attachment1, attachment2)));
 
         Optional<String> name1 = Optional.of("name1");
         Optional<String> name2 = Optional.of("name2");
@@ -149,7 +149,7 @@ public class AttachmentLoaderTest {
             .type("type")
             .build();
         when(attachmentMapper.getAttachmentsAsFuture(attachmentIds))
-            .thenReturn(CompletableFuture.completedFuture(ImmutableList.of(attachment)));
+            .thenReturn(Mono.just(ImmutableList.of(attachment)));
 
         Collection<MessageAttachment> attachments = testee.getAttachments(ImmutableList.of())
             .join();
@@ -174,7 +174,7 @@ public class AttachmentLoaderTest {
                 .type("type")
                 .build();
         when(attachmentMapper.getAttachmentsAsFuture(attachmentIds))
-            .thenReturn(CompletableFuture.completedFuture(ImmutableList.of(attachment, attachment2)));
+            .thenReturn(Mono.just(ImmutableList.of(attachment, attachment2)));
 
         Map<AttachmentId, Attachment> attachmentsById = testee.attachmentsById(attachmentIds)
             .join();
@@ -190,7 +190,7 @@ public class AttachmentLoaderTest {
         Set<AttachmentId> attachmentIds = ImmutableSet.of(attachmentId, attachmentId2);
 
         when(attachmentMapper.getAttachmentsAsFuture(attachmentIds))
-                .thenReturn(CompletableFuture.completedFuture(ImmutableList.of()));
+                .thenReturn(Mono.just(ImmutableList.of()));
 
         Map<AttachmentId, Attachment> attachmentsById = testee.attachmentsById(attachmentIds)
             .join();
