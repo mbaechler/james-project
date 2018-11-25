@@ -53,7 +53,6 @@ import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.mail.util.SharedByteArrayInputStream;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.james.backends.cassandra.init.CassandraTypesProvider;
 import org.apache.james.backends.cassandra.init.configuration.CassandraConfiguration;
@@ -95,6 +94,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.primitives.Bytes;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 public class CassandraMessageDAO {
     public static final long DEFAULT_LONG_VALUE = 0L;
@@ -175,20 +176,17 @@ public class CassandraMessageDAO {
             .where(eq(MESSAGE_ID, bindMarker(MESSAGE_ID))));
     }
 
-    public CompletableFuture<Void> save(MailboxMessage message) throws MailboxException {
-        return saveContent(message).thenCompose(pair ->
-            cassandraAsyncExecutor.executeVoid(boundWriteStatement(message, pair)));
+    public Mono<Void> save(MailboxMessage message) throws MailboxException {
+        return saveContent(message)
+            .flatMap(pair -> Mono.fromCompletionStage(cassandraAsyncExecutor.executeVoid(boundWriteStatement(message, pair))));
     }
 
-    private CompletableFuture<Pair<BlobId, BlobId>> saveContent(MailboxMessage message) throws MailboxException {
+    private Mono<Pair<BlobId, BlobId>> saveContent(MailboxMessage message) throws MailboxException {
         try {
-            byte[] headerContent = IOUtils.toByteArray(message.getHeaderContent());
-            byte[] bodyContent = IOUtils.toByteArray(message.getBodyContent());
-
-            CompletableFuture<BlobId> bodyFuture = blobStore.save(bodyContent).toFuture();
-            CompletableFuture<BlobId> headerFuture = blobStore.save(headerContent).toFuture();
-
-            return headerFuture.thenCombine(bodyFuture, Pair::of);
+            return Flux.just(message.getHeaderContent(), message.getBodyContent())
+                .flatMapSequential(blobStore::save)
+                .collectList()
+                .map(list -> Pair.of(list.get(0), list.get(1)));
         } catch (IOException e) {
             throw new MailboxException("Error saving mail content", e);
         }
