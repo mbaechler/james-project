@@ -24,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 import org.apache.james.backends.es.ElasticSearchConfiguration;
 import org.apache.james.backends.es.ElasticSearchIndexer;
@@ -58,6 +59,7 @@ import org.junit.rules.RuleChain;
 import org.junit.rules.TemporaryFolder;
 
 import com.google.common.base.Strings;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 public class ElasticSearchIntegrationTest extends AbstractMessageSearchIndexTest {
 
@@ -99,11 +101,11 @@ public class ElasticSearchIntegrationTest extends AbstractMessageSearchIndexTest
         storeMailboxManager = new InMemoryIntegrationResources()
             .createMailboxManager(new SimpleGroupMembershipResolver());
 
-
+        ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat(getClass().getName() + "-%d").build();
         ElasticSearchListeningMessageSearchIndex elasticSearchListeningMessageSearchIndex = new ElasticSearchListeningMessageSearchIndex(
             storeMailboxManager.getMapperFactory(),
             new ElasticSearchIndexer(client,
-                Executors.newSingleThreadExecutor(),
+                Executors.newSingleThreadExecutor(threadFactory),
                 MailboxElasticSearchConstants.DEFAULT_MAILBOX_WRITE_ALIAS,
                 MailboxElasticSearchConstants.MESSAGE_TYPE,
                 BATCH_SIZE),

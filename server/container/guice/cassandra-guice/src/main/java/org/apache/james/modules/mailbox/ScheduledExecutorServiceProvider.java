@@ -21,10 +21,12 @@ package org.apache.james.modules.mailbox;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 
 import javax.annotation.PreDestroy;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Provider;
 
 @VisibleForTesting
@@ -34,7 +36,8 @@ class ScheduledExecutorServiceProvider implements Provider<ScheduledExecutorServ
 
     @VisibleForTesting
     ScheduledExecutorServiceProvider() {
-        scheduler = Executors.newSingleThreadScheduledExecutor();
+        ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat(getClass().getName() + "-%d").build();
+        scheduler = Executors.newSingleThreadScheduledExecutor(threadFactory);
     }
 
     @Override

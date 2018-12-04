@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -53,6 +54,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 public class IdleProcessor extends AbstractMailboxProcessor<IdleRequest> implements CapabilityImplementingProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(IdleProcessor.class);
@@ -78,7 +80,8 @@ public class IdleProcessor extends AbstractMailboxProcessor<IdleRequest> impleme
         this.heartbeatIntervalUnit = imapConfiguration.getIdleTimeIntervalUnit();
         this.enableIdle = imapConfiguration.isEnableIdle();
         if (enableIdle) {
-            this.heartbeatExecutor = Executors.newScheduledThreadPool(DEFAULT_SCHEDULED_POOL_CORE_SIZE);
+            ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat(getClass().getName() + "-%d").build();
+            this.heartbeatExecutor = Executors.newScheduledThreadPool(DEFAULT_SCHEDULED_POOL_CORE_SIZE, threadFactory);
         }
     }
 

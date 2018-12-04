@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 import org.apache.james.protocols.api.ProtocolServer;
 import org.jboss.netty.bootstrap.ServerBootstrap;
@@ -35,6 +36,7 @@ import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.util.ExternalResourceReleasable;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 /**
  * Abstract base class for Servers which want to use async io
@@ -203,7 +205,8 @@ public abstract class AbstractAsyncServer implements ProtocolServer {
      * @return bossExecutor
      */
     protected Executor createBossExecutor() {
-        return Executors.newCachedThreadPool();
+        ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat(getClass().getName() + "-%d").build();
+        return Executors.newCachedThreadPool(threadFactory);
     }
 
     /**
@@ -212,7 +215,8 @@ public abstract class AbstractAsyncServer implements ProtocolServer {
      * @return workerExecutor
      */
     protected Executor createWorkerExecutor() {
-        return Executors.newCachedThreadPool();
+        ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat(getClass().getName() + "-%d").build();
+        return Executors.newCachedThreadPool(threadFactory);
     }
     
 

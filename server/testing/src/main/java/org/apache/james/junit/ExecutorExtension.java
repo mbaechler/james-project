@@ -21,6 +21,7 @@ package org.apache.james.junit;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
@@ -29,13 +30,16 @@ import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
 public class ExecutorExtension implements ParameterResolver, BeforeEachCallback, AfterEachCallback {
 
     private ExecutorService executorService;
 
     @Override
     public void beforeEach(ExtensionContext context) throws Exception {
-        executorService = Executors.newWorkStealingPool();
+        ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat(getClass().getName() + "-%d").build();
+        executorService = Executors.newCachedThreadPool(threadFactory);
     }
 
     @Override

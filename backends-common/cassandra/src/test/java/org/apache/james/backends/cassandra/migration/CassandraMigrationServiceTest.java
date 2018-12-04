@@ -47,6 +47,7 @@ import org.junit.rules.ExpectedException;
 
 import com.datastax.driver.core.Session;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 public class CassandraMigrationServiceTest {
     private static final SchemaVersion LATEST_VERSION = new SchemaVersion(3);
@@ -74,7 +75,8 @@ public class CassandraMigrationServiceTest {
             .put(LATEST_VERSION, successfulMigration)
             .build();
         testee = new CassandraMigrationService(schemaVersionDAO, allMigrationClazz, LATEST_VERSION);
-        executorService = Executors.newFixedThreadPool(2);
+        executorService = Executors.newFixedThreadPool(2,
+            new ThreadFactoryBuilder().setNameFormat(getClass().getName() + "-%d").build());
     }
 
     @After

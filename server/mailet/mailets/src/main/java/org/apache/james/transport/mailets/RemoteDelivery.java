@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.inject.Inject;
@@ -48,6 +49,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 /**
  * <p>The RemoteDelivery mailet delivers messages to a remote SMTP server able to deliver or forward messages to their final
@@ -171,7 +173,8 @@ public class RemoteDelivery extends GenericMailet {
     }
 
     private void initDeliveryThreads() {
-        executor = Executors.newFixedThreadPool(configuration.getWorkersThreadCount());
+        ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat(getClass().getName() + "-%d").build();
+        executor = Executors.newFixedThreadPool(configuration.getWorkersThreadCount(), threadFactory);
         for (int a = 0; a < configuration.getWorkersThreadCount(); a++) {
             executor.execute(
                 new DeliveryRunnable(queue,

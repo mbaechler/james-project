@@ -21,11 +21,14 @@ package org.apache.james.mailbox.store.event;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 import javax.annotation.PreDestroy;
 
 import org.apache.james.mailbox.Event;
 import org.apache.james.mailbox.MailboxListener;
+
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 public class AsynchronousEventDelivery implements EventDelivery {
 
@@ -33,7 +36,8 @@ public class AsynchronousEventDelivery implements EventDelivery {
     private final SynchronousEventDelivery synchronousEventDelivery;
 
     public AsynchronousEventDelivery(int threadPoolSize, SynchronousEventDelivery synchronousEventDelivery) {
-        this.threadPoolExecutor = Executors.newFixedThreadPool(threadPoolSize);
+        ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat(getClass().getName() + "-%d").build();
+        this.threadPoolExecutor = Executors.newFixedThreadPool(threadPoolSize, threadFactory);
         this.synchronousEventDelivery = synchronousEventDelivery;
     }
 

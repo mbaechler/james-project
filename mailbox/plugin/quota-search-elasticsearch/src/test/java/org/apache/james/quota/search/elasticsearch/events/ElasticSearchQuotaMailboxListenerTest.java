@@ -26,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
 
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 import org.apache.james.backends.es.ElasticSearchConfiguration;
 import org.apache.james.backends.es.ElasticSearchIndexer;
@@ -47,6 +48,8 @@ import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.junit.rules.TemporaryFolder;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
 public class ElasticSearchQuotaMailboxListenerTest {
 
     private static final int BATCH_SIZE = 1;
@@ -66,9 +69,10 @@ public class ElasticSearchQuotaMailboxListenerTest {
         client = QuotaSearchIndexCreationUtil.prepareDefaultClient(
             new TestingClientProvider(embeddedElasticSearch.getNode()).get(), ElasticSearchConfiguration.DEFAULT_CONFIGURATION);
 
+        ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat(getClass().getName() + "-%d").build();
         quotaMailboxListener = new ElasticSearchQuotaMailboxListener(
             new ElasticSearchIndexer(client,
-                Executors.newSingleThreadExecutor(),
+                Executors.newSingleThreadExecutor(threadFactory),
                 QuotaRatioElasticSearchConstants.DEFAULT_QUOTA_RATIO_WRITE_ALIAS,
                 QuotaRatioElasticSearchConstants.QUOTA_RATIO_TYPE,
                 BATCH_SIZE),

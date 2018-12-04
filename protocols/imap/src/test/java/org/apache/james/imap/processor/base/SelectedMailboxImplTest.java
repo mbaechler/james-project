@@ -31,6 +31,7 @@ import java.util.Iterator;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.mail.Flags;
@@ -59,6 +60,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 
 public class SelectedMailboxImplTest {
@@ -77,7 +79,8 @@ public class SelectedMailboxImplTest {
 
     @Before
     public void setUp() throws Exception {
-        executorService = Executors.newFixedThreadPool(1);
+        ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat(getClass().getName() + "-%d").build();
+        executorService = Executors.newFixedThreadPool(1, threadFactory);
         mailboxPath = MailboxPath.forUser("tellier@linagora.com", MailboxConstants.INBOX);
         mailboxManager = mock(MailboxManager.class);
         messageManager = mock(MessageManager.class);

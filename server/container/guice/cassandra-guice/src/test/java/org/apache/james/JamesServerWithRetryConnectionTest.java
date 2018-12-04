@@ -29,6 +29,7 @@ import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.james.backends.es.ElasticSearchConfiguration;
@@ -45,6 +46,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Module;
 
 class JamesServerWithRetryConnectionTest {
@@ -104,7 +106,8 @@ class JamesServerWithRetryConnectionTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        executorService = Executors.newFixedThreadPool(1);
+        ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat(getClass().getName() + "-%d").build();
+        executorService = Executors.newFixedThreadPool(1, threadFactory);
         socketChannel = SocketChannel.open();
     }
 

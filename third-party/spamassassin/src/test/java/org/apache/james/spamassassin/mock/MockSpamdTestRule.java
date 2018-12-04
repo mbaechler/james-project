@@ -21,12 +21,16 @@ package org.apache.james.spamassassin.mock;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 import org.junit.rules.ExternalResource;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
 public class MockSpamdTestRule extends ExternalResource {
 
-    private ExecutorService executor = Executors.newSingleThreadExecutor();
+    private ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat(getClass().getName() + "-%d").build();
+    private ExecutorService executor = Executors.newSingleThreadExecutor(threadFactory);
     private MockSpamd spamd = new MockSpamd();
 
     @Override

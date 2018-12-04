@@ -25,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
 
 import javax.annotation.PreDestroy;
@@ -37,6 +38,7 @@ import com.github.fge.lambdas.Throwing;
 import com.github.steveash.guavate.Guavate;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 public class MemoryTaskManager implements TaskManager {
     private static final boolean INTERRUPT_IF_RUNNING = true;
@@ -49,7 +51,8 @@ public class MemoryTaskManager implements TaskManager {
     public MemoryTaskManager() {
         idToExecutionDetails = new ConcurrentHashMap<>();
         idToFuture = new ConcurrentHashMap<>();
-        executor = Executors.newSingleThreadExecutor();
+        ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat(getClass().getName() + "-%d").build();
+        executor = Executors.newSingleThreadExecutor(threadFactory);
     }
 
     @Override

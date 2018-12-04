@@ -24,10 +24,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.net.URI;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.nurkiewicz.asyncretry.AsyncRetryExecutor;
 
 class RabbitMQConnectionFactoryTest {
@@ -36,7 +38,8 @@ class RabbitMQConnectionFactoryTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
+        ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat(getClass().getName() + "-%d").build();
+        scheduledExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
     }
 
     @Test
