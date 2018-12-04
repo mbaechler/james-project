@@ -151,6 +151,7 @@ public class EnqueuedMailsDAO {
                 .setString(QUEUE_NAME, queueName.asString())
                 .setTimestamp(TIME_RANGE_START, Date.from(slice.getStartSliceInstant()))
                 .setInt(BUCKET_ID, bucketId.getValue())))
+            .publishOn(Schedulers.elastic())
             .map(cassandraUtils::convertToStream)
             .flatMapMany(Flux::fromStream)
             .map(row -> EnqueuedMailsDaoUtil.toEnqueuedMail(row, blobFactory));

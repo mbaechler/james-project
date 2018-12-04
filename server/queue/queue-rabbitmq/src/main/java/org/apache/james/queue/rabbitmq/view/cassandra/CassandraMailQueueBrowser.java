@@ -50,6 +50,8 @@ import reactor.core.scheduler.Schedulers;
 
 public class CassandraMailQueueBrowser {
 
+    public static final int MAX_CONCURRENCY = 2;
+
     static class CassandraMailQueueIterator implements ManageableMailQueue.MailQueueIterator {
 
         private final Iterator<ManageableMailQueue.MailQueueItemView> iterator;
@@ -100,20 +102,22 @@ public class CassandraMailQueueBrowser {
 
     Flux<ManageableMailQueue.MailQueueItemView> browse(MailQueueName queueName) {
         return browseReferences(queueName)
-            .flatMapSequential(this::toMailFuture)
+            .publishOn(Schedulers.elastic())
+            .flatMapSequential(this::toMailFuture, MAX_CONCURRENCY)
             .map(ManageableMailQueue.MailQueueItemView::new);
     }
 
     Flux<EnqueuedItemWithSlicingContext> browseReferences(MailQueueName queueName) {
         return browseStartDao.findBrowseStart(queueName)
+            .publishOn(Schedulers.elastic())
             .flatMapMany(this::allSlicesStartingAt)
-            .flatMapSequential(slice -> browseSlice(queueName, slice))
-            .subscribeOn(Schedulers.parallel());
+            .flatMapSequential(slice -> browseSlice(queueName, slice), MAX_CONCURRENCY);
     }
 
     private Mono<Mail> toMailFuture(EnqueuedItemWithSlicingContext enqueuedItemWithSlicingContext) {
         EnqueuedItem enqueuedItem = enqueuedItemWithSlicingContext.getEnqueuedItem();
         return Mono.fromCompletionStage(mimeMessageStore.read(enqueuedItem.getPartsId()))
+            .publishOn(Schedulers.elastic())
             .map(mimeMessage -> toMail(enqueuedItem, mimeMessage));
     }
 
@@ -132,7 +136,8 @@ public class CassandraMailQueueBrowser {
     private Flux<EnqueuedItemWithSlicingContext> browseSlice(MailQueueName queueName, Slice slice) {
         return
             allBucketIds()
-                .flatMap(bucketId -> browseBucket(queueName, slice, bucketId))
+                .flatMap(bucketId -> browseBucket(queueName, slice, bucketId), MAX_CONCURRENCY)
+                .publishOn(Schedulers.elastic())
                 .sort(Comparator.comparing(enqueuedMail -> enqueuedMail.getEnqueuedItem().getEnqueuedTime()));
     }
 
