@@ -42,6 +42,7 @@ import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.google.common.annotations.VisibleForTesting;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 public class BrowseStartDAO {
 
@@ -80,6 +81,7 @@ public class BrowseStartDAO {
 
     Mono<Instant> findBrowseStart(MailQueueName queueName) {
         return selectOne(queueName)
+            .publishOn(Schedulers.elastic())
             .map(this::getBrowseStart);
     }
 
