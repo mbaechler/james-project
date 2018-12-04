@@ -24,6 +24,7 @@ import static org.apache.james.queue.api.MailQueue.DEQUEUED_METRIC_NAME_PREFIX;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -42,6 +43,8 @@ import com.nurkiewicz.asyncretry.AsyncRetryExecutor;
 import com.rabbitmq.client.GetResponse;
 
 class Dequeuer {
+
+
     private static class NoMailYetException extends RuntimeException {
     }
 
@@ -73,6 +76,7 @@ class Dequeuer {
     private final Metric dequeueMetric;
     private final MailReferenceSerializer mailReferenceSerializer;
     private final MailQueueView mailQueueView;
+    private final ScheduledExecutorService scheduler;
 
     Dequeuer(MailQueueName name, RabbitClient rabbitClient, Function<MailReferenceDTO, Mail> mailLoader,
              MailReferenceSerializer serializer, MetricFactory metricFactory,
@@ -83,6 +87,8 @@ class Dequeuer {
         this.mailReferenceSerializer = serializer;
         this.mailQueueView = mailQueueView;
         this.dequeueMetric = metricFactory.generate(DEQUEUED_METRIC_NAME_PREFIX + name.asString());
+        ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat(getClass().getName() + "-%d").build();
+        this.scheduler = Executors.newSingleThreadScheduledExecutor(threadFactory);
     }
 
     MailQueue.MailQueueItem deQueue() {
@@ -127,8 +133,7 @@ class Dequeuer {
     }
 
     private CompletableFuture<GetResponse> pollChannel() {
-        ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat(getClass().getName() + "-%d").build();
-        return new AsyncRetryExecutor(Executors.newSingleThreadScheduledExecutor(threadFactory))
+        return new AsyncRetryExecutor(scheduler)
             .withFixedRate()
             .withMinDelay(TEN_MS)
             .retryOn(NoMailYetException.class)
