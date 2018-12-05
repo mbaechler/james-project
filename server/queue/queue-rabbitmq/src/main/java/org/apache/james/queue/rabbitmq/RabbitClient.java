@@ -29,7 +29,6 @@ import static org.apache.james.backend.rabbitmq.Constants.NO_ARGUMENTS;
 import static org.apache.james.backend.rabbitmq.Constants.REQUEUE;
 
 import java.io.IOException;
-import java.util.Optional;
 
 import javax.inject.Inject;
 
@@ -37,7 +36,8 @@ import org.apache.james.backend.rabbitmq.RabbitMQChannelPool;
 import org.apache.james.queue.api.MailQueue;
 
 import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.GetResponse;
+import reactor.core.publisher.Flux;
+import reactor.rabbitmq.AcknowledgableDelivery;
 
 class RabbitClient {
     private final RabbitMQChannelPool channelPool;
@@ -69,19 +69,7 @@ class RabbitClient {
         });
     }
 
-    void ack(long deliveryTag) throws IOException {
-        RabbitMQChannelPool.RabbitConsumer<IOException> consumer = channel -> channel.basicAck(deliveryTag, !MULTIPLE);
-        channelPool.execute(consumer);
-    }
-
-    void nack(long deliveryTag) throws IOException {
-        RabbitMQChannelPool.RabbitConsumer<IOException> consumer = channel -> channel.basicNack(deliveryTag, !MULTIPLE, REQUEUE);
-        channelPool.execute(consumer);
-    }
-
-    Optional<GetResponse> poll(MailQueueName name) throws IOException {
-        RabbitMQChannelPool.RabbitFunction<Optional<GetResponse>, IOException> f = channel ->
-            Optional.ofNullable(channel.basicGet(name.toWorkQueueName().asString(), !AUTO_ACK));
-        return channelPool.execute(f);
+    Flux<AcknowledgableDelivery> receive(MailQueueName name) {
+        return channelPool.receive(name.toWorkQueueName().asString());
     }
 }
