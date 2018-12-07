@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
 import java.nio.ByteBuffer;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Stream;
@@ -126,9 +127,8 @@ public class MimeMessageStore {
 
     static class MimeMessageDecoder implements Store.Impl.Decoder<MimeMessage> {
         @Override
-        public MimeMessage decode(Stream<Pair<BlobType, byte[]>> streams) {
-            Preconditions.checkNotNull(streams);
-            Map<BlobType,byte[]> pairs = streams.collect(ImmutableMap.toImmutableMap(Pair::getLeft, Pair::getRight));
+        public MimeMessage decode(Map<BlobType, InputStream> pairs) {
+            Preconditions.checkNotNull(pairs);
             Preconditions.checkArgument(pairs.containsKey(HEADER_BLOB_TYPE));
             Preconditions.checkArgument(pairs.containsKey(BODY_BLOB_TYPE));
 

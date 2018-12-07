@@ -21,10 +21,13 @@ package org.apache.james.blob.api;
 
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.reactivestreams.Publisher;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -70,7 +73,7 @@ public interface Store<T, I> {
         }
 
         public interface Decoder<T> {
-            T decode(Stream<Pair<BlobType, byte[]>> streams);
+            T decode(Map<BlobType, InputStream> pairs);
         }
 
         private final BlobPartsId.Factory<I> idFactory;
@@ -103,11 +106,14 @@ public interface Store<T, I> {
             return Flux.fromStream(blobIds.asMap()
                 .entrySet()
                 .stream())
-                .flatMapSequential(entry -> blobStore.readBytes(entry.getValue()).zipWith(Mono.just(entry.getKey())))
-                .map(entry -> Pair.of(entry.getT2(), entry.getT1()))
-                .collectList()
-                .map(Collection::stream)
+                .flatMapSequential(this::readEntry)
+                .collectMap(Tuple2::getT1, Tuple2::getT2)
                 .map(decoder::decode);
+        }
+
+        private Mono<Tuple2<BlobType, InputStream>> readEntry(Map.Entry<BlobType, BlobId> entry) {
+            return Mono.just(entry.getKey())
+                .zipWith(blobStore.readBytes(entry.getValue()));
         }
     }
 }
