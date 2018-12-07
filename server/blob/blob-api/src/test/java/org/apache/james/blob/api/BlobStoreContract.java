@@ -84,10 +84,9 @@ public interface BlobStoreContract {
     }
 
     @Test
-    default void readBytesShouldBeEmptyWhenNoExisting() throws IOException {
-        byte[] bytes = testee().readBytes(blobIdFactory().from("unknown")).join();
-
-        assertThat(bytes).isEmpty();
+    default void readBytesShouldThrowWhenNoExisting() throws IOException {
+        assertThatThrownBy(() -> testee().readBytes(blobIdFactory().from("unknown")).join())
+            .hasCauseInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
