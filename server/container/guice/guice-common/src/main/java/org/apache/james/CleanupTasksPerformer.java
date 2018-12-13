@@ -43,11 +43,13 @@ public class CleanupTasksPerformer {
 
     public void clean() {
         int parallel = cleanupTasks.size();
-        Runnables
-            .runParallel(
-                Flux.fromIterable(cleanupTasks)
-                    .map(cleanupTask -> cleanupTask::run),
-                parallel);
+        if (parallel > 0) {
+            Runnables
+                .runParallel(
+                    Flux.fromIterable(cleanupTasks)
+                        .map(cleanupTask -> cleanupTask::run),
+                    parallel);
+        }
     }
 
 }
