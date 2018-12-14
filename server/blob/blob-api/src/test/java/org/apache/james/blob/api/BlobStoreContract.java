@@ -23,9 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 
 import org.junit.jupiter.api.Test;
@@ -36,7 +34,7 @@ public interface BlobStoreContract {
 
     byte[] EMPTY_BYTEARRAY = {};
     byte[] SHORT_BYTEARRAY = "toto".getBytes(StandardCharsets.UTF_8);
-    byte[] TEN_KILOBYTES = Strings.repeat("0123456789\n", 1000).getBytes(StandardCharsets.UTF_8);
+    byte[] ELEVEN_KILOBYTES = Strings.repeat("0123456789\n", 1000).getBytes(StandardCharsets.UTF_8);
     byte[] TWELVE_MEGABYTES = Strings.repeat("0123456789\r\n", 1024 * 1024).getBytes(StandardCharsets.UTF_8);
 
     BlobStore testee();
@@ -105,11 +103,11 @@ public interface BlobStoreContract {
 
     @Test
     default void readBytesShouldReturnLongSavedData() {
-        BlobId blobId = testee().save(TEN_KILOBYTES).join();
+        BlobId blobId = testee().save(ELEVEN_KILOBYTES).join();
 
         byte[] bytes = testee().readBytes(blobId).join();
 
-        assertThat(bytes).isEqualTo(TEN_KILOBYTES);
+        assertThat(bytes).isEqualTo(ELEVEN_KILOBYTES);
     }
 
     @Test
@@ -138,11 +136,11 @@ public interface BlobStoreContract {
 
     @Test
     default void readShouldReturnLongSavedData() {
-        BlobId blobId = testee().save(TEN_KILOBYTES).join();
+        BlobId blobId = testee().save(ELEVEN_KILOBYTES).join();
 
         InputStream read = testee().read(blobId);
 
-        assertThat(read).hasSameContentAs(new ByteArrayInputStream(TEN_KILOBYTES));
+        assertThat(read).hasSameContentAs(new ByteArrayInputStream(ELEVEN_KILOBYTES));
     }
 
     @Test
