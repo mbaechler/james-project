@@ -26,19 +26,20 @@ import reactor.core.scheduler.Schedulers;
 public class Runnables {
     public static void runParallel(Runnable... runnables) {
         Flux<Runnable> stream = Flux.just(runnables);
-        runParallel(stream, runnables.length);
+        runParallel(stream);
     }
 
-    public static void runParallel(Flux<Runnable> runnables, int parallel) {
+    public static void runParallel(Flux<Runnable> runnables) {
         runnables
             .publishOn(Schedulers.elastic())
-            .parallel(parallel)
+            .parallel()
             .runOn(Schedulers.elastic())
             .flatMap(runnable -> {
                 runnable.run();
                 return Mono.empty();
             })
             .sequential()
-            .blockLast();
+            .then()
+            .block();
     }
 }

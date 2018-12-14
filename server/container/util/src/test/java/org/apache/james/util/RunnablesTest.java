@@ -40,10 +40,10 @@ class RunnablesTest {
 
     @Test
     void shouldActuallyRunInParallel() throws InterruptedException {
-        int parallel = 20;
+        int parallel = 2;
         CountDownLatch countDownLatch = new CountDownLatch(parallel);
         Runnable runnable = countDownLatch::countDown;
-        Runnables.runParallel(Flux.range(0, 20).map(i -> runnable), parallel);
+        Runnables.runParallel(Flux.range(0, 2).map(i -> runnable));
         assertThat(countDownLatch.await(2, TimeUnit.MINUTES)).isTrue();
     }
 }
