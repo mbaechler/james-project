@@ -111,6 +111,43 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>com.google.cloud.tools</groupId>
+                <artifactId>jib-maven-plugin</artifactId>
+                <version>0.10.1</version>
+                <executions>
+                    <execution>
+                        <id>docker packaging</id>
+                        <goals>
+                            <goal>buildTar</goal>
+                        </goals>
+                        <phase>package</phase>
+                        <configuration>
+                            <to>
+                                <image>james-jpa-jib</image>
+                            </to>
+                            <container>
+                                <mainClass>org.apache.james.JPAJamesServerMain</mainClass>
+                                <volumes>
+                                    <volume>/root/</volume>
+                                    <volume>/logs</volume>
+                                </volumes>
+                                <jvmFlags>
+                                    <jvmFlag>-javaagent:openjpa-3.0.0.jar</jvmFlag>
+                                    <jvmFlag>-Dworking.directory=/root</jvmFlag>
+                                    <jvmFlag>-Dlogback.configurationFile=/root/conf/logback.xml</jvmFlag>
+                                </jvmFlags>
+                                <ports>
+                                    <port>25</port>
+                                    <port>465</port>
+                                    <port>587</port>
+                                    <port>8000</port>
+                                </ports>
+                            </container>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
