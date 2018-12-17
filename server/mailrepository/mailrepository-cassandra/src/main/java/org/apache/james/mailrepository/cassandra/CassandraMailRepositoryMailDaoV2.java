@@ -30,9 +30,6 @@ import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.BO
 import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.CONTENT_TABLE_NAME;
 import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.ERROR_MESSAGE;
 import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.HEADER_BLOB_ID;
-import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.HeaderEntrty.HEADER_NAME_INDEX;
-import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.HeaderEntrty.HEADER_VALUE_INDEX;
-import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.HeaderEntrty.USER_INDEX;
 import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.LAST_UPDATED;
 import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.MAIL_KEY;
 import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.MAIL_PROPERTIES;
@@ -43,14 +40,11 @@ import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.RE
 import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.REPOSITORY_NAME;
 import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.SENDER;
 import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.STATE;
+import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.HeaderEntrty.HEADER_NAME_INDEX;
+import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.HeaderEntrty.HEADER_VALUE_INDEX;
+import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.HeaderEntrty.USER_INDEX;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -69,7 +63,9 @@ import org.apache.james.core.MailAddress;
 import org.apache.james.mailrepository.api.MailKey;
 import org.apache.james.mailrepository.api.MailRepositoryUrl;
 import org.apache.james.server.core.MailImpl;
-import org.apache.james.util.streams.Iterators;
+import org.apache.mailet.Attribute;
+import org.apache.mailet.AttributeName;
+import org.apache.mailet.AttributeValue;
 import org.apache.mailet.Mail;
 import org.apache.mailet.PerRecipientHeaders;
 import org.apache.mailet.PerRecipientHeaders.Header;
@@ -183,7 +179,7 @@ public class CassandraMailRepositoryMailDaoV2 implements CassandraMailRepository
         String errorMessage = row.getString(ERROR_MESSAGE);
         String name = row.getString(MAIL_KEY);
         Date lastUpdated = row.getTimestamp(LAST_UPDATED);
-        Map<String, ByteBuffer> rawAttributes = row.getMap(ATTRIBUTES, String.class, ByteBuffer.class);
+        Map<String, String> rawAttributes = row.getMap(ATTRIBUTES, String.class, String.class);
         PerRecipientHeaders perRecipientHeaders = fromList(row.getList(PER_RECIPIENT_SPECIFIC_HEADERS, TupleValue.class));
 
         MailImpl.Builder mailBuilder = MailImpl.builder()
@@ -203,21 +199,20 @@ public class CassandraMailRepositoryMailDaoV2 implements CassandraMailRepository
             blobIdFactory.from(row.getString(BODY_BLOB_ID)));
     }
 
-    private Map<String, Serializable> toAttributes(Map<String, ByteBuffer> rowAttributes) {
+    private List<Attribute> toAttributes(Map<String, String> rowAttributes) {
         return rowAttributes.entrySet()
             .stream()
-            .map(entry -> Pair.of(entry.getKey(), fromByteBuffer(entry.getValue())))
-            .collect(Guavate.toImmutableMap(Pair::getLeft, Pair::getRight));
+            .map(Throwing.function(entry -> new Attribute(AttributeName.of(entry.getKey()), AttributeValue.fromJsonString(entry.getValue()))))
+            .collect(Guavate.toImmutableList());
     }
 
     private ImmutableList<String> asStringList(Collection<MailAddress> mailAddresses) {
         return mailAddresses.stream().map(MailAddress::asString).collect(Guavate.toImmutableList());
     }
 
-    private ImmutableMap<String, ByteBuffer> toRawAttributeMap(Mail mail) {
-        return Iterators.toStream(mail.getAttributeNames())
-            .map(name -> Pair.of(name, mail.getAttribute(name)))
-            .map(pair -> Pair.of(pair.getLeft(), toByteBuffer(pair.getRight())))
+    private ImmutableMap<String, String> toRawAttributeMap(Mail mail) {
+        return mail.attributes()
+            .map(attribute -> Pair.of(attribute.getName().asString(), toJson(attribute.getValue())))
             .collect(Guavate.toImmutableMap(Pair::getLeft, Pair::getRight));
     }
 
@@ -242,25 +237,8 @@ public class CassandraMailRepositoryMailDaoV2 implements CassandraMailRepository
         return result;
     }
 
-    private ByteBuffer toByteBuffer(Serializable serializable) {
-        try {
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            new ObjectOutputStream(outputStream).writeObject(serializable);
-            return ByteBuffer.wrap(outputStream.toByteArray());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private Serializable fromByteBuffer(ByteBuffer byteBuffer) {
-        try {
-            byte[] data = new byte[byteBuffer.remaining()];
-            byteBuffer.get(data);
-            ObjectInputStream objectInputStream = new ObjectInputStream(new ByteArrayInputStream(data));
-            return (Serializable) objectInputStream.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+    private String toJson(AttributeValue<?> attributeValue) {
+        return attributeValue.toJson().toString();
     }
 
     private MailAddress toMailAddress(String rawValue) {
