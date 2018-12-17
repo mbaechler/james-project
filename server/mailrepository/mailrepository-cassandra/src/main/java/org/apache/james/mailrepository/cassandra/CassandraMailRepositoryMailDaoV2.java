@@ -30,6 +30,9 @@ import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.BO
 import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.CONTENT_TABLE_NAME;
 import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.ERROR_MESSAGE;
 import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.HEADER_BLOB_ID;
+import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.HeaderEntrty.HEADER_NAME_INDEX;
+import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.HeaderEntrty.HEADER_VALUE_INDEX;
+import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.HeaderEntrty.USER_INDEX;
 import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.LAST_UPDATED;
 import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.MAIL_KEY;
 import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.MAIL_PROPERTIES;
@@ -40,11 +43,7 @@ import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.RE
 import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.REPOSITORY_NAME;
 import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.SENDER;
 import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.STATE;
-import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.HeaderEntrty.HEADER_NAME_INDEX;
-import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.HeaderEntrty.HEADER_VALUE_INDEX;
-import static org.apache.james.mailrepository.cassandra.MailRepositoryTableV2.HeaderEntrty.USER_INDEX;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
