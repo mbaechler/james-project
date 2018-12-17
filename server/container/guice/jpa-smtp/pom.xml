@@ -132,7 +132,7 @@
                                     <volume>/logs</volume>
                                 </volumes>
                                 <jvmFlags>
-                                    <jvmFlag>-javaagent:openjpa-3.0.0.jar</jvmFlag>
+                                    <jvmFlag>-javaagent:/app/libs/openjpa-3.0.0.jar</jvmFlag>
                                     <jvmFlag>-Dworking.directory=/root</jvmFlag>
                                     <jvmFlag>-Dlogback.configurationFile=/root/conf/logback.xml</jvmFlag>
                                 </jvmFlags>
