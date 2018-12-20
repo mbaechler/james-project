@@ -39,6 +39,7 @@ import org.apache.james.mailbox.store.mail.MessageMapper.FetchType;
 import org.apache.james.mailbox.store.mail.model.impl.PropertyBuilder;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailboxMessage;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public abstract class MessageMoveTest {
@@ -59,6 +60,7 @@ public abstract class MessageMoveTest {
 
     protected abstract MapperProvider createMapperProvider();
 
+    @BeforeEach
     public void setUp() throws Exception {
         this.mapperProvider = createMapperProvider();
         assumeThat(mapperProvider.getSupportedCapabilities().contains(MapperProvider.Capabilities.MOVE)).isTrue();

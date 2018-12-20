@@ -32,6 +32,7 @@ import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.mail.MailboxMapper;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -80,6 +81,7 @@ public abstract class MailboxMapperTest {
 
     protected abstract MailboxId generateId();
 
+    @BeforeEach
     public void setUp() throws Exception {
         this.mailboxMapper = createMailboxMapper();
         

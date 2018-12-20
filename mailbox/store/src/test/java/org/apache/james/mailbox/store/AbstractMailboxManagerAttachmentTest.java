@@ -41,6 +41,7 @@ import org.apache.james.mailbox.store.mail.MessageMapper;
 import org.apache.james.mailbox.store.mail.MessageMapper.FetchType;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.MailboxMessage;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public abstract class AbstractMailboxManagerAttachmentTest {
@@ -62,7 +63,8 @@ public abstract class AbstractMailboxManagerAttachmentTest {
     protected abstract MailboxSessionMapperFactory getMailboxSessionMapperFactory();
     
     protected abstract AttachmentMapperFactory getAttachmentMapperFactory();
-    
+
+    @BeforeEach
     public void setUp() throws Exception {
         mailboxSession = MailboxSessionUtil.create(USERNAME);
         messageMapper = getMailboxSessionMapperFactory().getMessageMapper(mailboxSession);

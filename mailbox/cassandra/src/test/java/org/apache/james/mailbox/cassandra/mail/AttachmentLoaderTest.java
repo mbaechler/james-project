@@ -33,8 +33,8 @@ import org.apache.james.mailbox.model.AttachmentId;
 import org.apache.james.mailbox.model.Cid;
 import org.apache.james.mailbox.model.MessageAttachment;
 import org.assertj.core.data.MapEntry;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -44,7 +44,7 @@ public class AttachmentLoaderTest {
     private CassandraAttachmentMapper attachmentMapper;
     private AttachmentLoader testee;
 
-    @Before
+    @BeforeEach
     public void setup() {
         attachmentMapper = mock(CassandraAttachmentMapper.class);
         testee = new AttachmentLoader(attachmentMapper);

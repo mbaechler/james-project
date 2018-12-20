@@ -20,12 +20,13 @@
 package org.apache.james.mailbox.cassandra.ids;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.UUID;
 
 import org.apache.james.mailbox.store.mail.model.MailboxIdDeserialisationException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class CassandraMailboxIdDeserializerTest {
 
@@ -35,7 +36,7 @@ public class CassandraMailboxIdDeserializerTest {
 
     private CassandraMailboxIdDeserializer mailboxIdDeserializer;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         mailboxIdDeserializer = new CassandraMailboxIdDeserializer();
     }
@@ -45,9 +46,10 @@ public class CassandraMailboxIdDeserializerTest {
         assertThat(mailboxIdDeserializer.deserialize(UUID_STRING)).isEqualTo(CASSANDRA_ID);
     }
 
-    @Test(expected = MailboxIdDeserialisationException.class)
+    @Test
     public void deserializeShouldThrowOnMalformedData() throws Exception {
-        mailboxIdDeserializer.deserialize(MALFORMED_UUID_STRING);
+        assertThatThrownBy(() -> mailboxIdDeserializer.deserialize(MALFORMED_UUID_STRING))
+            .isInstanceOf(MailboxIdDeserialisationException.class);
     }
 
 }

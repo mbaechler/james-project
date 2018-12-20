@@ -46,6 +46,7 @@ import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.mailbox.model.MessageResult;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.github.steveash.guavate.Guavate;
@@ -69,6 +70,7 @@ public abstract class AbstractMessageIdManagerStorageTest {
 
     protected abstract MessageIdManagerTestSystem createTestingData() throws Exception;
 
+    @BeforeEach
     public void setUp() throws Exception {
         aliceSession = MailboxSessionUtil.create(MailboxFixture.ALICE);
         bobSession = MailboxSessionUtil.create(MailboxFixture.BOB);

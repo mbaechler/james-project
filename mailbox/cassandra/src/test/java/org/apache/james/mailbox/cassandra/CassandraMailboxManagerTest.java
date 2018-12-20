@@ -25,6 +25,7 @@ import org.apache.james.mailbox.cassandra.mail.MailboxAggregateModule;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 public class CassandraMailboxManagerTest extends MailboxManagerTest {
+
     @RegisterExtension
     static CassandraClusterExtension cassandra = new CassandraClusterExtension(MailboxAggregateModule.MODULE_WITH_QUOTA);
 

@@ -48,6 +48,7 @@ import org.apache.james.mailbox.model.MultimailboxesSearchQuery;
 import org.apache.james.mailbox.model.SearchQuery;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mime4j.dom.Message;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableList;
@@ -73,6 +74,7 @@ public abstract class AbstractCombinationManagerTest {
 
     public abstract CombinationManagerTestSystem createTestingData() throws Exception;
 
+    @BeforeEach
     public void setUp() throws Exception {
         session = MailboxSessionUtil.create(MailboxFixture.ALICE);
         testingData = createTestingData();

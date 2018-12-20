@@ -33,6 +33,7 @@ import org.apache.james.mailbox.model.Attachment;
 import org.apache.james.mailbox.model.AttachmentId;
 import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.mailbox.store.mail.AttachmentMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableList;
@@ -48,6 +49,7 @@ public abstract class AttachmentMapperTest {
 
     protected abstract MessageId generateMessageId();
 
+    @BeforeEach
     public void setUp() throws MailboxException {
         this.attachmentMapper = createAttachmentMapper();
     }

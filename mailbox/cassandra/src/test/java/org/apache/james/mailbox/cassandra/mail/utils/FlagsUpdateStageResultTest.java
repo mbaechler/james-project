@@ -25,10 +25,9 @@ import javax.mail.Flags;
 
 import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.model.UpdatedFlags;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableList;
-
 import nl.jqno.equalsverifier.EqualsVerifier;
 
 public class FlagsUpdateStageResultTest {

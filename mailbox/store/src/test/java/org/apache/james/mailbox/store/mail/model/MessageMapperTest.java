@@ -26,7 +26,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.util.Date;
 import java.util.Iterator;
@@ -55,6 +54,7 @@ import org.apache.james.mailbox.store.mail.model.impl.PropertyBuilder;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailboxMessage;
 import org.apache.james.util.concurrency.ConcurrentTestRunner;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Lists;
@@ -85,6 +85,7 @@ public abstract class MessageMapperTest {
 
     protected abstract MapperProvider createMapperProvider();
 
+    @BeforeEach
     public void setUp() throws Exception {
         this.mapperProvider = createMapperProvider();
 

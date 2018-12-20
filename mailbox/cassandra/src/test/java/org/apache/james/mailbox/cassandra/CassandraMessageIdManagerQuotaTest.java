@@ -19,8 +19,7 @@
 
 package org.apache.james.mailbox.cassandra;
 
-import org.apache.james.backends.cassandra.CassandraCluster;
-import org.apache.james.backends.cassandra.DockerCassandraRule;
+import org.apache.james.backends.cassandra.CassandraClusterExtension;
 import org.apache.james.mailbox.cassandra.mail.MailboxAggregateModule;
 import org.apache.james.mailbox.quota.CurrentQuotaManager;
 import org.apache.james.mailbox.quota.MaxQuotaManager;
@@ -28,47 +27,21 @@ import org.apache.james.mailbox.quota.QuotaManager;
 import org.apache.james.mailbox.store.AbstractMessageIdManagerQuotaTest;
 import org.apache.james.mailbox.store.MessageIdManagerTestSystem;
 import org.apache.james.mailbox.store.quota.StoreQuotaManager;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 public class CassandraMessageIdManagerQuotaTest extends AbstractMessageIdManagerQuotaTest {
 
-    @ClassRule public static DockerCassandraRule cassandraServer = new DockerCassandraRule();
-
-    private static CassandraCluster cassandra;
-
-    @BeforeClass
-    public static void setUpClass() {
-        cassandra = CassandraCluster.create(MailboxAggregateModule.MODULE_WITH_QUOTA, cassandraServer.getHost());
-    }
-
-    @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
-    }
-
-    @After
-    public void tearDown() {
-        cassandra.clearTables();
-    }
-
-    @AfterClass
-    public static void tearDownClass() {
-        cassandra.closeCluster();
-    }
+    @RegisterExtension
+    static CassandraClusterExtension cassandra = new CassandraClusterExtension(MailboxAggregateModule.MODULE_WITH_QUOTA);
 
     @Override
     protected MessageIdManagerTestSystem createTestSystem(QuotaManager quotaManager, CurrentQuotaManager currentQuotaManager) throws Exception {
-        return CassandraMessageIdManagerTestSystem.createTestingDataWithQuota(cassandra, quotaManager, currentQuotaManager);
+        return CassandraMessageIdManagerTestSystem.createTestingDataWithQuota(cassandra.getCassandraCluster(), quotaManager, currentQuotaManager);
     }
 
     @Override
     protected MaxQuotaManager createMaxQuotaManager() {
-        return CassandraTestSystemFixture.createMaxQuotaManager(cassandra);
+        return CassandraTestSystemFixture.createMaxQuotaManager(cassandra.getCassandraCluster());
     }
 
     @Override
@@ -78,6 +51,6 @@ public class CassandraMessageIdManagerQuotaTest extends AbstractMessageIdManager
 
     @Override
     protected CurrentQuotaManager createCurrentQuotaManager() {
-        return CassandraTestSystemFixture.createCurrentQuotaManager(cassandra);
+        return CassandraTestSystemFixture.createCurrentQuotaManager(cassandra.getCassandraCluster());
     }
 }

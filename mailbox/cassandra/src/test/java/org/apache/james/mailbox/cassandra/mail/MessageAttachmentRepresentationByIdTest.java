@@ -20,27 +20,26 @@
 package org.apache.james.mailbox.cassandra.mail;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.Optional;
 
-import org.apache.james.mailbox.cassandra.mail.MessageAttachmentRepresentation;
 import org.apache.james.mailbox.model.AttachmentId;
 import org.apache.james.mailbox.model.Cid;
-import org.junit.Test;
+import org.apache.james.mailbox.model.MessageAttachment;
+import org.junit.jupiter.api.Test;
 
 
 public class MessageAttachmentRepresentationByIdTest {
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void buildShouldThrowWhenAttachmentIsNotGiven() {
-        org.apache.james.mailbox.model.MessageAttachment.builder()
-            .build();
+        assertThatThrownBy(() -> MessageAttachment.builder().build()).isInstanceOf(IllegalStateException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void builderShouldThrowWhenAttachmentIsNull() {
-        org.apache.james.mailbox.model.MessageAttachment.builder()
-            .attachment(null);
+        assertThatThrownBy(() -> MessageAttachment.builder().attachment(null)).isInstanceOf(IllegalStateException.class);
     }
 
     @Test

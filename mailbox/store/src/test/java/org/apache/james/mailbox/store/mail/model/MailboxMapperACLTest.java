@@ -33,6 +33,7 @@ import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.mail.MailboxMapper;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableMap;
@@ -50,6 +51,7 @@ public abstract class MailboxMapperACLTest {
 
     protected abstract MailboxId generateId();
 
+    @BeforeEach
     public void setUp() throws Exception {
         mailboxMapper = createMailboxMapper();
         MailboxPath benwaInboxPath = MailboxPath.forUser("benwa", "INBOX");

@@ -33,8 +33,8 @@ public class CassandraClusterExtension implements BeforeAllCallback, AfterAllCal
     private final CassandraModule cassandraModule;
     private CassandraCluster cassandraCluster;
 
-    public CassandraClusterExtension(CassandraModule cassandraModule) {
-        this.cassandraModule = cassandraModule;
+    public CassandraClusterExtension(CassandraModule cassandraModule, CassandraModule... cassandraModules) {
+        this.cassandraModule = CassandraModule.aggregateModules(cassandraModule, cassandraModules);
         this.cassandraExtension = new DockerCassandraExtension();
     }
 

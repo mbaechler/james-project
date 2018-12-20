@@ -28,6 +28,7 @@ import org.apache.james.mailbox.model.MailboxAnnotation;
 import org.apache.james.mailbox.model.MailboxAnnotationKey;
 import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.store.mail.AnnotationMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableSet;
@@ -56,6 +57,7 @@ public abstract class AnnotationMapperTest {
 
     protected abstract MailboxId generateMailboxId();
 
+    @BeforeEach
     public void setUp() throws Exception {
         this.annotationMapper = createAnnotationMapper();
         this.mailboxId = generateMailboxId();

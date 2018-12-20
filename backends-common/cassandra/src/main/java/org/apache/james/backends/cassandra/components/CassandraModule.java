@@ -32,6 +32,7 @@ import com.github.steveash.guavate.Guavate;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 
 public interface CassandraModule {
 
@@ -175,8 +176,11 @@ public interface CassandraModule {
         return builder().table(tableName);
     }
 
-    static CassandraModule aggregateModules(CassandraModule... modules) {
-        return aggregateModules(Arrays.asList(modules));
+    static CassandraModule aggregateModules(CassandraModule module, CassandraModule... modules) {
+        return builder()
+            .module(module)
+            .modules(modules)
+            .build();
     }
 
     static CassandraModule aggregateModules(Collection<CassandraModule> modules) {

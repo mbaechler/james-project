@@ -50,6 +50,7 @@ import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailboxMessage;
 import org.apache.james.util.concurrency.ConcurrentTestRunner;
 import org.assertj.core.data.MapEntry;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.github.steveash.guavate.Guavate;
@@ -78,6 +79,7 @@ public abstract class MessageIdMapperTest {
 
     protected abstract MapperProvider provideMapper();
 
+    @BeforeEach
     public void setUp() throws MailboxException {
         this.mapperProvider = provideMapper();
         assumeTrue(mapperProvider.getSupportedCapabilities().contains(MapperProvider.Capabilities.UNIQUE_MESSAGE_ID));
