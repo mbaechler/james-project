@@ -18,19 +18,28 @@
  ****************************************************************/
 package org.apache.james.backend.rabbitmq;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeoutException;
 
 import javax.inject.Inject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.rabbitmq.client.AddressResolver;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 public class RabbitMQConnectionFactory {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(RabbitMQConnectionFactory.class);
+
     private class ConnectionCallable implements Callable<Connection> {
         private final ConnectionFactory connectionFactory;
         private Optional<Connection> connection;
@@ -63,7 +72,14 @@ public class RabbitMQConnectionFactory {
 
     private ConnectionFactory from(RabbitMQConfiguration rabbitMQConfiguration) {
         try {
-            ConnectionFactory connectionFactory = new ConnectionFactory();
+            ConnectionFactory connectionFactory = new ConnectionFactory() {
+                @Override
+                public Connection newConnection(ExecutorService executor, AddressResolver addressResolver, String clientProvidedName) throws IOException, TimeoutException {
+                    Connection connection = super.newConnection(executor, addressResolver, clientProvidedName);
+                    connection.addShutdownListener(cause -> LOGGER.error("Shuting down connection", cause));
+                    return connection;
+                }
+            };
             connectionFactory.setUri(rabbitMQConfiguration.getUri());
             return connectionFactory;
         } catch (Exception e) {
