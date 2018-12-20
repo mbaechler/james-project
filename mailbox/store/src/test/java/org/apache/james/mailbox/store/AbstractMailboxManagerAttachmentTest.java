@@ -64,7 +64,6 @@ public abstract class AbstractMailboxManagerAttachmentTest {
     
     protected abstract AttachmentMapperFactory getAttachmentMapperFactory();
 
-    @BeforeEach
     public void setUp() throws Exception {
         mailboxSession = MailboxSessionUtil.create(USERNAME);
         messageMapper = getMailboxSessionMapperFactory().getMessageMapper(mailboxSession);

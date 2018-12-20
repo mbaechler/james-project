@@ -54,8 +54,9 @@ public class CassandraMailboxManagerAttachmentTest extends AbstractMailboxManage
     private CassandraMailboxManager parseFailingMailboxManager;
 
     @BeforeEach
-    public void init() throws Exception {
+    public void setUp() throws Exception {
         initSystemUnderTest();
+        super.setUp();
     }
 
     private void initSystemUnderTest() throws Exception {
