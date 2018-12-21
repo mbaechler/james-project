@@ -39,7 +39,7 @@ public class MessageAttachmentRepresentationByIdTest {
 
     @Test
     public void builderShouldThrowWhenAttachmentIsNull() {
-        assertThatThrownBy(() -> MessageAttachment.builder().attachment(null)).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> MessageAttachment.builder().attachment(null)).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
