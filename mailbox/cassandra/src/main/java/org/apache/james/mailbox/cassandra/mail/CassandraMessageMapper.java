@@ -205,12 +205,12 @@ public class CassandraMessageMapper implements MessageMapper {
 
         return deletedMessageDAO.retrieveDeletedMessage(mailboxId, messageRange)
             .buffer(cassandraConfiguration.getExpungeChunkSize())
-            .flatMap(uidChunk -> expungeUidChunk(mailboxId, uidChunk))
+            .flatMap(uidChunk -> expungeUidsChunk(mailboxId, uidChunk))
             .collect(Guavate.<SimpleMailboxMessage, MessageUid, MessageMetaData>toImmutableMap(MailboxMessage::getUid, MailboxMessage::metaData))
             .block();
     }
 
-    private Flux<SimpleMailboxMessage> expungeUidChunk(CassandraId mailboxId, Collection<MessageUid> uidChunk) {
+    private Flux<SimpleMailboxMessage> expungeUidsChunk(CassandraId mailboxId, Collection<MessageUid> uidChunk) {
         return Flux.fromIterable(uidChunk)
             .flatMap(uid -> retrieveComposedId(mailboxId, uid))
             .doOnNext(this::deleteUsingMailboxId)
