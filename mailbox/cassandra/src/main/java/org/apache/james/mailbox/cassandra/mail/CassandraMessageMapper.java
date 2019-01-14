@@ -259,9 +259,13 @@ public class CassandraMessageMapper implements MessageMapper {
     }
 
     private MailboxMessage addUidAndModseq(MailboxMessage message, CassandraId mailboxId) throws MailboxException {
-        message.setUid(uidProvider.nextUid(mailboxId).blockOptional()
+        final Mono<MessageUid> messageUidMono = uidProvider.nextUid(mailboxId).cache();
+        final Mono<Long> nextModSeqMono = modSeqProvider.nextModSeq(mailboxId).cache();
+        Flux.merge(messageUidMono, nextModSeqMono).then();
+
+        message.setUid(messageUidMono.blockOptional()
             .orElseThrow(() -> new MailboxException("Can not find a UID to save " + message.getMessageId() + " in " + mailboxId)));
-        message.setModSeq(modSeqProvider.nextModSeq(mailboxId).blockOptional()
+        message.setModSeq(nextModSeqMono.blockOptional()
             .orElseThrow(() -> new MailboxException("Can not find a MODSEQ to save " + message.getMessageId() + " in " + mailboxId)));
 
         return message;
