@@ -84,6 +84,7 @@ public class CassandraAttachmentMapper implements AttachmentMapper {
 
     @Override
     public List<Attachment> getAttachments(Collection<AttachmentId> attachmentIds) {
+        Preconditions.checkArgument(attachmentIds != null);
         return Flux.fromIterable(attachmentIds)
             .flatMap(this::getAttachmentsAsMono)
             .collectList()

@@ -312,9 +312,10 @@ public class CassandraMessageMapper implements MessageMapper {
 
     private Mono<FlagsUpdateStageResult> runUpdateStage(CassandraId mailboxId, Flux<ComposedMessageIdWithMetaData> toBeUpdated, FlagsUpdateCalculator flagsUpdateCalculator) {
         Mono<Long> newModSeq = computeNewModSeq(mailboxId);
-        return toBeUpdated
-            .buffer(cassandraConfiguration.getFlagsUpdateChunkSize())
-            .flatMap(uidChunk -> newModSeq.flatMap(modSeq -> performUpdatesForChunk(mailboxId, flagsUpdateCalculator, modSeq, uidChunk)))
+        Flux<Mono<FlagsUpdateStageResult>> updates = toBeUpdated
+                .map(uidChunk -> newModSeq.flatMap(modSeq -> performUpdate(mailboxId, flagsUpdateCalculator, modSeq, uidChunk)));
+
+        return Flux.merge(updates, cassandraConfiguration.getFlagsUpdateChunkSize())
             .reduce(FlagsUpdateStageResult.none(), FlagsUpdateStageResult::merge);
     }
 
@@ -323,10 +324,8 @@ public class CassandraMessageMapper implements MessageMapper {
             .switchIfEmpty(ReactorUtils.executeAndEmpty(() -> new RuntimeException("ModSeq generation failed for mailbox " + mailboxId.asUuid())));
     }
 
-    private Mono<FlagsUpdateStageResult> performUpdatesForChunk(CassandraId mailboxId, FlagsUpdateCalculator flagsUpdateCalculator, Long newModSeq, Collection<ComposedMessageIdWithMetaData> uidChunk) {
-        return Flux.fromIterable(uidChunk)
-            .flatMap(oldMetadata -> tryFlagsUpdate(flagsUpdateCalculator, newModSeq, oldMetadata))
-            .reduce(FlagsUpdateStageResult.none(), FlagsUpdateStageResult::merge)
+    private Mono<FlagsUpdateStageResult> performUpdate(CassandraId mailboxId, FlagsUpdateCalculator flagsUpdateCalculator, Long newModSeq, ComposedMessageIdWithMetaData oldMetadata) {
+        return tryFlagsUpdate(flagsUpdateCalculator, newModSeq, oldMetadata)
             .flatMap(result -> updateIndexesForUpdatesResult(mailboxId, result));
     }
 
