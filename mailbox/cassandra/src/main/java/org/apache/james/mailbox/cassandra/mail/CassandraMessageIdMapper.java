@@ -29,6 +29,7 @@ import java.util.stream.Stream;
 
 import javax.mail.Flags;
 
+import com.google.common.collect.ImmutableList;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.james.backends.cassandra.init.configuration.CassandraConfiguration;
 import org.apache.james.mailbox.MailboxSession;
@@ -185,15 +186,14 @@ public class CassandraMessageIdMapper implements MessageIdMapper {
 
     @Override
     public void delete(Multimap<MessageId, MailboxId> ids) {
-        ids.asMap()
-            .entrySet()
-            .stream()
-            .collect(JamesCollectors.chunker(cassandraConfiguration.getExpungeChunkSize()))
-            .forEach(chunk ->
-                Flux.fromStream(chunk.stream())
-                    .flatMap(entry -> deleteAsMono(entry.getKey(), entry.getValue()))
-                    .then()
-                    .block());
+        Flux.fromIterable(ids.asMap()
+            .entrySet())
+            .buffer(cassandraConfiguration.getExpungeChunkSize())
+            .flatMap(chunk ->
+               Flux.merge(chunk
+                   .stream()
+                   .map(entry -> deleteAsMono(entry.getKey(), entry.getValue()))
+                   .collect(ImmutableList.toImmutableList()));
     }
 
     private Mono<Void> retrieveAndDeleteIndices(CassandraMessageId messageId, Optional<CassandraId> mailboxId) {
