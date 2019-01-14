@@ -21,8 +21,8 @@ package org.apache.james.mailbox.cassandra.mail;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.StringTokenizer;
-import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -41,7 +41,6 @@ import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.mail.MailboxMapper;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
-import org.apache.james.util.FunctionalUtils;
 import org.apache.james.util.ReactorUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -175,20 +174,20 @@ public class CassandraMailboxMapper implements MailboxMapper {
 
         CassandraId cassandraId = retrieveId(cassandraMailbox);
         cassandraMailbox.setMailboxId(cassandraId);
-        boolean applied = trySave(cassandraMailbox, cassandraId).block();
-        if (!applied) {
+        if (!trySave(cassandraMailbox, cassandraId)) {
             throw new MailboxExistsException(mailbox.generateAssociatedPath().asString());
         }
         return cassandraId;
     }
 
-    private Mono<Boolean> trySave(SimpleMailbox cassandraMailbox, CassandraId cassandraId) {
-        return mailboxPathV2DAO.save(cassandraMailbox.generateAssociatedPath(), cassandraId)
-            .filter(FunctionalUtils.toPredicate(Function.identity()))
-            .flatMap(any -> Flux.merge(
-                        retrieveMailbox(cassandraId).flatMap(mailbox -> mailboxPathV2DAO.delete(mailbox.generateAssociatedPath())),
-                        mailboxDAO.save(cassandraMailbox)).then(Mono.just(true)))
-            .switchIfEmpty(Mono.just(false));
+    private boolean trySave(SimpleMailbox cassandraMailbox, CassandraId cassandraId) {
+        boolean isCreated = mailboxPathV2DAO.save(cassandraMailbox.generateAssociatedPath(), cassandraId).block();
+        if (isCreated) {
+            Optional<SimpleMailbox> simpleMailbox = retrieveMailbox(cassandraId).blockOptional();
+            simpleMailbox.ifPresent(mbx -> mailboxPathV2DAO.delete(mbx.generateAssociatedPath()).block());
+            mailboxDAO.save(cassandraMailbox).block();
+        }
+        return isCreated;
     }
 
     private CassandraId retrieveId(SimpleMailbox cassandraMailbox) {
