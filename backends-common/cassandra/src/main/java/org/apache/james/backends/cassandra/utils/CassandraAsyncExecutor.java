@@ -63,8 +63,7 @@ public class CassandraAsyncExecutor {
 
 
     public Mono<Boolean> executeReturnApplied(Statement statement) {
-        return executeReactor(statement)
-                .map(ResultSet::one)
+        return executeSingleRowReactor(statement)
                 .map(row -> row.getBool(CassandraConstants.LIGHTWEIGHT_TRANSACTION_APPLIED));
     }
 
