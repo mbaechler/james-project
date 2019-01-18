@@ -29,6 +29,7 @@ import static org.apache.james.mailbox.cassandra.table.CassandraMessageModseqTab
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageModseqTable.NEXT_MODSEQ;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageModseqTable.TABLE_NAME;
 
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
 import java.util.function.Supplier;
@@ -180,25 +181,18 @@ public class CassandraModSeqProvider implements ModSeqProvider {
     }
 
     public Mono<Long> nextModSeq(CassandraId mailboxId) {
-        Mono<ModSeq> optionalMono = findHighestModSeq(mailboxId)
-            .flatMap(
-                maybeModSeq -> {
-                    LoggerFactory.getLogger(CassandraModSeqProvider.class).warn("initial find : {}", maybeModSeq);
-                    if (maybeModSeq.isPresent()) {
-                        return tryUpdateModSeq(mailboxId, maybeModSeq.get());
-                    }
-                    return tryInsertModSeq(mailboxId, FIRST_MODSEQ);
-                }
-            )
-            .flatMap(Mono::justOrEmpty)
-            .switchIfEmpty(handleRetries(mailboxId));
-        return optionalMono.map(ModSeq::getValue);
+        return findHighestModSeq(mailboxId)
+            .flatMap(maybeHighestModSeq -> maybeHighestModSeq
+                        .map(highestModSeq -> tryUpdateModSeq(mailboxId, highestModSeq))
+                        .orElseGet(() -> tryInsertModSeq(mailboxId, FIRST_MODSEQ)))
+            .switchIfEmpty(handleRetries(mailboxId))
+            .map(ModSeq::getValue);
     }
 
     private Mono<ModSeq> handleRetries(CassandraId mailboxId) {
         return tryFindThenUpdateOnce(mailboxId)
             .single()
-            .retry(maxModSeqRetries);
+            .retryBackoff(maxModSeqRetries, Duration.ofMillis(2));
     }
 
     private Mono<ModSeq> tryFindThenUpdateOnce(CassandraId mailboxId) {
