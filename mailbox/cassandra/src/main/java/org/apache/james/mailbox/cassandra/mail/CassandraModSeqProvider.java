@@ -48,7 +48,9 @@ import org.slf4j.LoggerFactory;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Session;
 import com.google.common.base.MoreObjects;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
 
 public class CassandraModSeqProvider implements ModSeqProvider {
 
@@ -205,11 +207,11 @@ public class CassandraModSeqProvider implements ModSeqProvider {
                         })
                     ));
 
-        return perform.repeat(maxModSeqRetries)
+        return Flux.range(0, (int)maxModSeqRetries)
             .limitRate(1)
-            .index()
+            .zipWith(perform.repeat())
             .doOnNext(t -> LoggerFactory.getLogger(CassandraModSeqProvider.class).warn("updated in {} iterations", t.getT1() + 1))
-            .flatMap(t -> Mono.justOrEmpty(t.getT2()))
+            .map(Tuple2::getT2)
             .next();
     }
 
