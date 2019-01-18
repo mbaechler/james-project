@@ -197,9 +197,8 @@ public class CassandraModSeqProvider implements ModSeqProvider {
 
     private Mono<ModSeq> handleRetries(CassandraId mailboxId) {
         Mono<ModSeq> perform = Mono.defer(() -> findHighestModSeq(mailboxId)
-                .flatMap((Optional<ModSeq> newModSeq) ->
-                        Mono.justOrEmpty(newModSeq).flatMap(value -> tryUpdateModSeq(mailboxId, value))
-                    ));
+                .flatMap(Mono::justOrEmpty)
+                .flatMap(value -> tryUpdateModSeq(mailboxId, value)));
 
         return perform.repeat(maxModSeqRetries)
             .limitRate(1)
