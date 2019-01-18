@@ -31,7 +31,6 @@ import static org.apache.james.mailbox.cassandra.table.CassandraMessageModseqTab
 
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import javax.inject.Inject;
@@ -154,31 +153,30 @@ public class CassandraModSeqProvider implements ModSeqProvider {
             }));
     }
 
-    private Mono<Optional<ModSeq>> tryInsertModSeq(CassandraId mailboxId, ModSeq modSeq) {
+    private Mono<ModSeq> tryInsertModSeq(CassandraId mailboxId, ModSeq modSeq) {
         ModSeq nextModSeq = modSeq.next();
         return cassandraAsyncExecutor.executeReturnApplied(
             insert.bind()
                 .setUUID(MAILBOX_ID, mailboxId.asUuid())
                 .setLong(NEXT_MODSEQ, nextModSeq.getValue()))
-            .map(success -> successToModSeq(nextModSeq, success));
+            .flatMap(success -> successToModSeq(nextModSeq, success));
     }
 
-    private Mono<Optional<ModSeq>> tryUpdateModSeq(CassandraId mailboxId, ModSeq modSeq) {
+    private Mono<ModSeq> tryUpdateModSeq(CassandraId mailboxId, ModSeq modSeq) {
         ModSeq nextModSeq = modSeq.next();
         return cassandraAsyncExecutor.executeReturnApplied(
             update.bind()
                 .setUUID(MAILBOX_ID, mailboxId.asUuid())
                 .setLong(NEXT_MODSEQ, nextModSeq.getValue())
                 .setLong(MOD_SEQ_CONDITION, modSeq.getValue()))
-            .map(success -> successToModSeq(nextModSeq, success));
+            .flatMap(success -> successToModSeq(nextModSeq, success));
     }
 
-    private Optional<ModSeq> successToModSeq(ModSeq modSeq, Boolean success) {
-        LoggerFactory.getLogger(CassandraModSeqProvider.class).warn("update applied : {}", success);
+    private Mono<ModSeq> successToModSeq(ModSeq modSeq, Boolean success) {
         if (success) {
-            return Optional.of(modSeq);
+            return Mono.just(modSeq);
         }
-        return Optional.empty();
+        return Mono.empty();
     }
 
     public Mono<Long> nextModSeq(CassandraId mailboxId) {
@@ -198,19 +196,18 @@ public class CassandraModSeqProvider implements ModSeqProvider {
     }
 
     private Mono<ModSeq> handleRetries(CassandraId mailboxId) {
-        Mono<Optional<ModSeq>> perform = Mono.defer(() -> findHighestModSeq(mailboxId)
-                .map((Optional<ModSeq> newModSeq) ->
-                        newModSeq.flatMap(value -> {
-                            Mono<Optional<ModSeq>> modSeq = tryUpdateModSeq(mailboxId, value);
+        Mono<ModSeq> perform = Mono.defer(() -> findHighestModSeq(mailboxId)
+                .flatMap((Optional<ModSeq> newModSeq) ->
+                        Mono.justOrEmpty(newModSeq).flatMap(value -> {
+                            Mono<ModSeq> modSeq = tryUpdateModSeq(mailboxId, value);
                             LoggerFactory.getLogger(CassandraModSeqProvider.class).warn("aretry update");
-                            return modSeq.blockOptional();
-                        }).flatMap(Function.identity())
+                            return modSeq;
+                        })
                     ));
 
         return perform.repeat(maxModSeqRetries)
             .limitRate(1)
             .index()
-            .filter(t -> t.getT2().isPresent())
             .doOnNext(t -> LoggerFactory.getLogger(CassandraModSeqProvider.class).warn("updated in {} iterations", t.getT1() + 1))
             .flatMap(t -> Mono.justOrEmpty(t.getT2()))
             .next();
