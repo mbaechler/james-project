@@ -24,6 +24,8 @@ import java.util.concurrent.CompletableFuture;
 
 import javax.inject.Inject;
 
+import org.slf4j.LoggerFactory;
+
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
@@ -64,7 +66,11 @@ public class CassandraAsyncExecutor {
 
     public Mono<Boolean> executeReturnApplied(Statement statement) {
         return executeSingleRowReactor(statement)
-                .map(row -> row.getBool(CassandraConstants.LIGHTWEIGHT_TRANSACTION_APPLIED));
+                .map(row -> {
+                    boolean updateApplied = row.getBool(CassandraConstants.LIGHTWEIGHT_TRANSACTION_APPLIED);
+                    LoggerFactory.getLogger(CassandraAsyncExecutor.class).warn("update applied : {}", updateApplied);
+                    return updateApplied;
+                });
     }
 
     public Mono<Void> executeVoidReactor(Statement statement) {
@@ -77,7 +83,7 @@ public class CassandraAsyncExecutor {
                 .flatMap(Mono::justOrEmpty);
     }
 
-    private Mono<Optional<Row>> executeSingleRowOptionalReactor(Statement statement) {
+    public Mono<Optional<Row>> executeSingleRowOptionalReactor(Statement statement) {
         return executeReactor(statement)
             .map(resultSet -> Optional.ofNullable(resultSet.one()));
     }

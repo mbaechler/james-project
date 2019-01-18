@@ -20,6 +20,10 @@ package org.apache.james.mailbox.cassandra.mail;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Duration;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.LongStream;
 
 import org.apache.james.backends.cassandra.CassandraCluster;
@@ -29,6 +33,7 @@ import org.apache.james.mailbox.cassandra.ids.CassandraId;
 import org.apache.james.mailbox.cassandra.modules.CassandraModSeqModule;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
+import org.apache.james.util.concurrency.ConcurrentTestRunner;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -78,13 +83,16 @@ class CassandraModSeqProviderTest {
     }
 
     @Test
-    void nextModSeqShouldGenerateUniqueValuesWhenParallelCalls() {
-        int nbEntries = 100;
-        long nbValues = LongStream.range(0, nbEntries)
-            .parallel()
-            .map(Throwing.longUnaryOperator(x -> modSeqProvider.nextModSeq(null, mailbox)))
-            .distinct()
-            .count();
-        assertThat(nbValues).isEqualTo(nbEntries);
+    void nextModSeqShouldGenerateUniqueValuesWhenParallelCalls() throws ExecutionException, InterruptedException {
+        int nbEntries = 10;
+
+        ConcurrentSkipListSet<Long> modSeqs = new ConcurrentSkipListSet<>();
+        ConcurrentTestRunner.builder()
+            .operation(
+                (threadNumber, step) -> modSeqs.add(modSeqProvider.nextModSeq(null, mailbox)))
+            .threadCount(10)
+            .operationCount(nbEntries)
+            .runSuccessfullyWithin(Duration.ofMinutes(1));
+        assertThat(modSeqs).hasSize(100);
     }
 }
