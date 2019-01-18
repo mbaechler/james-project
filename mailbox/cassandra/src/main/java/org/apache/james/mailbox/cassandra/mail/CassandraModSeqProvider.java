@@ -48,9 +48,7 @@ import org.slf4j.LoggerFactory;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Session;
 import com.google.common.base.MoreObjects;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple2;
 
 public class CassandraModSeqProvider implements ModSeqProvider {
 
@@ -200,18 +198,11 @@ public class CassandraModSeqProvider implements ModSeqProvider {
     private Mono<ModSeq> handleRetries(CassandraId mailboxId) {
         Mono<ModSeq> perform = Mono.defer(() -> findHighestModSeq(mailboxId)
                 .flatMap((Optional<ModSeq> newModSeq) ->
-                        Mono.justOrEmpty(newModSeq).flatMap(value -> {
-                            Mono<ModSeq> modSeq = tryUpdateModSeq(mailboxId, value);
-                            LoggerFactory.getLogger(CassandraModSeqProvider.class).warn("aretry update");
-                            return modSeq;
-                        })
+                        Mono.justOrEmpty(newModSeq).flatMap(value -> tryUpdateModSeq(mailboxId, value))
                     ));
 
-        return Flux.range(0, (int)maxModSeqRetries)
+        return perform.repeat(maxModSeqRetries)
             .limitRate(1)
-            .zipWith(perform.repeat())
-            .doOnNext(t -> LoggerFactory.getLogger(CassandraModSeqProvider.class).warn("updated in {} iterations", t.getT1() + 1))
-            .map(Tuple2::getT2)
             .next();
     }
 
