@@ -21,9 +21,11 @@ package org.apache.james.backend.rabbitmq;
 
 import com.rabbitmq.client.Channel;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.rabbitmq.AcknowledgableDelivery;
 
 public interface RabbitMQChannelPool {
+
     class ConnectionFailedException extends RuntimeException {
         public ConnectionFailedException(Throwable cause) {
             super(cause);
@@ -48,6 +50,8 @@ public interface RabbitMQChannelPool {
         throws E, ConnectionFailedException;
 
     Flux<AcknowledgableDelivery> receive(String queueName);
+
+    Mono<? extends Channel> getResilientChannel();
 
     boolean tryConnection();
 

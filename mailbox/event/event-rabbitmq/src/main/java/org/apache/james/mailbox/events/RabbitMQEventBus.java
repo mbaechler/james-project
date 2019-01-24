@@ -24,20 +24,25 @@ import java.util.Set;
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 
+import org.apache.james.backend.rabbitmq.RabbitMQChannelPool;
 import org.apache.james.backend.rabbitmq.SimpleConnectionPool;
 import org.apache.james.event.json.EventSerializer;
 import org.apache.james.lifecycle.api.Startable;
 import org.apache.james.metrics.api.MetricFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import com.github.fge.lambdas.Throwing;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.rabbitmq.client.Connection;
 import reactor.core.publisher.Mono;
 import reactor.rabbitmq.RabbitFlux;
+import reactor.rabbitmq.SendOptions;
 import reactor.rabbitmq.Sender;
 import reactor.rabbitmq.SenderOptions;
 
 public class RabbitMQEventBus implements EventBus, Startable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RabbitMQEventBus.class);
     private static final String NOT_RUNNING_ERROR_MESSAGE = "Event Bus is not running";
     static final String MAILBOX_EVENT = "mailboxEvent";
     static final String MAILBOX_EVENT_EXCHANGE_NAME = MAILBOX_EVENT + "-exchange";
@@ -49,7 +54,9 @@ public class RabbitMQEventBus implements EventBus, Startable {
     private final RetryBackoffConfiguration retryBackoff;
     private final EventBusId eventBusId;
     private final EventDeadLetters eventDeadLetters;
+    private final RabbitMQChannelPool simpleChannelPool;
     private final MailboxListenerExecutor mailboxListenerExecutor;
+    private final SendOptions sendOptions;
 
     private volatile boolean isRunning;
     private volatile boolean isStopping;
@@ -59,10 +66,13 @@ public class RabbitMQEventBus implements EventBus, Startable {
     private Sender sender;
 
     @Inject
-    public RabbitMQEventBus(SimpleConnectionPool simpleConnectionPool, EventSerializer eventSerializer,
-                     RetryBackoffConfiguration retryBackoff,
-                     RoutingKeyConverter routingKeyConverter,
-                     EventDeadLetters eventDeadLetters, MetricFactory metricFactory) {
+    public RabbitMQEventBus(SimpleConnectionPool simpleConnectionPool,
+                            RabbitMQChannelPool simpleChannelPool,
+                            EventSerializer eventSerializer,
+                            RetryBackoffConfiguration retryBackoff,
+                            RoutingKeyConverter routingKeyConverter,
+                            EventDeadLetters eventDeadLetters, MetricFactory metricFactory) {
+        this.simpleChannelPool = simpleChannelPool;
         this.mailboxListenerExecutor = new MailboxListenerExecutor(metricFactory);
         this.eventBusId = EventBusId.random();
         this.connectionMono = simpleConnectionPool.getResilientConnection();
@@ -72,16 +82,18 @@ public class RabbitMQEventBus implements EventBus, Startable {
         this.eventDeadLetters = eventDeadLetters;
         this.isRunning = false;
         this.isStopping = false;
+        this.sendOptions = new SendOptions()
+            .channelMono(simpleChannelPool.getResilientChannel())
+            .channelCloseHandler(((signalType, channel) -> LOGGER.info("Do not close channel {} by signal {}", channel, signalType)));
     }
 
     public void start() {
         if (!isRunning && !isStopping) {
-            sender = RabbitFlux.createSender(new SenderOptions().connectionMono(connectionMono)
-                .resourceManagementChannelMono(connectionMono.map(Throwing.function(Connection::createChannel))));
+            sender = RabbitFlux.createSender(new SenderOptions().channelMono(simpleChannelPool.getResilientChannel()));
             LocalListenerRegistry localListenerRegistry = new LocalListenerRegistry();
             keyRegistrationHandler = new KeyRegistrationHandler(eventBusId, eventSerializer, sender, connectionMono, routingKeyConverter, localListenerRegistry, mailboxListenerExecutor);
-            groupRegistrationHandler = new GroupRegistrationHandler(eventSerializer, sender, connectionMono, retryBackoff, eventDeadLetters, mailboxListenerExecutor);
-            eventDispatcher = new EventDispatcher(eventBusId, eventSerializer, sender, localListenerRegistry, mailboxListenerExecutor);
+            groupRegistrationHandler = new GroupRegistrationHandler(eventSerializer, sender, sendOptions, connectionMono, retryBackoff, eventDeadLetters, mailboxListenerExecutor);
+            eventDispatcher = new EventDispatcher(eventBusId, eventSerializer, sender, sendOptions, localListenerRegistry, mailboxListenerExecutor);
 
             eventDispatcher.start();
             keyRegistrationHandler.start();
@@ -128,5 +140,10 @@ public class RabbitMQEventBus implements EventBus, Startable {
             return groupRegistrationHandler.retrieveGroupRegistration(group).reDeliver(event);
         }
         return Mono.empty();
+    }
+
+    @VisibleForTesting
+    SendOptions getSendOptions() {
+        return sendOptions;
     }
 }

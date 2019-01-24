@@ -129,7 +129,9 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
     }
 
     private RabbitMQEventBus newEventBus() {
-        return new RabbitMQEventBus(rabbitMQExtension.getRabbitConnectionPool(), eventSerializer, RetryBackoffConfiguration.DEFAULT, routingKeyConverter, memoryEventDeadLetters, new NoopMetricFactory());
+        return new RabbitMQEventBus(rabbitMQExtension.getRabbitConnectionPool(),
+            rabbitMQExtension.getRabbitChannelPool(),
+            eventSerializer, RetryBackoffConfiguration.DEFAULT, routingKeyConverter, memoryEventDeadLetters, new NoopMetricFactory());
     }
 
     @Override
@@ -169,6 +171,17 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
         GroupConsumerRetry.RetryExchangeName retryExchangeName = GroupConsumerRetry.RetryExchangeName.of(registeredGroup);
         assertThat(rabbitMQExtension.managementAPI().listExchanges())
             .anyMatch(exchange -> exchange.getName().equals(retryExchangeName.asString()));
+    }
+
+    @Test
+    void channelIsNotClosedAfterEventDispatched() {
+        eventBus.dispatch(EVENT, KEY_1).block();
+
+        assertThat(eventBus.getSendOptions().getChannelMono().block())
+            .satisfies(channel -> {
+                assertThat(channel.isOpen()).isTrue();
+                assertThat(channel.getConnection().isOpen()).isTrue();
+            });
     }
 
     @Nested

@@ -46,7 +46,7 @@ public class SimpleChannelPool implements RabbitMQChannelPool {
 
     @Inject
     @VisibleForTesting
-    SimpleChannelPool(SimpleConnectionPool connectionPool) {
+    public SimpleChannelPool(SimpleConnectionPool connectionPool) {
         this.connectionPool = connectionPool;
         this.channelReference = new AtomicReference<>();
         this.rabbitFlux = RabbitFlux
@@ -82,7 +82,8 @@ public class SimpleChannelPool implements RabbitMQChannelPool {
         }
     }
 
-    private Mono<Channel> getResilientChannel() {
+    @Override
+    public Mono<Channel> getResilientChannel() {
         int numRetries = 100;
         Duration initialDelay = Duration.ofMillis(100);
         return Mono.defer(this::getOpenChannel)

@@ -28,6 +28,7 @@ import org.apache.james.event.json.EventSerializer;
 import com.rabbitmq.client.Connection;
 
 import reactor.core.publisher.Mono;
+import reactor.rabbitmq.SendOptions;
 import reactor.rabbitmq.Sender;
 
 class GroupRegistrationHandler {
@@ -38,12 +39,14 @@ class GroupRegistrationHandler {
     private final RetryBackoffConfiguration retryBackoff;
     private final EventDeadLetters eventDeadLetters;
     private final MailboxListenerExecutor mailboxListenerExecutor;
+    private final SendOptions sendOptions;
 
-    GroupRegistrationHandler(EventSerializer eventSerializer, Sender sender, Mono<Connection> connectionMono,
-                             RetryBackoffConfiguration retryBackoff,
+    GroupRegistrationHandler(EventSerializer eventSerializer, Sender sender, SendOptions sendOptions,
+                             Mono<Connection> connectionMono, RetryBackoffConfiguration retryBackoff,
                              EventDeadLetters eventDeadLetters, MailboxListenerExecutor mailboxListenerExecutor) {
         this.eventSerializer = eventSerializer;
         this.sender = sender;
+        this.sendOptions = sendOptions;
         this.connectionMono = connectionMono;
         this.retryBackoff = retryBackoff;
         this.eventDeadLetters = eventDeadLetters;
@@ -75,6 +78,7 @@ class GroupRegistrationHandler {
         return new GroupRegistration(
             connectionMono,
             sender,
+            sendOptions,
             eventSerializer,
             listener,
             group,
