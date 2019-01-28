@@ -29,7 +29,6 @@ import org.apache.james.backends.cassandra.components.CassandraModule;
 import org.apache.james.backends.cassandra.components.CassandraTable;
 import org.apache.james.backends.cassandra.components.CassandraType;
 import org.apache.james.backends.cassandra.init.configuration.ClusterConfiguration;
-import org.apache.james.backends.cassandra.utils.CassandraUtils;
 import org.apache.james.backends.cassandra.versions.CassandraSchemaVersionDAO;
 import org.apache.james.backends.cassandra.versions.CassandraSchemaVersionManager;
 
@@ -51,7 +50,7 @@ public class SessionWithInitializedTablesFactory implements Provider<Session> {
         Session session = cluster.connect(keyspace);
         try {
             if (allOperationsAreFullyPerformed(session)) {
-                new CassandraSchemaVersionDAO(session, CassandraUtils.WITH_DEFAULT_CONFIGURATION)
+                new CassandraSchemaVersionDAO(session)
                         .updateVersion(CassandraSchemaVersionManager.MAX_VERSION);
             }
             return session;

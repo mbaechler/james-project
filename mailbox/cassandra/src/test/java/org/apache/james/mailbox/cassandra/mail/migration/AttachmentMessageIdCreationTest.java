@@ -28,8 +28,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Stream;
 
 import javax.mail.Flags;
 import javax.mail.util.SharedByteArrayInputStream;
@@ -61,6 +59,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import reactor.core.publisher.Flux;
 
 class AttachmentMessageIdCreationTest {
     @RegisterExtension
@@ -88,7 +87,7 @@ class AttachmentMessageIdCreationTest {
             blobsDAO, new HashBlobId.Factory(), CassandraUtils.WITH_DEFAULT_CONFIGURATION, messageIdFactory);
 
         attachmentMessageIdDAO = new CassandraAttachmentMessageIdDAO(cassandra.getConf(),
-            new CassandraMessageId.Factory(), CassandraUtils.WITH_DEFAULT_CONFIGURATION);
+            new CassandraMessageId.Factory());
 
         migration = new AttachmentMessageIdCreation(cassandraMessageDAO, attachmentMessageIdDAO);
 
@@ -132,7 +131,7 @@ class AttachmentMessageIdCreationTest {
 
         migration.run();
 
-        assertThat(attachmentMessageIdDAO.getOwnerMessageIds(attachment.getAttachmentId()).join())
+        assertThat(attachmentMessageIdDAO.getOwnerMessageIds(attachment.getAttachmentId()).toIterable())
             .containsExactly(messageId);
     }
 
@@ -157,7 +156,7 @@ class AttachmentMessageIdCreationTest {
 
         when(messageIdAttachmentIds.getAttachmentId()).thenReturn(ImmutableSet.of(AttachmentId.from("any")));
         when(cassandraMessageDAO.retrieveAllMessageIdAttachmentIds())
-            .thenReturn(CompletableFuture.completedFuture(Stream.of(messageIdAttachmentIds)));
+            .thenReturn(Flux.just(messageIdAttachmentIds));
         when(attachmentMessageIdDAO.storeAttachmentForMessageId(any(AttachmentId.class), any(MessageId.class)))
             .thenThrow(new RuntimeException());
 

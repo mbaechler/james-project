@@ -25,8 +25,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Stream;
 
 import org.apache.james.backends.cassandra.CassandraCluster;
 import org.apache.james.backends.cassandra.CassandraClusterExtension;
@@ -46,6 +44,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 class AttachmentV2MigrationTest {
@@ -151,7 +150,7 @@ class AttachmentV2MigrationTest {
         CassandraBlobsDAO blobsDAO = mock(CassandraBlobsDAO.class);
         migration = new AttachmentV2Migration(attachmentDAO, attachmentDAOV2, blobsDAO);
 
-        when(attachmentDAO.retrieveAll()).thenReturn(Stream.of(
+        when(attachmentDAO.retrieveAll()).thenReturn(Flux.just(
             attachment1,
             attachment2));
         when(blobsDAO.save(any(byte[].class))).thenThrow(new RuntimeException());
@@ -166,7 +165,7 @@ class AttachmentV2MigrationTest {
         CassandraBlobsDAO blobsDAO = mock(CassandraBlobsDAO.class);
         migration = new AttachmentV2Migration(attachmentDAO, attachmentDAOV2, blobsDAO);
 
-        when(attachmentDAO.retrieveAll()).thenReturn(Stream.of(
+        when(attachmentDAO.retrieveAll()).thenReturn(Flux.just(
             attachment1,
             attachment2));
         when(blobsDAO.save(attachment1.getBytes()))
@@ -185,7 +184,7 @@ class AttachmentV2MigrationTest {
         CassandraBlobsDAO blobsDAO = mock(CassandraBlobsDAO.class);
         migration = new AttachmentV2Migration(attachmentDAO, attachmentDAOV2, blobsDAO);
 
-        when(attachmentDAO.retrieveAll()).thenReturn(Stream.of(
+        when(attachmentDAO.retrieveAll()).thenReturn(Flux.just(
             attachment1,
             attachment2));
         when(blobsDAO.save(attachment1.getBytes()))
@@ -205,7 +204,7 @@ class AttachmentV2MigrationTest {
         CassandraBlobsDAO blobsDAO = mock(CassandraBlobsDAO.class);
         migration = new AttachmentV2Migration(attachmentDAO, attachmentDAOV2, blobsDAO);
 
-        when(attachmentDAO.retrieveAll()).thenReturn(Stream.of(
+        when(attachmentDAO.retrieveAll()).thenReturn(Flux.just(
             attachment1,
             attachment2));
         when(blobsDAO.save(attachment1.getBytes()))
@@ -213,7 +212,7 @@ class AttachmentV2MigrationTest {
         when(blobsDAO.save(attachment2.getBytes()))
             .thenThrow(new RuntimeException());
         when(attachmentDAOV2.storeAttachment(any())).thenReturn(Mono.empty());
-        when(attachmentDAO.deleteAttachment(any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(attachmentDAO.deleteAttachment(any())).thenReturn(Mono.just(null));
 
         assertThat(migration.run()).isEqualTo(Migration.Result.PARTIAL);
     }

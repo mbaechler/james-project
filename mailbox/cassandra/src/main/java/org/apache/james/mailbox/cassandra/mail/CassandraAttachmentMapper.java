@@ -126,12 +126,13 @@ public class CassandraAttachmentMapper implements AttachmentMapper {
     @Override
     public Collection<MessageId> getRelatedMessageIds(AttachmentId attachmentId) throws MailboxException {
         return attachmentMessageIdDAO.getOwnerMessageIds(attachmentId)
-            .join();
+            .collectList()
+            .block();
     }
 
     @Override
     public Collection<Username> getOwners(AttachmentId attachmentId) throws MailboxException {
-        return ownerDAO.retrieveOwners(attachmentId).join().collect(Guavate.toImmutableList());
+        return ownerDAO.retrieveOwners(attachmentId).collect(Guavate.toImmutableList()).block();
     }
 
     public Mono<Void> storeAttachmentAsync(Attachment attachment, MessageId ownerMessageId) {

@@ -195,7 +195,7 @@ class CassandraMessageDAOTest {
 
     @Test
     void retrieveAllMessageIdAttachmentIdsShouldReturnEmptyWhenNone() {
-        Stream<MessageIdAttachmentIds> actual = testee.retrieveAllMessageIdAttachmentIds().join();
+        Stream<MessageIdAttachmentIds> actual = testee.retrieveAllMessageIdAttachmentIds().toStream();
         
         assertThat(actual).isEmpty();
     }
@@ -214,7 +214,7 @@ class CassandraMessageDAOTest {
         MessageIdAttachmentIds expected = new MessageIdAttachmentIds(messageId, ImmutableSet.of(attachment.getAttachmentId()));
         
         //When
-        Stream<MessageIdAttachmentIds> actual = testee.retrieveAllMessageIdAttachmentIds().join();
+        Stream<MessageIdAttachmentIds> actual = testee.retrieveAllMessageIdAttachmentIds().toStream();
         
         //Then
         assertThat(actual).containsOnly(expected);
@@ -240,7 +240,7 @@ class CassandraMessageDAOTest {
         MessageIdAttachmentIds expected = new MessageIdAttachmentIds(messageId, ImmutableSet.of(attachment1.getAttachmentId(), attachment2.getAttachmentId()));
         
         //When
-        Stream<MessageIdAttachmentIds> actual = testee.retrieveAllMessageIdAttachmentIds().join();
+        Stream<MessageIdAttachmentIds> actual = testee.retrieveAllMessageIdAttachmentIds().toStream();
         
         //Then
         assertThat(actual).containsOnly(expected);
@@ -271,7 +271,7 @@ class CassandraMessageDAOTest {
         MessageIdAttachmentIds expected2 = new MessageIdAttachmentIds(messageId2, ImmutableSet.of(attachment2.getAttachmentId()));
         
         //When
-        Stream<MessageIdAttachmentIds> actual = testee.retrieveAllMessageIdAttachmentIds().join();
+        Stream<MessageIdAttachmentIds> actual = testee.retrieveAllMessageIdAttachmentIds().toStream();
         
         //Then
         assertThat(actual).containsOnly(expected1, expected2);
@@ -284,7 +284,7 @@ class CassandraMessageDAOTest {
         testee.save(message1).block();
         
         //When
-        Stream<MessageIdAttachmentIds> actual = testee.retrieveAllMessageIdAttachmentIds().join();
+        Stream<MessageIdAttachmentIds> actual = testee.retrieveAllMessageIdAttachmentIds().toStream();
         
         //Then
         assertThat(actual).isEmpty();
@@ -316,7 +316,7 @@ class CassandraMessageDAOTest {
         testee.save(message3).block();
         
         //When
-        Stream<MessageIdAttachmentIds> actual = testee.retrieveAllMessageIdAttachmentIds().join();
+        Stream<MessageIdAttachmentIds> actual = testee.retrieveAllMessageIdAttachmentIds().toStream();
         
         //Then
         assertThat(actual).extracting(MessageIdAttachmentIds::getMessageId)

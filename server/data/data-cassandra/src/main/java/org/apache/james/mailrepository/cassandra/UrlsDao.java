@@ -28,29 +28,26 @@ import static org.apache.james.mailrepository.cassandra.UrlsTable.URL;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
 import org.apache.james.backends.cassandra.utils.CassandraAsyncExecutor;
-import org.apache.james.backends.cassandra.utils.CassandraUtils;
 import org.apache.james.mailrepository.api.MailRepositoryUrl;
 
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
+import reactor.core.publisher.Flux;
 
 public class UrlsDao {
     private final CassandraAsyncExecutor executor;
     private final PreparedStatement insert;
     private final PreparedStatement selectAll;
     private final PreparedStatement select;
-    private final CassandraUtils cassandraUtils;
 
     @Inject
-    public UrlsDao(Session session, CassandraUtils cassandraUtils) {
+    public UrlsDao(Session session) {
         this.executor = new CassandraAsyncExecutor(session);
-        this.cassandraUtils = cassandraUtils;
 
         this.insert = prepareInsert(session);
         this.selectAll = prepareSelectAll(session);
@@ -86,10 +83,10 @@ public class UrlsDao {
             .thenApply(optional -> optional.map(this::toUrl));
     }
 
-    public CompletableFuture<Stream<MailRepositoryUrl>> retrieveUsedUrls() {
-        return executor.execute(selectAll.bind())
-            .thenApply(resultSet -> cassandraUtils.convertToStream(resultSet)
-                .map(this::toUrl));
+    public Flux<MailRepositoryUrl> retrieveUsedUrls() {
+        return executor.executeReactor(selectAll.bind())
+            .flatMapMany(Flux::fromIterable)
+            .map(this::toUrl);
     }
 
     private MailRepositoryUrl toUrl(Row row) {

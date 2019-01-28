@@ -32,7 +32,6 @@ import static org.apache.james.mailbox.cassandra.table.CassandraMailboxPathTable
 import static org.apache.james.mailbox.cassandra.table.CassandraMailboxPathTable.TABLE_NAME;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
@@ -202,10 +201,10 @@ public class CassandraMailboxPathDAOImpl implements CassandraMailboxPathDAO {
             .setString(MAILBOX_NAME, mailboxPath.getName()));
     }
 
-    public CompletableFuture<Stream<CassandraIdAndPath>> readAll() {
-        return cassandraAsyncExecutor.execute(selectAll.bind())
-            .thenApply(cassandraUtils::convertToStream)
-            .thenApply(stream -> stream.map(this::fromRowToCassandraIdAndPath));
+    public Flux<CassandraIdAndPath> readAll() {
+        return cassandraAsyncExecutor.executeReactor(selectAll.bind())
+            .flatMapMany(Flux::fromIterable)
+            .map(this::fromRowToCassandraIdAndPath);
     }
 
     public CompletableFuture<Long> countAll() {

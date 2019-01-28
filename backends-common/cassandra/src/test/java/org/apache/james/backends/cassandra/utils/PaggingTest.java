@@ -76,11 +76,11 @@ class PaggingTest {
             .join();
 
         assertThat(
-            executor.execute(select()
-                .from(TABLE_NAME)
-                .where(eq(ID, UUID))
-                .setFetchSize(fetchSize))
-                .join())
+            executor.executeReactor(select()
+                    .from(TABLE_NAME)
+                    .where(eq(ID, UUID))
+                    .setFetchSize(fetchSize))
+                .block())
             .hasSize(size);
     }
 

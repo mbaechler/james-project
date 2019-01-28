@@ -69,9 +69,9 @@ public class MailboxPathV2Migration implements Migration {
     public Result run() {
         try {
             return daoV1.readAll()
-                .join()
                 .map(this::migrate)
-                .reduce(Result.COMPLETED, Task::combine);
+                .reduce(Result.COMPLETED, Task::combine)
+                .block();
         } catch (Exception e) {
             LOGGER.error("Error while performing migration", e);
             return Result.PARTIAL;

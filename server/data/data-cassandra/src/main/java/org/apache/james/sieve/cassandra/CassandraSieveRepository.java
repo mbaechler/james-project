@@ -44,9 +44,9 @@ import org.apache.james.sieverepository.api.exception.IsActiveException;
 import org.apache.james.sieverepository.api.exception.QuotaExceededException;
 import org.apache.james.sieverepository.api.exception.QuotaNotFoundException;
 import org.apache.james.sieverepository.api.exception.ScriptNotFoundException;
-
 import org.apache.james.util.FunctionalUtils;
 
+import com.github.steveash.guavate.Guavate;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -125,7 +125,7 @@ public class CassandraSieveRepository implements SieveRepository {
 
     @Override
     public List<ScriptSummary> listScripts(User user) {
-        return cassandraSieveDAO.listScripts(user).join();
+        return cassandraSieveDAO.listScripts(user).collect(Guavate.toImmutableList()).block();
     }
 
     @Override

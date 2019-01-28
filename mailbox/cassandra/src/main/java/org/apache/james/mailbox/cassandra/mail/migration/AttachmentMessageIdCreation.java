@@ -48,9 +48,9 @@ public class AttachmentMessageIdCreation implements Migration {
     public Result run() {
         try {
             return cassandraMessageDAO.retrieveAllMessageIdAttachmentIds()
-                .join()
                 .map(this::createIndex)
-                .reduce(Result.COMPLETED, Task::combine);
+                .reduce(Result.COMPLETED, Task::combine)
+                .block();
         } catch (Exception e) {
             LOGGER.error("Error while creation attachmentId -> messageIds index", e);
             return Result.PARTIAL;

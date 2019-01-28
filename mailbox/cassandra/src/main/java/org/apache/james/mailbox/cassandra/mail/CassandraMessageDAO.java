@@ -399,13 +399,13 @@ public class CassandraMessageDAO {
         }
     }
 
-    public CompletableFuture<Stream<MessageIdAttachmentIds>> retrieveAllMessageIdAttachmentIds() {
-        return cassandraAsyncExecutor.execute(
+    public Flux<MessageIdAttachmentIds> retrieveAllMessageIdAttachmentIds() {
+        return cassandraAsyncExecutor.executeReactor(
             selectAllMessagesWithAttachment.bind()
                 .setReadTimeoutMillis(configuration.getMessageAttachmentIdsReadTimeout()))
-            .thenApply(resultSet -> cassandraUtils.convertToStream(resultSet)
-                .map(this::fromRow)
-                .filter(MessageIdAttachmentIds::hasAttachment));
+            .flatMapMany(Flux::fromIterable)
+            .map(this::fromRow)
+            .filter(MessageIdAttachmentIds::hasAttachment);
     }
 
     private MessageIdAttachmentIds fromRow(Row row) {

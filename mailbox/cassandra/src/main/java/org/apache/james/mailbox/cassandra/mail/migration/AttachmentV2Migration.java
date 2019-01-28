@@ -52,7 +52,8 @@ public class AttachmentV2Migration implements Migration {
         try {
             return attachmentDAOV1.retrieveAll()
                 .map(this::migrateAttachment)
-                .reduce(Result.COMPLETED, Task::combine);
+                .reduce(Result.COMPLETED, Task::combine)
+                .block();
         } catch (Exception e) {
             LOGGER.error("Error while performing attachmentDAO V2 migration", e);
             return Result.PARTIAL;

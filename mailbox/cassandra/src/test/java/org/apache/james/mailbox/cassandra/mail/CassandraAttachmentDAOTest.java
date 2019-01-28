@@ -35,8 +35,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-import com.github.steveash.guavate.Guavate;
-
 class CassandraAttachmentDAOTest {
     private static final AttachmentId ATTACHMENT_ID = AttachmentId.from("id1");
     private static final AttachmentId ATTACHMENT_ID_2 = AttachmentId.from("id2");
@@ -64,7 +62,8 @@ class CassandraAttachmentDAOTest {
     void retrieveAllShouldReturnEmptyByDefault() {
         assertThat(
             testee.retrieveAll()
-                .collect(Guavate.toImmutableList()))
+                .collectList()
+                .block())
             .isEmpty();
     }
 
@@ -85,7 +84,8 @@ class CassandraAttachmentDAOTest {
 
         assertThat(
             testee.retrieveAll()
-                .collect(Guavate.toImmutableList()))
+                .collectList()
+                .block())
             .containsOnly(attachment1, attachment2);
     }
 
@@ -112,7 +112,7 @@ class CassandraAttachmentDAOTest {
             .build();
         testee.storeAttachment(attachment).join();
 
-        testee.deleteAttachment(attachment.getAttachmentId()).join();
+        testee.deleteAttachment(attachment.getAttachmentId()).block();
 
         assertThat(testee.getAttachment(attachment.getAttachmentId()).blockOptional())
             .isEmpty();
