@@ -38,7 +38,7 @@ public interface ObjectStorageBlobsDAOContract {
         ObjectStorageBlobsDAO dao = builder.build();
         dao.createContainer(containerName());
 
-        BlobId blobId = dao.save(BYTES).join();
+        BlobId blobId = dao.save(BYTES).block();
 
         InputStream inputStream = dao.read(blobId);
         assertThat(inputStream).hasSameContentAs(new ByteArrayInputStream(BYTES));

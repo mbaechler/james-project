@@ -28,7 +28,6 @@ import java.io.InputStream;
 import java.io.PipedInputStream;
 import java.nio.ByteBuffer;
 import java.util.Comparator;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -115,10 +114,10 @@ public class CassandraBlobsDAO implements BlobStore {
     }
 
     @Override
-    public CompletableFuture<BlobId> save(byte[] data) {
+    public Mono<BlobId> save(byte[] data) {
         Preconditions.checkNotNull(data);
 
-        return saveAsMono(data).toFuture();
+        return saveAsMono(data);
     }
 
     private Mono<BlobId> saveAsMono(byte[] data) {
@@ -164,16 +163,13 @@ public class CassandraBlobsDAO implements BlobStore {
     }
 
     @Override
-    public CompletableFuture<byte[]> readBytes(BlobId blobId) {
+    public Mono<byte[]> readBytes(BlobId blobId) {
         try {
             return readBlobParts(blobId)
                 .collectList()
-                .map(parts -> Bytes.concat(parts.toArray(new byte[0][])))
-                .toFuture();
+                .map(parts -> Bytes.concat(parts.toArray(new byte[0][])));
         } catch (ObjectStoreException e) {
-            CompletableFuture<byte[]> error = new CompletableFuture<>();
-            error.completeExceptionally(e);
-            return error;
+            return Mono.error(e);
         }
     }
 
@@ -220,11 +216,10 @@ public class CassandraBlobsDAO implements BlobStore {
     }
 
     @Override
-    public CompletableFuture<BlobId> save(InputStream data) {
+    public Mono<BlobId> save(InputStream data) {
         Preconditions.checkNotNull(data);
         return Mono.fromSupplier(Throwing.supplier(() -> IOUtils.toByteArray(data)).sneakyThrow())
             .publishOn(Schedulers.elastic())
-            .flatMap(this::saveAsMono)
-            .toFuture();
+            .flatMap(this::saveAsMono);
     }
 }
