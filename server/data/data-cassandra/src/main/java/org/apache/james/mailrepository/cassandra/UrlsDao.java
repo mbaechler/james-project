@@ -38,6 +38,7 @@ import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 public class UrlsDao {
     private final CassandraAsyncExecutor executor;
@@ -70,8 +71,8 @@ public class UrlsDao {
             .value(URL, bindMarker(URL)));
     }
 
-    public CompletableFuture<Void> addUrl(MailRepositoryUrl url) {
-        return executor.executeVoid(
+    public Mono<Void> addUrl(MailRepositoryUrl url) {
+        return executor.executeVoidReactor(
             insert.bind()
                 .setString(URL, url.asString()));
     }

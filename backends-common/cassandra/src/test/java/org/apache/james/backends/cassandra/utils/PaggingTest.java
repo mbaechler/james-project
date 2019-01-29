@@ -25,18 +25,17 @@ import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.UUID;
-import java.util.stream.IntStream;
 
 import org.apache.james.backends.cassandra.CassandraCluster;
 import org.apache.james.backends.cassandra.CassandraClusterExtension;
 import org.apache.james.backends.cassandra.components.CassandraModule;
-import org.apache.james.util.CompletableFutureUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import com.datastax.driver.core.DataType;
 import com.datastax.driver.core.utils.UUIDs;
+import reactor.core.publisher.Flux;
 
 class PaggingTest {
     
@@ -65,15 +64,12 @@ class PaggingTest {
         int fetchSize = 200;
         int size = 2 * fetchSize + 50;
 
-        CompletableFutureUtil.allOf(
-            IntStream.range(0, size)
-                .boxed()
-                .map(i ->
-                    executor
-                        .executeVoid(insertInto(TABLE_NAME)
+        Flux.range(0, size)
+            .map(i -> executor
+                        .executeVoidReactor(insertInto(TABLE_NAME)
                             .value(ID, UUID)
-                            .value(CLUSTERING, i))))
-            .join();
+                            .value(CLUSTERING, i)))
+            .blockLast();
 
         assertThat(
             executor.executeReactor(select()

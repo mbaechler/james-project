@@ -29,6 +29,7 @@ import org.apache.james.jmap.api.vacation.VacationPatch;
 import org.apache.james.jmap.api.vacation.VacationRepository;
 
 import com.google.common.base.Preconditions;
+import reactor.core.publisher.Mono;
 
 public class MemoryVacationRepository implements VacationRepository {
 
@@ -45,12 +46,12 @@ public class MemoryVacationRepository implements VacationRepository {
     }
 
     @Override
-    public CompletableFuture<Void> modifyVacation(AccountId accountId, VacationPatch vacationPatch) {
+    public Mono<Void> modifyVacation(AccountId accountId, VacationPatch vacationPatch) {
         Preconditions.checkNotNull(accountId);
         Preconditions.checkNotNull(vacationPatch);
         Vacation oldVacation = retrieveVacation(accountId).join();
         vacationMap.put(accountId, vacationPatch.patch(oldVacation));
-        return CompletableFuture.completedFuture(null);
+        return Mono.empty();
     }
 
 

@@ -43,7 +43,7 @@ public abstract class AccessTokenRepositoryTest {
 
     @Test
     public void validTokenMustBeRetrieved() throws Throwable {
-        accessTokenRepository.addToken(USERNAME, TOKEN).join();
+        accessTokenRepository.addToken(USERNAME, TOKEN).block();
         assertThat(accessTokenRepository.getUsernameFromToken(TOKEN).join()).isEqualTo(USERNAME);
     }
 
@@ -55,15 +55,15 @@ public abstract class AccessTokenRepositoryTest {
 
     @Test
     public void removedTokensMustBeInvalid() throws Exception {
-        accessTokenRepository.addToken(USERNAME, TOKEN).join();
-        accessTokenRepository.removeToken(TOKEN).join();
+        accessTokenRepository.addToken(USERNAME, TOKEN).block();
+        accessTokenRepository.removeToken(TOKEN).block();
         assertThatThrownBy(() -> accessTokenRepository.getUsernameFromToken(TOKEN).join()).isInstanceOf(CompletionException.class);
         assertThatThrownBy(() -> accessTokenRepository.getUsernameFromToken(TOKEN).join()).hasCauseInstanceOf(InvalidAccessToken.class);
     }
 
     @Test
     public void outDatedTokenMustBeInvalid() throws Exception {
-        accessTokenRepository.addToken(USERNAME, TOKEN).join();
+        accessTokenRepository.addToken(USERNAME, TOKEN).block();
         Thread.sleep(2 * TTL_IN_MS);
         assertThatThrownBy(() -> accessTokenRepository.getUsernameFromToken(TOKEN).join()).isInstanceOf(CompletionException.class);
         assertThatThrownBy(() -> accessTokenRepository.getUsernameFromToken(TOKEN).join()).hasCauseInstanceOf(InvalidAccessToken.class);

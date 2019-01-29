@@ -41,6 +41,7 @@ import org.apache.james.jmap.cassandra.access.table.CassandraAccessTokenTable;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Session;
 import com.google.common.primitives.Ints;
+import reactor.core.publisher.Mono;
 
 public class CassandraAccessTokenDAO {
 
@@ -71,15 +72,15 @@ public class CassandraAccessTokenDAO {
             .where(eq(CassandraAccessTokenTable.TOKEN, bindMarker(CassandraAccessTokenTable.TOKEN))));
     }
 
-    public CompletableFuture<Void> addToken(String username, AccessToken accessToken) {
-        return cassandraAsyncExecutor.executeVoid(insertStatement.bind()
+    public Mono<Void> addToken(String username, AccessToken accessToken) {
+        return cassandraAsyncExecutor.executeVoidReactor(insertStatement.bind()
             .setUUID(CassandraAccessTokenTable.TOKEN, accessToken.asUUID())
             .setString(CassandraAccessTokenTable.USERNAME, username)
             .setInt(TTL, durationInSeconds));
     }
 
-    public CompletableFuture<Void> removeToken(AccessToken accessToken) {
-        return cassandraAsyncExecutor.executeVoid(removeStatement.bind()
+    public Mono<Void> removeToken(AccessToken accessToken) {
+        return cassandraAsyncExecutor.executeVoidReactor(removeStatement.bind()
             .setUUID(CassandraAccessTokenTable.TOKEN, accessToken.asUUID()));
     }
 

@@ -115,7 +115,7 @@ public class VacationMailet extends GenericMailet {
             notificationRegistry.register(AccountId.fromString(recipient.toString()),
                 RecipientId.fromMailAddress(processedMail.getMaybeSender().get()),
                 vacation.getToDate())
-                .join();
+                .block();
         } catch (MessagingException e) {
             LOGGER.warn("Failed to send JMAP vacation notification from {} to {}", recipient, processedMail.getMaybeSender(), e);
         }

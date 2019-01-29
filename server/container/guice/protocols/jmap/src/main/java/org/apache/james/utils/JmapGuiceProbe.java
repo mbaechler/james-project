@@ -63,7 +63,7 @@ public class JmapGuiceProbe implements GuiceProbe {
     }
 
     public void modifyVacation(AccountId accountId, VacationPatch vacationPatch) {
-        vacationRepository.modifyVacation(accountId, vacationPatch).join();
+        vacationRepository.modifyVacation(accountId, vacationPatch).block();
     }
 
     public Vacation retrieveVacation(AccountId accountId) {

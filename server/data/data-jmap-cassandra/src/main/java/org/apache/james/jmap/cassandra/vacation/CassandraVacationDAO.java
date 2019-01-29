@@ -49,6 +49,7 @@ import com.datastax.driver.core.UDTValue;
 import com.datastax.driver.core.UserType;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.google.common.collect.ImmutableList;
+import reactor.core.publisher.Mono;
 
 public class CassandraVacationDAO {
 
@@ -79,8 +80,8 @@ public class CassandraVacationDAO {
                     (a, b) -> (vacation, insert) -> b.apply(vacation, a.apply(vacation, insert)));
     }
 
-    public CompletableFuture<Void> modifyVacation(AccountId accountId, VacationPatch vacationPatch) {
-        return cassandraAsyncExecutor.executeVoid(
+    public Mono<Void> modifyVacation(AccountId accountId, VacationPatch vacationPatch) {
+        return cassandraAsyncExecutor.executeVoidReactor(
             createSpecificUpdate(vacationPatch,
                 insertInto(CassandraVacationTable.TABLE_NAME)
                     .value(CassandraVacationTable.ACCOUNT_ID, accountId.getIdentifier())));

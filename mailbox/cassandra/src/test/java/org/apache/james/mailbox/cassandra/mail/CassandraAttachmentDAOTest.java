@@ -79,8 +79,8 @@ class CassandraAttachmentDAOTest {
             .type("application/json")
             .bytes("{\"property\":`\"value2\"}".getBytes(StandardCharsets.UTF_8))
             .build();
-        testee.storeAttachment(attachment1).join();
-        testee.storeAttachment(attachment2).join();
+        testee.storeAttachment(attachment1).block();
+        testee.storeAttachment(attachment2).block();
 
         assertThat(
             testee.retrieveAll()
@@ -96,7 +96,7 @@ class CassandraAttachmentDAOTest {
             .type("application/json")
             .bytes("{\"property\":`\"value\"}".getBytes(StandardCharsets.UTF_8))
             .build();
-        testee.storeAttachment(attachment).join();
+        testee.storeAttachment(attachment).block();
 
         Optional<Attachment> actual = testee.getAttachment(ATTACHMENT_ID).blockOptional();
 
@@ -110,7 +110,7 @@ class CassandraAttachmentDAOTest {
             .type("application/json")
             .bytes("{\"property\":`\"value\"}".getBytes(StandardCharsets.UTF_8))
             .build();
-        testee.storeAttachment(attachment).join();
+        testee.storeAttachment(attachment).block();
 
         testee.deleteAttachment(attachment.getAttachmentId()).block();
 

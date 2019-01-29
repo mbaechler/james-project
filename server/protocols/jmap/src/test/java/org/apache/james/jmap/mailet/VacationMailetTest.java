@@ -49,6 +49,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
+import reactor.core.publisher.Mono;
 
 public class VacationMailetTest {
 
@@ -204,7 +205,7 @@ public class VacationMailetTest {
         when(notificationRegistry.isRegistered(secondAccountId, RecipientId.fromMailAddress(originalSender)))
             .thenReturn(CompletableFuture.completedFuture(false));
         when(notificationRegistry.register(any(), any(), any()))
-            .thenReturn(CompletableFuture.completedFuture(null));
+            .thenReturn(Mono.empty());
 
         testee.service(mail);
 

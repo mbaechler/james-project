@@ -123,15 +123,15 @@ public class CassandraSieveQuotaDAO {
                 QuotaSize.size(row.getLong(CassandraSieveClusterQuotaTable.VALUE))));
     }
 
-    public CompletableFuture<Void> setQuota(QuotaSize quota) {
-        return cassandraAsyncExecutor.executeVoid(
+    public Mono<Void> setQuota(QuotaSize quota) {
+        return cassandraAsyncExecutor.executeVoidReactor(
             updateClusterQuotaStatement.bind()
                 .setLong(CassandraSieveClusterQuotaTable.VALUE, quota.asLong())
                 .setString(CassandraSieveClusterQuotaTable.NAME, CassandraSieveClusterQuotaTable.DEFAULT_NAME));
     }
 
-    public CompletableFuture<Void> removeQuota() {
-        return cassandraAsyncExecutor.executeVoid(
+    public Mono<Void> removeQuota() {
+        return cassandraAsyncExecutor.executeVoidReactor(
             deleteClusterQuotaStatement.bind()
                 .setString(CassandraSieveClusterQuotaTable.NAME, CassandraSieveClusterQuotaTable.DEFAULT_NAME));
     }
@@ -144,15 +144,15 @@ public class CassandraSieveQuotaDAO {
                 QuotaSize.size(row.getLong(CassandraSieveQuotaTable.QUOTA))));
     }
 
-    public CompletableFuture<Void> setQuota(User user, QuotaSize quota) {
-        return cassandraAsyncExecutor.executeVoid(
+    public Mono<Void> setQuota(User user, QuotaSize quota) {
+        return cassandraAsyncExecutor.executeVoidReactor(
             updateUserQuotaStatement.bind()
                 .setLong(CassandraSieveQuotaTable.QUOTA, quota.asLong())
                 .setString(CassandraSieveQuotaTable.USER_NAME, user.asString()));
     }
 
-    public CompletableFuture<Void> removeQuota(User user)  {
-        return cassandraAsyncExecutor.executeVoid(
+    public Mono<Void> removeQuota(User user)  {
+        return cassandraAsyncExecutor.executeVoidReactor(
             deleteUserQuotaStatement.bind()
                 .setString(CassandraSieveQuotaTable.USER_NAME, user.asString()));
     }

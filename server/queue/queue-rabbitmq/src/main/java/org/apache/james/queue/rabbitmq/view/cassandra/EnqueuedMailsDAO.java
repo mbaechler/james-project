@@ -120,7 +120,7 @@ public class EnqueuedMailsDAO {
         Mail mail = enqueuedItem.getMail();
         MimeMessagePartsId mimeMessagePartsId = enqueuedItem.getPartsId();
 
-        return Mono.fromCompletionStage(executor.executeVoid(insert.bind()
+        return executor.executeVoidReactor(insert.bind()
             .setString(QUEUE_NAME, enqueuedItem.getMailQueueName().asString())
             .setTimestamp(TIME_RANGE_START, Date.from(slicingContext.getTimeRangeStart()))
             .setInt(BUCKET_ID, slicingContext.getBucketId().getValue())
@@ -136,7 +136,7 @@ public class EnqueuedMailsDAO {
             .setString(REMOTE_HOST, mail.getRemoteHost())
             .setTimestamp(LAST_UPDATED, mail.getLastUpdated())
             .setMap(ATTRIBUTES, toRawAttributeMap(mail))
-            .setMap(PER_RECIPIENT_SPECIFIC_HEADERS, toHeaderMap(cassandraTypesProvider, mail.getPerRecipientSpecificHeaders()))));
+            .setMap(PER_RECIPIENT_SPECIFIC_HEADERS, toHeaderMap(cassandraTypesProvider, mail.getPerRecipientSpecificHeaders())));
     }
 
     Flux<EnqueuedItemWithSlicingContext> selectEnqueuedMails(

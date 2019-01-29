@@ -43,7 +43,7 @@ public class AccessTokenManagerImpl implements AccessTokenManager {
     public AccessToken grantAccessToken(String username) {
         Preconditions.checkNotNull(username);
         AccessToken accessToken = AccessToken.generate();
-        accessTokenRepository.addToken(username, accessToken).join();
+        accessTokenRepository.addToken(username, accessToken).block();
         return accessToken;
     }
 
@@ -72,7 +72,7 @@ public class AccessTokenManagerImpl implements AccessTokenManager {
 
     @Override
     public void revoke(AccessToken token) {
-        accessTokenRepository.removeToken(token).join();
+        accessTokenRepository.removeToken(token).block();
     }
 
 }

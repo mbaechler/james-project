@@ -32,8 +32,6 @@ import static org.apache.james.mailbox.cassandra.table.CassandraMailboxTable.NAM
 import static org.apache.james.mailbox.cassandra.table.CassandraMailboxTable.TABLE_NAME;
 import static org.apache.james.mailbox.cassandra.table.CassandraMailboxTable.UIDVALIDITY;
 
-import java.util.concurrent.CompletableFuture;
-
 import javax.inject.Inject;
 
 import org.apache.james.backends.cassandra.init.CassandraTypesProvider;
@@ -121,8 +119,8 @@ public class CassandraMailboxDAO {
             .setUDTValue(MAILBOX_BASE, mailboxBaseTupleUtil.createMailboxBaseUDT(mailbox.getNamespace(), mailbox.getUser())));
     }
 
-    public CompletableFuture<Void> updatePath(CassandraId mailboxId, MailboxPath mailboxPath) {
-        return executor.executeVoid(updateStatement.bind()
+    public Mono<Void> updatePath(CassandraId mailboxId, MailboxPath mailboxPath) {
+        return executor.executeVoidReactor(updateStatement.bind()
             .setUUID(ID, mailboxId.asUuid())
             .setString(NAME, mailboxPath.getName())
             .setUDTValue(MAILBOX_BASE, mailboxBaseTupleUtil.createMailboxBaseUDT(mailboxPath.getNamespace(), mailboxPath.getUser())));

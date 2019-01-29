@@ -37,7 +37,7 @@ public class CassandraMailRepositoryUrlStore implements MailRepositoryUrlStore {
 
     @Override
     public void add(MailRepositoryUrl url) {
-        urlsDao.addUrl(url).join();
+        urlsDao.addUrl(url).block();
     }
 
     @Override

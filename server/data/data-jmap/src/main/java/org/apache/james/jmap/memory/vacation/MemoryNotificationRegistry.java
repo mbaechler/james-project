@@ -33,6 +33,7 @@ import org.apache.james.util.date.ZonedDateTimeProvider;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
+import reactor.core.publisher.Mono;
 
 public class MemoryNotificationRegistry implements NotificationRegistry {
 
@@ -64,9 +65,9 @@ public class MemoryNotificationRegistry implements NotificationRegistry {
 }
 
     @Override
-    public CompletableFuture<Void> register(AccountId accountId, RecipientId recipientId, Optional<ZonedDateTime> expiryDate) {
+    public Mono<Void> register(AccountId accountId, RecipientId recipientId, Optional<ZonedDateTime> expiryDate) {
         registrations.put(accountId, new Entry(recipientId, expiryDate));
-        return CompletableFuture.completedFuture(null);
+        return Mono.empty();
     }
 
     @Override
@@ -87,8 +88,8 @@ public class MemoryNotificationRegistry implements NotificationRegistry {
     }
 
     @Override
-    public CompletableFuture<Void> flush(AccountId accountId) {
+    public Mono<Void> flush(AccountId accountId) {
         registrations.removeAll(accountId);
-        return CompletableFuture.completedFuture(null);
+        return Mono.empty();
     }
 }

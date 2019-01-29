@@ -94,8 +94,8 @@ class AttachmentV2MigrationTest {
 
     @Test
     void migrationShouldSucceed() throws Exception {
-        attachmentDAO.storeAttachment(attachment1).join();
-        attachmentDAO.storeAttachment(attachment2).join();
+        attachmentDAO.storeAttachment(attachment1).block();
+        attachmentDAO.storeAttachment(attachment2).block();
 
         assertThat(migration.run())
             .isEqualTo(Migration.Result.COMPLETED);
@@ -103,8 +103,8 @@ class AttachmentV2MigrationTest {
 
     @Test
     void migrationShouldMoveAttachmentsToV2() throws Exception {
-        attachmentDAO.storeAttachment(attachment1).join();
-        attachmentDAO.storeAttachment(attachment2).join();
+        attachmentDAO.storeAttachment(attachment1).block();
+        attachmentDAO.storeAttachment(attachment2).block();
 
         migration.run();
 
@@ -120,8 +120,8 @@ class AttachmentV2MigrationTest {
 
     @Test
     void migrationShouldRemoveAttachmentsFromV1() throws Exception {
-        attachmentDAO.storeAttachment(attachment1).join();
-        attachmentDAO.storeAttachment(attachment2).join();
+        attachmentDAO.storeAttachment(attachment1).block();
+        attachmentDAO.storeAttachment(attachment2).block();
 
         migration.run();
 

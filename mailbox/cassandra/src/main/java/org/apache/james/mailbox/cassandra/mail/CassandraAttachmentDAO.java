@@ -33,8 +33,6 @@ import static org.apache.james.mailbox.cassandra.table.CassandraAttachmentTable.
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
@@ -117,8 +115,8 @@ public class CassandraAttachmentDAO {
             .map(this::attachment);
     }
 
-    public CompletableFuture<Void> storeAttachment(Attachment attachment) throws IOException {
-        return cassandraAsyncExecutor.executeVoid(
+    public Mono<Void> storeAttachment(Attachment attachment) throws IOException {
+        return cassandraAsyncExecutor.executeVoidReactor(
             insertStatement.bind()
                 .setString(ID, attachment.getAttachmentId().getId())
                 .setLong(SIZE, attachment.getSize())

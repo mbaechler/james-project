@@ -39,6 +39,7 @@ import org.apache.james.jmap.cassandra.vacation.tables.CassandraNotificationTabl
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.Insert;
+import reactor.core.publisher.Mono;
 
 public class CassandraNotificationRegistryDAO {
 
@@ -73,8 +74,8 @@ public class CassandraNotificationRegistryDAO {
             .value(CassandraNotificationTable.RECIPIENT_ID, bindMarker(CassandraNotificationTable.RECIPIENT_ID));
     }
 
-    public CompletableFuture<Void> register(AccountId accountId, RecipientId recipientId, Optional<Integer> ttl) {
-        return cassandraAsyncExecutor.executeVoid(
+    public Mono<Void> register(AccountId accountId, RecipientId recipientId, Optional<Integer> ttl) {
+        return cassandraAsyncExecutor.executeVoidReactor(
             ttl.map(value -> registerWithTTLStatement.bind().setInt(TTL, value))
                 .orElse(registerStatement.bind())
                 .setString(CassandraNotificationTable.ACCOUNT_ID, accountId.getIdentifier())
@@ -89,8 +90,8 @@ public class CassandraNotificationRegistryDAO {
             .thenApply(Optional::isPresent);
     }
 
-    public CompletableFuture<Void> flush(AccountId accountId) {
-        return cassandraAsyncExecutor.executeVoid(
+    public Mono<Void> flush(AccountId accountId) {
+        return cassandraAsyncExecutor.executeVoidReactor(
             flushStatement.bind()
                 .setString(CassandraNotificationTable.ACCOUNT_ID, accountId.getIdentifier()));
     }

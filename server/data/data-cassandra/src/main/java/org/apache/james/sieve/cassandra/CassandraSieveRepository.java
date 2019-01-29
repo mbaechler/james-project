@@ -237,12 +237,12 @@ public class CassandraSieveRepository implements SieveRepository {
 
     @Override
     public void setDefaultQuota(QuotaSize quota) {
-        cassandraSieveQuotaDAO.setQuota(quota).join();
+        cassandraSieveQuotaDAO.setQuota(quota).block();
     }
 
     @Override
     public void removeQuota() {
-        cassandraSieveQuotaDAO.removeQuota().join();
+        cassandraSieveQuotaDAO.removeQuota().block();
     }
 
     @Override
@@ -263,12 +263,12 @@ public class CassandraSieveRepository implements SieveRepository {
 
     @Override
     public void setQuota(User user, QuotaSize quota) {
-        cassandraSieveQuotaDAO.setQuota(user, quota).join();
+        cassandraSieveQuotaDAO.setQuota(user, quota).block();
     }
 
     @Override
     public void removeQuota(User user) {
-        cassandraSieveQuotaDAO.removeQuota(user).join();
+        cassandraSieveQuotaDAO.removeQuota(user).block();
     }
 
 }

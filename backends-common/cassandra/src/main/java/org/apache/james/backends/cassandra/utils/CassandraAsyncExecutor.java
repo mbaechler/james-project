@@ -42,10 +42,6 @@ public class CassandraAsyncExecutor {
         this.session = session;
     }
 
-    public CompletableFuture<Void> executeVoid(Statement statement) {
-        return executeVoidReactor(statement).toFuture();
-    }
-
     public CompletableFuture<Optional<Row>> executeSingleRow(Statement statement) {
         return executeSingleRowOptionalReactor(statement)
                 .toFuture();

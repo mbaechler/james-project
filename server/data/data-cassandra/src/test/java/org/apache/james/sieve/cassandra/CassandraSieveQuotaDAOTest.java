@@ -57,7 +57,7 @@ class CassandraSieveQuotaDAOTest {
 
     @Test
     void getQuotaShouldReturnStoredValue() {
-        sieveQuotaDAO.setQuota(QUOTA_SIZE).join();
+        sieveQuotaDAO.setQuota(QUOTA_SIZE).block();
 
         assertThat(sieveQuotaDAO.getQuota().join())
             .contains(QUOTA_SIZE);
@@ -65,7 +65,7 @@ class CassandraSieveQuotaDAOTest {
 
     @Test
     void getQuotaUserShouldReturnStoredValue() {
-        sieveQuotaDAO.setQuota(USER, QUOTA_SIZE).join();
+        sieveQuotaDAO.setQuota(USER, QUOTA_SIZE).block();
 
         assertThat(sieveQuotaDAO.getQuota(USER).join())
             .contains(QUOTA_SIZE);
@@ -73,9 +73,9 @@ class CassandraSieveQuotaDAOTest {
 
     @Test
     void removeQuotaShouldDeleteQuota() {
-        sieveQuotaDAO.setQuota(QUOTA_SIZE).join();
+        sieveQuotaDAO.setQuota(QUOTA_SIZE).block();
 
-        sieveQuotaDAO.removeQuota().join();
+        sieveQuotaDAO.removeQuota().block();
 
         assertThat(sieveQuotaDAO.getQuota().join())
             .isEmpty();
@@ -83,9 +83,9 @@ class CassandraSieveQuotaDAOTest {
 
     @Test
     void removeQuotaUserShouldDeleteQuotaUser() {
-        sieveQuotaDAO.setQuota(USER, QUOTA_SIZE).join();
+        sieveQuotaDAO.setQuota(USER, QUOTA_SIZE).block();
 
-        sieveQuotaDAO.removeQuota(USER).join();
+        sieveQuotaDAO.removeQuota(USER).block();
 
         assertThat(sieveQuotaDAO.getQuota(USER).join())
             .isEmpty();
@@ -93,7 +93,7 @@ class CassandraSieveQuotaDAOTest {
 
     @Test
     void removeQuotaShouldWorkWhenNoneStore() {
-        sieveQuotaDAO.removeQuota().join();
+        sieveQuotaDAO.removeQuota().block();
 
         assertThat(sieveQuotaDAO.getQuota().join())
             .isEmpty();
@@ -101,7 +101,7 @@ class CassandraSieveQuotaDAOTest {
 
     @Test
     void removeQuotaUserShouldWorkWhenNoneStore() {
-        sieveQuotaDAO.removeQuota(USER).join();
+        sieveQuotaDAO.removeQuota(USER).block();
 
         assertThat(sieveQuotaDAO.getQuota(USER).join())
             .isEmpty();

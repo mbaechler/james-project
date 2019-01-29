@@ -45,7 +45,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -331,8 +330,8 @@ public class CassandraMessageDAO {
         }
     }
 
-    public CompletableFuture<Void> delete(CassandraMessageId messageId) {
-        return cassandraAsyncExecutor.executeVoid(delete.bind()
+    public Mono<Void> delete(CassandraMessageId messageId) {
+        return cassandraAsyncExecutor.executeVoidReactor(delete.bind()
             .setUUID(MESSAGE_ID, messageId.get()));
     }
 

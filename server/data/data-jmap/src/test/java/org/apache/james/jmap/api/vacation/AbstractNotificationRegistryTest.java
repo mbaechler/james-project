@@ -60,7 +60,7 @@ public abstract class AbstractNotificationRegistryTest {
 
     @Test
     public void registerShouldWork() {
-        notificationRegistry.register(ACCOUNT_ID, recipientId, Optional.empty()).join();
+        notificationRegistry.register(ACCOUNT_ID, recipientId, Optional.empty()).block();
 
         assertThat(notificationRegistry.isRegistered(ACCOUNT_ID, recipientId).join()).isTrue();
     }
@@ -68,7 +68,7 @@ public abstract class AbstractNotificationRegistryTest {
     @Test
     public void registerShouldWorkWithExpiracyDate() {
         when(zonedDateTimeProvider.get()).thenReturn(ZONED_DATE_TIME);
-        notificationRegistry.register(ACCOUNT_ID, recipientId, Optional.of(ZONED_DATE_TIME_PLUS_4_SECONDS)).join();
+        notificationRegistry.register(ACCOUNT_ID, recipientId, Optional.of(ZONED_DATE_TIME_PLUS_4_SECONDS)).block();
 
         assertThat(notificationRegistry.isRegistered(ACCOUNT_ID, recipientId).join()).isTrue();
     }
@@ -77,7 +77,7 @@ public abstract class AbstractNotificationRegistryTest {
     public void registerShouldExpireAfterExpiracyDate() {
         when(zonedDateTimeProvider.get()).thenReturn(ZONED_DATE_TIME);
 
-        notificationRegistry.register(ACCOUNT_ID, recipientId, Optional.of(ZONED_DATE_TIME_PLUS_4_SECONDS)).join();
+        notificationRegistry.register(ACCOUNT_ID, recipientId, Optional.of(ZONED_DATE_TIME_PLUS_4_SECONDS)).block();
 
         when(zonedDateTimeProvider.get()).thenReturn(ZONED_DATE_TIME_PLUS_8_SECONDS);
 
@@ -87,9 +87,9 @@ public abstract class AbstractNotificationRegistryTest {
     @Test
     public void flushShouldWork() {
         when(zonedDateTimeProvider.get()).thenReturn(ZONED_DATE_TIME);
-        notificationRegistry.register(ACCOUNT_ID, recipientId, Optional.empty()).join();
+        notificationRegistry.register(ACCOUNT_ID, recipientId, Optional.empty()).block();
 
-        notificationRegistry.flush(ACCOUNT_ID).join();
+        notificationRegistry.flush(ACCOUNT_ID).block();
 
         assertThat(notificationRegistry.isRegistered(ACCOUNT_ID, recipientId).join()).isFalse();
     }
@@ -98,7 +98,7 @@ public abstract class AbstractNotificationRegistryTest {
     public void registerShouldNotPersistWhenExpiryDateIsPast() {
         when(zonedDateTimeProvider.get()).thenReturn(ZONED_DATE_TIME_PLUS_4_SECONDS);
 
-        notificationRegistry.register(ACCOUNT_ID, recipientId, Optional.of(ZONED_DATE_TIME)).join();
+        notificationRegistry.register(ACCOUNT_ID, recipientId, Optional.of(ZONED_DATE_TIME)).block();
 
         assertThat(notificationRegistry.isRegistered(ACCOUNT_ID, recipientId).join()).isFalse();
     }
@@ -107,7 +107,7 @@ public abstract class AbstractNotificationRegistryTest {
     public void registerShouldNotPersistWhenExpiryDateIsPresent() {
         when(zonedDateTimeProvider.get()).thenReturn(ZONED_DATE_TIME);
 
-        notificationRegistry.register(ACCOUNT_ID, recipientId, Optional.of(ZONED_DATE_TIME)).join();
+        notificationRegistry.register(ACCOUNT_ID, recipientId, Optional.of(ZONED_DATE_TIME)).block();
 
         assertThat(notificationRegistry.isRegistered(ACCOUNT_ID, recipientId).join()).isTrue();
     }
