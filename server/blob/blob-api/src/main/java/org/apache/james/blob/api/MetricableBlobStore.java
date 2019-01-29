@@ -19,7 +19,6 @@
 package org.apache.james.blob.api;
 
 import java.io.InputStream;
-import java.util.concurrent.CompletableFuture;
 
 import javax.inject.Inject;
 import javax.inject.Named;
