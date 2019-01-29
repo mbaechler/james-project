@@ -27,7 +27,6 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -331,7 +330,7 @@ class UnionBlobStoreTest implements BlobStoreContract {
         @ParameterizedTest
         @MethodSource("blobStoresCauseThrowExceptions")
         void operationShouldThrow(UnionBlobStore blobStoreThrowsException,
-                                  Function<UnionBlobStore, CompletableFuture<?>> blobStoreOperation) {
+                                  Function<UnionBlobStore, Mono<?>> blobStoreOperation) {
             assertThatThrownBy(() -> blobStoreOperation.apply(blobStoreThrowsException))
                 .isInstanceOf(RuntimeException.class);
         }
@@ -339,9 +338,9 @@ class UnionBlobStoreTest implements BlobStoreContract {
         @ParameterizedTest
         @MethodSource("blobStoresCauseReturnExceptionallyFutures")
         void operationShouldReturnExceptionallyFuture(UnionBlobStore blobStoreReturnsExceptionallyFuture,
-                                                      Function<UnionBlobStore, CompletableFuture<?>> blobStoreOperation) {
-            assertThat(blobStoreOperation.apply(blobStoreReturnsExceptionallyFuture))
-                .isCompletedExceptionally();
+                                                      Function<UnionBlobStore, Mono<?>> blobStoreOperation) {
+            assertThatThrownBy(() -> blobStoreOperation.apply(blobStoreReturnsExceptionallyFuture).block())
+                .isInstanceOf(RuntimeException.class);
         }
     }
 
