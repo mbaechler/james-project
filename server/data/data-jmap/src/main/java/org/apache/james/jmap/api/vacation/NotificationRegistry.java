@@ -21,7 +21,6 @@ package org.apache.james.jmap.api.vacation;
 
 import java.time.ZonedDateTime;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 import reactor.core.publisher.Mono;
 
@@ -29,7 +28,7 @@ public interface NotificationRegistry {
 
     Mono<Void> register(AccountId accountId, RecipientId recipientId, Optional<ZonedDateTime> expiryDate);
 
-    CompletableFuture<Boolean> isRegistered(AccountId accountId, RecipientId recipientId);
+    Mono<Boolean> isRegistered(AccountId accountId, RecipientId recipientId);
 
     Mono<Void> flush(AccountId accountId);
 

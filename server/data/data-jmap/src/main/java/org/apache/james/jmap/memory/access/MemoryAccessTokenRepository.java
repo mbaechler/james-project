@@ -20,7 +20,6 @@
 package org.apache.james.jmap.memory.access;
 
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
 import javax.inject.Inject;
@@ -64,10 +63,10 @@ public class MemoryAccessTokenRepository implements AccessTokenRepository {
     }
 
     @Override
-    public CompletableFuture<String> getUsernameFromToken(AccessToken accessToken) throws InvalidAccessToken {
+    public Mono<String> getUsernameFromToken(AccessToken accessToken) throws InvalidAccessToken {
         Preconditions.checkNotNull(accessToken);
         synchronized (tokensExpirationDates) {
-            return CompletableFuture.completedFuture(
+            return Mono.just(
                 Optional.ofNullable(tokensExpirationDates.get(accessToken))
                     .<CompletionException>orElseThrow(() -> new CompletionException(new InvalidAccessToken(accessToken))));
         }

@@ -207,9 +207,9 @@ public class CassandraMailboxPathDAOImpl implements CassandraMailboxPathDAO {
             .map(this::fromRowToCassandraIdAndPath);
     }
 
-    public CompletableFuture<Long> countAll() {
-        return cassandraAsyncExecutor.executeSingleRow(countAll.bind())
-            .thenApply(optional -> optional.map(row -> row.getLong(FIRST_CELL)).orElse(0L));
+    public Mono<Long> countAll() {
+        return cassandraAsyncExecutor.executeSingleRowOptionalReactor(countAll.bind())
+            .map(optional -> optional.map(row -> row.getLong(FIRST_CELL)).orElse(0L));
     }
 
 }

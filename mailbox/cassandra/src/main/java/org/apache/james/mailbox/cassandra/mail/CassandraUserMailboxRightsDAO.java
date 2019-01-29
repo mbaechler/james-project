@@ -125,12 +125,12 @@ public class CassandraUserMailboxRightsDAO {
             .then();
     }
 
-    public CompletableFuture<Optional<Rfc4314Rights>> retrieve(String userName, CassandraId mailboxId) {
-        return cassandraAsyncExecutor.executeSingleRow(
+    public Mono<Optional<Rfc4314Rights>> retrieve(String userName, CassandraId mailboxId) {
+        return cassandraAsyncExecutor.executeSingleRowOptionalReactor(
             select.bind()
                 .setString(USER_NAME, userName)
                 .setUUID(MAILBOX_ID, mailboxId.asUuid()))
-            .thenApply(rowOptional ->
+            .map(rowOptional ->
                 rowOptional.map(Throwing.function(row -> Rfc4314Rights.fromSerializedRfc4314Rights(row.getString(RIGHTS)))));
     }
 

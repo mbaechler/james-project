@@ -55,14 +55,14 @@ public abstract class AbstractNotificationRegistryTest {
 
     @Test
     public void isRegisterShouldReturnFalseByDefault() {
-        assertThat(notificationRegistry.isRegistered(ACCOUNT_ID, recipientId).join()).isFalse();
+        assertThat(notificationRegistry.isRegistered(ACCOUNT_ID, recipientId).block()).isFalse();
     }
 
     @Test
     public void registerShouldWork() {
         notificationRegistry.register(ACCOUNT_ID, recipientId, Optional.empty()).block();
 
-        assertThat(notificationRegistry.isRegistered(ACCOUNT_ID, recipientId).join()).isTrue();
+        assertThat(notificationRegistry.isRegistered(ACCOUNT_ID, recipientId).block()).isTrue();
     }
 
     @Test
@@ -70,7 +70,7 @@ public abstract class AbstractNotificationRegistryTest {
         when(zonedDateTimeProvider.get()).thenReturn(ZONED_DATE_TIME);
         notificationRegistry.register(ACCOUNT_ID, recipientId, Optional.of(ZONED_DATE_TIME_PLUS_4_SECONDS)).block();
 
-        assertThat(notificationRegistry.isRegistered(ACCOUNT_ID, recipientId).join()).isTrue();
+        assertThat(notificationRegistry.isRegistered(ACCOUNT_ID, recipientId).block()).isTrue();
     }
 
     @Test
@@ -81,7 +81,7 @@ public abstract class AbstractNotificationRegistryTest {
 
         when(zonedDateTimeProvider.get()).thenReturn(ZONED_DATE_TIME_PLUS_8_SECONDS);
 
-        await().atMost(20, TimeUnit.SECONDS).until(() -> !notificationRegistry.isRegistered(ACCOUNT_ID, recipientId).join());
+        await().atMost(20, TimeUnit.SECONDS).until(() -> !notificationRegistry.isRegistered(ACCOUNT_ID, recipientId).block());
     }
 
     @Test
@@ -91,7 +91,7 @@ public abstract class AbstractNotificationRegistryTest {
 
         notificationRegistry.flush(ACCOUNT_ID).block();
 
-        assertThat(notificationRegistry.isRegistered(ACCOUNT_ID, recipientId).join()).isFalse();
+        assertThat(notificationRegistry.isRegistered(ACCOUNT_ID, recipientId).block()).isFalse();
     }
 
     @Test
@@ -100,7 +100,7 @@ public abstract class AbstractNotificationRegistryTest {
 
         notificationRegistry.register(ACCOUNT_ID, recipientId, Optional.of(ZONED_DATE_TIME)).block();
 
-        assertThat(notificationRegistry.isRegistered(ACCOUNT_ID, recipientId).join()).isFalse();
+        assertThat(notificationRegistry.isRegistered(ACCOUNT_ID, recipientId).block()).isFalse();
     }
 
     @Test
@@ -109,6 +109,6 @@ public abstract class AbstractNotificationRegistryTest {
 
         notificationRegistry.register(ACCOUNT_ID, recipientId, Optional.of(ZONED_DATE_TIME)).block();
 
-        assertThat(notificationRegistry.isRegistered(ACCOUNT_ID, recipientId).join()).isTrue();
+        assertThat(notificationRegistry.isRegistered(ACCOUNT_ID, recipientId).block()).isTrue();
     }
 }

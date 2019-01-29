@@ -19,8 +19,6 @@
 
 package org.apache.james.jmap.api.vacation;
 
-import java.util.concurrent.CompletableFuture;
-
 import reactor.core.publisher.Mono;
 
 public interface VacationRepository {
@@ -29,6 +27,6 @@ public interface VacationRepository {
 
     Mono<Void> modifyVacation(AccountId accountId, VacationPatch vacationPatch);
 
-    CompletableFuture<Vacation> retrieveVacation(AccountId accountId);
+    Mono<Vacation> retrieveVacation(AccountId accountId);
 
 }

@@ -77,11 +77,11 @@ public class UrlsDao {
                 .setString(URL, url.asString()));
     }
 
-    public CompletableFuture<Optional<MailRepositoryUrl>> retrieve(MailRepositoryUrl url) {
-        return executor.executeSingleRow(
-            select.bind()
-                .setString(URL, url.asString()))
-            .thenApply(optional -> optional.map(this::toUrl));
+    public Mono<Optional<MailRepositoryUrl>> retrieve(MailRepositoryUrl url) {
+        return executor.executeSingleRowOptionalReactor(
+                select.bind()
+                    .setString(URL, url.asString()))
+            .map(optional -> optional.map(this::toUrl));
     }
 
     public Flux<MailRepositoryUrl> retrieveUsedUrls() {

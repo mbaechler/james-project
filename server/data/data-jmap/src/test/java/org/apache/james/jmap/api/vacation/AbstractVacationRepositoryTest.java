@@ -56,7 +56,7 @@ public abstract class AbstractVacationRepositoryTest {
 
     @Test
     public void retrieveVacationShouldReturnDefaultValueByDefault() {
-        assertThat(vacationRepository.retrieveVacation(ACCOUNT_ID).join()).isEqualTo(VacationRepository.DEFAULT_VACATION);
+        assertThat(vacationRepository.retrieveVacation(ACCOUNT_ID).block()).isEqualTo(VacationRepository.DEFAULT_VACATION);
     }
 
     @Test
@@ -67,7 +67,7 @@ public abstract class AbstractVacationRepositoryTest {
 
         vacationRepository.modifyVacation(ACCOUNT_ID, vacationPatch).block();
 
-        assertThat(vacationRepository.retrieveVacation(ACCOUNT_ID).join())
+        assertThat(vacationRepository.retrieveVacation(ACCOUNT_ID).block())
             .isEqualTo(Vacation.builder()
                 .enabled(true)
                 .build());
@@ -81,7 +81,7 @@ public abstract class AbstractVacationRepositoryTest {
 
         vacationRepository.modifyVacation(ACCOUNT_ID, vacationPatch).block();
 
-        assertThat(vacationRepository.retrieveVacation(ACCOUNT_ID).join())
+        assertThat(vacationRepository.retrieveVacation(ACCOUNT_ID).block())
             .isEqualTo(Vacation.builder()
                 .fromDate(Optional.of(DATE_2014))
                 .enabled(false)
@@ -96,7 +96,7 @@ public abstract class AbstractVacationRepositoryTest {
 
         vacationRepository.modifyVacation(ACCOUNT_ID, vacationPatch).block();
 
-        assertThat(vacationRepository.retrieveVacation(ACCOUNT_ID).join())
+        assertThat(vacationRepository.retrieveVacation(ACCOUNT_ID).block())
             .isEqualTo(Vacation.builder()
                 .toDate(Optional.of(DATE_2017))
                 .enabled(false)
@@ -112,7 +112,7 @@ public abstract class AbstractVacationRepositoryTest {
 
         vacationRepository.modifyVacation(ACCOUNT_ID, vacationPatch).block();
 
-        assertThat(vacationRepository.retrieveVacation(ACCOUNT_ID).join())
+        assertThat(vacationRepository.retrieveVacation(ACCOUNT_ID).block())
             .isEqualTo(Vacation.builder()
                 .subject(Optional.of(newSubject))
                 .enabled(false)
@@ -128,7 +128,7 @@ public abstract class AbstractVacationRepositoryTest {
 
         vacationRepository.modifyVacation(ACCOUNT_ID, vacationPatch).block();
 
-        assertThat(vacationRepository.retrieveVacation(ACCOUNT_ID).join())
+        assertThat(vacationRepository.retrieveVacation(ACCOUNT_ID).block())
             .isEqualTo(Vacation.builder()
                 .textBody(newTextBody)
                 .enabled(false)
@@ -144,7 +144,7 @@ public abstract class AbstractVacationRepositoryTest {
 
         vacationRepository.modifyVacation(ACCOUNT_ID, vacationPatch).block();
 
-        assertThat(vacationRepository.retrieveVacation(ACCOUNT_ID).join())
+        assertThat(vacationRepository.retrieveVacation(ACCOUNT_ID).block())
             .isEqualTo(Vacation.builder()
                 .enabled(false)
                 .htmlBody(newHtmlBody)
@@ -158,7 +158,7 @@ public abstract class AbstractVacationRepositoryTest {
 
         vacationRepository.modifyVacation(ACCOUNT_ID, vacationPatch).block();
 
-        assertThat(vacationRepository.retrieveVacation(ACCOUNT_ID).join())
+        assertThat(vacationRepository.retrieveVacation(ACCOUNT_ID).block())
             .isEqualTo(VACATION);
     }
 
@@ -169,7 +169,7 @@ public abstract class AbstractVacationRepositoryTest {
 
         vacationRepository.modifyVacation(ACCOUNT_ID, vacationPatch).block();
 
-        assertThat(vacationRepository.retrieveVacation(ACCOUNT_ID).join())
+        assertThat(vacationRepository.retrieveVacation(ACCOUNT_ID).block())
             .isEqualTo(VacationRepository.DEFAULT_VACATION);
     }
 
@@ -187,7 +187,7 @@ public abstract class AbstractVacationRepositoryTest {
             .block();
 
         // Then
-        assertThat(vacationRepository.retrieveVacation(ACCOUNT_ID).join())
+        assertThat(vacationRepository.retrieveVacation(ACCOUNT_ID).block())
             .isEqualTo(VACATION);
     }
 
@@ -206,7 +206,7 @@ public abstract class AbstractVacationRepositoryTest {
             .block();
 
         // Then
-        Vacation vacation = vacationRepository.retrieveVacation(ACCOUNT_ID).join();
+        Vacation vacation = vacationRepository.retrieveVacation(ACCOUNT_ID).block();
         assertThat(vacation.getSubject()).isEmpty();
         assertThat(vacation)
             .isEqualTo(Vacation.builder()
@@ -233,7 +233,7 @@ public abstract class AbstractVacationRepositoryTest {
             .block();
 
         // Then
-        Vacation vacation = vacationRepository.retrieveVacation(ACCOUNT_ID).join();
+        Vacation vacation = vacationRepository.retrieveVacation(ACCOUNT_ID).block();
         assertThat(vacation.getTextBody()).isEmpty();
         assertThat(vacation)
             .isEqualTo(Vacation.builder()
@@ -260,7 +260,7 @@ public abstract class AbstractVacationRepositoryTest {
             .block();
 
         // Then
-        Vacation vacation = vacationRepository.retrieveVacation(ACCOUNT_ID).join();
+        Vacation vacation = vacationRepository.retrieveVacation(ACCOUNT_ID).block();
         assertThat(vacation.getHtmlBody()).isEmpty();
         assertThat(vacation)
             .isEqualTo(Vacation.builder()
@@ -287,7 +287,7 @@ public abstract class AbstractVacationRepositoryTest {
             .block();
 
         // Then
-        Vacation vacation = vacationRepository.retrieveVacation(ACCOUNT_ID).join();
+        Vacation vacation = vacationRepository.retrieveVacation(ACCOUNT_ID).block();
         assertThat(vacation.getToDate()).isEmpty();
         assertThat(vacation)
             .isEqualTo(Vacation.builder()
@@ -314,7 +314,7 @@ public abstract class AbstractVacationRepositoryTest {
             .block();
 
         // Then
-        Vacation vacation = vacationRepository.retrieveVacation(ACCOUNT_ID).join();
+        Vacation vacation = vacationRepository.retrieveVacation(ACCOUNT_ID).block();
         assertThat(vacation.getFromDate()).isEmpty();
         assertThat(vacation)
             .isEqualTo(Vacation.builder()

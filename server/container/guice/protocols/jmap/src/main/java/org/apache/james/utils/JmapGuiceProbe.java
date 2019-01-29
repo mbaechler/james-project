@@ -67,7 +67,7 @@ public class JmapGuiceProbe implements GuiceProbe {
     }
 
     public Vacation retrieveVacation(AccountId accountId) {
-        return vacationRepository.retrieveVacation(accountId).join();
+        return vacationRepository.retrieveVacation(accountId).block();
     }
 
     public void setInMailboxes(MessageId messageId, String username, MailboxId... mailboxIds) throws MailboxException {

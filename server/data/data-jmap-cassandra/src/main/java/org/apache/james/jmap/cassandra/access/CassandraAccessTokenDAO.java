@@ -84,9 +84,9 @@ public class CassandraAccessTokenDAO {
             .setUUID(CassandraAccessTokenTable.TOKEN, accessToken.asUUID()));
     }
 
-    public CompletableFuture<Optional<String>> getUsernameFromToken(AccessToken accessToken) {
-        return cassandraAsyncExecutor.executeSingleRow(selectStatement.bind()
-            .setUUID(CassandraAccessTokenTable.TOKEN, accessToken.asUUID()))
-            .thenApply(optional -> optional.map(row -> row.getString(CassandraAccessTokenTable.USERNAME)));
+    public Mono<Optional<String>> getUsernameFromToken(AccessToken accessToken) {
+        return cassandraAsyncExecutor.executeSingleRowOptionalReactor(selectStatement.bind()
+                .setUUID(CassandraAccessTokenTable.TOKEN, accessToken.asUUID()))
+            .map(optional -> optional.map(row -> row.getString(CassandraAccessTokenTable.USERNAME)));
     }
 }

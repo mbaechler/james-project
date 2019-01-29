@@ -39,7 +39,7 @@ class CassandraMailboxPathDAOImplTest extends CassandraMailboxPathDAOTest {
 
         CassandraMailboxPathDAOImpl daoV1 = (CassandraMailboxPathDAOImpl) testee;
 
-        assertThat(daoV1.countAll().join())
+        assertThat(daoV1.countAll().block())
             .isEqualTo(3);
     }
 
@@ -47,7 +47,7 @@ class CassandraMailboxPathDAOImplTest extends CassandraMailboxPathDAOTest {
     void countAllShouldReturnZeroByDefault() {
         CassandraMailboxPathDAOImpl daoV1 = (CassandraMailboxPathDAOImpl) testee;
 
-        assertThat(daoV1.countAll().join())
+        assertThat(daoV1.countAll().block())
             .isEqualTo(0);
     }
 

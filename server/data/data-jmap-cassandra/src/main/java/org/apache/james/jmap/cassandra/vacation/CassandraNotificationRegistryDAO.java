@@ -82,12 +82,12 @@ public class CassandraNotificationRegistryDAO {
                 .setString(CassandraNotificationTable.RECIPIENT_ID, recipientId.getAsString()));
     }
 
-    public CompletableFuture<Boolean> isRegistered(AccountId accountId, RecipientId recipientId) {
-        return cassandraAsyncExecutor.executeSingleRow(
+    public Mono<Boolean> isRegistered(AccountId accountId, RecipientId recipientId) {
+        return cassandraAsyncExecutor.executeSingleRowOptionalReactor(
             isRegisteredStatement.bind()
                 .setString(CassandraNotificationTable.ACCOUNT_ID, accountId.getIdentifier())
                 .setString(CassandraNotificationTable.RECIPIENT_ID, recipientId.getAsString()))
-            .thenApply(Optional::isPresent);
+            .map(Optional::isPresent);
     }
 
     public Mono<Void> flush(AccountId accountId) {

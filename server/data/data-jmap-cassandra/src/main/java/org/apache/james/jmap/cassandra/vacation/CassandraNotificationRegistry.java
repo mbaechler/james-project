@@ -22,7 +22,6 @@ package org.apache.james.jmap.cassandra.vacation;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 import javax.inject.Inject;
 
@@ -61,7 +60,7 @@ public class CassandraNotificationRegistry implements NotificationRegistry {
     }
 
     @Override
-    public CompletableFuture<Boolean> isRegistered(AccountId accountId, RecipientId recipientId) {
+    public Mono<Boolean> isRegistered(AccountId accountId, RecipientId recipientId) {
         return cassandraNotificationRegistryDAO.isRegistered(accountId, recipientId);
     }
 

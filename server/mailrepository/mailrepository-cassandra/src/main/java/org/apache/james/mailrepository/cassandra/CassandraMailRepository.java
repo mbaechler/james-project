@@ -139,7 +139,7 @@ public class CassandraMailRepository implements MailRepository {
 
     @Override
     public long size() {
-        return countDAO.getCount(url).join();
+        return countDAO.getCount(url).block();
     }
 
     @Override

@@ -19,8 +19,6 @@
 
 package org.apache.james.jmap.cassandra.access;
 
-import java.util.concurrent.CompletableFuture;
-
 import javax.inject.Inject;
 
 import org.apache.james.jmap.api.access.AccessToken;
@@ -56,11 +54,11 @@ public class CassandraAccessTokenRepository implements AccessTokenRepository {
     }
 
     @Override
-    public CompletableFuture<String> getUsernameFromToken(AccessToken accessToken) throws InvalidAccessToken {
+    public Mono<String> getUsernameFromToken(AccessToken accessToken) throws InvalidAccessToken {
         Preconditions.checkNotNull(accessToken);
 
         return cassandraAccessTokenDAO.getUsernameFromToken(accessToken)
-            .thenApply(
+            .map(
                 optional -> optional.<InvalidAccessToken>orElseThrow(() -> new InvalidAccessToken(accessToken)));
     }
 }

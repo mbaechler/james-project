@@ -87,10 +87,10 @@ public class CassandraVacationDAO {
                     .value(CassandraVacationTable.ACCOUNT_ID, accountId.getIdentifier())));
     }
 
-    public CompletableFuture<Optional<Vacation>> retrieveVacation(AccountId accountId) {
-        return cassandraAsyncExecutor.executeSingleRow(readStatement.bind()
-            .setString(CassandraVacationTable.ACCOUNT_ID, accountId.getIdentifier()))
-            .thenApply(optional -> optional.map(row -> Vacation.builder()
+    public Mono<Optional<Vacation>> retrieveVacation(AccountId accountId) {
+        return cassandraAsyncExecutor.executeSingleRowOptionalReactor(readStatement.bind()
+                .setString(CassandraVacationTable.ACCOUNT_ID, accountId.getIdentifier()))
+            .map(optional -> optional.map(row -> Vacation.builder()
                 .enabled(row.getBool(CassandraVacationTable.IS_ENABLED))
                 .fromDate(retrieveDate(row, CassandraVacationTable.FROM_DATE))
                 .toDate(retrieveDate(row, CassandraVacationTable.TO_DATE))

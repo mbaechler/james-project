@@ -93,9 +93,9 @@ public class CassandraDomainList extends AbstractDomainList {
 
     @Override
     protected boolean containsDomainInternal(Domain domain) throws DomainListException {
-        return executor.executeSingleRow(readStatement.bind()
+        return executor.executeSingleRowOptionalReactor(readStatement.bind()
                 .setString(DOMAIN, domain.asString()))
-            .join()
+            .block()
             .isPresent();
     }
 

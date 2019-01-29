@@ -50,7 +50,7 @@ public class AccessTokenManagerImpl implements AccessTokenManager {
     @Override
     public String getUsernameFromToken(AccessToken token) throws InvalidAccessToken {
         try {
-            return accessTokenRepository.getUsernameFromToken(token).join();
+            return accessTokenRepository.getUsernameFromToken(token).block();
         } catch (CompletionException completionException) {
             if (completionException.getCause() instanceof InvalidAccessToken) {
                 throw (InvalidAccessToken) completionException.getCause();

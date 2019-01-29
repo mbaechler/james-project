@@ -49,7 +49,7 @@ public class CassandraMailRepositoryUrlStore implements MailRepositoryUrlStore {
     @Override
     public boolean contains(MailRepositoryUrl url) {
         return urlsDao.retrieve(url)
-            .join()
+            .block()
             .isPresent();
     }
 }

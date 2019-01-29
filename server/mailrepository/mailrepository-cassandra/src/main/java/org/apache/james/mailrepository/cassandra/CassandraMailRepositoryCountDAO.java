@@ -30,7 +30,6 @@ import static org.apache.james.mailrepository.cassandra.MailRepositoryTable.COUN
 import static org.apache.james.mailrepository.cassandra.MailRepositoryTable.REPOSITORY_NAME;
 
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 import javax.inject.Inject;
 
@@ -86,10 +85,10 @@ public class CassandraMailRepositoryCountDAO {
             .setString(REPOSITORY_NAME, url.asString()));
     }
 
-    public CompletableFuture<Long> getCount(MailRepositoryUrl url) {
-        return executor.executeSingleRow(select.bind()
+    public Mono<Long> getCount(MailRepositoryUrl url) {
+        return executor.executeSingleRowOptionalReactor(select.bind()
                 .setString(REPOSITORY_NAME, url.asString()))
-            .thenApply(this::toCount);
+            .map(this::toCount);
     }
 
     private Long toCount(Optional<Row> rowOptional) {

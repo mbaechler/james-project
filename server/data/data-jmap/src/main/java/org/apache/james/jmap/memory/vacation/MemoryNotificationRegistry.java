@@ -21,7 +21,6 @@ package org.apache.james.jmap.memory.vacation;
 
 import java.time.ZonedDateTime;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 import javax.inject.Inject;
 
@@ -71,9 +70,9 @@ public class MemoryNotificationRegistry implements NotificationRegistry {
     }
 
     @Override
-    public CompletableFuture<Boolean> isRegistered(AccountId accountId, RecipientId recipientId) {
+    public Mono<Boolean> isRegistered(AccountId accountId, RecipientId recipientId) {
         ZonedDateTime currentTime = zonedDateTimeProvider.get();
-        return CompletableFuture.completedFuture(
+        return Mono.just(
             registrations.get(accountId)
                 .stream()
                 .filter(entry -> entry.getRecipientId().equals(recipientId))

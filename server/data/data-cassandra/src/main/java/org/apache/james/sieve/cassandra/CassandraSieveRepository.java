@@ -77,11 +77,11 @@ public class CassandraSieveRepository implements SieveRepository {
     }
 
     private void throwOnOverQuota(User user, Mono<Long> sizeDifference) throws QuotaExceededException {
-        CompletableFuture<Optional<QuotaSize>> userQuotaFuture = cassandraSieveQuotaDAO.getQuota(user);
-        CompletableFuture<Optional<QuotaSize>> globalQuotaFuture = cassandraSieveQuotaDAO.getQuota();
-        CompletableFuture<Long> spaceUsedFuture = cassandraSieveQuotaDAO.spaceUsedBy(user);
+        Mono<Optional<QuotaSize>> userQuotaFuture = cassandraSieveQuotaDAO.getQuota(user);
+        Mono<Optional<QuotaSize>> globalQuotaFuture = cassandraSieveQuotaDAO.getQuota();
+        Mono<Long> spaceUsedFuture = cassandraSieveQuotaDAO.spaceUsedBy(user);
 
-        new SieveQuota(spaceUsedFuture.join(), limitToUse(userQuotaFuture, globalQuotaFuture))
+        new SieveQuota(spaceUsedFuture.block(), limitToUse(userQuotaFuture, globalQuotaFuture))
             .checkOverQuotaUponModification(sizeDifference.block());
     }
 
@@ -92,11 +92,11 @@ public class CassandraSieveRepository implements SieveRepository {
             .map(sizeOfStoredScript -> scriptSize - sizeOfStoredScript);
     }
 
-    private Optional<QuotaSize> limitToUse(CompletableFuture<Optional<QuotaSize>> userQuota, CompletableFuture<Optional<QuotaSize>> globalQuota) {
-        if (userQuota.join().isPresent()) {
-            return userQuota.join();
+    private Optional<QuotaSize> limitToUse(Mono<Optional<QuotaSize>> userQuota, Mono<Optional<QuotaSize>> globalQuota) {
+        if (userQuota.block().isPresent()) {
+            return userQuota.block();
         }
-        return globalQuota.join();
+        return globalQuota.block();
     }
 
     @Override
@@ -224,14 +224,14 @@ public class CassandraSieveRepository implements SieveRepository {
     @Override
     public boolean hasDefaultQuota() {
         return cassandraSieveQuotaDAO.getQuota()
-            .join()
+            .block()
             .isPresent();
     }
 
     @Override
     public QuotaSize getDefaultQuota() throws QuotaNotFoundException {
         return cassandraSieveQuotaDAO.getQuota()
-            .join()
+            .block()
             .orElseThrow(QuotaNotFoundException::new);
     }
 
@@ -247,17 +247,17 @@ public class CassandraSieveRepository implements SieveRepository {
 
     @Override
     public boolean hasQuota(User user) {
-        CompletableFuture<Boolean> hasUserQuota = cassandraSieveQuotaDAO.getQuota(user).thenApply(Optional::isPresent);
-        CompletableFuture<Boolean> hasGlobalQuota = cassandraSieveQuotaDAO.getQuota().thenApply(Optional::isPresent);
+        Mono<Boolean> hasUserQuota = cassandraSieveQuotaDAO.getQuota(user).map(Optional::isPresent);
+        Mono<Boolean> hasGlobalQuota = cassandraSieveQuotaDAO.getQuota().map(Optional::isPresent);
 
-        return hasUserQuota.thenCombine(hasGlobalQuota, (a, b) -> a || b)
-            .join();
+        return hasUserQuota.zipWith(hasGlobalQuota, (a, b) -> a || b)
+            .block();
     }
 
     @Override
     public QuotaSize getQuota(User user) throws QuotaNotFoundException {
         return cassandraSieveQuotaDAO.getQuota(user)
-            .join()
+            .block()
             .orElseThrow(QuotaNotFoundException::new);
     }
 

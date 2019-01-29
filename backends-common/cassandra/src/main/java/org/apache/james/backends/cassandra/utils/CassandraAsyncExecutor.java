@@ -20,7 +20,6 @@
 package org.apache.james.backends.cassandra.utils;
 
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 import javax.inject.Inject;
 
@@ -28,7 +27,6 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
-
 import net.javacrumbs.futureconverter.java8guava.FutureConverter;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -42,17 +40,11 @@ public class CassandraAsyncExecutor {
         this.session = session;
     }
 
-    public CompletableFuture<Optional<Row>> executeSingleRow(Statement statement) {
-        return executeSingleRowOptionalReactor(statement)
-                .toFuture();
-    }
-
     public Mono<ResultSet> executeReactor(Statement statement) {
         return Mono.defer(() -> Mono.fromFuture(FutureConverter
                 .toCompletableFuture(session.executeAsync(statement)))
                 .publishOn(Schedulers.elastic()));
     }
-
 
     public Mono<Boolean> executeReturnApplied(Statement statement) {
         return executeSingleRowReactor(statement)

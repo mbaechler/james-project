@@ -62,7 +62,7 @@ public class MailboxPathV2Migration implements Migration {
     public MailboxPathV2Migration(CassandraMailboxPathDAOImpl daoV1, CassandraMailboxPathV2DAO daoV2) {
         this.daoV1 = daoV1;
         this.daoV2 = daoV2;
-        this.additionalInformation = new AdditionalInformation(() -> daoV1.countAll().join());
+        this.additionalInformation = new AdditionalInformation(() -> daoV1.countAll().block());
     }
 
     @Override

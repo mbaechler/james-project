@@ -100,11 +100,11 @@ public class CassandraSieveQuotaDAO {
                 .where(eq(CassandraSieveQuotaTable.USER_NAME, bindMarker(CassandraSieveQuotaTable.USER_NAME))));
     }
 
-    public CompletableFuture<Long> spaceUsedBy(User user) {
-        return cassandraAsyncExecutor.executeSingleRow(
+    public Mono<Long> spaceUsedBy(User user) {
+        return cassandraAsyncExecutor.executeSingleRowOptionalReactor(
             selectSpaceUsedByUserStatement.bind()
                 .setString(CassandraSieveSpaceTable.USER_NAME, user.asString()))
-            .thenApply(optional -> optional.map(row -> row.getLong(CassandraSieveSpaceTable.SPACE_USED))
+            .map(optional -> optional.map(row -> row.getLong(CassandraSieveSpaceTable.SPACE_USED))
                 .orElse(0L));
     }
 
@@ -115,11 +115,11 @@ public class CassandraSieveQuotaDAO {
                 .setString(CassandraSieveSpaceTable.USER_NAME, user.asString()));
     }
 
-    public CompletableFuture<Optional<QuotaSize>> getQuota() {
-        return cassandraAsyncExecutor.executeSingleRow(
+    public Mono<Optional<QuotaSize>> getQuota() {
+        return cassandraAsyncExecutor.executeSingleRowOptionalReactor(
             selectClusterQuotaStatement.bind()
                 .setString(CassandraSieveClusterQuotaTable.NAME, CassandraSieveClusterQuotaTable.DEFAULT_NAME))
-            .thenApply(optional -> optional.map(row ->
+            .map(optional -> optional.map(row ->
                 QuotaSize.size(row.getLong(CassandraSieveClusterQuotaTable.VALUE))));
     }
 
@@ -136,11 +136,11 @@ public class CassandraSieveQuotaDAO {
                 .setString(CassandraSieveClusterQuotaTable.NAME, CassandraSieveClusterQuotaTable.DEFAULT_NAME));
     }
 
-    public CompletableFuture<Optional<QuotaSize>> getQuota(User user) {
-        return cassandraAsyncExecutor.executeSingleRow(
+    public Mono<Optional<QuotaSize>> getQuota(User user) {
+        return cassandraAsyncExecutor.executeSingleRowOptionalReactor(
             selectUserQuotaStatement.bind()
                 .setString(CassandraSieveQuotaTable.USER_NAME, user.asString()))
-            .thenApply(optional -> optional.map(row ->
+            .map(optional -> optional.map(row ->
                 QuotaSize.size(row.getLong(CassandraSieveQuotaTable.QUOTA))));
     }
 

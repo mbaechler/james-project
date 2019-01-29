@@ -97,10 +97,9 @@ public class BrowseStartDAO {
 
     @VisibleForTesting
     Mono<Row> selectOne(MailQueueName queueName) {
-        return Mono.fromCompletionStage(executor.executeSingleRow(
-            selectOne.bind()
-                .setString(QUEUE_NAME, queueName.asString())))
-            .flatMap(Mono::justOrEmpty);
+        return executor.executeSingleRowReactor(
+                selectOne.bind()
+                    .setString(QUEUE_NAME, queueName.asString()));
     }
 
     private Instant getBrowseStart(Row row) {
