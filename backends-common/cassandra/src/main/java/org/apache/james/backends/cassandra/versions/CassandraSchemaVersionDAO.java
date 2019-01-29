@@ -27,7 +27,6 @@ import static org.apache.james.backends.cassandra.versions.table.CassandraSchema
 import static org.apache.james.backends.cassandra.versions.table.CassandraSchemaVersionTable.VALUE;
 
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 import javax.inject.Inject;
 
