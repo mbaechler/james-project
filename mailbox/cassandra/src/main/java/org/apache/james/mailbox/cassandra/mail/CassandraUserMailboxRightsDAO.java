@@ -28,7 +28,6 @@ import static org.apache.james.mailbox.cassandra.table.CassandraUserMailboxRight
 import static org.apache.james.mailbox.cassandra.table.CassandraUserMailboxRightsTable.USER_NAME;
 
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;

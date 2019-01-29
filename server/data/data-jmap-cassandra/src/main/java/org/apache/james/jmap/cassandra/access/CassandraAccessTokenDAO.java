@@ -28,7 +28,6 @@ import static com.datastax.driver.core.querybuilder.QueryBuilder.ttl;
 import static org.apache.james.jmap.api.access.AccessTokenRepository.TOKEN_EXPIRATION_IN_MS;
 
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;

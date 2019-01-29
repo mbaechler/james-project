@@ -31,8 +31,6 @@ import static org.apache.james.mailbox.cassandra.table.CassandraMailboxPathTable
 import static org.apache.james.mailbox.cassandra.table.CassandraMailboxPathTable.NAMESPACE_AND_USER;
 import static org.apache.james.mailbox.cassandra.table.CassandraMailboxPathTable.TABLE_NAME;
 
-import java.util.concurrent.CompletableFuture;
-
 import javax.inject.Inject;
 
 import org.apache.james.backends.cassandra.init.CassandraTypesProvider;

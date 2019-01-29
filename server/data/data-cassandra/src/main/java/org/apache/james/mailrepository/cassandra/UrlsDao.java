@@ -27,7 +27,6 @@ import static org.apache.james.mailrepository.cassandra.UrlsTable.TABLE_NAME;
 import static org.apache.james.mailrepository.cassandra.UrlsTable.URL;
 
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 import javax.inject.Inject;
 

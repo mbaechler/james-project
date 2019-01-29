@@ -26,7 +26,6 @@ import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 
 import java.time.ZonedDateTime;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
