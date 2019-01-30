@@ -19,14 +19,11 @@
 
 package org.apache.james.queue.rabbitmq;
 
-import static org.apache.james.backend.rabbitmq.Constants.AUTO_ACK;
 import static org.apache.james.backend.rabbitmq.Constants.AUTO_DELETE;
 import static org.apache.james.backend.rabbitmq.Constants.DURABLE;
 import static org.apache.james.backend.rabbitmq.Constants.EMPTY_ROUTING_KEY;
 import static org.apache.james.backend.rabbitmq.Constants.EXCLUSIVE;
-import static org.apache.james.backend.rabbitmq.Constants.MULTIPLE;
 import static org.apache.james.backend.rabbitmq.Constants.NO_ARGUMENTS;
-import static org.apache.james.backend.rabbitmq.Constants.REQUEUE;
 
 import java.io.IOException;
 
