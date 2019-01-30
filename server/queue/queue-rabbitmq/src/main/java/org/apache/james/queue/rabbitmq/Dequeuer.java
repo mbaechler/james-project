@@ -22,7 +22,7 @@ package org.apache.james.queue.rabbitmq;
 import static org.apache.james.queue.api.MailQueue.DEQUEUED_METRIC_NAME_PREFIX;
 
 import java.io.IOException;
-import java.util.Iterator;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -33,6 +33,7 @@ import org.apache.james.queue.rabbitmq.view.api.DeleteCondition;
 import org.apache.james.queue.rabbitmq.view.api.MailQueueView;
 import org.apache.mailet.Mail;
 
+import com.github.fge.lambdas.Throwing;
 import com.github.fge.lambdas.consumers.ThrowingConsumer;
 import com.rabbitmq.client.Delivery;
 import reactor.rabbitmq.AcknowledgableDelivery;
@@ -40,7 +41,7 @@ import reactor.rabbitmq.AcknowledgableDelivery;
 class Dequeuer {
 
     private static final boolean REQUEUE = true;
-    private final Iterator<AcknowledgableDelivery> messages;
+    private final LinkedBlockingQueue<AcknowledgableDelivery> messages;
 
     private static class RabbitMQMailQueueItem implements MailQueue.MailQueueItem {
         private final Consumer<Boolean> ack;
@@ -77,26 +78,18 @@ class Dequeuer {
         this.messages = messageIterator(name, rabbitClient);
     }
 
-    private Iterator<AcknowledgableDelivery> messageIterator(MailQueueName name, RabbitClient rabbitClient) {
-        return rabbitClient
+    private LinkedBlockingQueue<AcknowledgableDelivery> messageIterator(MailQueueName name, RabbitClient rabbitClient) {
+        LinkedBlockingQueue<AcknowledgableDelivery> dequeue = new LinkedBlockingQueue<>(1);
+        rabbitClient
             .receive(name)
             .filter(getResponse -> getResponse.getBody() != null)
-            .toIterable()
-            .iterator();
+            .doOnNext(Throwing.consumer(dequeue::put))
+            .subscribe();
+        return dequeue;
     }
 
     MailQueue.MailQueueItem deQueue() throws MailQueue.MailQueueException, InterruptedException {
-        return loadItem(next());
-    }
-
-    private AcknowledgableDelivery next() throws InterruptedException {
-        try {
-            //In some very weird cases, there's a race condition
-            //Blocking iterable pass through hasNext and then don't find any element to return
-            return messages.next();
-        } catch (IllegalStateException e) {
-            throw new InterruptedException();
-        }
+        return loadItem(messages.take());
     }
 
     private RabbitMQMailQueueItem loadItem(AcknowledgableDelivery response) throws MailQueue.MailQueueException {
