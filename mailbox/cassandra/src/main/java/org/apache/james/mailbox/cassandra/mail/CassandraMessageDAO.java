@@ -177,7 +177,7 @@ public class CassandraMessageDAO {
 
     public Mono<Void> save(MailboxMessage message) throws MailboxException {
         return saveContent(message)
-            .map(pair -> cassandraAsyncExecutor.executeVoidReactor(boundWriteStatement(message, pair)))
+            .flatMap(pair -> cassandraAsyncExecutor.executeVoidReactor(boundWriteStatement(message, pair)))
             .then();
     }
 
