@@ -487,7 +487,7 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
                 eventBus.stop();
 
                 assertThat(rabbitManagementAPI.listExchanges())
-                    .anySatisfy(exchange -> exchange.getName().equals(MAILBOX_EVENT_EXCHANGE_NAME));
+                    .anySatisfy(exchange -> assertThat(exchange.getName()).contains(MAILBOX_EVENT_EXCHANGE_NAME));
             }
 
             @Test
@@ -497,7 +497,7 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
                 eventBus.stop();
 
                 assertThat(rabbitManagementAPI.listQueues())
-                    .anySatisfy(queue -> queue.getName().contains(GroupA.class.getName()));
+                    .anySatisfy(queue -> assertThat(queue.getName()).contains(GroupA.class.getName()));
             }
 
             @Test
@@ -579,7 +579,7 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
                 eventBus3.stop();
 
                 assertThat(rabbitManagementAPI.listExchanges())
-                    .anySatisfy(exchange -> exchange.getName().equals(MAILBOX_EVENT_EXCHANGE_NAME));
+                    .anySatisfy(exchange -> assertThat(exchange.getName()).isEqualTo(MAILBOX_EVENT_EXCHANGE_NAME));
             }
 
             @Test
@@ -591,7 +591,7 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
                 eventBus3.stop();
 
                 assertThat(rabbitManagementAPI.listQueues())
-                    .anySatisfy(queue -> queue.getName().contains(GroupA.class.getName()));
+                    .anySatisfy(queue -> assertThat(queue.getName()).isEqualTo(GroupA.class.getName()));
             }
 
             @Test
