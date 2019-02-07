@@ -80,7 +80,7 @@ public class ConcurrentTestRunner implements Closeable {
                 operation);
         }
 
-        public Closeable run() {
+        public ConcurrentTestRunner run() {
             ConcurrentTestRunner testRunner = build();
             testRunner.run();
             return testRunner;

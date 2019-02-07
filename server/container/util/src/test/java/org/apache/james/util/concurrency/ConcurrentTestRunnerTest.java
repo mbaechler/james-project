@@ -112,7 +112,8 @@ public class ConcurrentTestRunnerTest {
             .operation((threadNumber, step) -> queue.add(threadNumber + ":" + step))
             .threadCount(2)
             .operationCount(2)
-            .run())
+            .run()
+            .awaitTermination(Duration.ofSeconds(1)))
             .doesNotThrowAnyException();
 
         assertThat(queue).containsOnly("0:0", "0:1", "1:0", "1:1");
