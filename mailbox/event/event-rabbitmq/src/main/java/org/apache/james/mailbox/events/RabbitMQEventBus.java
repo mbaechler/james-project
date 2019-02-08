@@ -68,7 +68,7 @@ public class RabbitMQEventBus implements EventBus {
         this.retryBackoff = retryBackoff;
         this.eventDeadLetters = eventDeadLetters;
         this.isRunning = false;
-        this.isRunning = false;
+        this.isStopping = false;
     }
 
     public void start() {
