@@ -39,6 +39,8 @@ There is many other ways one can help us: packaging, communication, etc ...
 
 = How to...
 
+:toc:
+
  * https://github.com/apache/james-project/#how-to-try-james[How to try James]
  * https://github.com/apache/james-project/#how-to-build-and-publish-the-website[How to build and publish the website]
  * https://github.com/apache/james-project/#how-to-release-via-maven-release-plugin[How to release via maven release plugin]
@@ -152,69 +154,132 @@ Don't forget to add your key to http://www.apache.org/dist/james/KEYS
     $ cd /www/www.apache.org/dist/james
 
 
-== How to check the compilation
+== How to compile
 
-In order to have a standard compilation environment, we introduce Dockerfiles, using java-8.
+Build related tasks are all implemented with Docker to minimize environment related failures.
+We use a multi-stage build to allow reuse between various targets.
 
-=== Java 8
+For compilation, run:
 
-First step, you have to build the Docker image
+    $ DOCKER_BUILDKIT=1 docker build --progress plain --target builder -f dockerfiles/Dockerfile .
 
-    $ docker build -t james/project dockerfiles/compilation/java-8
+== How to run the testsuite
 
-In order to run the build, you have to launch the following command:
+The testsuite is no executed by default because it's really long and resource intensive.
+To run it, you need to run:
 
-    $ docker run -v $PWD/.m2:/root/.m2 -v $PWD:/origin -t james/project -s SHA1
-
-Where:
-
-- $PWD/.m2:/root/.m2: is the first volume used to share the maven repository,
-as we don't want to download all dependencies on each build
-
-- SHA1 (optional): is the given git SHA1 of the james-project repository to build or master if none.
-- -s option: given tests will not be played while building. Not specifying means play tests.
-
-To retrieve compiled artifacts, one might mount these volumes:
-
-- --volume $PWD/dockerfiles/run/spring/destination:/spring/destination : is the volume used to get the compiled elements for Spring packaging.
-- --volume $PWD/dockerfiles/run/guice/cassandra/destination:/cassandra/destination : is the volume used to get the compiled elements for Guice Cassandra packaging and Cassandra-LDAP packaging.
-- --volume $PWD/dockerfiles/run/guice/cassandra/destination:/jpa/destination : is the volume used to get the compiled elements for Guice JPA packaging.
-- --volume $PWD/swagger:/swagger : is the volume used to get the swagger json files for webadmin documentation.
+    $ DOCKER_BUILDKIT=1 docker build --progress plain --target run-tests -f dockerfiles/Dockerfile .
 
 Some tests needs a DOCKER_HOST environment variable in order to be played, they will be ignored if you don't provide this variable.
-If you wish to play them, you may use a command like the following (depending on your docker configuration):
+If you wish to play them, you may add this arguments to previous command (depending on your docker configuration):
 
-    $ docker run --env DOCKER_HOST=tcp://172.17.0.1:2376 -v $PWD/.m2:/root/.m2 -v $PWD:/origin -v $PWD/dockerfiles/run/spring/destination:/destination -t james/project SHA1
+    --env DOCKER_HOST=tcp://172.17.0.1:2376
 
 If you are using a a fresh installation of Docker, your DOCKER_HOST should be unix:///var/run/docker.sock and you should mount this socket as a volume:
 
-    $ docker run --env DOCKER_HOST=unix:///var/run/docker.sock -v /var/run/docker.sock:/var/run/docker.sock -v $PWD/.m2:/root/.m2 -v $PWD:/origin -v $PWD/dockerfiles/run/spring/destination:/destination -t james/project SHA1
-
+    --env DOCKER_HOST=unix:///var/run/docker.sock -v /var/run/docker.sock:/var/run/docker.sock
 
 == How to run James in Docker
 
-This feature is available for three configurations :
+There are a number of different images available:
 
- * Java 8 + Guice + Cassandra + RabbitMQ + Swift + ElasticSearch
- * Java 8 + Guice + Cassandra + ElasticSearch
- * Java 8 + Guice + JPA + Lucene
- * Java 8 + Spring + JPA
+ * Single-node James with Guice for testing purpose only (Derby/Lucene)
+ * Single-node SMTP-only James with Guice for testing purpose only (Derby/Lucene)
+ * Single-node SMTP-only James with Guice for MariaDB (MariaDB/Lucene)
+ * Distributed James with Guice (Cassandra/ElasticSearch/RabbitMQ/Swift)
+ * Distributed James with Guice + ldap support (Cassandra/ElasticSearch/RabbitMQ/Swift)
+ * Transitional almost-distributed James with Guice (Cassandra/ElasticSearch)
+ * Transitional almost-distributed James with Guice + ldap support (Cassandra/ElasticSearch)
+ * Flexible distribution of James with Spring
+
+=== Run single-node James with Guice for testing purpose only (Derby/Lucene)
+
+You need to generate the docker image you want to use. For this image, you have to run
+the following command:
+
+    $ DOCKER_BUILDKIT=1 docker build --progress plain --tag jpa-guice --target jpa-guice -f dockerfiles/Dockerfile .
+
+Once the image is built, you need to mount a configuration directory to `/root/conf`, you can use the default
+configurations from `configurations/jpa`.
+
+However, you need to provide the key that will be used for TLS. For obvious reasons, this is not provided in the
+default configuration directory.
+
+Copy your TLS keys and modify configuration files accordingly or generate it using the following command.
+ The password must be `james72laBalle` to match default configuration.
+
+    $ keytool -genkey -alias james -keyalg RSA -keystore configurations/jpa/keystore
+
+Finally, you can start the server by running:
+
+    $ docker run --hostname HOSTNAME -v $PWD/configurations/jpa:/root/conf -p "25:25" -p 80:80 \
+    -p "110:110" -p "143:143" -p "465:465" -p "587:587" -p "993:993" -p 143:143 jpa-guice
+
+Where :
+
+- HOSTNAME: is the hostname you want to give to your James container. This DNS entry will be used to send mail to your James server.
 
 
-=== Run James with Java 8 + Guice + Cassandra + RabbitMQ + Swift + ElasticSearch
+=== Run Single-node SMTP-only James with Guice for testing purpose only (Derby/Lucene)
+
+You need to generate the docker image you want to use. For this image, you have to run
+the following command:
+
+    $ DOCKER_BUILDKIT=1 docker build --progress plain --tag jpa-smtp --target jpa-smtp -f dockerfiles/Dockerfile .
+
+Once the image is built, you need to mount a configuration directory to `/root/conf`, you can use the default
+configurations from `configurations/jpa-smtp`.
+
+However, you need to provide the key that will be used for TLS. For obvious reasons, this is not provided in the
+default configuration directory.
+
+Copy your TLS keys and modify configuration files accordingly or generate it using the following command.
+ The password must be `james72laBalle` to match default configuration.
+
+    $ keytool -genkey -alias james -keyalg RSA -keystore configurations/jpa-smtp/keystore
+
+Finally, you can start the server by running:
+
+    $ docker run --hostname HOSTNAME -v $PWD/configurations/jpa-smtp:/root/conf -p "25:25" -p 80:80 \
+    -p "465:465" -p "587:587" jpa-guice
+
+Where :
+
+- HOSTNAME: is the hostname you want to give to your James container. This DNS entry will be used to send mail to your James server.
 
 
-==== Requirements
-Built artifacts should be in ./dockerfiles/run/guice/cassandra-rabbitmq/destination folder for cassandra.
-If you haven't already:
+=== Run Single-node SMTP-only James with Guice for MariaDB (MariaDB/Lucene)
 
-    $ docker build -t james/project dockerfiles/compilation/java-8
-    $ docker run -v $HOME/.m2:/root/.m2 -v $PWD:/origin \
-  -v $PWD/dockerfiles/run/guice/cassandra-rabbitmq/destination:/cassandra-rabbitmq/destination \
-  -t james/project -s HEAD
+You need to generate the docker image you want to use. For this image, you have to run
+the following command:
+
+    $ DOCKER_BUILDKIT=1 docker build --progress plain --tag jpa-smtp-mariadb --target jpa-smtp-mariadb-guice -f dockerfiles/Dockerfile .
+
+Once the image is built, you need to mount a configuration directory to `/root/conf`, you can use the default
+configurations from `configurations/jpa-smtp`.
+
+However, you need to provide the key that will be used for TLS. For obvious reasons, this is not provided in the
+default configuration directory.
+
+Copy your TLS keys and modify configuration files accordingly or generate it using the following command.
+ The password must be `james72laBalle` to match default configuration.
+
+    $ keytool -genkey -alias james -keyalg RSA -keystore configurations/jpa-smtp/keystore
+
+Finally, you can start the server by running:
+
+    $ docker run --hostname HOSTNAME -v $PWD/configurations/jpa-smtp:/root/conf -p "25:25" -p 80:80 \
+    -p "465:465" -p "587:587" jpa-smtp-mariadb-guice
+
+Where :
+
+- HOSTNAME: is the hostname you want to give to your James container. This DNS entry will be used to send mail to your James server.
 
 
-==== How to ?
+=== Run distributed James with Guice (Cassandra/ElasticSearch/RabbitMQ/Swift)
+
+==== Start dependencies
+
 You need a running *cassandra* in docker. To achieve this run:
 
     $ docker run -d --name=cassandra cassandra:3.11.3
@@ -237,31 +302,40 @@ If you want to use all the JMAP search capabilities, you may also need to start 
 
 You can find more explanation on the need of Tika in this page http://james.apache.org/server/config-elasticsearch.html
 
-We need to provide the key we will use for TLS. For obvious reasons, this is not provided in this git.
+==== Running James
 
-Copy your TLS keys to `run/guice/cassandra-rabbitmq/destination/conf/keystore` or generate it using the following command. The password must be `james72laBalle` to match default configuration.
+You need to generate the docker image you want to use. For this image, you have to run
+the following command:
 
-    $ keytool -genkey -alias james -keyalg RSA -keystore dockerfiles/run/guice/cassandra-rabbitmq/destination/conf/keystore
+    $ DOCKER_BUILDKIT=1 docker build --progress plain --tag cassandra-rabbitmq --target cassandra-rabbitmq-guice -f dockerfiles/Dockerfile .
 
-Then we need to build james container :
+Once the image is built, you need to mount a configuration directory to `/root/conf`, you can use the default
+configurations from `configurations/cassandra-rabbitmq`.
 
-    $ docker build -t james_run dockerfiles/run/guice/cassandra-rabbitmq
+However, you need to provide the key that will be used for TLS. For obvious reasons, this is not provided in the
+default configuration directory.
 
-To run this container :
+Copy your TLS keys and modify configuration files accordingly or generate it using the following command.
+ The password must be `james72laBalle` to match default configuration.
 
-    $ docker run --hostname HOSTNAME -p "25:25" -p 80:80 -p "110:110" -p "143:143" -p "465:465" -p "587:587" -p "993:993" --link cassandra:cassandra --link rabbitmq:rabbitmq
-   --link elasticsearch:elasticsearch --link tika:tika --link swift:swift --name james_run -t james_run
+    $ keytool -genkey -alias james -keyalg RSA -keystore configurations/cassandra-rabbitmq/keystore
+
+Finally, you can start the server by running:
+
+    $ docker run --hostname HOSTNAME -p "25:25" -p 80:80 -p "110:110" -p "143:143" -p "465:465" -p "587:587" -p "993:993" \
+    --link cassandra:cassandra --link rabbitmq:rabbitmq --link elasticsearch:elasticsearch --link tika:tika \
+    --link swift:swift -v $PWD/configurations/cassandra-rabbitmq:/root/conf cassandra-rabbitmq
 
 Where :
 
 - HOSTNAME: is the hostname you want to give to your James container. This DNS entry will be used to send mail to your James server.
 
-You can add an optional port binding to port 8000, to expose the webadmin server. Please note that users are not authenticated on webadmin server, thus you should avoid exposing it in production.
+You can add an optional port binding to port 8000, to expose the webadmin server. Please note that users are not
+authenticated on webadmin server, thus you should avoid exposing it in production.
 
 If you want to pass additional options to the underlying java command, you can configure a _JVM_OPTIONS_ env variable, for example add:
 
     --env JVM_OPTIONS="-Xms256m -Xmx2048m"
-
 
 To have log file accessible on a volume, add *-v  $PWD/logs:/logs* option to the above command line, where *$PWD/logs* is your local directory to put files in.
 
@@ -277,102 +351,6 @@ Add a link for the tika container in the above command line:
 
     $ docker run --hostname HOSTNAME -p "25:25" -p 80:80 -p "110:110" -p "143:143" -p "465:465" -p "587:587" -p "993:993" --link cassandra:cassandra --link rabbitmq:rabbitmq
     --link elasticsearch:elasticsearch --link tika:tika --name james_run -t james_run
-
-=== Run James with Java 8 + Guice + Cassandra + ElasticSearch
-
-
-==== Requirements
-Built artifacts should be in ./dockerfiles/run/guice/cassandra/destination folder for cassandra.
-If you haven't already:
-
-    $ docker build -t james/project dockerfiles/compilation/java-8
-    $ docker run -v $HOME/.m2:/root/.m2 -v $PWD:/origin \
-  -v $PWD/dockerfiles/run/guice/cassandra/destination:/cassandra/destination \
-  -t james/project -s HEAD
-
-
-==== How to ?
-You need a running *cassandra* in docker. To achieve this run:
-
-    $ docker run -d --name=cassandra cassandra:3.11.3
-
-You need a running *ElasticSearch* in docker. To achieve this run:
-
-    $ docker run -d --name=elasticsearch elasticsearch:2.4.6
-
-If you want to use all the JMAP search capabilities, you may also need to start Tika:
-
-    $ docker run -d --name=tika logicalspark/docker-tikaserver:1.20
-
-You can find more explanation on the need of Tika in this page http://james.apache.org/server/config-elasticsearch.html
-
-We need to provide the key we will use for TLS. For obvious reasons, this is not provided in this git.
-
-Copy your TLS keys to `run/guice/cassandra/destination/conf/keystore` or generate it using the following command. The password must be `james72laBalle` to match default configuration.
-
-    $ keytool -genkey -alias james -keyalg RSA -keystore dockerfiles/run/guice/cassandra/destination/conf/keystore
-
-Then we need to build james container :
-
-    $ docker build -t james_run dockerfiles/run/guice/cassandra
-
-To run this container :
-
-    $ docker run --hostname HOSTNAME -p "25:25" -p 80:80 -p "110:110" -p "143:143" -p "465:465" -p "587:587" -p "993:993" --link cassandra:cassandra --link elasticsearch:elasticsearch --link tika:tika --name james_run -t james_run
-
-Where :
-
-- HOSTNAME: is the hostname you want to give to your James container. This DNS entry will be used to send mail to your James server.
-
-You can add an optional port binding to port 8000, to expose the webadmin server. Please note that webadmin is not secured by default, unless you configure JWT authentication.
-
-To have log file accessible on a volume, add *-v  $PWD/logs:/logs* option to the above command line, where *$PWD/logs* is your local directory to put files in.
-
-==== Handling attachment indexing
-
-You can handle attachment text extraction before indexing in ElasticSearch. This makes attachments searchable. To enable this:
-
-Run tika:
-
-    $ docker run --name tika logicalspark/docker-tikaserver:1.20
-
-Add a link for the tika container in the above command line:
-
-    $ docker run --hostname HOSTNAME -p "25:25" -p 80:80 -p "110:110" -p "143:143" -p "465:465" -p "587:587" -p "993:993" --link cassandra:cassandra --link elasticsearch:elasticsearch --link tika:tika --name james_run -t james_run
-
-=== Run James with Java 8 + Guice + JPA + Lucene
-
-==== Requirements
-Built artifacts should be in ./dockerfiles/run/guice/jpa/destination folder for jpa.
-If you haven't already:
-
-    $ docker build -t james/project dockerfiles/compilation/java-8
-    $ docker run -v $HOME/.m2:/root/.m2 -v $PWD:/origin \
-  -v $PWD/dockerfiles/run/guice/jpa/destination:/jpa/destination \
-  -t james/project -s HEAD
-
-
-==== How to ?
-We need to provide the key we will use for TLS. For obvious reasons, this is not provided in this git.
-
-Copy your TLS keys to `run/guice/jpa/destination/conf/keystore` or generate it using the following command. The password must be `james72laBalle` to match default configuration.
-
-    $ keytool -genkey -alias james -keyalg RSA -keystore dockerfiles/run/guice/jpa/destination/conf/keystore
-
-
-Then we need to build james container :
-
-    $ docker build -t james_run dockerfiles/run/guice/jpa
-
-To run this container :
-
-    $ docker run --hostname HOSTNAME -p "25:25" -p 80:80 -p "110:110" -p "143:143" -p "465:465" -p "587:587" -p "993:993" --name james_run -t james_run
-
-HOSTNAME is the hostname you want to give to your James container. This DNS entry will be used to send mail to your James server.
-
-You can add an optional port binding to port 8000, to expose the webadmin server. Please note that webadmin is not secured by default, unless you configure JWT authentication.
-
-To have log file accessible on a volume, add *-v  $PWD/logs:/logs* option to the above command line, where *$PWD/logs* is your local directory to put files in.
 
 
 === Run James with Java 8 + Spring + JPA
