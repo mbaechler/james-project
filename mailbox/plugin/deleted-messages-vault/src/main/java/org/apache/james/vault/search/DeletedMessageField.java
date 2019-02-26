@@ -31,12 +31,12 @@ public interface DeletedMessageField<T> {
     interface ValueExtractor<T> {
         Optional<T> extract(DeletedMessage deletedMessage);
 
-        ValueExtractor<ZonedDateTime> DELETION_DATE_EXTRACTOR = deletedMessage -> Optional.ofNullable(deletedMessage.getDeletionDate());
-        ValueExtractor<ZonedDateTime> DELIVERY_DATE_EXTRACTOR = deletedMessage -> Optional.ofNullable(deletedMessage.getDeliveryDate());
-        ValueExtractor<List<MailAddress>> RECIPIENTS_EXTRACTOR = deletedMessage -> Optional.ofNullable(deletedMessage.getRecipients());
+        ValueExtractor<ZonedDateTime> DELETION_DATE_EXTRACTOR = deletedMessage -> Optional.of(deletedMessage.getDeletionDate());
+        ValueExtractor<ZonedDateTime> DELIVERY_DATE_EXTRACTOR = deletedMessage -> Optional.of(deletedMessage.getDeliveryDate());
+        ValueExtractor<List<MailAddress>> RECIPIENTS_EXTRACTOR = deletedMessage -> Optional.of(deletedMessage.getRecipients());
         ValueExtractor<MailAddress> SENDER_EXTRACTOR = deletedMessage -> deletedMessage.getSender().asOptional();
         ValueExtractor<Boolean> HAS_ATTACHMENT_EXTRACTOR = deletedMessage -> Optional.of(deletedMessage.hasAttachment());
-        ValueExtractor<List<MailboxId>> ORIGIN_MAILBOXES_EXTRACTOR = deletedMessage -> Optional.ofNullable(deletedMessage.getOriginMailboxes());
+        ValueExtractor<List<MailboxId>> ORIGIN_MAILBOXES_EXTRACTOR = deletedMessage -> Optional.of(deletedMessage.getOriginMailboxes());
         ValueExtractor<String> SUBJECT_EXTRACTOR = DeletedMessage::getSubject;
 
     }
