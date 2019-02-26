@@ -35,6 +35,11 @@ import org.apache.james.mailbox.model.MailboxId;
 
 public interface CriterionFactory<T> {
 
+    EqualsMatcherFactory<Boolean> HAS_ATTACHMENT_MATCHER_FACTORY = () -> HAS_ATTACHMENT;
+    EqualsMatcherFactory<MailAddress> SENDER_MATCHER_FACTORY = () -> SENDER;
+    ListMatcherFactory<MailAddress> RECIPIENTS_MATCHER_FACTORY = () -> RECIPIENTS;
+    ListMatcherFactory<MailboxId> ORIGIN_MAILBOXES_MATCHER_FACTORY = () -> ORIGIN_MAILBOXES;
+
     DeletedMessageField<T> deletedMessageField();
 
     interface EqualsMatcherFactory<T> extends CriterionFactory<T> {
@@ -92,23 +97,31 @@ public interface CriterionFactory<T> {
         return () -> DELIVERY_DATE;
     }
 
-    static ListMatcherFactory<MailAddress> recipients() {
-        return () -> RECIPIENTS;
+    static Criterion<List<MailAddress>> containsRecipient(MailAddress recipient) {
+        return RECIPIENTS_MATCHER_FACTORY.contains(recipient);
     }
 
-    static EqualsMatcherFactory<MailAddress> sender() {
-        return () -> SENDER;
+    static Criterion<MailAddress> hasSender(MailAddress sender) {
+        return SENDER_MATCHER_FACTORY.equalsMatcher(sender);
     }
 
-    static EqualsMatcherFactory<Boolean> hasAttachment() {
-        return () -> HAS_ATTACHMENT;
+    static Criterion<Boolean> hasAttachment() {
+        return HAS_ATTACHMENT_MATCHER_FACTORY.equalsMatcher(true);
+    }
+
+    static Criterion<Boolean> hasNoAttachment() {
+        return HAS_ATTACHMENT_MATCHER_FACTORY.equalsMatcher(false);
+    }
+
+    static Criterion<Boolean> hasAttachment(boolean hasAttachment) {
+        return HAS_ATTACHMENT_MATCHER_FACTORY.equalsMatcher(hasAttachment);
     }
 
     static StringMatcherFactory subject() {
         return () -> SUBJECT;
     }
 
-    static ListMatcherFactory<MailboxId> originMailboxes() {
-        return () -> ORIGIN_MAILBOXES;
+    static Criterion<List<MailboxId>> containsOriginMailbox(MailboxId mailboxId) {
+        return ORIGIN_MAILBOXES_MATCHER_FACTORY.contains(mailboxId);
     }
 }

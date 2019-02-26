@@ -19,6 +19,29 @@
 
 package org.apache.james.vault;
 
+import static org.apache.james.vault.DeletedMessageFixture.CONTENT;
+import static org.apache.james.vault.DeletedMessageFixture.DELETION_DATE;
+import static org.apache.james.vault.DeletedMessageFixture.DELIVERY_DATE;
+import static org.apache.james.vault.DeletedMessageFixture.MAILBOX_ID_1;
+import static org.apache.james.vault.DeletedMessageFixture.MAILBOX_ID_2;
+import static org.apache.james.vault.DeletedMessageFixture.MAILBOX_ID_3;
+import static org.apache.james.vault.DeletedMessageFixture.SUBJECT;
+import static org.apache.james.vault.DeletedMessageFixture.USER;
+import static org.apache.james.vault.DeletedMessageFixture.USER_2;
+import static org.apache.mailet.base.MailAddressFixture.RECIPIENT1;
+import static org.apache.mailet.base.MailAddressFixture.RECIPIENT2;
+import static org.apache.mailet.base.MailAddressFixture.RECIPIENT3;
+import static org.apache.mailet.base.MailAddressFixture.SENDER;
+import static org.apache.mailet.base.MailAddressFixture.SENDER2;
+import static org.apache.mailet.base.MailAddressFixture.SENDER3;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.io.ByteArrayInputStream;
+import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.apache.james.core.MailAddress;
 import org.apache.james.core.MaybeSender;
 import org.apache.james.core.User;
@@ -27,17 +50,9 @@ import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.vault.search.CriterionFactory;
 import org.apache.james.vault.search.Query;
 import org.junit.jupiter.api.Test;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
-import java.io.ByteArrayInputStream;
-import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
-
-import static org.apache.james.vault.DeletedMessageFixture.*;
-import static org.apache.mailet.base.MailAddressFixture.*;
-import static org.assertj.core.api.Assertions.assertThat;
 
 public interface DeletedMessageVaultSearchContract {
     DeletedMessageVault getVault();
@@ -132,7 +147,7 @@ public interface DeletedMessageVaultSearchContract {
             DeletedMessage message2 = storeMessageWithRecipients(RECIPIENT1);
             DeletedMessage message3 = storeMessageWithRecipients(RECIPIENT3);
 
-            assertThat(search(Query.of(CriterionFactory.recipients().contains(RECIPIENT1))))
+            assertThat(search(Query.of(CriterionFactory.containsRecipient(RECIPIENT1))))
                 .containsOnly(message1, message2);
 
         }
@@ -143,7 +158,7 @@ public interface DeletedMessageVaultSearchContract {
             storeMessageWithRecipients(RECIPIENT1);
             storeMessageWithRecipients(RECIPIENT2);
 
-            assertThat(search(Query.of(CriterionFactory.recipients().contains(RECIPIENT3))))
+            assertThat(search(Query.of(CriterionFactory.containsRecipient(RECIPIENT3))))
                 .isEmpty();
         }
     }
@@ -152,31 +167,31 @@ public interface DeletedMessageVaultSearchContract {
 
         @Test
         default void shouldReturnMessagesWithSenderWhenEquals() {
-            DeletedMessage message1 = storeMessageWithSender(SENDER);
-            DeletedMessage message2 = storeMessageWithSender(SENDER2);
+            DeletedMessage message1 = storeMessageWithSender(MaybeSender.of(SENDER));
+            DeletedMessage message2 = storeMessageWithSender(MaybeSender.of(SENDER2));
 
-            assertThat(search(Query.of(CriterionFactory.sender().equalsMatcher(SENDER))))
+            assertThat(search(Query.of(CriterionFactory.hasSender(SENDER))))
                 .containsOnly(message1);
 
         }
 
         @Test
         default void shouldReturnNoMessageWhenSenderDoesntEquals() {
-            storeMessageWithSender(SENDER);
-            storeMessageWithSender(SENDER2);
+            storeMessageWithSender(MaybeSender.of(SENDER));
+            storeMessageWithSender(MaybeSender.of(SENDER2));
 
-            assertThat(search(Query.of(CriterionFactory.sender().equalsMatcher(SENDER3))))
+            assertThat(search(Query.of(CriterionFactory.hasSender(SENDER3))))
                 .isEmpty();
         }
 
         @Test
         default void shouldNotReturnMessagesWithNullSenderWhenEquals() {
-            DeletedMessage message1 = storeMessageWithSender(SENDER);
-            storeMessageWithSender(SENDER2);
-            storeMessageWithSender(null);
-            storeMessageWithSender(null);
+            DeletedMessage message1 = storeMessageWithSender(MaybeSender.of(SENDER));
+            storeMessageWithSender(MaybeSender.of(SENDER2));
+            storeMessageWithSender(MaybeSender.nullSender());
+            storeMessageWithSender(MaybeSender.nullSender());
 
-            assertThat(search(Query.of(CriterionFactory.sender().equalsMatcher(SENDER))))
+            assertThat(search(Query.of(CriterionFactory.hasSender(SENDER))))
                 .containsOnly(message1);
         }
     }
@@ -189,7 +204,7 @@ public interface DeletedMessageVaultSearchContract {
             DeletedMessage message2 = storeMessageWithHasAttachment(false);
             DeletedMessage message3 = storeMessageWithHasAttachment(true);
 
-            assertThat(search(Query.of(CriterionFactory.hasAttachment().equalsMatcher(true))))
+            assertThat(search(Query.of(CriterionFactory.hasAttachment())))
                 .containsOnly(message1, message3);
         }
 
@@ -199,7 +214,7 @@ public interface DeletedMessageVaultSearchContract {
             DeletedMessage message2 = storeMessageWithHasAttachment(false);
             DeletedMessage message3 = storeMessageWithHasAttachment(true);
 
-            assertThat(search(Query.of(CriterionFactory.hasAttachment().equalsMatcher(false))))
+            assertThat(search(Query.of(CriterionFactory.hasNoAttachment())))
                 .containsOnly(message1, message2);
         }
     }
@@ -212,7 +227,7 @@ public interface DeletedMessageVaultSearchContract {
             DeletedMessage message2 = storeMessageWithOriginMailboxes(MAILBOX_ID_1);
             DeletedMessage message3 = storeMessageWithOriginMailboxes(MAILBOX_ID_3);
 
-            assertThat(search(Query.of(CriterionFactory.originMailboxes().contains(MAILBOX_ID_1))))
+            assertThat(search(Query.of(CriterionFactory.containsOriginMailbox(MAILBOX_ID_1))))
                 .containsOnly(message1, message2);
 
         }
@@ -223,7 +238,7 @@ public interface DeletedMessageVaultSearchContract {
             storeMessageWithOriginMailboxes(MAILBOX_ID_1);
             storeMessageWithOriginMailboxes(MAILBOX_ID_2);
 
-            assertThat(search(Query.of(CriterionFactory.originMailboxes().contains(MAILBOX_ID_3))))
+            assertThat(search(Query.of(CriterionFactory.containsOriginMailbox(MAILBOX_ID_3))))
                 .isEmpty();
         }
     }
@@ -263,7 +278,7 @@ public interface DeletedMessageVaultSearchContract {
         @Test
         default void shouldNotReturnMissingSubjectMessagesWhenContains() {
             DeletedMessage message1 = storeMessageWithSubject(APACHE_JAMES_PROJECT);
-            DeletedMessage message2 = storeMessageWithSubject(null);
+            DeletedMessage message2 = storeMessageNoSubject();
 
             assertThat(search(Query.of(CriterionFactory.subject().contains("james"))))
                 .containsOnly(message1);
@@ -319,7 +334,7 @@ public interface DeletedMessageVaultSearchContract {
         @Test
         default void shouldNotReturnMissingSubjectMessagesWhenContainsIgnoreCase() {
             DeletedMessage message1 = storeMessageWithSubject(APACHE_JAMES_PROJECT);
-            DeletedMessage message2 = storeMessageWithSubject(null);
+            DeletedMessage message2 = storeMessageNoSubject();
 
             assertThat(search(Query.of(CriterionFactory.subject().containsIgnoreCase("JAMes"))))
                 .containsOnly(message1);
@@ -364,7 +379,7 @@ public interface DeletedMessageVaultSearchContract {
         @Test
         default void shouldNotReturnMissingSubjectMessagesWhenEquals() {
             DeletedMessage message1 = storeMessageWithSubject(APACHE_JAMES_PROJECT);
-            DeletedMessage message2 = storeMessageWithSubject(null);
+            DeletedMessage message2 = storeMessageNoSubject();
 
             assertThat(search(Query.of(CriterionFactory.subject().equals(APACHE_JAMES_PROJECT))))
                 .containsOnly(message1);
@@ -379,12 +394,12 @@ public interface DeletedMessageVaultSearchContract {
             DeletedMessage message2 = storeDefaultMessage();
             DeletedMessage message3 = storeDefaultMessage();
             DeletedMessage message4 = storeMessageWithOriginMailboxes(MAILBOX_ID_2);
-            DeletedMessage message5 = storeMessageWithSender(SENDER2);
+            DeletedMessage message5 = storeMessageWithSender(MaybeSender.of(SENDER2));
             DeletedMessage message6 = storeMessageWithDeletionDate(DELETION_DATE.minusHours(1));
 
             assertThat(search(Query.of(
-                    CriterionFactory.originMailboxes().contains(MAILBOX_ID_1),
-                    CriterionFactory.sender().equalsMatcher(SENDER),
+                    CriterionFactory.containsOriginMailbox(MAILBOX_ID_1),
+                    CriterionFactory.hasSender(SENDER),
                     CriterionFactory.deletionDate().afterOrEquals(DELETION_DATE))))
                 .containsOnly(message1, message2, message3);
         }
@@ -395,7 +410,7 @@ public interface DeletedMessageVaultSearchContract {
             DeletedMessage message2 = storeDefaultMessage();
             DeletedMessage message3 = storeDefaultMessage();
             DeletedMessage message4 = storeMessageWithOriginMailboxes(MAILBOX_ID_2);
-            DeletedMessage message5 = storeMessageWithSender(SENDER2);
+            DeletedMessage message5 = storeMessageWithSender(MaybeSender.of(SENDER2));
             DeletedMessage message6 = storeMessageWithDeletionDate(DELETION_DATE.minusHours(1));
 
             assertThat(search(Query.ALL))
@@ -407,7 +422,7 @@ public interface DeletedMessageVaultSearchContract {
             DeletedMessage message1 = storeDefaultMessage();
             DeletedMessage message2 = storeDefaultMessage();
             DeletedMessage message3 = storeDefaultMessage();
-            DeletedMessage message4 = storeMessageWithSubject(null);
+            DeletedMessage message4 = storeMessageNoSubject();
 
             assertThat(search(Query.ALL))
                 .containsOnly(message1, message2, message3, message4);
@@ -418,7 +433,7 @@ public interface DeletedMessageVaultSearchContract {
             DeletedMessage message1 = storeDefaultMessage();
             DeletedMessage message2 = storeDefaultMessage();
             DeletedMessage message3 = storeDefaultMessage();
-            DeletedMessage message4 = storeMessageWithSender(null);
+            DeletedMessage message4 = storeMessageWithSender(MaybeSender.nullSender());
 
             assertThat(search(Query.ALL))
                 .containsOnly(message1, message2, message3, message4);
@@ -431,8 +446,8 @@ public interface DeletedMessageVaultSearchContract {
             DeletedMessage message3 = storeMessageWithRecipients(RECIPIENT1);
 
             assertThat(search(Query.of(
-                    CriterionFactory.recipients().contains(RECIPIENT1),
-                    CriterionFactory.recipients().contains(RECIPIENT2))))
+                    CriterionFactory.containsRecipient(RECIPIENT1),
+                    CriterionFactory.containsRecipient(RECIPIENT2))))
                 .containsOnly(message1, message2);
         }
 
@@ -466,9 +481,7 @@ public interface DeletedMessageVaultSearchContract {
                 .subject(SUBJECT)
                 .build();
 
-            Mono.from(getVault().append(user, deletedMessage))
-                .block();
-            return deletedMessage;
+            return storeDeletedMessage(deletedMessage, user);
         }
 
         @Test
@@ -505,9 +518,7 @@ public interface DeletedMessageVaultSearchContract {
             .hasAttachment(false)
             .build();
 
-        Mono.from(getVault().append(USER, deletedMessage))
-            .block();
-        return deletedMessage;
+        return storeDeletedMessage(deletedMessage, USER);
     }
 
     default DeletedMessage storeMessageWithDeletionDate(ZonedDateTime delitionDate) {
@@ -523,9 +534,7 @@ public interface DeletedMessageVaultSearchContract {
             .hasAttachment(false)
             .build();
 
-        Mono.from(getVault().append(USER, deletedMessage))
-            .block();
-        return deletedMessage;
+        return storeDeletedMessage(deletedMessage, USER);
     }
 
     default DeletedMessage storeMessageWithRecipients(MailAddress... recipients) {
@@ -541,27 +550,23 @@ public interface DeletedMessageVaultSearchContract {
             .hasAttachment(false)
             .build();
 
-        Mono.from(getVault().append(USER, deletedMessage))
-            .block();
-        return deletedMessage;
+        return storeDeletedMessage(deletedMessage, USER);
     }
 
-    default DeletedMessage storeMessageWithSender(MailAddress sender) {
+    default DeletedMessage storeMessageWithSender(MaybeSender sender) {
         DeletedMessage deletedMessage = DeletedMessage.builder()
             .messageId(InMemoryMessageId.of(MESSAGE_ID_GENERATOR.incrementAndGet()))
             .originMailboxes(MAILBOX_ID_1)
             .user(USER)
             .deliveryDate(DELIVERY_DATE)
             .deletionDate(DELETION_DATE)
-            .sender(MaybeSender.of(sender))
+            .sender(sender)
             .recipients(RECIPIENT1, RECIPIENT2)
             .content(() -> new ByteArrayInputStream(CONTENT))
             .hasAttachment(false)
             .build();
 
-        Mono.from(getVault().append(USER, deletedMessage))
-            .block();
-        return deletedMessage;
+        return storeDeletedMessage(deletedMessage, USER);
     }
 
     default DeletedMessage storeMessageWithHasAttachment(boolean hasAttachment) {
@@ -577,9 +582,7 @@ public interface DeletedMessageVaultSearchContract {
             .hasAttachment(hasAttachment)
             .build();
 
-        Mono.from(getVault().append(USER, deletedMessage))
-            .block();
-        return deletedMessage;
+        return storeDeletedMessage(deletedMessage, USER);
     }
 
     default DeletedMessage storeMessageWithOriginMailboxes(MailboxId... originMailboxIds) {
@@ -595,12 +598,18 @@ public interface DeletedMessageVaultSearchContract {
             .hasAttachment(true)
             .build();
 
-        Mono.from(getVault().append(USER, deletedMessage))
-            .block();
-        return deletedMessage;
+        return storeDeletedMessage(deletedMessage, USER);
+    }
+
+    default DeletedMessage storeMessageNoSubject() {
+        return storeMessageWithSubject(Optional.empty());
     }
 
     default DeletedMessage storeMessageWithSubject(String subject) {
+        return storeMessageWithSubject(Optional.ofNullable(subject));
+    }
+
+    default DeletedMessage storeMessageWithSubject(Optional<String> subject) {
         DeletedMessage deletedMessage = DeletedMessage.builder()
             .messageId(InMemoryMessageId.of(MESSAGE_ID_GENERATOR.incrementAndGet()))
             .originMailboxes(MAILBOX_ID_1)
@@ -611,12 +620,10 @@ public interface DeletedMessageVaultSearchContract {
             .recipients(RECIPIENT1)
             .content(() -> new ByteArrayInputStream(CONTENT))
             .hasAttachment(false)
-            .subject(subject)
+            .subject(subject.orElse(null))
             .build();
 
-        Mono.from(getVault().append(USER, deletedMessage))
-            .block();
-        return deletedMessage;
+        return storeDeletedMessage(deletedMessage, USER);
     }
 
     default DeletedMessage storeDefaultMessage() {
@@ -633,7 +640,11 @@ public interface DeletedMessageVaultSearchContract {
             .subject(SUBJECT)
             .build();
 
-        Mono.from(getVault().append(USER, deletedMessage))
+        return storeDeletedMessage(deletedMessage, USER);
+    }
+
+    default DeletedMessage storeDeletedMessage(DeletedMessage deletedMessage, User user) {
+        Mono.from(getVault().append(user, deletedMessage))
             .block();
         return deletedMessage;
     }
