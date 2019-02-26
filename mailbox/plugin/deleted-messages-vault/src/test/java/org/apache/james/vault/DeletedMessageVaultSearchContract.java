@@ -39,7 +39,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.ByteArrayInputStream;
 import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.james.core.MailAddress;
@@ -468,16 +467,7 @@ public interface DeletedMessageVaultSearchContract {
     interface PerUserContract extends DeletedMessageVaultSearchContract {
 
         default DeletedMessage storeMessageWithUser(User user) {
-            DeletedMessage deletedMessage = DeletedMessage.builder()
-                .messageId(InMemoryMessageId.of(MESSAGE_ID_GENERATOR.incrementAndGet()))
-                .originMailboxes(MAILBOX_ID_1)
-                .user(USER)
-                .deliveryDate(DELIVERY_DATE)
-                .deletionDate(DELETION_DATE)
-                .sender(MaybeSender.of(SENDER))
-                .recipients(RECIPIENT1)
-                .content(() -> new ByteArrayInputStream(CONTENT))
-                .hasAttachment(false)
+            DeletedMessage deletedMessage = defaultDeletedMessageFinalStage(DELIVERY_DATE, DELETION_DATE)
                 .subject(SUBJECT)
                 .build();
 
@@ -506,32 +496,14 @@ public interface DeletedMessageVaultSearchContract {
     }
 
     default DeletedMessage storeMessageWithDeliveryDate(ZonedDateTime deliveryDate) {
-        DeletedMessage deletedMessage = DeletedMessage.builder()
-            .messageId(InMemoryMessageId.of(MESSAGE_ID_GENERATOR.incrementAndGet()))
-            .originMailboxes(MAILBOX_ID_1)
-            .user(USER)
-            .deliveryDate(deliveryDate)
-            .deletionDate(DELETION_DATE)
-            .sender(MaybeSender.of(SENDER))
-            .recipients(RECIPIENT1)
-            .content(() -> new ByteArrayInputStream(CONTENT))
-            .hasAttachment(false)
+        DeletedMessage deletedMessage = defaultDeletedMessageFinalStage(deliveryDate, DELETION_DATE)
             .build();
 
         return storeDeletedMessage(deletedMessage, USER);
     }
 
     default DeletedMessage storeMessageWithDeletionDate(ZonedDateTime delitionDate) {
-        DeletedMessage deletedMessage = DeletedMessage.builder()
-            .messageId(InMemoryMessageId.of(MESSAGE_ID_GENERATOR.incrementAndGet()))
-            .originMailboxes(MAILBOX_ID_1)
-            .user(USER)
-            .deliveryDate(DELIVERY_DATE)
-            .deletionDate(delitionDate)
-            .sender(MaybeSender.of(SENDER))
-            .recipients(RECIPIENT1)
-            .content(() -> new ByteArrayInputStream(CONTENT))
-            .hasAttachment(false)
+        DeletedMessage deletedMessage = defaultDeletedMessageFinalStage(DELIVERY_DATE, delitionDate)
             .build();
 
         return storeDeletedMessage(deletedMessage, USER);
@@ -602,41 +574,22 @@ public interface DeletedMessageVaultSearchContract {
     }
 
     default DeletedMessage storeMessageNoSubject() {
-        return storeMessageWithSubject(Optional.empty());
+        DeletedMessage deletedMessage = defaultDeletedMessageFinalStage(DELIVERY_DATE, DELETION_DATE)
+            .build();
+
+        return storeDeletedMessage(deletedMessage, USER);
     }
 
     default DeletedMessage storeMessageWithSubject(String subject) {
-        return storeMessageWithSubject(Optional.ofNullable(subject));
-    }
-
-    default DeletedMessage storeMessageWithSubject(Optional<String> subject) {
-        DeletedMessage deletedMessage = DeletedMessage.builder()
-            .messageId(InMemoryMessageId.of(MESSAGE_ID_GENERATOR.incrementAndGet()))
-            .originMailboxes(MAILBOX_ID_1)
-            .user(USER)
-            .deliveryDate(DELIVERY_DATE)
-            .deletionDate(DELETION_DATE)
-            .sender(MaybeSender.of(SENDER))
-            .recipients(RECIPIENT1)
-            .content(() -> new ByteArrayInputStream(CONTENT))
-            .hasAttachment(false)
-            .subject(subject.orElse(null))
+        DeletedMessage deletedMessage = defaultDeletedMessageFinalStage(DELIVERY_DATE, DELETION_DATE)
+            .subject(subject)
             .build();
 
         return storeDeletedMessage(deletedMessage, USER);
     }
 
     default DeletedMessage storeDefaultMessage() {
-        DeletedMessage deletedMessage = DeletedMessage.builder()
-            .messageId(InMemoryMessageId.of(MESSAGE_ID_GENERATOR.incrementAndGet()))
-            .originMailboxes(MAILBOX_ID_1)
-            .user(USER)
-            .deliveryDate(DELIVERY_DATE)
-            .deletionDate(DELETION_DATE)
-            .sender(MaybeSender.of(SENDER))
-            .recipients(RECIPIENT1)
-            .content(() -> new ByteArrayInputStream(CONTENT))
-            .hasAttachment(false)
+        DeletedMessage deletedMessage = defaultDeletedMessageFinalStage(DELIVERY_DATE, DELETION_DATE)
             .subject(SUBJECT)
             .build();
 
@@ -647,5 +600,18 @@ public interface DeletedMessageVaultSearchContract {
         Mono.from(getVault().append(user, deletedMessage))
             .block();
         return deletedMessage;
+    }
+
+    default DeletedMessage.Builder.FinalStage defaultDeletedMessageFinalStage(ZonedDateTime deliveryDate, ZonedDateTime deletionDate) {
+        return DeletedMessage.builder()
+            .messageId(InMemoryMessageId.of(MESSAGE_ID_GENERATOR.incrementAndGet()))
+            .originMailboxes(MAILBOX_ID_1)
+            .user(USER)
+            .deliveryDate(deliveryDate)
+            .deletionDate(deletionDate)
+            .sender(MaybeSender.of(SENDER))
+            .recipients(RECIPIENT1)
+            .content(() -> new ByteArrayInputStream(CONTENT))
+            .hasAttachment(false);
     }
 }
