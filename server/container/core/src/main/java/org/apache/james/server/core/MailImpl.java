@@ -149,7 +149,7 @@ public class MailImpl implements Disposable, Mail {
 
         private Builder(String name) {
             Preconditions.checkNotNull(name);
-            Preconditions.checkArgument(!name.isEmpty());
+            Preconditions.checkArgument(!name.isEmpty(), "name must not be empty");
             this.name = name;
             mimeMessage = Optional.empty();
             recipients = Lists.newArrayList();
@@ -423,7 +423,7 @@ public class MailImpl implements Disposable, Mail {
     @Override
     public void setName(String name) {
         Preconditions.checkNotNull(name);
-        Preconditions.checkArgument(!name.isEmpty());
+        Preconditions.checkArgument(!name.isEmpty(), "name must not be empty");
         this.name = name;
     }
 
