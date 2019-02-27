@@ -28,7 +28,8 @@ import static org.apache.james.vault.search.DeletedMessageField.SENDER;
 import static org.apache.james.vault.search.DeletedMessageField.SUBJECT;
 
 import java.time.ZonedDateTime;
-import java.util.List;
+import java.util.Collection;
+import java.util.Locale;
 
 import org.apache.james.core.MailAddress;
 import org.apache.james.mailbox.model.MailboxId;
@@ -37,60 +38,62 @@ public interface CriterionFactory {
 
     class StringCriterionFactory {
 
-        private final DeletedMessageField<String> deletedMessageField;
+        private final Criterion.ExpectMatcher<String> builder;
 
-        private StringCriterionFactory(DeletedMessageField<String> deletedMessageField) {
-            this.deletedMessageField = deletedMessageField;
+        private StringCriterionFactory(Criterion.ExpectMatcher<String> builder) {
+            this.builder = builder;
         }
 
         public Criterion<String> contains(String subString) {
-            return new Criterion<>(deletedMessageField, ValueMatcher.SingleValueMatcher.contains(subString));
+            return builder.withMatcher(value -> value.contains(subString));
         }
 
         public Criterion<String> containsIgnoreCase(String subString) {
-            return new Criterion<>(deletedMessageField, ValueMatcher.SingleValueMatcher.containsIgnoreCase(subString));
+            return builder.withMatcher(value -> value.toLowerCase(Locale.US).contains(subString.toLowerCase(Locale.US)));
         }
 
-        public Criterion<String> equals(String testedString) {
-            return new Criterion<>(deletedMessageField, ValueMatcher.SingleValueMatcher.isEquals(testedString));
+        public Criterion<String> equals(String expectedString) {
+            return builder.withMatcher(expectedString::equals);
         }
 
-        public Criterion<String> equalsIgnoreCase(String testedString) {
-            return new Criterion<>(deletedMessageField, ValueMatcher.SingleValueMatcher.equalsIgnoreCase(testedString));
+        public Criterion<String> equalsIgnoreCase(String expectedString) {
+            return builder.withMatcher(expectedString::equalsIgnoreCase);
         }
     }
 
     class ZonedDateTimeCriterionFactory {
 
-        private final DeletedMessageField<ZonedDateTime> deletedMessageField;
+        private final Criterion.ExpectMatcher<ZonedDateTime> builder;
 
-        private ZonedDateTimeCriterionFactory(DeletedMessageField<ZonedDateTime> deletedMessageField) {
-            this.deletedMessageField = deletedMessageField;
+        private ZonedDateTimeCriterionFactory(Criterion.ExpectMatcher<ZonedDateTime> builder) {
+            this.builder = builder;
         }
 
-        public Criterion<ZonedDateTime> beforeOrEquals(ZonedDateTime testedInstant) {
-            return new Criterion<>(deletedMessageField, ValueMatcher.SingleValueMatcher.beforeOrEquals(testedInstant));
+        public Criterion<ZonedDateTime> beforeOrEquals(ZonedDateTime expectedValue) {
+            return builder.withMatcher(actualValue -> !expectedValue.isBefore(actualValue));
         }
 
-        public Criterion<ZonedDateTime> afterOrEquals(ZonedDateTime testedInstant) {
-            return new Criterion<>(deletedMessageField, ValueMatcher.SingleValueMatcher.afterOrEquals(testedInstant));
+        public Criterion<ZonedDateTime> afterOrEquals(ZonedDateTime expectedValue) {
+            return builder.withMatcher(actualValue -> !expectedValue.isAfter(actualValue));
         }
     }
 
     static ZonedDateTimeCriterionFactory deletionDate() {
-        return new ZonedDateTimeCriterionFactory(DELETION_DATE);
+        return new ZonedDateTimeCriterionFactory(Criterion.Builder.forField(DELETION_DATE));
     }
 
     static ZonedDateTimeCriterionFactory deliveryDate() {
-        return new ZonedDateTimeCriterionFactory(DELIVERY_DATE);
+        return new ZonedDateTimeCriterionFactory(Criterion.Builder.forField(DELIVERY_DATE));
     }
 
-    static Criterion<List<MailAddress>> containsRecipient(MailAddress recipient) {
-        return new Criterion<>(RECIPIENTS, ValueMatcher.ListContains.of(recipient));
+    static Criterion<Collection<MailAddress>> containsRecipient(MailAddress recipient) {
+        return Criterion.Builder.forField(RECIPIENTS)
+            .withMatcher(actualValue -> actualValue.contains(recipient));
     }
 
     static Criterion<MailAddress> hasSender(MailAddress sender) {
-        return new Criterion<>(SENDER, ValueMatcher.SingleValueMatcher.isEquals(sender));
+        return Criterion.Builder.forField(SENDER)
+            .withMatcher(sender::equals);
     }
 
     static Criterion<Boolean> hasAttachment() {
@@ -102,14 +105,16 @@ public interface CriterionFactory {
     }
 
     static Criterion<Boolean> hasAttachment(boolean hasAttachment) {
-        return new Criterion<>(HAS_ATTACHMENT, ValueMatcher.SingleValueMatcher.isEquals(hasAttachment));
+        return Criterion.Builder.forField(HAS_ATTACHMENT)
+            .withMatcher(actualValue -> hasAttachment == actualValue);
     }
 
     static StringCriterionFactory subject() {
-        return new StringCriterionFactory(SUBJECT);
+        return new StringCriterionFactory(Criterion.Builder.forField(SUBJECT));
     }
 
-    static Criterion<List<MailboxId>> containsOriginMailbox(MailboxId mailboxId) {
-        return new Criterion<>(ORIGIN_MAILBOXES, ValueMatcher.ListContains.of(mailboxId));
+    static Criterion<Collection<MailboxId>> containsOriginMailbox(MailboxId mailboxId) {
+        return Criterion.Builder.forField(ORIGIN_MAILBOXES)
+            .withMatcher(actualValue -> actualValue.contains(mailboxId));
     }
 }
