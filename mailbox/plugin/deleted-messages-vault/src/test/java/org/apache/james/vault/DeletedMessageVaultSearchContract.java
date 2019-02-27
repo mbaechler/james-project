@@ -475,7 +475,7 @@ public interface DeletedMessageVaultSearchContract {
         }
 
         @Test
-        default void searchShouldReturnMessageWhenHavingSameCreterionTypes() {
+        default void searchShouldReturnMessageWhenHavingSameCriterionTypes() {
             DeletedMessage message1 = storeMessageWithRecipients(RECIPIENT1, RECIPIENT2, RECIPIENT3);
             DeletedMessage message2 = storeMessageWithRecipients(RECIPIENT1, RECIPIENT2);
             DeletedMessage message3 = storeMessageWithRecipients(RECIPIENT1);
@@ -487,7 +487,7 @@ public interface DeletedMessageVaultSearchContract {
         }
 
         @Test
-        default void searchShouldReturnEmptyWhenHavingSameCreterionTypesButOppositeMatching() {
+        default void searchShouldReturnEmptyWhenHavingSameCriterionTypesButOppositeMatching() {
             DeletedMessage message1 = storeMessageWithDeletionDate(DELETION_DATE);
             DeletedMessage message2 = storeMessageWithDeletionDate(DELETION_DATE);
             DeletedMessage message3 = storeMessageWithDeletionDate(DELETION_DATE.plusHours(2));

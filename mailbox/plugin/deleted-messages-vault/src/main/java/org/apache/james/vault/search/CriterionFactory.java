@@ -94,11 +94,11 @@ public interface CriterionFactory {
     }
 
     static Criterion<Boolean> hasAttachment() {
-        return new Criterion<>(HAS_ATTACHMENT, ValueMatcher.SingleValueMatcher.isEquals(true));
+        return hasAttachment(true);
     }
 
     static Criterion<Boolean> hasNoAttachment() {
-        return new Criterion<>(HAS_ATTACHMENT, ValueMatcher.SingleValueMatcher.isEquals(false));
+        return hasAttachment(false);
     }
 
     static Criterion<Boolean> hasAttachment(boolean hasAttachment) {
