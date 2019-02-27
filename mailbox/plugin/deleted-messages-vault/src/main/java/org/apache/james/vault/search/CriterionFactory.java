@@ -35,11 +35,11 @@ import org.apache.james.mailbox.model.MailboxId;
 
 public interface CriterionFactory {
 
-    class StringMatcherFactory {
+    class StringCriterionFactory {
 
         private final DeletedMessageField<String> deletedMessageField;
 
-        private StringMatcherFactory(DeletedMessageField<String> deletedMessageField) {
+        private StringCriterionFactory(DeletedMessageField<String> deletedMessageField) {
             this.deletedMessageField = deletedMessageField;
         }
 
@@ -54,13 +54,17 @@ public interface CriterionFactory {
         public Criterion<String> equals(String testedString) {
             return new Criterion<>(deletedMessageField, ValueMatcher.SingleValueMatcher.isEquals(testedString));
         }
+
+        public Criterion<String> equalsIgnoreCase(String testedString) {
+            return new Criterion<>(deletedMessageField, ValueMatcher.SingleValueMatcher.equalsIgnoreCase(testedString));
+        }
     }
 
-    class ZonedDateTimeMatcherFactory {
+    class ZonedDateTimeCriterionFactory {
 
         private final DeletedMessageField<ZonedDateTime> deletedMessageField;
 
-        private ZonedDateTimeMatcherFactory(DeletedMessageField<ZonedDateTime> deletedMessageField) {
+        private ZonedDateTimeCriterionFactory(DeletedMessageField<ZonedDateTime> deletedMessageField) {
             this.deletedMessageField = deletedMessageField;
         }
 
@@ -73,12 +77,12 @@ public interface CriterionFactory {
         }
     }
 
-    static ZonedDateTimeMatcherFactory deletionDate() {
-        return new ZonedDateTimeMatcherFactory(DELETION_DATE);
+    static ZonedDateTimeCriterionFactory deletionDate() {
+        return new ZonedDateTimeCriterionFactory(DELETION_DATE);
     }
 
-    static ZonedDateTimeMatcherFactory deliveryDate() {
-        return new ZonedDateTimeMatcherFactory(DELIVERY_DATE);
+    static ZonedDateTimeCriterionFactory deliveryDate() {
+        return new ZonedDateTimeCriterionFactory(DELIVERY_DATE);
     }
 
     static Criterion<List<MailAddress>> containsRecipient(MailAddress recipient) {
@@ -101,8 +105,8 @@ public interface CriterionFactory {
         return new Criterion<>(HAS_ATTACHMENT, ValueMatcher.SingleValueMatcher.isEquals(hasAttachment));
     }
 
-    static StringMatcherFactory subject() {
-        return new StringMatcherFactory(SUBJECT);
+    static StringCriterionFactory subject() {
+        return new StringCriterionFactory(SUBJECT);
     }
 
     static Criterion<List<MailboxId>> containsOriginMailbox(MailboxId mailboxId) {

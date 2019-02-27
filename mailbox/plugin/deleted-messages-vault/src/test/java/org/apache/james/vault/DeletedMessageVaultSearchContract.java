@@ -376,6 +376,42 @@ public interface DeletedMessageVaultSearchContract {
         }
 
         @Test
+        default void shouldReturnMessagesWhenEqualsIgnoreCase() {
+            DeletedMessage message1 = storeMessageWithSubject(APACHE_JAMES_PROJECT);
+            DeletedMessage message2 = storeMessageWithSubject(OPEN_SOURCE_SOFTWARE);
+
+            assertThat(search(Query.of(CriterionFactory.subject().equals("Apache James PROJECT"))))
+                .isEmpty();
+        }
+
+        @Test
+        default void shouldReturnMessagesStrictlyEqualsWhenEqualsIgnoreCase() {
+            DeletedMessage message1 = storeMessageWithSubject(APACHE_JAMES_PROJECT);
+            DeletedMessage message2 = storeMessageWithSubject(OPEN_SOURCE_SOFTWARE);
+
+            assertThat(search(Query.of(CriterionFactory.subject().equalsIgnoreCase(APACHE_JAMES_PROJECT))))
+                .containsOnly(message1);
+        }
+
+        @Test
+        default void shouldNotReturnMessagesContainsWhenEqualsIgnoreCase() {
+            DeletedMessage message1 = storeMessageWithSubject(APACHE_JAMES_PROJECT);
+            DeletedMessage message2 = storeMessageWithSubject(OPEN_SOURCE_SOFTWARE);
+
+            assertThat(search(Query.of(CriterionFactory.subject().equalsIgnoreCase("james"))))
+                .isEmpty();
+        }
+
+        @Test
+        default void shouldNotReturnMessagesContainsIgnoreCaseWhenEqualsIgnoreCase() {
+            DeletedMessage message1 = storeMessageWithSubject(APACHE_JAMES_PROJECT);
+            DeletedMessage message2 = storeMessageWithSubject(OPEN_SOURCE_SOFTWARE);
+
+            assertThat(search(Query.of(CriterionFactory.subject().equalsIgnoreCase("proJECT"))))
+                .isEmpty();
+        }
+
+        @Test
         default void shouldNotReturnMissingSubjectMessagesWhenEquals() {
             DeletedMessage message1 = storeMessageWithSubject(APACHE_JAMES_PROJECT);
             DeletedMessage message2 = storeMessageNoSubject();

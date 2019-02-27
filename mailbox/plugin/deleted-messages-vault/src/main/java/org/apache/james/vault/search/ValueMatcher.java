@@ -33,6 +33,8 @@ public interface ValueMatcher<T> {
         private static final BiFunction<String, String, Boolean> CONTAINS = (testedValue, referenceValue) -> referenceValue.contains(testedValue);
         private static final BiFunction<String, String, Boolean> CONTAINS_IGNORE_CASE =
             (testedValue, referenceValue) -> referenceValue.toLowerCase(Locale.US).contains(testedValue.toLowerCase(Locale.US));
+        private static final BiFunction<String, String, Boolean> EQUALS_IGNORE_CASE =
+            (testedValue, referenceValue) -> referenceValue.equalsIgnoreCase(testedValue);
         private static final BiFunction<ZonedDateTime, ZonedDateTime, Boolean> BEFORE_OR_EQUALS =
             (testedValue, referenceValue) -> referenceValue.isBefore(testedValue) || referenceValue.isEqual(testedValue);
         private static final BiFunction<ZonedDateTime, ZonedDateTime, Boolean> AFTER_OR_EQUALS =
@@ -44,6 +46,10 @@ public interface ValueMatcher<T> {
 
         static SingleValueMatcher<String> containsIgnoreCase(String testedValue) {
             return new SingleValueMatcher<>(testedValue, CONTAINS_IGNORE_CASE);
+        }
+
+        static SingleValueMatcher<String> equalsIgnoreCase(String testedValue) {
+            return new SingleValueMatcher<>(testedValue, EQUALS_IGNORE_CASE);
         }
 
         static SingleValueMatcher<ZonedDateTime> beforeOrEquals(ZonedDateTime testedValue) {
