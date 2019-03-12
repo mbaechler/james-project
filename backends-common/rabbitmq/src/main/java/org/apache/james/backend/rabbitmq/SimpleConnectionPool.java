@@ -22,7 +22,6 @@ package org.apache.james.backend.rabbitmq;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Optional;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.annotation.PreDestroy;
