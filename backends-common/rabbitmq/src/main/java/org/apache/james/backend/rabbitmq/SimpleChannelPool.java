@@ -83,9 +83,11 @@ public class SimpleChannelPool implements RabbitMQChannelPool {
     }
 
     private Mono<Channel> getResilientChannel() {
+        int numRetries = 100;
+        Duration initialDelay = Duration.ofMillis(100);
         return Mono.defer(this::getOpenChannel)
-            .retryBackoff(100, Duration.ofMillis(100))
-            .subscribeOn(Schedulers.elastic());
+            .publishOn(Schedulers.elastic())
+            .retryBackoff(numRetries, initialDelay);
     }
 
     private Mono<Channel> getOpenChannel() {
@@ -109,6 +111,18 @@ public class SimpleChannelPool implements RabbitMQChannelPool {
                 //error below
             }
             return Mono.error(new RuntimeException("unable to create and register a new Channel"));
+        }
+    }
+
+    @Override
+    public boolean tryConnection() {
+        try {
+            return connectionPool.tryConnection() &&
+                getOpenChannel()
+                    .blockOptional()
+                    .isPresent();
+        } catch (Throwable t) {
+            return false;
         }
     }
 }

@@ -31,6 +31,7 @@ import com.github.fge.lambdas.Throwing;
 import com.google.common.annotations.VisibleForTesting;
 import com.rabbitmq.client.Connection;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 public class SimpleConnectionPool implements AutoCloseable {
     private final AtomicReference<Connection> connectionReference;
@@ -52,8 +53,11 @@ public class SimpleConnectionPool implements AutoCloseable {
     }
 
     public Mono<Connection> getResilientConnection() {
+        int numRetries = 100;
+        Duration initialDelay = Duration.ofMillis(100);
         return Mono.defer(this::getOpenConnection)
-            .retryBackoff(100, Duration.ofMillis(100));
+            .subscribeOn(Schedulers.elastic())
+            .retryBackoff(numRetries, initialDelay);
     }
 
     private Mono<Connection> getOpenConnection() {
@@ -71,6 +75,16 @@ public class SimpleConnectionPool implements AutoCloseable {
                 //error below
             }
             return Mono.error(new RuntimeException("unable to create and register a new Connection"));
+        }
+    }
+
+    public boolean tryConnection() {
+        try {
+            return getOpenConnection()
+                .blockOptional(Duration.ofSeconds(1))
+                .isPresent();
+        } catch (Throwable t) {
+            return false;
         }
     }
 }
