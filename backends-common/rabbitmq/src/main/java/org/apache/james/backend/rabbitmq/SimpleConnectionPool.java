@@ -19,8 +19,10 @@
 
 package org.apache.james.backend.rabbitmq;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.annotation.PreDestroy;
@@ -64,6 +66,11 @@ public class SimpleConnectionPool implements AutoCloseable {
         if (updated) {
             return Mono.just(current);
         } else {
+            try {
+                current.close();
+            } catch (IOException e) {
+                //error below
+            }
             return Mono.error(new RuntimeException("unable to create and register a new Connection"));
         }
     }
