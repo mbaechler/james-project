@@ -71,12 +71,12 @@ public class RabbitMQConnectionFactory {
         }
     }
 
-    public Connection create() {
+    Connection create() {
         return connectionMono().block();
     }
 
-    public Mono<Connection> connectionMono() {
-        return Mono.fromCallable(new ConnectionCallable(connectionFactory))
+    Mono<Connection> connectionMono() {
+        return Mono.fromCallable(connectionFactory::newConnection)
             .retryBackoff(configuration.getMaxRetries(), Duration.ofMillis(configuration.getMinDelayInMs()))
             .publishOn(Schedulers.elastic());
     }
