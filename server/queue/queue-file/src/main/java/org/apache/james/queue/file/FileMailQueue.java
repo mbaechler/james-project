@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -179,7 +180,7 @@ public class FileMailQueue implements ManageableMailQueue {
     }
 
     @Override
-    public void enQueue(Mail mail, long delay, TimeUnit unit) throws MailQueueException {
+    public void enQueue(Mail mail, Duration delay) throws MailQueueException {
         final String key = mail.getName() + "-" + COUNTER.incrementAndGet();
         try {
             int i = RANDOM.nextInt(SPLITCOUNT) + 1;
@@ -187,8 +188,8 @@ public class FileMailQueue implements ManageableMailQueue {
             String name = queueDirName + "/" + i + "/" + key;
 
             final FileItem item = new FileItem(name + OBJECT_EXTENSION, name + MSG_EXTENSION);
-            if (delay > 0) {
-                mail.setAttribute(new Attribute(NEXT_DELIVERY, AttributeValue.of(System.currentTimeMillis() + unit.toMillis(delay))));
+            if (!delay.isNegative()) {
+                mail.setAttribute(new Attribute(NEXT_DELIVERY, AttributeValue.of(Instant.now().plus(delay).getEpochSecond())));
             }
             try (FileOutputStream foout = new FileOutputStream(item.getObjectFile());
                 ObjectOutputStream oout = new ObjectOutputStream(foout)) {
@@ -208,7 +209,7 @@ public class FileMailQueue implements ManageableMailQueue {
 
             keyMappings.put(key, item);
 
-            if (delay > 0) {
+            if (!delay.isNegative()) {
                 // The message should get delayed so schedule it for later
                 scheduler.schedule(() -> {
                     try {
@@ -218,7 +219,7 @@ public class FileMailQueue implements ManageableMailQueue {
                         Thread.currentThread().interrupt();
                         throw new RuntimeException("Unable to init", e);
                     }
-                }, delay, unit);
+                }, delay.toMillis(), TimeUnit.MILLISECONDS);
 
             } else {
                 inmemoryQueue.put(key);
