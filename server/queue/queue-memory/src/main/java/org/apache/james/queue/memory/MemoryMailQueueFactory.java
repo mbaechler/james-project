@@ -19,6 +19,7 @@
 
 package org.apache.james.queue.memory;
 
+import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -118,7 +119,7 @@ public class MemoryMailQueueFactory implements MailQueueFactory<ManageableMailQu
             if (!delay.isNegative()) {
                 try {
                     return ZonedDateTime.now().plus(delay);
-                } catch (ArithmeticException e) {
+                } catch (DateTimeException | ArithmeticException e) {
                     return Instant.ofEpochMilli(Long.MAX_VALUE).atZone(ZoneId.of("UTC"));
                 }
             }

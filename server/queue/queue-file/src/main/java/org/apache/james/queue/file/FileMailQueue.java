@@ -189,7 +189,7 @@ public class FileMailQueue implements ManageableMailQueue {
 
             final FileItem item = new FileItem(name + OBJECT_EXTENSION, name + MSG_EXTENSION);
             if (!delay.isNegative()) {
-                mail.setAttribute(new Attribute(NEXT_DELIVERY, AttributeValue.of(Instant.now().plus(delay).getEpochSecond())));
+                mail.setAttribute(new Attribute(NEXT_DELIVERY, AttributeValue.of(computeNextDelivery(delay))));
             }
             try (FileOutputStream foout = new FileOutputStream(item.getObjectFile());
                 ObjectOutputStream oout = new ObjectOutputStream(foout)) {
@@ -219,7 +219,7 @@ public class FileMailQueue implements ManageableMailQueue {
                         Thread.currentThread().interrupt();
                         throw new RuntimeException("Unable to init", e);
                     }
-                }, delay.toMillis(), TimeUnit.MILLISECONDS);
+                }, delay.getSeconds(), TimeUnit.SECONDS);
 
             } else {
                 inmemoryQueue.put(key);
@@ -230,6 +230,14 @@ public class FileMailQueue implements ManageableMailQueue {
             throw new MailQueueException("Unable to enqueue mail", e);
         }
 
+    }
+
+    private long computeNextDelivery(Duration delay) {
+        try {
+            return Instant.now().plus(delay).getEpochSecond();
+        } catch (ArithmeticException e) {
+            return Long.MAX_VALUE;
+        }
     }
 
     @Override
