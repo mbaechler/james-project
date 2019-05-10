@@ -23,6 +23,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.apache.james.backends.cassandra.CassandraCluster;
 import org.apache.james.backends.cassandra.CassandraClusterExtension;
+import org.apache.james.backends.cassandra.components.CassandraModule;
+import org.apache.james.backends.cassandra.versions.CassandraSchemaVersionModule;
 import org.apache.james.queue.rabbitmq.MailQueueName;
 import org.apache.james.queue.rabbitmq.view.cassandra.model.MailKey;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,7 +39,9 @@ class DeletedMailsDAOTest {
     private static final MailKey MAIL_KEY_2 = MailKey.of("mailkey2");
 
     @RegisterExtension
-    static CassandraClusterExtension cassandraCluster = new CassandraClusterExtension(CassandraMailQueueViewModule.MODULE);
+    static CassandraClusterExtension cassandraCluster = new CassandraClusterExtension(CassandraModule.aggregateModules(
+        CassandraMailQueueViewModule.MODULE,
+        CassandraSchemaVersionModule.MODULE));
 
     private DeletedMailsDAO testee;
 
