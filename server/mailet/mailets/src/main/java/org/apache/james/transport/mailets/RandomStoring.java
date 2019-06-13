@@ -57,13 +57,13 @@ public class RandomStoring extends GenericMailet {
     private final Mono<List<ReroutingInfos>> reroutingInfos;
     private final UsersRepository usersRepository;
     private final MailboxManager mailboxManager;
-    private final Supplier<Long> randomRecipientsNumbers;
+    private final Supplier<Integer> randomRecipientsNumbers;
 
     @Inject
     public RandomStoring(UsersRepository usersRepository, MailboxManager mailboxManager) {
         this.usersRepository = usersRepository;
         this.mailboxManager = mailboxManager;
-        this.randomRecipientsNumbers = () -> ThreadLocalRandom.current().nextLong(MIN_NUMBER_OF_RECIPIENTS, MAX_NUMBER_OF_RECIPIENTS + 1);
+        this.randomRecipientsNumbers = () -> ThreadLocalRandom.current().nextInt(MIN_NUMBER_OF_RECIPIENTS, MAX_NUMBER_OF_RECIPIENTS + 1);
         this.reroutingInfos = Mono.fromCallable(this::retrieveReroutingInfos).cache(CACHE_DURATION);
     }
 
@@ -97,7 +97,7 @@ public class RandomStoring extends GenericMailet {
             .ints(0, reroutingInfos.size())
             .mapToObj(reroutingInfos::get)
             .distinct()
-            .limit(Math.toIntExact(randomRecipientsNumbers.get()))
+            .limit(randomRecipientsNumbers.get())
             .collect(Guavate.toImmutableSet());
     }
 
