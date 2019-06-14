@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import org.apache.james.event.json.EventSerializer;
+import org.apache.james.lifecycle.api.Disposable;
 import org.apache.james.mailbox.events.RoutingKeyConverter.RoutingKey;
 import org.apache.james.util.MDCBuilder;
 import org.apache.james.util.MDCStructuredLogger;
@@ -40,27 +41,34 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Connection;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoProcessor;
 import reactor.core.scheduler.Schedulers;
+import reactor.rabbitmq.ChannelPool;
+import reactor.rabbitmq.ChannelPoolFactory;
+import reactor.rabbitmq.ChannelPoolOptions;
 import reactor.rabbitmq.ExchangeSpecification;
 import reactor.rabbitmq.OutboundMessage;
+import reactor.rabbitmq.SendOptions;
 import reactor.rabbitmq.Sender;
 import reactor.util.function.Tuples;
 
-class EventDispatcher {
+class EventDispatcher implements Disposable {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventDispatcher.class);
+    public static final int MAX_CHANNELS_NUMBER = 4096;
 
     private final EventSerializer eventSerializer;
     private final Sender sender;
     private final LocalListenerRegistry localListenerRegistry;
     private final AMQP.BasicProperties basicProperties;
     private final MailboxListenerExecutor mailboxListenerExecutor;
+    private final ChannelPool channelPool;
     final AtomicInteger dispatchCount = new AtomicInteger();
 
-    EventDispatcher(EventBusId eventBusId, EventSerializer eventSerializer, Sender sender, LocalListenerRegistry localListenerRegistry, MailboxListenerExecutor mailboxListenerExecutor) {
+    EventDispatcher(EventBusId eventBusId, EventSerializer eventSerializer, Sender sender, Mono<? extends Connection> connectionMono, LocalListenerRegistry localListenerRegistry, MailboxListenerExecutor mailboxListenerExecutor) {
         this.eventSerializer = eventSerializer;
         this.sender = sender;
         this.localListenerRegistry = localListenerRegistry;
@@ -68,6 +76,10 @@ class EventDispatcher {
             .headers(ImmutableMap.of(EVENT_BUS_ID, eventBusId.asString()))
             .build();
         this.mailboxListenerExecutor = mailboxListenerExecutor;
+        this.channelPool = ChannelPoolFactory.createChannelPool(
+                connectionMono,
+                new ChannelPoolOptions().maxCacheSize(MAX_CHANNELS_NUMBER)
+        );
     }
 
     void start() {
@@ -86,6 +98,11 @@ class EventDispatcher {
             .then()
             .doOnSuccess(any -> dispatchCount.incrementAndGet())
             .subscribeWith(MonoProcessor.create());
+    }
+
+    @Override
+    public void dispose() {
+        channelPool.close();
     }
 
     private Mono<Void> dispatchToLocalListeners(Event event, Set<RegistrationKey> keys) {
@@ -127,7 +144,7 @@ class EventDispatcher {
         Stream<OutboundMessage> outboundMessages = routingKeys
             .map(routingKey -> new OutboundMessage(MAILBOX_EVENT_EXCHANGE_NAME, routingKey.asString(), basicProperties, serializedEvent));
 
-        return sender.send(Flux.fromStream(outboundMessages));
+        return sender.send(Flux.fromStream(outboundMessages), new SendOptions().channelPool(channelPool));
     }
 
     private byte[] serializeEvent(Event event) {
