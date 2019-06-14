@@ -92,6 +92,7 @@ public class RandomStoring extends GenericMailet {
     private Collection<ReroutingInfos> generateRandomMailboxes() {
         List<ReroutingInfos> reroutingInfos = this.reroutingInfos.block();
 
+        // Replaces Collections.shuffle() which has a too poor statistical distribution
         return ThreadLocalRandom
             .current()
             .ints(0, reroutingInfos.size())
