@@ -65,6 +65,8 @@ public interface Store<T, I> {
 
     class Impl<T, I extends BlobPartsId> implements Store<T, I> {
 
+        public static final int CONSERVATIVE_PREFETCH_RATE = 2;
+
         public interface Encoder<T> {
             Stream<Pair<BlobType, InputStream>> encode(T t);
         }
@@ -88,6 +90,7 @@ public interface Store<T, I> {
         @Override
         public Mono<I> save(T t) {
             return Flux.fromStream(encoder.encode(t))
+                .limitRate(CONSERVATIVE_PREFETCH_RATE)
                 .flatMapSequential(this::saveEntry)
                 .collectMap(Tuple2::getT1, Tuple2::getT2)
                 .map(idFactory::generate);
@@ -101,6 +104,7 @@ public interface Store<T, I> {
         @Override
         public Mono<T> read(I blobIds) {
             return Flux.fromIterable(blobIds.asMap().entrySet())
+                .limitRate(CONSERVATIVE_PREFETCH_RATE)
                 .flatMapSequential(
                     entry -> blobStore.readBytes(entry.getValue())
                         .zipWith(Mono.just(entry.getKey())))

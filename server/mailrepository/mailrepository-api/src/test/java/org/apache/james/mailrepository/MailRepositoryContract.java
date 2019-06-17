@@ -445,7 +445,7 @@ public interface MailRepositoryContract {
             .collect(Guavate.toImmutableList());
 
         ThrowingRunnable add = () -> {
-            int keyIndex = computeKeyIndex(nbKeys, Math.abs(ThreadLocalRandom.current().nextInt()));
+            int keyIndex = ThreadLocalRandom.current().nextInt(nbKeys);
             MailKey key =  computeKey(keyIndex);
             synchronized (locks.get(keyIndex)) {
                 testee.store(createMail(key));
@@ -454,7 +454,7 @@ public interface MailRepositoryContract {
         };
 
         ThrowingRunnable remove = () -> {
-            int keyIndex = computeKeyIndex(nbKeys, Math.abs(ThreadLocalRandom.current().nextInt()));
+            int keyIndex = ThreadLocalRandom.current().nextInt(nbKeys);
             MailKey key =  computeKey(keyIndex);
             synchronized (locks.get(keyIndex)) {
                 testee.remove(key);
@@ -478,10 +478,6 @@ public interface MailRepositoryContract {
 
     default MailKey computeKey(int keyIndex) {
         return new MailKey("mail" + keyIndex);
-    }
-
-    default int computeKeyIndex(int nbKeys, Integer i) {
-        return i % nbKeys;
     }
 
 }
