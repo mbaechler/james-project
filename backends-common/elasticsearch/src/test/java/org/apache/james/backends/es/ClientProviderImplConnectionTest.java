@@ -58,7 +58,7 @@ public class ClientProviderImplConnectionTest {
         Awaitility.await()
             .atMost(1, TimeUnit.MINUTES)
             .pollInterval(5, TimeUnit.SECONDS)
-            .until(() -> isConnected(ClientProviderImpl.fromConfiguration(configuration)));
+            .until(() -> isConnected(new ClientProvider(configuration)));
     }
 
     @Test
@@ -69,7 +69,7 @@ public class ClientProviderImplConnectionTest {
         Awaitility.await()
             .atMost(1, TimeUnit.MINUTES)
             .pollInterval(5, TimeUnit.SECONDS)
-            .until(() -> isConnected(ClientProviderImpl.fromConfiguration(configuration)));
+            .until(() -> isConnected(new ClientProvider(configuration)));
     }
 
     @Test
@@ -84,7 +84,7 @@ public class ClientProviderImplConnectionTest {
         Awaitility.await()
             .atMost(1, TimeUnit.MINUTES)
             .pollInterval(5, TimeUnit.SECONDS)
-            .until(() -> isConnected(ClientProviderImpl.fromConfiguration(configuration)));
+            .until(() -> isConnected(new ClientProvider(configuration)));
     }
 
     private boolean isConnected(ClientProvider clientProvider) {
