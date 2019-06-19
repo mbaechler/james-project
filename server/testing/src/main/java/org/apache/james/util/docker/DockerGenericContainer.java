@@ -61,7 +61,7 @@ public class DockerGenericContainer implements TestRule {
         try {
             DockerClientFactory.instance().client();
         } catch (IllegalStateException e) {
-            LOGGER.error("Cannot initial a docker container", e);
+            LOGGER.error("Cannot connect to docker service", e);
             throw new AssumptionViolatedException("Skipping all docker tests as no Docker environment was found");
         }
     }
