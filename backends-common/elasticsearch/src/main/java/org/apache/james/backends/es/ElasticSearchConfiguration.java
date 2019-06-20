@@ -19,6 +19,7 @@
 
 package org.apache.james.backends.es;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -41,28 +42,23 @@ public class ElasticSearchConfiguration {
     public static class Builder {
 
         private final ImmutableList.Builder<Host> hosts;
-        private Optional<String> clusterName;
         private Optional<Integer> nbShards;
         private Optional<Integer> nbReplica;
         private Optional<Integer> minDelay;
         private Optional<Integer> maxRetries;
+        private Optional<Duration> requestTimeout;
 
         public Builder() {
             hosts = ImmutableList.builder();
-            clusterName = Optional.empty();
             nbShards = Optional.empty();
             nbReplica = Optional.empty();
             minDelay = Optional.empty();
             maxRetries = Optional.empty();
+            requestTimeout = Optional.empty();
         }
 
         public Builder addHost(Host host) {
             this.hosts.add(host);
-            return this;
-        }
-
-        public Builder clusterName(String clusterName) {
-            this.clusterName = Optional.ofNullable(clusterName);
             return this;
         }
 
@@ -93,16 +89,21 @@ public class ElasticSearchConfiguration {
             return this;
         }
 
+        public Builder requestTimeout(Optional<Duration> requestTimeout) {
+            this.requestTimeout = requestTimeout;
+            return this;
+        }
+
         public ElasticSearchConfiguration build() {
             ImmutableList<Host> hosts = this.hosts.build();
             Preconditions.checkState(!hosts.isEmpty(), "You need to specify ElasticSearch host");
             return new ElasticSearchConfiguration(
                 hosts,
-                clusterName,
                 nbShards.orElse(DEFAULT_NB_SHARDS),
                 nbReplica.orElse(DEFAULT_NB_REPLICA),
                 minDelay.orElse(DEFAULT_CONNECTION_MIN_DELAY),
-                maxRetries.orElse(DEFAULT_CONNECTION_MAX_RETRIES));
+                maxRetries.orElse(DEFAULT_CONNECTION_MAX_RETRIES),
+                requestTimeout.orElse(DEFAULT_REQUEST_TIMEOUT));
         }
     }
 
@@ -111,7 +112,6 @@ public class ElasticSearchConfiguration {
     }
 
     public static final String ELASTICSEARCH_HOSTS = "elasticsearch.hosts";
-    public static final String ELASTICSEARCH_CLUSTER_NAME = "elasticsearch.clusterName";
     public static final String ELASTICSEARCH_MASTER_HOST = "elasticsearch.masterHost";
     public static final String ELASTICSEARCH_PORT = "elasticsearch.port";
     public static final String ELASTICSEARCH_NB_REPLICA = "elasticsearch.nb.replica";
@@ -121,6 +121,7 @@ public class ElasticSearchConfiguration {
 
     public static final int DEFAULT_CONNECTION_MAX_RETRIES = 7;
     public static final int DEFAULT_CONNECTION_MIN_DELAY = 3000;
+    public static final Duration DEFAULT_REQUEST_TIMEOUT = Duration.ofSeconds(30);
     public static final int DEFAULT_NB_SHARDS = 5;
     public static final int DEFAULT_NB_REPLICA = 1;
     public static final int DEFAULT_PORT = 9200;
@@ -134,7 +135,6 @@ public class ElasticSearchConfiguration {
     public static ElasticSearchConfiguration fromProperties(Configuration configuration) throws ConfigurationException {
         return builder()
             .addHosts(getHosts(configuration))
-            .clusterName(configuration.getString(ELASTICSEARCH_CLUSTER_NAME))
             .nbShards(configuration.getInteger(ELASTICSEARCH_NB_SHARDS, DEFAULT_NB_SHARDS))
             .nbReplica(configuration.getInteger(ELASTICSEARCH_NB_REPLICA, DEFAULT_NB_REPLICA))
             .minDelay(Optional.ofNullable(configuration.getInteger(ELASTICSEARCH_RETRY_CONNECTION_MIN_DELAY, null)))
@@ -179,27 +179,23 @@ public class ElasticSearchConfiguration {
     }
 
     private final ImmutableList<Host> hosts;
-    private final Optional<String> clusterName;
     private final int nbShards;
     private final int nbReplica;
     private final int minDelay;
     private final int maxRetries;
+    private final Duration requestTimeout;
 
-    private ElasticSearchConfiguration(ImmutableList<Host> hosts, Optional<String> clusterName, int nbShards, int nbReplica, int minDelay, int maxRetries) {
+    private ElasticSearchConfiguration(ImmutableList<Host> hosts, int nbShards, int nbReplica, int minDelay, int maxRetries, Duration requestTimeout) {
         this.hosts = hosts;
-        this.clusterName = clusterName;
         this.nbShards = nbShards;
         this.nbReplica = nbReplica;
         this.minDelay = minDelay;
         this.maxRetries = maxRetries;
+        this.requestTimeout = requestTimeout;
     }
 
     public ImmutableList<Host> getHosts() {
         return hosts;
-    }
-
-    public Optional<String> getClusterName() {
-        return clusterName;
     }
 
     public int getNbShards() {
@@ -218,13 +214,16 @@ public class ElasticSearchConfiguration {
         return maxRetries;
     }
 
+    public Duration getRequestTimeout() {
+        return requestTimeout;
+    }
+
     @Override
     public final boolean equals(Object o) {
         if (o instanceof ElasticSearchConfiguration) {
             ElasticSearchConfiguration that = (ElasticSearchConfiguration) o;
 
             return Objects.equals(this.nbShards, that.nbShards)
-                && Objects.equals(this.clusterName, that.clusterName)
                 && Objects.equals(this.nbReplica, that.nbReplica)
                 && Objects.equals(this.minDelay, that.minDelay)
                 && Objects.equals(this.maxRetries, that.maxRetries)
@@ -235,6 +234,6 @@ public class ElasticSearchConfiguration {
 
     @Override
     public final int hashCode() {
-        return Objects.hash(hosts, clusterName, nbShards, nbReplica, minDelay, maxRetries);
+        return Objects.hash(hosts, nbShards, nbReplica, minDelay, maxRetries);
     }
 }
