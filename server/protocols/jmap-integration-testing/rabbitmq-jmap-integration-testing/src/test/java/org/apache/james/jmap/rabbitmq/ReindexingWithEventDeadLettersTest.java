@@ -119,7 +119,7 @@ class ReindexingWithEventDeadLettersTest {
 
         CALMLY_AWAIT.until(() -> listElasticSearchFailedEvents().size() == 1);
 
-        unpauseElasticSearch();
+        dockerElasticSearch.getDockerES().unpause();
         assertThat(listMessageIdsForAccount(aliceAccessToken)).isEmpty();
     }
 
@@ -128,7 +128,7 @@ class ReindexingWithEventDeadLettersTest {
         aliceSavesADraft();
         CALMLY_AWAIT.until(() -> listElasticSearchFailedEvents().size() == 1);
 
-        unpauseElasticSearch();
+        dockerElasticSearch.getDockerES().unpause();
         redeliverAllFailedEvents();
 
         CALMLY_AWAIT.until(() -> listMessageIdsForAccount(aliceAccessToken).size() == 1);
@@ -139,16 +139,11 @@ class ReindexingWithEventDeadLettersTest {
         aliceSavesADraft();
         CALMLY_AWAIT.until(() -> listElasticSearchFailedEvents().size() == 1);
 
-        unpauseElasticSearch();
+        dockerElasticSearch.getDockerES().unpause();
         redeliverAllFailedEvents();
         CALMLY_AWAIT.until(() -> listMessageIdsForAccount(aliceAccessToken).size() == 1);
 
         assertThat(listElasticSearchFailedEvents()).isEmpty();
-    }
-
-    private void unpauseElasticSearch() throws Exception {
-        dockerElasticSearch.getDockerES().unpause();
-        Thread.sleep(Duration.FIVE_SECONDS.getValueInMS()); // Docker unpause is asynchronous and we found no way to poll for it
     }
 
     private void aliceSavesADraft() {

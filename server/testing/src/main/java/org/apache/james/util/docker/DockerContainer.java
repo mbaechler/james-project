@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.junit.AssumptionViolatedException;
 import org.junit.rules.TestRule;
@@ -36,6 +37,7 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.WaitStrategy;
 import org.testcontainers.images.builder.ImageFromDockerfile;
 
+import com.github.dockerjava.api.DockerClient;
 import com.google.common.base.Strings;
 
 public class DockerContainer implements TestRule {
@@ -43,6 +45,7 @@ public class DockerContainer implements TestRule {
     private static final String DOCKER_CONTAINER = "DOCKER_CONTAINER";
 
     private GenericContainer<?> container;
+    private Optional<WaitStrategy> waitStrategy;
 
     public static DockerContainer fromName(String imageName) {
         disableDockerTestsIfDockerUnavailable();
@@ -56,11 +59,15 @@ public class DockerContainer implements TestRule {
 
     private static void disableDockerTestsIfDockerUnavailable() {
         try {
-            DockerClientFactory.instance().client();
+            client();
         } catch (IllegalStateException e) {
             LOGGER.error("Cannot connect to docker service", e);
             throw new AssumptionViolatedException("Skipping all docker tests as no Docker environment was found");
         }
+    }
+
+    private static DockerClient client() {
+        return DockerClientFactory.instance().client();
     }
 
     public DockerContainer(GenericContainer<?> container) {
@@ -95,6 +102,7 @@ public class DockerContainer implements TestRule {
     }
 
     public DockerContainer waitingFor(WaitStrategy waitStrategy) {
+        this.waitStrategy = Optional.of(waitStrategy);
         container.waitingFor(waitStrategy);
         return this;
     }
@@ -122,7 +130,7 @@ public class DockerContainer implements TestRule {
     }
 
     public void pause() {
-        DockerClientFactory.instance().client().pauseContainerCmd(container.getContainerInfo().getId()).exec();
+        client().pauseContainerCmd(container.getContainerInfo().getId()).exec();
     }
 
     public boolean isRunning() {
@@ -130,7 +138,8 @@ public class DockerContainer implements TestRule {
     }
 
     public void unpause() {
-        DockerClientFactory.instance().client().unpauseContainerCmd(container.getContainerInfo().getId()).exec();
+        client().unpauseContainerCmd(container.getContainerInfo().getId()).exec();
+        waitStrategy.ifPresent(strategy -> strategy.waitUntilReady(container));
     }
 
     public Integer getMappedPort(int originalPort) {
