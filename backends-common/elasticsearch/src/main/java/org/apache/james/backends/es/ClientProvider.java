@@ -55,9 +55,11 @@ public class ClientProvider implements Provider<RestHighLevelClient> {
     private RestHighLevelClient connect(ElasticSearchConfiguration configuration) {
         Duration waitDelay = Duration.ofMillis(configuration.getMinDelay());
         Duration forever = Duration.ofMillis(Long.MAX_VALUE);
+        boolean suppressLeadingZeroElements = true;
+        boolean suppressTrailingZeroElements = true;
         return Mono.fromCallable(() -> connectToCluster(configuration))
             .doOnError(e -> LOGGER.warn("Error establishing ElasticSearch connection. Next retry scheduled in {}",
-                DurationFormatUtils.formatDurationWords(waitDelay.toMillis(), true, true), e))
+                DurationFormatUtils.formatDurationWords(waitDelay.toMillis(), suppressLeadingZeroElements, suppressTrailingZeroElements), e))
             .retryBackoff(configuration.getMaxRetries(), waitDelay, forever, Schedulers.elastic())
             .publishOn(Schedulers.elastic())
             .block();
