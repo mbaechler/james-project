@@ -560,7 +560,7 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
             }
 
             @Test
-            void registrationsShouldNotHandleEventsAfterStop() throws Exception {
+            void dispatchShouldStopDeliveringEventsShortlyAfterStopIsCalled() throws Exception {
                 eventBus.start();
 
                 MailboxListenerCountingSuccessfulExecution listener = new MailboxListenerCountingSuccessfulExecution();
@@ -650,7 +650,7 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
             }
 
             @Test
-            void registrationsShouldNotHandleEventsAfterStop() throws Exception {
+            void dispatchShouldStopDeliveringEventsShortlyAfterStopIsCalled() throws Exception {
                 eventBus.start();
                 eventBus2.start();
 
