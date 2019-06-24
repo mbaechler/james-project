@@ -23,10 +23,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.Test;
 
-public class ClientProviderImplTest {
+public class ClientProviderTest {
 
     @Test
-    public void fromConfigurationShouldThrowOnNull() {
+    public void constructorShouldThrowOnNull() {
         assertThatThrownBy(() -> new ClientProvider(null))
                 .isInstanceOf(NullPointerException.class);
     }
