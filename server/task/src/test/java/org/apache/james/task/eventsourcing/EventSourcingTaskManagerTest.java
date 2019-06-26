@@ -19,33 +19,32 @@
 
 package org.apache.james.task.eventsourcing;
 
-import java.util.List;
+import org.apache.james.eventsourcing.eventstore.EventStore;
+import org.apache.james.eventsourcing.eventstore.memory.InMemoryEventStore;
+import org.apache.james.task.CountDownLatchExtension;
+import org.apache.james.task.TaskManager;
+import org.apache.james.task.TaskManagerContract;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-import org.apache.james.eventsourcing.Event;
-import org.apache.james.eventsourcing.eventstore.History;
-import org.apache.james.task.Task;
-import org.apache.james.task.TaskExecutionDetails;
+@ExtendWith(CountDownLatchExtension.class)
+class EventSourcingTaskManagerTest implements TaskManagerContract {
 
-import com.google.common.collect.ImmutableList;
-
-public class TaskAggregate {
-    public static TaskAggregate fromHistory(TaskAggregateId aggregateId, History history) {
-        return new TaskAggregate(aggregateId, history);
+    private EventSourcingTaskManager taskManager;
+    @BeforeEach
+    void setUp() {
+        EventStore eventStore = new InMemoryEventStore();
+        taskManager = new EventSourcingTaskManager(eventStore);
     }
 
-    private final TaskAggregateId aggregateId;
-    private final History history;
-
-    private TaskAggregate(TaskAggregateId aggregateId, History history) {
-        this.aggregateId = aggregateId;
-        this.history = history;
+    @AfterEach
+    void tearDown() {
+        taskManager.stop();
     }
 
-    public List<Event> create(Task task) {
-        TaskExecutionDetails completed = TaskExecutionDetails
-            .from(task, aggregateId.getTaskId())
-            .start()
-            .completed();
-        return ImmutableList.of(new DetailsChanged(aggregateId, history.getNextEventId(), completed));
+    @Override
+    public TaskManager taskManager() {
+        return taskManager;
     }
 }
