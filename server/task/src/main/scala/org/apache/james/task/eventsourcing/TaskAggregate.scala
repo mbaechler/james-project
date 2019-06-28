@@ -27,8 +27,8 @@ import com.google.common.collect.ImmutableList
 
 class TaskAggregate private(val aggregateId: TaskAggregateId, private val history: History) {
   def create(task: Task): util.List[Event] = {
-    val completed = TaskExecutionDetails.from(task, aggregateId.taskId).start.completed
-    ImmutableList.of(DetailsChanged(aggregateId, history.getNextEventId, completed))
+    val waiting = TaskExecutionDetails.from(task, aggregateId.taskId)
+    ImmutableList.of(DetailsChanged(aggregateId, history.getNextEventId, waiting))
   }
 }
 

@@ -18,24 +18,34 @@
   * ***************************************************************/
 package org.apache.james.task.eventsourcing
 
+import java.io.Closeable
 import java.util
+import java.util.function.Consumer
 
 import com.google.common.annotations.VisibleForTesting
 import javax.inject.Inject
 import org.apache.james.eventsourcing.eventstore.EventStore
 import org.apache.james.eventsourcing.{Command, CommandHandler, EventSourcingSystem, Subscriber}
-import org.apache.james.task.{Task, TaskExecutionDetails, TaskId, TaskManager, TaskNotFoundException}
+import org.apache.james.task.{MemoryTaskManagerWorker, Task, TaskExecutionDetails, TaskId, TaskManager, TaskManagerWorker, TaskNotFoundException, WorkQueue}
 
 class Create(val id: TaskId, val task: Task) extends Command
 
-class EventSourcingTaskManager @Inject @VisibleForTesting private[eventsourcing](val eventStore: EventStore) extends TaskManager {
+class EventSourcingTaskManager @Inject @VisibleForTesting private[eventsourcing](val eventStore: EventStore) extends TaskManager with Closeable {
   private val executionDetailsProjection = new TaskExecutionDetailsProjection
+  private val worker: TaskManagerWorker = new MemoryTaskManagerWorker
+  private val workQueue: WorkQueue = WorkQueue.builder().worker(workQueue.submit(_)).listener(event => ())
   val handlers: Set[CommandHandler[_]] = Set(new CreateCommandHandler(eventStore))
 
   def projectionUpdater: Subscriber = {
     case detailsChanged: DetailsChanged =>
       executionDetailsProjection.update(detailsChanged.getAggregateId, detailsChanged.details)
     case _ =>
+  }
+
+  def workQueueProjectionUpdater: Consumer[WorkQueue.Event] = event => {
+    match event.status {
+      case WorkQueue.Event.STARTED
+    }
   }
 
   val subscribers: Set[Subscriber] = Set(projectionUpdater)
@@ -60,6 +70,9 @@ class EventSourcingTaskManager @Inject @VisibleForTesting private[eventsourcing]
 
   override def cancel(id: TaskId): Unit = {
   }
-
   override def await(id: TaskId): TaskExecutionDetails = null
+
+  override def close(): Unit = {
+    workQueue.close()
+  }
 }
