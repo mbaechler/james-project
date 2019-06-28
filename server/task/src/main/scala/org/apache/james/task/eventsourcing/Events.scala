@@ -20,8 +20,13 @@ package org.apache.james.task.eventsourcing
 
 import org.apache.james.eventsourcing.Event
 import org.apache.james.eventsourcing.EventId
-import org.apache.james.task.TaskExecutionDetails
+import org.apache.james.task.{Task, TaskExecutionDetails}
+
+case class Created(aggregateId: TaskAggregateId, eventId: EventId, task: Task) extends Event {
+  override def getAggregateId: TaskAggregateId = aggregateId
+}
 
 case class DetailsChanged(aggregateId: TaskAggregateId, eventId: EventId, details: TaskExecutionDetails) extends Event {
   override def getAggregateId: TaskAggregateId = aggregateId
 }
+

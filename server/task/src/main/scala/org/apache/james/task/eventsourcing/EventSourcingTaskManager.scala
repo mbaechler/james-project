@@ -26,15 +26,43 @@ import com.google.common.annotations.VisibleForTesting
 import javax.inject.Inject
 import org.apache.james.eventsourcing.eventstore.EventStore
 import org.apache.james.eventsourcing.{Command, CommandHandler, EventSourcingSystem, Subscriber}
-import org.apache.james.task.{MemoryTaskManagerWorker, Task, TaskExecutionDetails, TaskId, TaskManager, TaskManagerWorker, TaskNotFoundException, WorkQueue}
+import org.apache.james.task.TaskManagerWorker.Listener
+import org.apache.james.task.{MemoryTaskManagerWorker, Task, TaskExecutionDetails, TaskId, TaskManager, TaskManagerWorker, TaskNotFoundException, TaskWithId, WorkQueue}
 
 class Create(val id: TaskId, val task: Task) extends Command
 
 class EventSourcingTaskManager @Inject @VisibleForTesting private[eventsourcing](val eventStore: EventStore) extends TaskManager with Closeable {
   private val executionDetailsProjection = new TaskExecutionDetailsProjection
   private val worker: TaskManagerWorker = new MemoryTaskManagerWorker
-  private val workQueue: WorkQueue = WorkQueue.builder().worker(workQueue.submit(_)).listener(event => ())
+  private val workQueue: WorkQueue = WorkQueue.builder().worker(dispatchToWorker).listener(workQueueProjectionUpdater)
   val handlers: Set[CommandHandler[_]] = Set(new CreateCommandHandler(eventStore))
+
+  private def dispatchToWorker(taskWithId: TaskWithId) = {
+    val aggregateId = TaskAggregateId(taskWithId.getId)
+
+    def update(updater: TaskExecutionDetails => TaskExecutionDetails): Unit = {
+      executionDetailsProjection
+        .load(taskWithId.getId)
+        .map(updater)
+        .foreach(executionDetailsProjection.update(aggregateId, _))
+    }
+    worker.executeTask(taskWithId, new Listener {
+      override def started(): Unit = update(_.start())
+
+      override def completed(): Unit = update(_.completed())
+
+      override def failed(t: Throwable): Unit = update(_.failed())
+
+      override def failed(): Unit = update(_.failed())
+
+      override def cancelled(): Unit = update(_.cancelEffectively())
+    })
+  }
+
+  def workDispatcher: Subscriber = {
+    case Created(aggregateId, _, task) => workQueue.submit(new TaskWithId(aggregateId.taskId, task))
+    case _ =>
+  }
 
   def projectionUpdater: Subscriber = {
     case detailsChanged: DetailsChanged =>
@@ -43,12 +71,15 @@ class EventSourcingTaskManager @Inject @VisibleForTesting private[eventsourcing]
   }
 
   def workQueueProjectionUpdater: Consumer[WorkQueue.Event] = event => {
-    match event.status {
-      case WorkQueue.Event.STARTED
-    }
+    executionDetailsProjection
+      .load(event.id)
+      .foreach(details => event.status match {
+          case WorkQueue.Status.CANCELLED => executionDetailsProjection.update(TaskAggregateId(event.id), details.cancelEffectively())
+          case _ =>
+      })
   }
 
-  val subscribers: Set[Subscriber] = Set(projectionUpdater)
+  val subscribers: Set[Subscriber] = Set(projectionUpdater, workDispatcher)
   import scala.collection.JavaConverters._
   private val eventSourcingSystem = new EventSourcingSystem(handlers.asJava, subscribers.asJava, eventStore)
   def stop(): Unit = {
@@ -70,6 +101,7 @@ class EventSourcingTaskManager @Inject @VisibleForTesting private[eventsourcing]
 
   override def cancel(id: TaskId): Unit = {
   }
+
   override def await(id: TaskId): TaskExecutionDetails = null
 
   override def close(): Unit = {

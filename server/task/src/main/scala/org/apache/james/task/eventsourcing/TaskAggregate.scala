@@ -19,17 +19,26 @@
 package org.apache.james.task.eventsourcing
 
 import java.util
-import org.apache.james.eventsourcing.Event
+
 import org.apache.james.eventsourcing.eventstore.History
-import org.apache.james.task.Task
-import org.apache.james.task.TaskExecutionDetails
-import com.google.common.collect.ImmutableList
+import org.apache.james.eventsourcing.{Event, EventId}
+import org.apache.james.task.{Task, TaskExecutionDetails}
+
+import scala.collection.JavaConverters._
 
 class TaskAggregate private(val aggregateId: TaskAggregateId, private val history: History) {
   def create(task: Task): util.List[Event] = {
     val waiting = TaskExecutionDetails.from(task, aggregateId.taskId)
-    ImmutableList.of(DetailsChanged(aggregateId, history.getNextEventId, waiting))
+    publishEvents(history,
+      Created(aggregateId, _, task),
+      DetailsChanged(aggregateId, _, waiting))
   }
+
+  private def publishEvents(history: History, events: (EventId => Event)*): util.List[Event] =
+    Stream.iterate(history.getNextEventId)(_.next())
+      .zip(events)
+      .map({ case (eventId, builder) => builder(eventId) })
+      .asJava
 }
 
 object TaskAggregate {
