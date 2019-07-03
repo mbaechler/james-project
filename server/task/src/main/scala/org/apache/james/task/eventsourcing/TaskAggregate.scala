@@ -22,17 +22,36 @@ import java.util
 
 import org.apache.james.eventsourcing.eventstore.History
 import org.apache.james.eventsourcing.{Event, EventId}
-import org.apache.james.task.{Task, TaskExecutionDetails}
+import org.apache.james.task.{Task, TaskId}
 
 import scala.collection.JavaConverters._
 
-class TaskAggregate private(val aggregateId: TaskAggregateId, private val history: History) {
-  def create(task: Task): util.List[Event] = {
-    val waiting = TaskExecutionDetails.from(task, aggregateId.taskId)
-    publishEvents(history,
-      Created(aggregateId, _, task),
-      DetailsChanged(aggregateId, _, waiting))
+case class InternalProjection(aggregateId: TaskAggregateId, status: Option[Event] = None, task: Option[Task] = None) {
+  def apply(event: Event): InternalProjection = event match {
+    case e: Created => copy(status = Some(e), task = Some(e.task))
+    case e: CancelRequested => copy(status = Some(e))
+    case _ => this
   }
+}
+
+class TaskAggregate private(val aggregateId: TaskAggregateId, private val history: History) {
+
+  private val internalProjection = history.getEvents.asScala.foldLeft(InternalProjection(aggregateId))(_.apply(_))
+
+  def create(task: Task): util.List[Event] = {
+    publishEvents(history,
+      Created(aggregateId, _, task))
+  }
+
+  def cancel(id: TaskId): util.List[Event] = {
+    if (aggregateId.taskId.equals(id)) {
+      publishEvents(history,
+        CancelRequested(aggregateId, _, internalProjection.task.get))
+    } else {
+      Nil.asJava
+    }
+  }
+
 
   private def publishEvents(history: History, events: (EventId => Event)*): util.List[Event] =
     Stream.iterate(history.getNextEventId)(_.next())

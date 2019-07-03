@@ -26,7 +26,7 @@ case class Created(aggregateId: TaskAggregateId, eventId: EventId, task: Task) e
   override def getAggregateId: TaskAggregateId = aggregateId
 }
 
-case class DetailsChanged(aggregateId: TaskAggregateId, eventId: EventId, details: TaskExecutionDetails) extends Event {
+case class CancelRequested(aggregateId: TaskAggregateId, eventId: EventId, task: Task) extends Event {
   override def getAggregateId: TaskAggregateId = aggregateId
 }
 

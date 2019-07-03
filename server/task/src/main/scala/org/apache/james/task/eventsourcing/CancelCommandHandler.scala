@@ -19,17 +19,17 @@
 package org.apache.james.task.eventsourcing
 
 import java.util
-import org.apache.james.eventsourcing.CommandHandler
-import org.apache.james.eventsourcing.Event
+
+import org.apache.james.eventsourcing.{CommandHandler, Event}
 import org.apache.james.eventsourcing.eventstore.EventStore
 
-class CreateCommandHandler(private val eventStore: EventStore) extends CommandHandler[Create] {
-  override def handledClass: Class[Create] = classOf[Create]
+class CancelCommandHandler(private val eventStore: EventStore) extends CommandHandler[Cancel] {
+  override def handledClass: Class[Cancel] = classOf[Cancel]
 
-  override def handle(create: Create): util.List[_ <: Event] = {
-    val aggregateId = TaskAggregateId(create.id)
+  override def handle(cancel: Cancel): util.List[_ <: Event] = {
+    val aggregateId = TaskAggregateId(cancel.id)
     val history = eventStore.getEventsOfAggregate(aggregateId)
     val aggregate = TaskAggregate.fromHistory(aggregateId, history)
-    aggregate.create(create.task)
+    aggregate.cancel(cancel.id)
   }
 }
