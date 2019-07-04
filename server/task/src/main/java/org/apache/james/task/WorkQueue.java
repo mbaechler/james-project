@@ -21,10 +21,8 @@ package org.apache.james.task;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import com.google.common.collect.Sets;
 import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
