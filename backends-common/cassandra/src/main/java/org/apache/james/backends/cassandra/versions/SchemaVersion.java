@@ -19,7 +19,10 @@
 
 package org.apache.james.backends.cassandra.versions;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
@@ -50,6 +53,17 @@ public class SchemaVersion {
 
     public boolean isBefore(SchemaVersion other) {
         return this.value < other.value;
+    }
+
+    public List<SchemaTransition> listTransitionsForTarget(SchemaVersion target) {
+        List<SchemaTransition> transitions = new ArrayList<>();
+        SchemaVersion migrateTo = next();
+        while (target.isAfterOrEquals(migrateTo)) {
+            SchemaTransition transition = SchemaTransition.to(migrateTo);
+            transitions.add(transition);
+            migrateTo = migrateTo.next();
+        }
+        return transitions;
     }
 
     @Override
