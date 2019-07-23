@@ -97,7 +97,7 @@ public final class CassandraCluster implements AutoCloseable {
     }
 
     public void closeCluster() {
-        cluster.closeAsync();
+        cluster.closeAsync().force();
         startStackTrace = Optional.empty();
     }
 
