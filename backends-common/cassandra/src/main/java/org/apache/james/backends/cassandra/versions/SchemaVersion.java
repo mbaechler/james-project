@@ -22,7 +22,6 @@ package org.apache.james.backends.cassandra.versions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Stream;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
