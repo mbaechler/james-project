@@ -72,7 +72,7 @@ public class CassandraMigrationService {
         transitions.findMigration(transition).orElseThrow(() -> {
             String message = String.format("Can not migrate from %s to %s. No migration class registered.", transition.fromAsString(), transition.toAsString());
             logger.error(message);
-            throw new NotImplementedException(message);
+            return new NotImplementedException(message);
         });
     }
 
