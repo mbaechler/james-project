@@ -140,6 +140,10 @@ public class MigrationTask implements Task {
         return CASSANDRA_MIGRATION;
     }
 
+    SchemaVersion getTargetVersion() {
+        return target;
+    }
+
     @Override
     public Optional<TaskExecutionDetails.AdditionalInformation> details() {
         return Optional.of(new Details(target));
