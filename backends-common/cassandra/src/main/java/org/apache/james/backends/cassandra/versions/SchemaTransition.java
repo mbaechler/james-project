@@ -35,7 +35,7 @@ public class SchemaTransition {
     public String fromAsString() {
         return String.valueOf(toVersion.previous().getValue());
     }
-    
+
     public String toAsString() {
         return String.valueOf(toVersion.getValue());
     }
@@ -64,8 +64,6 @@ public class SchemaTransition {
 
     @Override
     public String toString() {
-        return "SchemaTransition{" +
-                "from " + fromAsString() + " to " + toAsString() +
-                '}';
+        return "SchemaTransition{ from " + fromAsString() + " to " + toAsString() + "}";
     }
 }
