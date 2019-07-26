@@ -22,23 +22,56 @@ package org.apache.james.backends.cassandra.migration;
 import static org.apache.james.backends.cassandra.versions.CassandraSchemaVersionManager.DEFAULT_VERSION;
 
 import java.util.Optional;
+import java.util.function.Function;
 
 import javax.inject.Inject;
 
 import org.apache.james.backends.cassandra.versions.CassandraSchemaVersionDAO;
 import org.apache.james.backends.cassandra.versions.SchemaTransition;
 import org.apache.james.backends.cassandra.versions.SchemaVersion;
+import org.apache.james.json.DTOModule;
+import org.apache.james.server.task.json.dto.TaskDTO;
+import org.apache.james.server.task.json.dto.TaskDTOModule;
 import org.apache.james.task.Task;
 import org.apache.james.task.TaskExecutionDetails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.fge.lambdas.Throwing;
 import com.google.common.annotations.VisibleForTesting;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
 public class MigrationTask implements Task {
+
+    @VisibleForTesting static final Function<Factory, TaskDTOModule<MigrationTask, MigrationTaskDTO>> SERIALIZATION_MODULE =
+            factory -> DTOModule.forDomainObject(MigrationTask.class)
+                    .convertToDTO(MigrationTaskDTO.class)
+                    .toDomainObjectConverter(dto -> factory.create(new SchemaVersion(dto.targetVersion)))
+                    .toDTOConverter((task, type) -> new MigrationTaskDTO(type, task.target.getValue()))
+                    .typeName("cassandra-migration-task")
+                    .withFactory(TaskDTOModule::new);
+
+    private static class MigrationTaskDTO implements TaskDTO {
+
+        private final String type;
+        private final int targetVersion;
+
+        MigrationTaskDTO(@JsonProperty("type") String type, @JsonProperty("targetVersion") int targetVersion) {
+            this.type = type;
+            this.targetVersion = targetVersion;
+        }
+
+        @Override
+        public String getType() {
+            return type;
+        }
+
+        public int getTargetVersion() {
+            return targetVersion;
+        }
+    }
 
     public interface Factory {
         MigrationTask create(SchemaVersion target);
@@ -140,12 +173,9 @@ public class MigrationTask implements Task {
         return CASSANDRA_MIGRATION;
     }
 
-    SchemaVersion getTargetVersion() {
-        return target;
-    }
-
     @Override
     public Optional<TaskExecutionDetails.AdditionalInformation> details() {
         return Optional.of(new Details(target));
     }
+
 }
