@@ -30,7 +30,7 @@ class MigrationTaskSerializationTest {
     void taskShouldBeDeserializable() throws IOException {
         MigrationTask task = factory.create(new SchemaVersion(12));
         assertThat(taskSerializer.deserialize("{\"type\": \"cassandra-migration-task\", \"targetVersion\": 12}"))
-                .isEqualToComparingFieldByField(task);
+            .isEqualToComparingFieldByField(task);
     }
 
 }
