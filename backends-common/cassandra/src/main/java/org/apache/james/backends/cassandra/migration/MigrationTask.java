@@ -45,13 +45,14 @@ import reactor.util.function.Tuples;
 
 public class MigrationTask implements Task {
 
-    @VisibleForTesting static final Function<Factory, TaskDTOModule<MigrationTask, MigrationTaskDTO>> SERIALIZATION_MODULE =
-            factory -> DTOModule.forDomainObject(MigrationTask.class)
-                    .convertToDTO(MigrationTaskDTO.class)
-                    .toDomainObjectConverter(dto -> factory.create(new SchemaVersion(dto.targetVersion)))
-                    .toDTOConverter((task, type) -> new MigrationTaskDTO(type, task.target.getValue()))
-                    .typeName("cassandra-migration-task")
-                    .withFactory(TaskDTOModule::new);
+    @VisibleForTesting
+    static final Function<Factory, TaskDTOModule<MigrationTask, MigrationTaskDTO>> SERIALIZATION_MODULE =
+        factory -> DTOModule.forDomainObject(MigrationTask.class)
+            .convertToDTO(MigrationTaskDTO.class)
+            .toDomainObjectConverter(dto -> factory.create(new SchemaVersion(dto.targetVersion)))
+            .toDTOConverter((task, type) -> new MigrationTaskDTO(type, task.target.getValue()))
+            .typeName("cassandra-migration-task")
+            .withFactory(TaskDTOModule::new);
 
     private static class MigrationTaskDTO implements TaskDTO {
 
@@ -165,7 +166,7 @@ public class MigrationTask implements Task {
 
     private String failureMessage(SchemaVersion newVersion) {
         return String.format("Migrating to version %d partially done. " +
-                "Please check logs for cause of failure and re-run this migration.", newVersion.getValue());
+            "Please check logs for cause of failure and re-run this migration.", newVersion.getValue());
     }
 
     @Override
