@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 import javax.annotation.PreDestroy;
+import javax.inject.Inject;
 
 import org.apache.james.task.eventsourcing.Hostname;
 
@@ -90,6 +91,7 @@ public class MemoryTaskManager implements TaskManager {
     private final TaskManagerWorker worker;
     private final ConcurrentHashMap<TaskId, TaskExecutionDetails> idToExecutionDetails;
 
+    @Inject
     public MemoryTaskManager(Hostname hostname) {
         this.hostname = hostname;
         this.idToExecutionDetails = new ConcurrentHashMap<>();
