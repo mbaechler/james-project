@@ -26,7 +26,6 @@ import java.net.UnknownHostException;
 import org.apache.james.task.eventsourcing.Hostname;
 
 import com.google.inject.AbstractModule;
-import com.google.inject.Scopes;
 
 public class HostnameModule extends AbstractModule {
     private static class UnconfigurableHostnameException extends RuntimeException {
@@ -37,7 +36,6 @@ public class HostnameModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        bind(Hostname.class).in(Scopes.SINGLETON);
         bind(Hostname.class).toInstance(getHostname());
     }
 
