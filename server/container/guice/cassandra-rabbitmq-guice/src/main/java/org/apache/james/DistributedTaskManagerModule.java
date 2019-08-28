@@ -20,15 +20,12 @@
 
 package org.apache.james;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
+import org.apache.james.modules.server.HostnameModule;
 import org.apache.james.task.MemoryWorkQueue;
 import org.apache.james.task.SerialTaskManagerWorker;
 import org.apache.james.task.TaskManager;
 import org.apache.james.task.TaskManagerWorker;
 import org.apache.james.task.eventsourcing.EventSourcingTaskManager;
-import org.apache.james.task.eventsourcing.Hostname;
 import org.apache.james.task.eventsourcing.TaskExecutionDetailsProjection;
 import org.apache.james.task.eventsourcing.WorkQueueSupplier;
 import org.apache.james.task.eventsourcing.WorkerStatusListener;
@@ -38,12 +35,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Scopes;
 
 public class DistributedTaskManagerModule extends AbstractModule {
-    private static class UnconfigurableHostname extends RuntimeException {
-        UnconfigurableHostname(String message, Exception originException) {
-            super(message, originException);
-        }
-    }
-
     public static final WorkQueueSupplier workQueueSupplier = eventSourcingSystem -> {
         WorkerStatusListener listener = new WorkerStatusListener(eventSourcingSystem);
         TaskManagerWorker worker = new SerialTaskManagerWorker(listener);
@@ -52,21 +43,12 @@ public class DistributedTaskManagerModule extends AbstractModule {
 
     @Override
     protected void configure() {
+        install(new HostnameModule());
         bind(TaskExecutionDetailsProjection.class).in(Scopes.SINGLETON);
         bind(TaskManager.class).in(Scopes.SINGLETON);
         bind(WorkQueueSupplier.class).in(Scopes.SINGLETON);
         bind(TaskExecutionDetailsProjection.class).to(CassandraTaskExecutionDetailsProjection.class);
-        bind(Hostname.class).in(Scopes.SINGLETON);
-        bind(Hostname.class).toInstance(getHostname());
         bind(TaskManager.class).to(EventSourcingTaskManager.class);
         bind(WorkQueueSupplier.class).toInstance(workQueueSupplier);
-    }
-
-    private Hostname getHostname() {
-        try {
-            return new Hostname(InetAddress.getLocalHost().getHostName());
-        } catch (UnknownHostException e) {
-            throw new UnconfigurableHostname("Hostname can not be retrieved, unable to initialize the distributed task manager", e);
-        }
     }
 }
