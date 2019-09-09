@@ -24,6 +24,7 @@ import javax.inject.Inject;
 
 import org.apache.commons.configuration2.BaseHierarchicalConfiguration;
 import org.apache.commons.configuration2.HierarchicalConfiguration;
+import org.apache.commons.configuration2.tree.ImmutableNode;
 import org.apache.james.mailbox.events.MailboxListener;
 
 import com.google.common.base.Preconditions;
@@ -35,7 +36,7 @@ public class MailboxListenerFactory {
         private final Injector injector;
         private Optional<Class<MailboxListener>> clazz;
         private Optional<MailboxListener.ExecutionMode> executionMode;
-        private Optional<HierarchicalConfiguration> configuration;
+        private Optional<HierarchicalConfiguration<ImmutableNode>> configuration;
 
         public MailboxListenerBuilder(Injector injector) {
             this.injector = injector;
@@ -49,7 +50,7 @@ public class MailboxListenerFactory {
             return this;
         }
 
-        public MailboxListenerBuilder withConfiguration(HierarchicalConfiguration configuration) {
+        public MailboxListenerBuilder withConfiguration(HierarchicalConfiguration<ImmutableNode> configuration) {
             this.configuration = Optional.of(configuration);
             return this;
         }
@@ -59,7 +60,7 @@ public class MailboxListenerFactory {
             return this;
         }
 
-        public MailboxListenerBuilder withConfiguration(Optional<HierarchicalConfiguration> configuration) {
+        public MailboxListenerBuilder withConfiguration(Optional<HierarchicalConfiguration<ImmutableNode>> configuration) {
             configuration.ifPresent(this::withConfiguration);
             return this;
         }

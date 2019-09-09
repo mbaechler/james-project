@@ -244,19 +244,18 @@ public class MailProtocolTestTask extends Task implements Monitor {
             scripts = new Union();
             scripts.add(new FileResource(script));
         }
-        
-        for (Iterator<?> it = scripts.iterator(); it.hasNext();) {
-            final Resource resource = (Resource) it.next();
+
+        for (final Resource resource : scripts) {
             try {
                 final Runner runner = new Runner();
-                
+
                 try {
-                    
+
                     final InputStream inputStream = resource.getInputStream();
                     final String name = resource.getName();
                     builder.addProtocolLines(name == null ? "[Unknown]" : name, inputStream, runner.getTestElements());
                     runner.runSessions(host);
-                    
+
                 } catch (UnsupportedOperationException e) {
                     log("Resource cannot be read: " + resource.getName(), Project.MSG_WARN);
                 }
@@ -266,7 +265,7 @@ public class MailProtocolTestTask extends Task implements Monitor {
                 log(e.getMessage(), Project.MSG_ERR);
                 throw new BuildException("[FAILURE] in script " + resource.getName() + "\n" + e.getMessage(), e);
             }
-            
+
         }
     
     }
