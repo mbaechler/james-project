@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.nio.channels.FileChannel;
-import java.util.Iterator;
 
 import javax.net.ssl.SSLEngine;
 
