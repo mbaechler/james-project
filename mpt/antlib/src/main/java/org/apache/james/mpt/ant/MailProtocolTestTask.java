@@ -28,7 +28,6 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Optional;
 
 import org.apache.james.mpt.Runner;
