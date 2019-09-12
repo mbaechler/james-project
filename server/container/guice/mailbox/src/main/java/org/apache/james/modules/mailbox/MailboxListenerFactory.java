@@ -29,6 +29,7 @@ import org.apache.james.mailbox.events.MailboxListener;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Injector;
+import com.google.inject.TypeLiteral;
 
 public class MailboxListenerFactory {
 
@@ -75,8 +76,8 @@ public class MailboxListenerFactory {
             return injector.createChildInjector(
                 binder -> binder.bind(MailboxListener.ExecutionMode.class)
                     .toInstance(executionMode.orElse(MailboxListener.ExecutionMode.SYNCHRONOUS)),
-                binder -> binder.bind(HierarchicalConfiguration.class)
-                    .toInstance(configuration.orElse(new BaseHierarchicalConfiguration())))
+                binder -> binder.bind(new TypeLiteral<HierarchicalConfiguration<ImmutableNode>>() {})
+                        .toInstance(configuration.orElse(new BaseHierarchicalConfiguration())))
                 .getInstance(clazz.get());
         }
     }
