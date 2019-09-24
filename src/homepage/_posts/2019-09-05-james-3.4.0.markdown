@@ -18,7 +18,7 @@ Here are some points we worked on:
 
 ### Changed
 - (experimental) New implementation of the deleted message vault on top of an object store, not relying anymore on a 
-repository. This avoids exposing messages via webAdmin. Messages previously stored in the vault will be lost.
+repository. This avoids exposing messages via WebAdmin. Messages previously stored in the vault will be lost.
 - Migration to ElasticSearch 6.3
 - Blob export to LinShare
 - Native DKIM support for outgoing mails. The mailets from james-jdkim have been included in main James project.
