@@ -54,9 +54,9 @@ To do so:
 
 #### Enqueuing several times a mail with the same name
 
-Date: XX/06/2019
+Date: 26/06/2019
 
-SHA-1: XXXXX
+SHA-1: edd328029485c64a63ef8dbc883f3db881c6197f
 
 JIRA: https://issues.apache.org/jira/browse/JAMES-2794
 
