@@ -26,6 +26,7 @@ import static org.apache.james.webadmin.Constants.JSON_CONTENT_TYPE;
 import static org.apache.james.webadmin.Constants.SEPARATOR;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
@@ -53,6 +54,7 @@ import org.apache.james.webadmin.routes.TasksRoutes;
 import org.apache.james.webadmin.routes.UserMailboxesRoutes;
 import org.apache.james.webadmin.routes.UserRoutes;
 import org.apache.james.webadmin.swagger.routes.SwaggerRoutes;
+import org.apache.mailbox.tools.indexer.FullReindexingTask;
 import org.awaitility.Awaitility;
 import org.awaitility.Duration;
 import org.eclipse.jetty.http.HttpStatus;
@@ -404,5 +406,22 @@ public class WebAdminServerIntegrationTest {
             .contentType(ContentType.JSON)
         .statusCode(HttpStatus.OK_200)
             .body("source", hasItems(ALIAS_1, ALIAS_2));
+    }
+
+    @Test
+    public void fullReindexShouldSucceedWhenNoMail() {
+        String taskId = with()
+            .post("/mailboxes?task=reIndex")
+            .jsonPath()
+            .get("taskId");
+
+        given()
+            .basePath(TasksRoutes.BASE)
+        .when()
+            .get(taskId + "/await")
+        .then()
+            .body("status", is("completed"))
+            .body("taskId", is(notNullValue()))
+            .body("type", is(FullReindexingTask.FULL_RE_INDEXING.asString()));
     }
 }

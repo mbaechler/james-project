@@ -41,7 +41,7 @@ class MigrationTaskSerializationTest {
     private final CassandraSchemaVersionDAO cassandraSchemaVersionDAO = mock(CassandraSchemaVersionDAO.class);
     private final CassandraSchemaTransitions transitions = mock(CassandraSchemaTransitions.class);
     private final MigrationTask.Factory factory = target -> new MigrationTask(cassandraSchemaVersionDAO, transitions, target);
-    private final JsonTaskSerializer taskSerializer = new JsonTaskSerializer(MigrationTaskDTO.SERIALIZATION_MODULE.apply(factory));
+    private final JsonTaskSerializer taskSerializer = new JsonTaskSerializer(MigrationTaskDTO.module(factory));
     private JsonTaskAdditionalInformationsSerializer jsonAdditionalInformationSerializer = new JsonTaskAdditionalInformationsSerializer(MigrationTaskAdditionalInformationsDTO.SERIALIZATION_MODULE);
 
     @Test

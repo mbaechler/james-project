@@ -60,7 +60,6 @@ public class CommonServicesModule extends AbstractModule {
         install(new PreDestroyModule());
         install(new DNSServiceModule());
         install(new DropWizardMetricsModule());
-        install(new TaskManagerModule());
         install(new CleanupTaskModule());
         install(new MimeMessageModule());
         install(new ClockModule());
