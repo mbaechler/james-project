@@ -116,7 +116,7 @@ public class DockerAwsS3TestRule implements GuiceModuleTestRule {
     }
 
     public void stop() {
-        DockerAwsS3Singleton.singleton.stop();
+        //nothing to stop
     }
 }
 
