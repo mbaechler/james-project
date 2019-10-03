@@ -24,6 +24,7 @@ import static io.restassured.RestAssured.when;
 import static io.restassured.RestAssured.with;
 import static org.apache.james.webadmin.Constants.JSON_CONTENT_TYPE;
 import static org.apache.james.webadmin.Constants.SEPARATOR;
+import static org.apache.james.webadmin.vault.routes.DeletedMessagesVaultRoutes.USERS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -61,6 +62,7 @@ import org.apache.james.webadmin.routes.TasksRoutes;
 import org.apache.james.webadmin.routes.UserMailboxesRoutes;
 import org.apache.james.webadmin.routes.UserRoutes;
 import org.apache.james.webadmin.swagger.routes.SwaggerRoutes;
+import org.apache.james.webadmin.vault.routes.DeletedMessagesVaultRoutes;
 import org.apache.mailbox.tools.indexer.FullReindexingTask;
 import org.apache.mailbox.tools.indexer.MessageIdReIndexingTask;
 import org.apache.mailbox.tools.indexer.SingleMessageReindexingTask;
@@ -77,6 +79,7 @@ import org.junit.Test;
 
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import reactor.core.publisher.Mono;
 
 import javax.mail.Flags;
 
@@ -564,5 +567,32 @@ public class WebAdminServerIntegrationTest {
             .body("status", is("completed"))
             .body("taskId", is(Matchers.notNullValue()))
             .body("type", is(UserReindexingTask.USER_RE_INDEXING.asString()));
+    }
+
+    @Test
+    public void deletedMessageVaultRestoreShouldCreateATask() throws Exception {
+        dataProbe.addUser(USERNAME, "password");
+        String query =
+            "{" +
+                "  \"fieldName\": \"subject\"," +
+                "  \"operator\": \"contains\"," +
+                "  \"value\": \"subject contains\"" +
+                "}";
+
+        String taskId =
+            with()
+                .basePath(DeletedMessagesVaultRoutes.ROOT_PATH)
+                .queryParam("action", "restore")
+                .body(query)
+            .post(USERS + SEPARATOR + USERNAME)
+                .jsonPath()
+                .get("taskId");
+
+        given()
+            .basePath(TasksRoutes.BASE)
+        .when()
+        .get(taskId + "/await")
+        .then()
+            .body("status", is("completed"));
     }
 }
