@@ -39,6 +39,7 @@ import org.apache.james.GuiceJamesServer;
 import org.apache.james.backends.cassandra.versions.CassandraSchemaVersionManager;
 import org.apache.james.modules.MailboxProbeImpl;
 import org.apache.james.probe.DataProbe;
+import org.apache.james.queue.api.RawMailQueueItemDecoratorFactory;
 import org.apache.james.utils.DataProbeImpl;
 import org.apache.james.utils.WebAdminGuiceProbe;
 import org.apache.james.webadmin.WebAdminUtils;
@@ -424,4 +425,33 @@ public class WebAdminServerIntegrationTest {
             .body("taskId", is(notNullValue()))
             .body("type", is(FullReindexingTask.FULL_RE_INDEXING.asString()));
     }
+
+    @Test
+    public void deleteMailsTasksShouldCompleteWhenSenderIsValid() {
+        String firstMailQueue = with()
+                .basePath(MailQueueRoutes.BASE_URL)
+            .get()
+            .then()
+                .statusCode(HttpStatus.OK_200)
+                .contentType(ContentType.JSON)
+                .extract()
+                .body()
+                .jsonPath()
+                .getString("[0]");
+
+        String taskId = with()
+                .basePath(MailQueueRoutes.BASE_URL)
+                .param("sender", USERNAME)
+            .delete(firstMailQueue + "/mails")
+                .jsonPath()
+                .getString("taskId");
+
+        given()
+                .basePath(TasksRoutes.BASE)
+            .when()
+            .get(taskId + "/await")
+            .then()
+                .body("status", is("completed"));
+    }
+
 }
