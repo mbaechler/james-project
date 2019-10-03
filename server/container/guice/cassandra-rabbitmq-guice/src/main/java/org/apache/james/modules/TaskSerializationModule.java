@@ -11,8 +11,9 @@ import org.apache.james.server.task.json.JsonTaskSerializer;
 import org.apache.james.server.task.json.dto.TaskDTOModule;
 import org.apache.james.task.eventsourcing.distributed.TasksSerializationModule;
 import org.apache.james.webadmin.service.CassandraMappingsSolveInconsistenciesTask;
-import org.apache.james.webadmin.service.DeleteMailsFromMailQueueTask;
 import org.apache.james.webadmin.service.DeleteMailsFromMailQueueTaskDTO;
+import org.apache.james.webadmin.service.ReprocessingAllMailsTaskDTO;
+import org.apache.james.webadmin.service.ReprocessingService;
 import org.apache.mailbox.tools.indexer.FullReindexingTask;
 import org.apache.mailbox.tools.indexer.ReIndexerPerformer;
 
@@ -63,6 +64,11 @@ public class TaskSerializationModule extends AbstractModule {
     @ProvidesIntoSet
     public TaskDTOModule<?, ?> deleteMailsFromMailQueueTask(MailQueueFactory<?> mailQueueFactory) {
         return DeleteMailsFromMailQueueTaskDTO.module((MailQueueFactory<ManageableMailQueue>) mailQueueFactory);
+    }
+
+    @ProvidesIntoSet
+    public TaskDTOModule<?, ?> reprocessingAllMailsTask(ReprocessingService reprocessingService) {
+        return ReprocessingAllMailsTaskDTO.module(reprocessingService);
     }
 
     @ProvidesIntoSet

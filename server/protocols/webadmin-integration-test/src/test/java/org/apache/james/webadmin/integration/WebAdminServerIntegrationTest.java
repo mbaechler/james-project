@@ -59,6 +59,7 @@ import org.apache.mailbox.tools.indexer.FullReindexingTask;
 import org.awaitility.Awaitility;
 import org.awaitility.Duration;
 import org.eclipse.jetty.http.HttpStatus;
+import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -452,6 +453,30 @@ public class WebAdminServerIntegrationTest {
             .get(taskId + "/await")
             .then()
                 .body("status", is("completed"));
+    }
+
+    @Test
+    public void reprocessingAllTaskShouldCreateATask() throws Exception {
+        String escapedRepositoryPath = with()
+                .basePath(MailRepositoriesRoutes.MAIL_REPOSITORIES)
+            .get()
+            .then()
+                .statusCode(HttpStatus.OK_200)
+                .contentType(ContentType.JSON)
+                .extract()
+                .body()
+                .jsonPath()
+                .getString("[0].path");
+
+        given()
+                .basePath(MailRepositoriesRoutes.MAIL_REPOSITORIES)
+                .param("action", "reprocess")
+            .when()
+            .patch(escapedRepositoryPath + "/mails")
+                .then()
+                .statusCode(HttpStatus.CREATED_201)
+                .header("Location", is(Matchers.notNullValue()))
+                .body("taskId", is(Matchers.notNullValue()));
     }
 
 }

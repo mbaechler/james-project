@@ -28,16 +28,17 @@ import org.apache.james.server.task.json.dto.TaskDTOModule;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-class ReprocessingAllMailsTaskDTO implements TaskDTO {
+public class ReprocessingAllMailsTaskDTO implements TaskDTO {
 
-    public static final Function<ReprocessingService, TaskDTOModule<ReprocessingAllMailsTask, ReprocessingAllMailsTaskDTO>> MODULE = (reprocessingService) ->
-        DTOModule
+    public static TaskDTOModule<ReprocessingAllMailsTask, ReprocessingAllMailsTaskDTO> module(ReprocessingService reprocessingService) {
+        return DTOModule
             .forDomainObject(ReprocessingAllMailsTask.class)
             .convertToDTO(ReprocessingAllMailsTaskDTO.class)
             .toDomainObjectConverter(dto -> dto.fromDTO(reprocessingService))
             .toDTOConverter(ReprocessingAllMailsTaskDTO::toDTO)
             .typeName(ReprocessingAllMailsTask.TYPE.asString())
             .withFactory(TaskDTOModule::new);
+    }
 
     private static ReprocessingAllMailsTaskDTO toDTO(ReprocessingAllMailsTask domainObject, String typeName) {
         try {
