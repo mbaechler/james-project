@@ -38,8 +38,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class DeletedMessagesVaultExportTaskDTO implements TaskDTO {
 
-    public static final Function<Factory, TaskDTOModule<DeletedMessagesVaultExportTask, DeletedMessagesVaultExportTaskDTO>> MODULE = (factory) ->
-        DTOModule
+    public static TaskDTOModule<DeletedMessagesVaultExportTask, DeletedMessagesVaultExportTaskDTO> module(Factory factory) {
+        return DTOModule
             .forDomainObject(DeletedMessagesVaultExportTask.class)
             .convertToDTO(DeletedMessagesVaultExportTaskDTO.class)
             .toDomainObjectConverter(dto -> {
@@ -52,6 +52,7 @@ public class DeletedMessagesVaultExportTaskDTO implements TaskDTO {
             .toDTOConverter(factory::createDTO)
             .typeName(DeletedMessagesVaultExportTask.TYPE.asString())
             .withFactory(TaskDTOModule::new);
+    }
 
     public static class Factory {
 

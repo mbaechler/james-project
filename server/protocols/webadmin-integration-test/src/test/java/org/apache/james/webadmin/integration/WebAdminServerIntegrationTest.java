@@ -122,6 +122,7 @@ public class WebAdminServerIntegrationTest {
 
         RestAssured.requestSpecification = WebAdminUtils.buildRequestSpecification(webAdminGuiceProbe.getWebAdminPort())
             .build();
+        RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
     }
 
     @After
@@ -594,5 +595,24 @@ public class WebAdminServerIntegrationTest {
         .get(taskId + "/await")
         .then()
             .body("status", is("completed"));
+    }
+
+    @Test
+    public void deletedMessageVaultExportShouldCreateATask() throws Exception {
+        dataProbe.addUser(USERNAME, "password");
+        String query = "{" +
+            "\"combinator\": \"and\"," +
+            "\"criteria\": []" +
+            "}";
+
+        with()
+            .basePath(DeletedMessagesVaultRoutes.ROOT_PATH)
+            .queryParam("action", "export")
+            .queryParam("exportTo", "exportTo@james.org")
+            .body(query)
+        .post(USERS + SEPARATOR + USERNAME)
+        .then()
+            .statusCode(HttpStatus.CREATED_201)
+            .body("taskId", Matchers.notNullValue());
     }
 }
