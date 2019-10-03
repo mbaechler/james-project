@@ -28,14 +28,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class MessageIdReindexingTaskDTO implements TaskDTO {
 
-    public static final Function<MessageIdReIndexingTask.Factory, TaskDTOModule<MessageIdReIndexingTask, MessageIdReindexingTaskDTO>> MODULE = (factory) ->
-        DTOModule
+    public static TaskDTOModule<MessageIdReIndexingTask, MessageIdReindexingTaskDTO> module(MessageIdReIndexingTask.Factory factory) {
+        return DTOModule
             .forDomainObject(MessageIdReIndexingTask.class)
             .convertToDTO(MessageIdReindexingTaskDTO.class)
             .toDomainObjectConverter(factory::create)
             .toDTOConverter(MessageIdReindexingTaskDTO::of)
             .typeName(MessageIdReIndexingTask.TYPE.asString())
             .withFactory(TaskDTOModule::new);
+    }
 
     private final String type;
     private final String messageId;

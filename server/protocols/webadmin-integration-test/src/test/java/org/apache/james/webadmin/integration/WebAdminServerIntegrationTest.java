@@ -64,6 +64,8 @@ import org.apache.james.webadmin.routes.UserMailboxesRoutes;
 import org.apache.james.webadmin.routes.UserRoutes;
 import org.apache.james.webadmin.swagger.routes.SwaggerRoutes;
 import org.apache.mailbox.tools.indexer.FullReindexingTask;
+import org.apache.mailbox.tools.indexer.MessageIdReIndexingTask;
+import org.apache.mailbox.tools.indexer.MessageIdReindexingTaskDTO;
 import org.apache.mailbox.tools.indexer.SingleMessageReindexingTask;
 import org.awaitility.Awaitility;
 import org.awaitility.Duration;
@@ -518,5 +520,31 @@ public class WebAdminServerIntegrationTest {
                 .body("status", is("completed"))
                 .body("taskId", is(Matchers.notNullValue()))
                 .body("type", is(SingleMessageReindexingTask.MESSAGE_RE_INDEXING.asString()));
+    }
+
+    @Test
+    public void messageIdReprocessingShouldReturnTaskDetailsWhenMail() throws Exception {
+        mailboxProbe.createMailbox(MailboxConstants.USER_NAMESPACE, USERNAME, MailboxConstants.INBOX);
+        ComposedMessageId composedMessageId = mailboxProbe.appendMessage(
+            USERNAME,
+            MailboxPath.forUser(USERNAME, MailboxConstants.INBOX),
+            new ByteArrayInputStream("Subject: test\r\n\r\ntestmail".getBytes()),
+            new Date(),
+            false,
+            new Flags());
+
+        String taskId = when()
+            .post("/messages/" + composedMessageId.getMessageId().serialize() + "?task=reIndex")
+            .jsonPath()
+            .get("taskId");
+
+        given()
+            .basePath(TasksRoutes.BASE)
+            .when()
+            .get(taskId + "/await")
+            .then()
+            .body("status", is("completed"))
+            .body("taskId", is(Matchers.notNullValue()))
+            .body("type", is(MessageIdReIndexingTask.TYPE.asString()));
     }
 }

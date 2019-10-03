@@ -52,7 +52,7 @@ class MessageIdReindexingTaskSerializationTest {
                 .apply(messageIdFactory));
         reIndexerPerformer = mock(ReIndexerPerformer.class);
         MessageIdReIndexingTask.Factory factory = new MessageIdReIndexingTask.Factory(reIndexerPerformer, messageIdFactory);
-        taskSerializer = new JsonTaskSerializer(MessageIdReindexingTaskDTO.MODULE.apply(factory));
+        taskSerializer = new JsonTaskSerializer(MessageIdReindexingTaskDTO.module(factory));
     }
 
     @Test
