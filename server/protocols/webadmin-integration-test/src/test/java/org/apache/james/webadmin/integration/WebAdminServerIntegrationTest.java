@@ -39,8 +39,6 @@ import org.apache.james.CassandraRabbitMQAwsS3JmapTestRule;
 import org.apache.james.DockerCassandraRule;
 import org.apache.james.GuiceJamesServer;
 import org.apache.james.backends.cassandra.versions.CassandraSchemaVersionManager;
-import org.apache.james.mailbox.MailboxSession;
-import org.apache.james.mailbox.MessageManager;
 import org.apache.james.mailbox.model.ComposedMessageId;
 import org.apache.james.mailbox.model.MailboxConstants;
 import org.apache.james.mailbox.model.MailboxId;
@@ -65,8 +63,9 @@ import org.apache.james.webadmin.routes.UserRoutes;
 import org.apache.james.webadmin.swagger.routes.SwaggerRoutes;
 import org.apache.mailbox.tools.indexer.FullReindexingTask;
 import org.apache.mailbox.tools.indexer.MessageIdReIndexingTask;
-import org.apache.mailbox.tools.indexer.MessageIdReindexingTaskDTO;
 import org.apache.mailbox.tools.indexer.SingleMessageReindexingTask;
+import org.apache.mailbox.tools.indexer.UserReindexingTask;
+
 import org.awaitility.Awaitility;
 import org.awaitility.Duration;
 import org.eclipse.jetty.http.HttpStatus;
@@ -546,5 +545,24 @@ public class WebAdminServerIntegrationTest {
             .body("status", is("completed"))
             .body("taskId", is(Matchers.notNullValue()))
             .body("type", is(MessageIdReIndexingTask.TYPE.asString()));
+    }
+
+    @Test
+    public void userReindexingShouldReturnTaskDetails() {
+        String taskId = with()
+                .queryParam("user", USERNAME)
+                .queryParam("task", "reIndex")
+            .post("/mailboxes")
+            .jsonPath()
+            .get("taskId");
+
+        given()
+            .basePath(TasksRoutes.BASE)
+            .when()
+            .get(taskId + "/await")
+            .then()
+            .body("status", is("completed"))
+            .body("taskId", is(Matchers.notNullValue()))
+            .body("type", is(UserReindexingTask.USER_RE_INDEXING.asString()));
     }
 }

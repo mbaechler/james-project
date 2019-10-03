@@ -23,6 +23,8 @@ import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.ProvidesIntoSet;
 import org.apache.mailbox.tools.indexer.SingleMessageReindexingTask;
 import org.apache.mailbox.tools.indexer.SingleMessageReindexingTaskDTO;
+import org.apache.mailbox.tools.indexer.UserReindexingTask;
+import org.apache.mailbox.tools.indexer.UserReindexingTaskDTO;
 
 public class TaskSerializationModule extends AbstractModule {
 
@@ -78,6 +80,11 @@ public class TaskSerializationModule extends AbstractModule {
     @ProvidesIntoSet
     public TaskDTOModule<?, ?> singleMessageReindexingTask(SingleMessageReindexingTask.Factory factory) {
         return SingleMessageReindexingTaskDTO.module(factory);
+    }
+
+    @ProvidesIntoSet
+    public TaskDTOModule<?, ?> userReindexingTask(UserReindexingTask.Factory factory) {
+        return UserReindexingTaskDTO.module(factory);
     }
 
     @ProvidesIntoSet
