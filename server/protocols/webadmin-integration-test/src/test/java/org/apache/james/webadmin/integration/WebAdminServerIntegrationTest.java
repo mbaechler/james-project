@@ -31,12 +31,21 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 
+import java.io.ByteArrayInputStream;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.james.CassandraRabbitMQAwsS3JmapTestRule;
 import org.apache.james.DockerCassandraRule;
 import org.apache.james.GuiceJamesServer;
 import org.apache.james.backends.cassandra.versions.CassandraSchemaVersionManager;
+import org.apache.james.mailbox.MailboxSession;
+import org.apache.james.mailbox.MessageManager;
+import org.apache.james.mailbox.model.ComposedMessageId;
+import org.apache.james.mailbox.model.MailboxConstants;
+import org.apache.james.mailbox.model.MailboxId;
+import org.apache.james.mailbox.model.MailboxPath;
+import org.apache.james.mailbox.probe.MailboxProbe;
 import org.apache.james.modules.MailboxProbeImpl;
 import org.apache.james.probe.DataProbe;
 import org.apache.james.utils.DataProbeImpl;
@@ -55,6 +64,7 @@ import org.apache.james.webadmin.routes.UserMailboxesRoutes;
 import org.apache.james.webadmin.routes.UserRoutes;
 import org.apache.james.webadmin.swagger.routes.SwaggerRoutes;
 import org.apache.mailbox.tools.indexer.FullReindexingTask;
+import org.apache.mailbox.tools.indexer.SingleMessageReindexingTask;
 import org.awaitility.Awaitility;
 import org.awaitility.Duration;
 import org.eclipse.jetty.http.HttpStatus;
@@ -66,6 +76,8 @@ import org.junit.Test;
 
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+
+import javax.mail.Flags;
 
 public class WebAdminServerIntegrationTest {
 
@@ -92,6 +104,7 @@ public class WebAdminServerIntegrationTest {
 
     private GuiceJamesServer guiceJamesServer;
     private DataProbe dataProbe;
+    private MailboxProbe mailboxProbe;
 
     @Before
     public void setUp() throws Exception {
@@ -100,6 +113,8 @@ public class WebAdminServerIntegrationTest {
         dataProbe = guiceJamesServer.getProbe(DataProbeImpl.class);
         dataProbe.addDomain(DOMAIN);
         WebAdminGuiceProbe webAdminGuiceProbe = guiceJamesServer.getProbe(WebAdminGuiceProbe.class);
+
+        mailboxProbe = guiceJamesServer.getProbe(MailboxProbeImpl.class);
 
         RestAssured.requestSpecification = WebAdminUtils.buildRequestSpecification(webAdminGuiceProbe.getWebAdminPort())
             .build();
@@ -478,4 +493,30 @@ public class WebAdminServerIntegrationTest {
                 .body("taskId", is(Matchers.notNullValue()));
     }
 
+    @Test
+    public void messageReprocessingShouldReturnTaskDetailsWhenMail() throws Exception {
+        MailboxId mailboxId = mailboxProbe.createMailbox(MailboxConstants.USER_NAMESPACE, USERNAME, MailboxConstants.INBOX);
+        ComposedMessageId composedMessageId = mailboxProbe.appendMessage(
+                USERNAME,
+                MailboxPath.forUser(USERNAME, MailboxConstants.INBOX),
+                new ByteArrayInputStream("Subject: test\r\n\r\ntestmail".getBytes()),
+                new Date(),
+                false,
+                new Flags());
+
+        String taskId = when()
+                .post("/mailboxes/" + mailboxId.serialize() + "/mails/"
+                        + composedMessageId.getUid().asLong() + "?task=reIndex")
+                .jsonPath()
+                .get("taskId");
+
+        given()
+                .basePath(TasksRoutes.BASE)
+                .when()
+                .get(taskId + "/await")
+                .then()
+                .body("status", is("completed"))
+                .body("taskId", is(Matchers.notNullValue()))
+                .body("type", is(SingleMessageReindexingTask.MESSAGE_RE_INDEXING.asString()));
+    }
 }

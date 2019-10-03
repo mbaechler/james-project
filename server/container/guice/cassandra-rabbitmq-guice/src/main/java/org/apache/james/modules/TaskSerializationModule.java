@@ -19,6 +19,8 @@ import org.apache.mailbox.tools.indexer.ReIndexerPerformer;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.ProvidesIntoSet;
+import org.apache.mailbox.tools.indexer.SingleMessageReindexingTask;
+import org.apache.mailbox.tools.indexer.SingleMessageReindexingTaskDTO;
 
 public class TaskSerializationModule extends AbstractModule {
 
@@ -69,6 +71,11 @@ public class TaskSerializationModule extends AbstractModule {
     @ProvidesIntoSet
     public TaskDTOModule<?, ?> reprocessingAllMailsTask(ReprocessingService reprocessingService) {
         return ReprocessingAllMailsTaskDTO.module(reprocessingService);
+    }
+
+    @ProvidesIntoSet
+    public TaskDTOModule<?, ?> singleMessageReindexingTask(SingleMessageReindexingTask.Factory factory) {
+        return SingleMessageReindexingTaskDTO.module(factory);
     }
 
     @ProvidesIntoSet
