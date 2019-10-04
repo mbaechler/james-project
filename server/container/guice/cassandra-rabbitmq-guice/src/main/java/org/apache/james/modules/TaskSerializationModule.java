@@ -43,6 +43,8 @@ import com.github.steveash.guavate.Guavate;
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.ProvidesIntoSet;
 
+import org.apache.mailbox.tools.indexer.SingleMailboxReindexingTask;
+import org.apache.mailbox.tools.indexer.SingleMailboxReindexingTaskDTO;
 import org.apache.mailbox.tools.indexer.SingleMessageReindexingTask;
 import org.apache.mailbox.tools.indexer.SingleMessageReindexingTaskDTO;
 import org.apache.mailbox.tools.indexer.UserReindexingTask;
@@ -102,6 +104,11 @@ public class TaskSerializationModule extends AbstractModule {
     @ProvidesIntoSet
     public TaskDTOModule<?, ?> reprocessingOneMailsTask(ReprocessingService reprocessingService) {
         return ReprocessingOneMailTaskDTO.module(reprocessingService);
+    }
+
+    @ProvidesIntoSet
+    public TaskDTOModule<?, ?> singleMailboxReindexingTask(SingleMailboxReindexingTask.Factory factory) {
+        return SingleMailboxReindexingTaskDTO.module(factory);
     }
 
     @ProvidesIntoSet

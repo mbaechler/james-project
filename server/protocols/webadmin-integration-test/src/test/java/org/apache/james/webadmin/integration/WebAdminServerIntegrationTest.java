@@ -85,6 +85,7 @@ import org.apache.james.webadmin.swagger.routes.SwaggerRoutes;
 import org.apache.james.webadmin.vault.routes.DeletedMessagesVaultRoutes;
 import org.apache.mailbox.tools.indexer.FullReindexingTask;
 import org.apache.mailbox.tools.indexer.MessageIdReIndexingTask;
+import org.apache.mailbox.tools.indexer.SingleMailboxReindexingTask;
 import org.apache.mailbox.tools.indexer.SingleMessageReindexingTask;
 import org.apache.mailbox.tools.indexer.UserReindexingTask;
 import org.apache.mailet.base.test.FakeMail;
@@ -865,4 +866,24 @@ public class WebAdminServerIntegrationTest {
             .body("startedDate", is(not(nullValue())))
             .body("completedDate", is(not(nullValue())));
     }
+
+    @Test
+    public void mailboxReprocessingShouldNotFailWhenNoMail() throws Exception {
+        MailboxId mailboxId = mailboxProbe.createMailbox(MailboxConstants.USER_NAMESPACE, USERNAME, MailboxConstants.INBOX);
+
+        String taskId = when()
+            .post("/mailboxes/" + mailboxId.serialize() + "?task=reIndex")
+            .jsonPath()
+            .get("taskId");
+
+        given()
+            .basePath(TasksRoutes.BASE)
+            .when()
+            .get(taskId + "/await")
+            .then()
+            .body("status", is("completed"))
+            .body("taskId", is(Matchers.notNullValue()))
+            .body("type", is(SingleMailboxReindexingTask.MAILBOX_RE_INDEXING.asString()));
+    }
+
 }
