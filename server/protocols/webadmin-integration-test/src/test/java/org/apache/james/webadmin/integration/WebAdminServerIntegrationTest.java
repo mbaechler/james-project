@@ -785,5 +785,24 @@ public class WebAdminServerIntegrationTest {
             .body("status", is("completed"));
     }
 
+    @Test
+    public void purgeShouldProduceASuccessfulTaskWithAdditionalInformation() {
+        String taskId =
+            with()
+                .basePath(DeletedMessagesVaultRoutes.ROOT_PATH)
+                .queryParam("scope", "expired")
+            .delete()
+                .jsonPath()
+                .get("taskId");
+
+        given()
+            .basePath(TasksRoutes.BASE)
+        .when()
+            .get(taskId + "/await")
+        .then()
+            .body("status", is("completed"))
+            .body("taskId", is(taskId))
+            .body("type", is("deletedMessages/blobStoreBasedGarbageCollection"));
+    }
 
 }

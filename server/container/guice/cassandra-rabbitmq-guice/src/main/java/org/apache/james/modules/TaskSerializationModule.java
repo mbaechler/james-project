@@ -10,6 +10,8 @@ import org.apache.james.rrt.cassandra.migration.MappingsSourcesMigration;
 import org.apache.james.server.task.json.JsonTaskSerializer;
 import org.apache.james.server.task.json.dto.TaskDTOModule;
 import org.apache.james.task.eventsourcing.distributed.TasksSerializationModule;
+import org.apache.james.vault.blob.BlobStoreVaultGarbageCollectionTask;
+import org.apache.james.vault.blob.BlobStoreVaultGarbageCollectionTaskDTO;
 import org.apache.james.webadmin.service.CassandraMappingsSolveInconsistenciesTask;
 import org.apache.james.webadmin.service.ClearMailQueueTaskDTO;
 import org.apache.james.webadmin.service.DeleteMailsFromMailQueueTaskDTO;
@@ -103,6 +105,11 @@ public class TaskSerializationModule extends AbstractModule {
     @ProvidesIntoSet
     public TaskDTOModule<?, ?> messageIdReindexingTask(MessageIdReIndexingTask.Factory factory) {
         return MessageIdReindexingTaskDTO.module(factory);
+    }
+
+    @ProvidesIntoSet
+    public TaskDTOModule<?, ?> blobStoreVaultGarbageCollectionTask(BlobStoreVaultGarbageCollectionTask.Factory factory) {
+        return BlobStoreVaultGarbageCollectionTaskDTO.module(factory);
     }
 
     @ProvidesIntoSet
