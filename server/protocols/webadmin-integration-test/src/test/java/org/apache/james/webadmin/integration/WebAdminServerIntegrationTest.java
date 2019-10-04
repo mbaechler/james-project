@@ -35,19 +35,25 @@ import static org.hamcrest.Matchers.is;
 import java.io.ByteArrayInputStream;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.apache.james.CassandraRabbitMQAwsS3JmapTestRule;
 import org.apache.james.DockerCassandraRule;
 import org.apache.james.GuiceJamesServer;
 import org.apache.james.backends.cassandra.versions.CassandraSchemaVersionManager;
+import org.apache.james.core.builder.MimeMessageBuilder;
 import org.apache.james.mailbox.model.ComposedMessageId;
 import org.apache.james.mailbox.model.MailboxConstants;
 import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.probe.MailboxProbe;
+import org.apache.james.mailrepository.api.MailRepository;
+import org.apache.james.mailrepository.api.MailRepositoryStore;
+import org.apache.james.mailrepository.api.MailRepositoryUrl;
 import org.apache.james.modules.MailboxProbeImpl;
 import org.apache.james.probe.DataProbe;
 import org.apache.james.utils.DataProbeImpl;
+import org.apache.james.utils.MailRepositoryProbeImpl;
 import org.apache.james.utils.WebAdminGuiceProbe;
 import org.apache.james.webadmin.WebAdminUtils;
 import org.apache.james.webadmin.routes.AliasRoutes;
@@ -67,6 +73,7 @@ import org.apache.mailbox.tools.indexer.FullReindexingTask;
 import org.apache.mailbox.tools.indexer.MessageIdReIndexingTask;
 import org.apache.mailbox.tools.indexer.SingleMessageReindexingTask;
 import org.apache.mailbox.tools.indexer.UserReindexingTask;
+import org.apache.mailet.base.test.FakeMail;
 
 import org.awaitility.Awaitility;
 import org.awaitility.Duration;
@@ -79,7 +86,6 @@ import org.junit.Test;
 
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
-import reactor.core.publisher.Mono;
 
 import javax.mail.Flags;
 
@@ -496,6 +502,29 @@ public class WebAdminServerIntegrationTest {
                 .statusCode(HttpStatus.CREATED_201)
                 .header("Location", is(Matchers.notNullValue()))
                 .body("taskId", is(Matchers.notNullValue()));
+    }
+
+    @Test
+    public void reprocessingOneTaskShouldCreateATask() throws Exception {
+        MailRepositoryStore mailRepositoryStore = guiceJamesServer.getProbe(MailRepositoryProbeImpl.class).getMailRepositoryStore();
+        Stream<MailRepositoryUrl> urls = mailRepositoryStore.getUrls();
+        MailRepositoryUrl mailRepositoryUrl = urls.findAny().get();
+        MailRepository repository = mailRepositoryStore.get(mailRepositoryUrl).get();
+
+        repository.store(FakeMail.builder()
+            .name("name1")
+            .mimeMessage(MimeMessageBuilder.mimeMessageBuilder().build())
+            .build());
+
+        given()
+            .basePath(MailRepositoriesRoutes.MAIL_REPOSITORIES)
+            .param("action", "reprocess")
+        .when()
+        .patch(mailRepositoryUrl.urlEncoded() + "/mails/name1")
+        .then()
+            .statusCode(HttpStatus.CREATED_201)
+            .header("Location", is(Matchers.notNullValue()))
+            .body("taskId", is(Matchers.notNullValue()));
     }
 
     @Test
