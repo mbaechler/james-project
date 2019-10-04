@@ -758,4 +758,32 @@ public class WebAdminServerIntegrationTest {
             .body("taskId", is(Matchers.notNullValue()));
     }
 
+    @Test
+    public void clearMailQueueShouldCompleteWhenNoQueryParameters() {
+        String firstMailQueue = with()
+            .basePath(MailQueueRoutes.BASE_URL)
+            .get()
+            .then()
+            .statusCode(HttpStatus.OK_200)
+            .contentType(ContentType.JSON)
+            .extract()
+            .body()
+            .jsonPath()
+            .getString("[0]");
+
+        String taskId = with()
+            .basePath(MailQueueRoutes.BASE_URL)
+            .delete(firstMailQueue + "/mails")
+            .jsonPath()
+            .getString("taskId");
+
+        given()
+            .basePath(TasksRoutes.BASE)
+            .when()
+            .get(taskId + "/await")
+            .then()
+            .body("status", is("completed"));
+    }
+
+
 }
