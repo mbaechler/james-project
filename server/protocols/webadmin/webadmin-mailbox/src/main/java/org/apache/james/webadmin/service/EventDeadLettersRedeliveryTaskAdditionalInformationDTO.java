@@ -13,16 +13,16 @@ import com.github.fge.lambdas.Throwing;
 
 public class EventDeadLettersRedeliveryTaskAdditionalInformationDTO implements AdditionalInformationDTO {
 
-    public static final AdditionalInformationDTOModule<EventDeadLettersRedeliverTask.AdditionalInformation, EventDeadLettersRedeliveryTaskAdditionalInformationDTO> MODULE =
+    public static final AdditionalInformationDTOModule<EventDeadLettersRedeliveryTaskAdditionalInformation, EventDeadLettersRedeliveryTaskAdditionalInformationDTO> MODULE =
         DTOModule
-            .forDomainObject(EventDeadLettersRedeliverTask.AdditionalInformation.class)
+            .forDomainObject(EventDeadLettersRedeliveryTaskAdditionalInformation.class)
             .convertToDTO(EventDeadLettersRedeliveryTaskAdditionalInformationDTO.class)
             .toDomainObjectConverter(EventDeadLettersRedeliveryTaskAdditionalInformationDTO::fromDTO)
             .toDTOConverter(EventDeadLettersRedeliveryTaskAdditionalInformationDTO::toDTO)
-            .typeName(EventDeadLettersRedeliverTask.TYPE.asString())
+            .typeName("EventDeadLettersRedeliverTask")
             .withFactory(AdditionalInformationDTOModule::new);
 
-    private static EventDeadLettersRedeliveryTaskAdditionalInformationDTO toDTO(EventDeadLettersRedeliverTask.AdditionalInformation domainObject, String typeName) {
+    private static EventDeadLettersRedeliveryTaskAdditionalInformationDTO toDTO(EventDeadLettersRedeliveryTaskAdditionalInformation domainObject, String typeName) {
         return new EventDeadLettersRedeliveryTaskAdditionalInformationDTO(
             domainObject.getSuccessfulRedeliveriesCount(),
             domainObject.getFailedRedeliveriesCount(),
@@ -30,8 +30,8 @@ public class EventDeadLettersRedeliveryTaskAdditionalInformationDTO implements A
             domainObject.getInsertionId());
     }
 
-    private static EventDeadLettersRedeliverTask.AdditionalInformation fromDTO(EventDeadLettersRedeliveryTaskAdditionalInformationDTO dto) {
-        return new EventDeadLettersRedeliverTask.AdditionalInformation(
+    private static EventDeadLettersRedeliveryTaskAdditionalInformation fromDTO(EventDeadLettersRedeliveryTaskAdditionalInformationDTO dto) {
+        return new EventDeadLettersRedeliveryTaskAdditionalInformation(
             dto.successfulRedeliveriesCount,
             dto.failedRedeliveriesCount,
             dto.group.map(Throwing.function(Group::deserialize).sneakyThrow()),

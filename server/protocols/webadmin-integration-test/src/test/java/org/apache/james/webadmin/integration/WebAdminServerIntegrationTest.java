@@ -678,4 +678,15 @@ public class WebAdminServerIntegrationTest {
             .body("type", is("ErrorRecoveryIndexation"));
     }
 
+    @Test
+    public void postRedeliverAllEventsShouldCreateATask() {
+        given()
+            .queryParam("action", "reDeliver")
+        .when()
+        .post("/events/deadLetter")
+        .then()
+            .statusCode(HttpStatus.CREATED_201);
+    }
+
+
 }

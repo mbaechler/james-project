@@ -3,6 +3,7 @@ package org.apache.james.modules;
 import org.apache.james.backends.cassandra.migration.MigrationTask;
 import org.apache.james.backends.cassandra.migration.MigrationTaskDTO;
 import org.apache.james.eventsourcing.eventstore.cassandra.dto.EventDTOModule;
+import org.apache.james.json.DTOModule;
 import org.apache.james.queue.api.MailQueueFactory;
 import org.apache.james.queue.api.ManageableMailQueue;
 import org.apache.james.rrt.cassandra.CassandraMappingsSourcesDAO;
@@ -12,6 +13,8 @@ import org.apache.james.server.task.json.dto.TaskDTOModule;
 import org.apache.james.task.eventsourcing.distributed.TasksSerializationModule;
 import org.apache.james.webadmin.service.CassandraMappingsSolveInconsistenciesTask;
 import org.apache.james.webadmin.service.DeleteMailsFromMailQueueTaskDTO;
+import org.apache.james.webadmin.service.EventDeadLettersRedeliverAllTaskDTO;
+import org.apache.james.webadmin.service.EventDeadLettersRedeliverService;
 import org.apache.james.webadmin.service.ReprocessingAllMailsTaskDTO;
 import org.apache.james.webadmin.service.ReprocessingOneMailTaskDTO;
 import org.apache.james.webadmin.service.ReprocessingService;
@@ -113,6 +116,11 @@ public class TaskSerializationModule extends AbstractModule {
     @ProvidesIntoSet
     public TaskDTOModule<?, ?> deletedMessagesVaultRestoreTask(DeletedMessagesVaultRestoreTaskDTO.Factory factory) {
         return DeletedMessagesVaultRestoreTaskDTO.module(factory);
+    }
+
+    @ProvidesIntoSet
+    public TaskDTOModule<?, ?> eventDeadLettersRedeliverAllTask(EventDeadLettersRedeliverService service) {
+        return EventDeadLettersRedeliverAllTaskDTO.module(service);
     }
 
     @ProvidesIntoSet

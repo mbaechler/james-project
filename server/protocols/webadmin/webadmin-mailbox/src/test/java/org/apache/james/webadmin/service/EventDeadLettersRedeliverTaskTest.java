@@ -25,25 +25,38 @@ import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import org.apache.james.mailbox.events.EventDeadLetters;
+import org.apache.james.mailbox.events.GenericGroup;
 import org.apache.james.mailbox.events.Group;
 import org.apache.james.server.task.json.JsonTaskAdditionalInformationsSerializer;
 import org.apache.james.server.task.json.JsonTaskSerializer;
+import org.apache.james.task.Task;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.javacrumbs.jsonunit.assertj.JsonAssertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class EventDeadLettersRedeliverTaskTest {
-    private static final String SERIALIZED = "{\"type\":\"eventDeadLettersRedeliverTask\"}";
+    private static final String SERIALIZED_ALL = "{\"type\":\"eventDeadLettersRedeliverAllTask\"}";
+    private static final String SERIALIZED_GROUP = "{\"type\":\"eventDeadLettersRedeliverGroupTask\",\"group\":\"org.apache.james.mailbox.events.GenericGroup-abc\"}";
+    private static final String SERIALIZED_ONE = "{\"type\":\"eventDeadLettersRedeliverOneTask\",\"group\":\"org.apache.james.mailbox.events.GenericGroup-abc\",\"insertionId\":\"fcbc3c92-e9a0-4ece-94ed-6e6b45045258\"}";
     private static final String SERIALIZED_TASK_ADDITIONAL_INFORMATION = "{\"successfulRedeliveriesCount\":10,\"failedRedeliveriesCount\":4,\"group\":\"org.apache.james.mailbox.events.GenericGroup-foo\",\"insertionId\":\"53db3dd9-80eb-476f-b25a-722ad364905a\"}";
     private static final String SERIALIZED_TASK_ADDITIONAL_INFORMATION_EMPTY_FIELDS = "{\"successfulRedeliveriesCount\":10,\"failedRedeliveriesCount\":4}";
     private static final EventDeadLettersRedeliverService SERVICE = mock(EventDeadLettersRedeliverService.class);
-    private static final EventRetriever EVENT_RETRIEVER = mock(EventRetriever.class);
-    private static final EventDeadLettersRedeliverTask TASK = new EventDeadLettersRedeliverTask(SERVICE, EVENT_RETRIEVER);
-    private static final JsonTaskSerializer TESTEE = new JsonTaskSerializer(EventDeadLettersRedeliverTaskDTO.MODULE.apply(SERVICE, EVENT_RETRIEVER));
+    private static final EventDeadLettersRedeliverAllTask TASK_ALL = new EventDeadLettersRedeliverAllTask(SERVICE);
+    private static final EventDeadLettersRedeliverGroupTask TASK_GROUP = new EventDeadLettersRedeliverGroupTask(SERVICE, new GenericGroup("abc"));
+    private static final EventDeadLettersRedeliverOneTask TASK_ONE = new EventDeadLettersRedeliverOneTask(SERVICE, new GenericGroup("abc"), EventDeadLetters.InsertionId.of("fcbc3c92-e9a0-4ece-94ed-6e6b45045258"));
+    private static final JsonTaskSerializer TESTEE = new JsonTaskSerializer(
+        EventDeadLettersRedeliverAllTaskDTO.module(SERVICE),
+        EventDeadLettersRedeliverGroupTaskDTO.module(SERVICE),
+        EventDeadLettersRedeliverOneTaskDTO.module(SERVICE));
 
     private JsonTaskAdditionalInformationsSerializer jsonAdditionalInformationSerializer = new JsonTaskAdditionalInformationsSerializer(
         EventDeadLettersRedeliveryTaskAdditionalInformationDTO.MODULE);
@@ -61,21 +74,38 @@ class EventDeadLettersRedeliverTaskTest {
         SOME_GROUP = Optional.of(Group.deserialize("org.apache.james.mailbox.events.GenericGroup-foo"));
     }
 
-    @Test
-    void taskShouldBeSerializable() throws JsonProcessingException {
-        JsonAssertions.assertThatJson(TESTEE.serialize(TASK))
-            .isEqualTo(SERIALIZED);
+    @ParameterizedTest
+    @MethodSource
+    void taskShouldBeSerializable(String serializedTask, Task task) throws JsonProcessingException {
+        JsonAssertions.assertThatJson(TESTEE.serialize(task))
+            .isEqualTo(serializedTask);
     }
 
-    @Test
-    void taskShouldBeDeserializable() throws IOException {
-        assertThat(TESTEE.deserialize(SERIALIZED))
-            .isEqualToComparingFieldByFieldRecursively(TASK);
+    @ParameterizedTest
+    @MethodSource
+    void taskShouldBeDeserializable(String serializedTask, Task task) throws IOException {
+        assertThat(TESTEE.deserialize(serializedTask))
+            .isEqualToComparingFieldByFieldRecursively(task);
+    }
+
+    static Stream<Arguments> tasks() {
+        return Stream.of(
+            Arguments.of(SERIALIZED_ALL, TASK_ALL),
+            Arguments.of(SERIALIZED_GROUP, TASK_GROUP),
+            Arguments.of(SERIALIZED_ONE, TASK_ONE)
+        );
+    }
+    static Stream<Arguments> taskShouldBeSerializable() {
+        return tasks();
+    }
+
+    static Stream<Arguments> taskShouldBeDeserializable() {
+        return tasks();
     }
 
     @Test
     void additionalInformationShouldBeSerializable() throws JsonProcessingException {
-        EventDeadLettersRedeliverTask.AdditionalInformation details = new EventDeadLettersRedeliverTask.AdditionalInformation(SUCCESSFUL_REDELIVERY_COUNT,
+        EventDeadLettersRedeliveryTaskAdditionalInformation details = new EventDeadLettersRedeliveryTaskAdditionalInformation(SUCCESSFUL_REDELIVERY_COUNT,
             FAILED_REDELIVERY_COUNT,
             SOME_GROUP,
             SOME_INSERTION_ID);
@@ -84,7 +114,7 @@ class EventDeadLettersRedeliverTaskTest {
 
     @Test
     void additionalInformationShouldBeDeserializable() throws IOException {
-        EventDeadLettersRedeliverTask.AdditionalInformation details = new EventDeadLettersRedeliverTask.AdditionalInformation(SUCCESSFUL_REDELIVERY_COUNT,
+        EventDeadLettersRedeliveryTaskAdditionalInformation details = new EventDeadLettersRedeliveryTaskAdditionalInformation(SUCCESSFUL_REDELIVERY_COUNT,
             FAILED_REDELIVERY_COUNT,
             SOME_GROUP,
             SOME_INSERTION_ID);
@@ -94,7 +124,7 @@ class EventDeadLettersRedeliverTaskTest {
 
     @Test
     void additionalInformationShouldBeSerializableWithEmptyFields() throws JsonProcessingException {
-        EventDeadLettersRedeliverTask.AdditionalInformation details = new EventDeadLettersRedeliverTask.AdditionalInformation(SUCCESSFUL_REDELIVERY_COUNT,
+        EventDeadLettersRedeliveryTaskAdditionalInformation details = new EventDeadLettersRedeliveryTaskAdditionalInformation(SUCCESSFUL_REDELIVERY_COUNT,
             FAILED_REDELIVERY_COUNT,
             NO_GROUP,
             NO_INSERTION_ID);
@@ -103,7 +133,7 @@ class EventDeadLettersRedeliverTaskTest {
 
     @Test
     void additionalInformationShouldBeDeserializableWithEmptyFields() throws IOException {
-        EventDeadLettersRedeliverTask.AdditionalInformation details = new EventDeadLettersRedeliverTask.AdditionalInformation(SUCCESSFUL_REDELIVERY_COUNT,
+        EventDeadLettersRedeliveryTaskAdditionalInformation details = new EventDeadLettersRedeliveryTaskAdditionalInformation(SUCCESSFUL_REDELIVERY_COUNT,
             FAILED_REDELIVERY_COUNT,
             NO_GROUP,
             NO_INSERTION_ID);
