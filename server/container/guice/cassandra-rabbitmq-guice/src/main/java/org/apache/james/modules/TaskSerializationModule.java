@@ -1,8 +1,13 @@
 package org.apache.james.modules;
 
+import java.util.List;
+
 import org.apache.james.backends.cassandra.migration.MigrationTask;
 import org.apache.james.backends.cassandra.migration.MigrationTaskDTO;
 import org.apache.james.eventsourcing.eventstore.cassandra.dto.EventDTOModule;
+import org.apache.james.mailrepository.api.MailRepository;
+import org.apache.james.mailrepository.api.MailRepositoryStore;
+import org.apache.james.mailrepository.api.MailRepositoryUrl;
 import org.apache.james.queue.api.MailQueueFactory;
 import org.apache.james.queue.api.ManageableMailQueue;
 import org.apache.james.rrt.cassandra.CassandraMappingsSourcesDAO;
@@ -10,10 +15,12 @@ import org.apache.james.rrt.cassandra.migration.MappingsSourcesMigration;
 import org.apache.james.server.task.json.JsonTaskSerializer;
 import org.apache.james.server.task.json.dto.TaskDTOModule;
 import org.apache.james.task.eventsourcing.distributed.TasksSerializationModule;
+import org.apache.james.util.OptionalUtils;
 import org.apache.james.vault.blob.BlobStoreVaultGarbageCollectionTask;
 import org.apache.james.vault.blob.BlobStoreVaultGarbageCollectionTaskDTO;
 import org.apache.james.webadmin.service.CassandraMappingsSolveInconsistenciesTask;
 import org.apache.james.webadmin.service.ClearMailQueueTaskDTO;
+import org.apache.james.webadmin.service.ClearMailRepositoryTaskDTO;
 import org.apache.james.webadmin.service.DeleteMailsFromMailQueueTaskDTO;
 import org.apache.james.webadmin.service.EventDeadLettersRedeliverAllTaskDTO;
 import org.apache.james.webadmin.service.EventDeadLettersRedeliverGroupTaskDTO;
@@ -29,8 +36,12 @@ import org.apache.mailbox.tools.indexer.MessageIdReIndexingTask;
 import org.apache.mailbox.tools.indexer.MessageIdReindexingTaskDTO;
 import org.apache.mailbox.tools.indexer.ReIndexerPerformer;
 
+import com.github.fge.lambdas.Throwing;
+import com.github.steveash.guavate.Guavate;
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.ProvidesIntoSet;
+import scala.Option;
+
 import org.apache.mailbox.tools.indexer.SingleMessageReindexingTask;
 import org.apache.mailbox.tools.indexer.SingleMessageReindexingTaskDTO;
 import org.apache.mailbox.tools.indexer.UserReindexingTask;
@@ -120,6 +131,14 @@ public class TaskSerializationModule extends AbstractModule {
     @ProvidesIntoSet
     public TaskDTOModule<?, ?> clearMailQueueTask(MailQueueFactory<?> mailQueueFactory) {
         return ClearMailQueueTaskDTO.module((MailQueueFactory<ManageableMailQueue>) mailQueueFactory);
+    }
+
+    @ProvidesIntoSet
+    public TaskDTOModule<?, ?> clearMailRepositoyTask(MailRepositoryStore mailRepositoryStore) {
+        List<MailRepository> mailRepositories = mailRepositoryStore.getUrls()
+            .flatMap(Throwing.function((MailRepositoryUrl url) -> OptionalUtils.toStream(mailRepositoryStore.get(url))).sneakyThrow())
+            .collect(Guavate.toImmutableList());
+        return ClearMailRepositoryTaskDTO.module(mailRepositories);
     }
 
     @ProvidesIntoSet

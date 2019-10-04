@@ -31,14 +31,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class ClearMailRepositoryTaskDTO implements TaskDTO {
 
-    public static final Function<List<MailRepository>, TaskDTOModule<ClearMailRepositoryTask, ClearMailRepositoryTaskDTO>> MODULE = (mailRepositories) ->
-        DTOModule
+    public static TaskDTOModule<ClearMailRepositoryTask, ClearMailRepositoryTaskDTO> module(List<MailRepository> mailRepositories) {
+        return DTOModule
             .forDomainObject(ClearMailRepositoryTask.class)
             .convertToDTO(ClearMailRepositoryTaskDTO.class)
             .toDomainObjectConverter(dto -> dto.fromDTO(mailRepositories))
             .toDTOConverter(ClearMailRepositoryTaskDTO::toDTO)
             .typeName(ClearMailRepositoryTask.TYPE.asString())
             .withFactory(TaskDTOModule::new);
+    }
 
     public static ClearMailRepositoryTaskDTO toDTO(ClearMailRepositoryTask domainObject, String typeName) {
         try {

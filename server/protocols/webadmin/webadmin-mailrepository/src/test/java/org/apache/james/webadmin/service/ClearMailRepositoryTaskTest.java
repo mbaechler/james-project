@@ -49,14 +49,14 @@ class ClearMailRepositoryTaskTest {
 
     @Test
     void taskShouldBeSerializable() throws JsonProcessingException {
-        JsonTaskSerializer testee = new JsonTaskSerializer(ClearMailRepositoryTaskDTO.MODULE.apply(MAIL_REPOSITORIES));
+        JsonTaskSerializer testee = new JsonTaskSerializer(ClearMailRepositoryTaskDTO.module(MAIL_REPOSITORIES));
         JsonAssertions.assertThatJson(testee.serialize(TASK))
             .isEqualTo(SERIALIZED);
     }
 
     @Test
     void taskShouldBeDeserializable() throws IOException {
-        JsonTaskSerializer testee = new JsonTaskSerializer(ClearMailRepositoryTaskDTO.MODULE.apply(MAIL_REPOSITORIES));
+        JsonTaskSerializer testee = new JsonTaskSerializer(ClearMailRepositoryTaskDTO.module(MAIL_REPOSITORIES));
 
         assertThat(testee.deserialize(SERIALIZED))
             .isEqualToComparingFieldByFieldRecursively(TASK);
@@ -64,7 +64,7 @@ class ClearMailRepositoryTaskTest {
 
     @Test
     void taskShouldThrowOnDeserializationUrlDecodingError() {
-        JsonTaskSerializer testee = new JsonTaskSerializer(ClearMailRepositoryTaskDTO.MODULE.apply(MAIL_REPOSITORIES));
+        JsonTaskSerializer testee = new JsonTaskSerializer(ClearMailRepositoryTaskDTO.module(MAIL_REPOSITORIES));
 
         assertThatThrownBy(() -> testee.deserialize("{\"type\":\"clearMailRepository\",\"mailRepositoryPath\":\"%\"}"))
             .isInstanceOf(ClearMailRepositoryTask.InvalidMailRepositoryPathDeserializationException.class);

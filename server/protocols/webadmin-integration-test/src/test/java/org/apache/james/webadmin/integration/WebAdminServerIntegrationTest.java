@@ -805,4 +805,27 @@ public class WebAdminServerIntegrationTest {
             .body("type", is("deletedMessages/blobStoreBasedGarbageCollection"));
     }
 
+    @Test
+    public void clearTaskShouldCreateATask() {
+        String escapedRepositoryPath = with()
+            .basePath(MailRepositoriesRoutes.MAIL_REPOSITORIES)
+            .get()
+            .then()
+            .statusCode(HttpStatus.OK_200)
+            .contentType(ContentType.JSON)
+            .extract()
+            .body()
+            .jsonPath()
+            .getString("[0].path");
+
+        String taskId = with()
+            .basePath(MailRepositoriesRoutes.MAIL_REPOSITORIES)
+            .delete(escapedRepositoryPath + "/mails")
+            .jsonPath()
+            .get("taskId");
+
+        given()
+            .basePath(TasksRoutes.BASE)
+            .get(taskId + "/await");
+    }
 }
