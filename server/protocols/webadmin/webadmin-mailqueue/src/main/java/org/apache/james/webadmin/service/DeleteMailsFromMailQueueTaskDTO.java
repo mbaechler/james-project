@@ -1,7 +1,6 @@
 package org.apache.james.webadmin.service;
 
 import java.util.Optional;
-import java.util.function.Function;
 
 import org.apache.james.core.MailAddress;
 import org.apache.james.json.DTOModule;
