@@ -5,6 +5,8 @@ import java.util.List;
 import org.apache.james.backends.cassandra.migration.MigrationTask;
 import org.apache.james.backends.cassandra.migration.MigrationTaskDTO;
 import org.apache.james.eventsourcing.eventstore.cassandra.dto.EventDTOModule;
+import org.apache.james.mailbox.cassandra.mail.task.MailboxMergingTaskDTO;
+import org.apache.james.mailbox.cassandra.mail.task.MailboxMergingTaskRunner;
 import org.apache.james.mailrepository.api.MailRepository;
 import org.apache.james.mailrepository.api.MailRepositoryStore;
 import org.apache.james.mailrepository.api.MailRepositoryUrl;
@@ -164,6 +166,11 @@ public class TaskSerializationModule extends AbstractModule {
     @ProvidesIntoSet
     public TaskDTOModule<?, ?> eventDeadLettersRedeliverOneTask(EventDeadLettersRedeliverService service) {
         return EventDeadLettersRedeliverOneTaskDTO.module(service);
+    }
+
+    @ProvidesIntoSet
+    public TaskDTOModule<?, ?> mailboxMergingTask(MailboxMergingTaskRunner taskRunner) {
+        return MailboxMergingTaskDTO.module(taskRunner);
     }
 
     @ProvidesIntoSet
