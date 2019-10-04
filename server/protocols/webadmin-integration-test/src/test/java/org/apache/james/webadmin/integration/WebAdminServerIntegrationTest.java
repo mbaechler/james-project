@@ -81,6 +81,7 @@ import org.eclipse.jetty.http.HttpStatus;
 import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -644,4 +645,37 @@ public class WebAdminServerIntegrationTest {
             .statusCode(HttpStatus.CREATED_201)
             .body("taskId", Matchers.notNullValue());
     }
+
+    @Test
+    @Ignore("This task needs AdditionalInformation to work, will be fixed later")
+    public void fixingReIndexingShouldNotFailWhenNoMail() {
+        String taskId = with()
+            .post("/mailboxes?task=reIndex")
+            .jsonPath()
+            .get("taskId");
+
+        with()
+            .basePath(TasksRoutes.BASE)
+            .get(taskId + "/await");
+
+        String fixingTaskId = with()
+            .queryParam("reIndexFailedMessagesOf", taskId)
+            .queryParam("task", "reIndex")
+        .post("/mailboxes")
+        .then()
+            .statusCode(HttpStatus.CREATED_201)
+            .extract()
+            .jsonPath()
+            .get("taskId");
+
+        given()
+            .basePath(TasksRoutes.BASE)
+        .when()
+        .get(fixingTaskId + "/await")
+        .then()
+            .body("status", is("completed"))
+            .body("taskId", is(Matchers.notNullValue()))
+            .body("type", is("ErrorRecoveryIndexation"));
+    }
+
 }
