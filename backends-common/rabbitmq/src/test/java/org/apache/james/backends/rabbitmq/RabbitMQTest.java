@@ -36,11 +36,15 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.AfterEach;
@@ -327,6 +331,137 @@ class RabbitMQTest {
                 assertThat(fallbackConsumer.getConsumedMessages()).contains(1, 2).doesNotContain(0);
             }
 
+            @Test
+            void rabbitMQShouldDeliverMessageToSingleActiveConsumer() throws Exception {
+                channel1.exchangeDeclare(EXCHANGE_NAME, "direct", DURABLE);
+                channel1.queueDeclare(WORK_QUEUE, DURABLE, !EXCLUSIVE, !AUTO_DELETE, ImmutableMap.of("x-single-active-consumer", true));
+                channel1.queueBind(WORK_QUEUE, EXCHANGE_NAME, ROUTING_KEY);
+
+                IntStream.range(0, 10)
+                    .mapToObj(String::valueOf)
+                    .map(RabbitMQTest.this::asBytes)
+                    .forEach(Throwing.consumer(
+                        bytes -> channel1.basicPublish(EXCHANGE_NAME, ROUTING_KEY, NO_PROPERTIES, bytes)));
+
+                channel2.basicQos(1);
+                channel3.basicQos(1);
+
+                AtomicInteger firstRegisteredConsumerMessageCount = new AtomicInteger(0);
+                AtomicInteger secondRegisteredConsumerMessageCount = new AtomicInteger(0);
+
+                String firstRegisteredConsumer = "firstRegisteredConsumer";
+                ImmutableMap<String, Object> arguments = ImmutableMap.of();
+                channel2.basicConsume(WORK_QUEUE, !AUTO_ACK, firstRegisteredConsumer, !NO_LOCAL, !EXCLUSIVE, arguments,
+                    (consumerTag, message) -> {
+                        try {
+                            firstRegisteredConsumerMessageCount.incrementAndGet();
+                            TimeUnit.SECONDS.sleep(1);
+                            channel2.basicAck(message.getEnvelope().getDeliveryTag(), false);
+                        } catch (InterruptedException e) {
+                            //do nothing
+                        }
+                    },
+                    (consumerTag -> { }));
+                channel3.basicConsume(WORK_QUEUE, !AUTO_ACK, "starvingConsumer", !NO_LOCAL, !EXCLUSIVE, arguments,
+                    (consumerTag, message) -> {
+                        try {
+                            secondRegisteredConsumerMessageCount.incrementAndGet();
+                            TimeUnit.SECONDS.sleep(1);
+                            channel3.basicAck(message.getEnvelope().getDeliveryTag(), false);
+                        } catch (InterruptedException e) {
+                            //do nothing
+                        }
+                    },
+                    consumerTag -> { });
+
+                awaitAtMostOneMinute.until(() -> (firstRegisteredConsumerMessageCount.get() + secondRegisteredConsumerMessageCount.get()) == 10);
+
+                assertThat(firstRegisteredConsumerMessageCount.get()).isEqualTo(10);
+                assertThat(secondRegisteredConsumerMessageCount.get()).isEqualTo(0);
+            }
+
+            @Test
+            void rabbitMQShouldProvideSingleActiveConsumerName() throws Exception {
+                channel1.exchangeDeclare(EXCHANGE_NAME, "direct", DURABLE);
+                channel1.queueDeclare(WORK_QUEUE, DURABLE, !EXCLUSIVE, !AUTO_DELETE, ImmutableMap.of("x-single-active-consumer", true));
+                channel1.queueBind(WORK_QUEUE, EXCHANGE_NAME, ROUTING_KEY);
+
+                channel1.basicPublish(EXCHANGE_NAME, ROUTING_KEY, NO_PROPERTIES, "foo".getBytes(StandardCharsets.UTF_8));
+
+                AtomicInteger deliveredMessagesCount = new AtomicInteger(0);
+
+                String firstRegisteredConsumer = "firstRegisteredConsumer";
+                ImmutableMap<String, Object> arguments = ImmutableMap.of();
+                channel2.basicConsume(WORK_QUEUE, AUTO_ACK, firstRegisteredConsumer, !NO_LOCAL, !EXCLUSIVE, arguments,
+                    (consumerTag, message) -> deliveredMessagesCount.incrementAndGet(),
+                    (consumerTag -> { }));
+                channel3.basicConsume(WORK_QUEUE, AUTO_ACK, "starvingConsumer", !NO_LOCAL, !EXCLUSIVE, arguments,
+                    (consumerTag, message) -> deliveredMessagesCount.incrementAndGet(),
+                    consumerTag -> { });
+
+                awaitAtMostOneMinute.until(() -> deliveredMessagesCount.get() > 0);
+                awaitAtMostOneMinute.until(() -> rabbitMQExtension.managementAPI()
+                    .queueDetails("/", WORK_QUEUE)
+                    .consumerDetails.isEmpty() == false);
+
+                List<String> currentConsumerName = rabbitMQExtension.managementAPI()
+                    .queueDetails("/", WORK_QUEUE)
+                    .consumerDetails
+                    .stream()
+                    .filter(consumer -> consumer.status == RabbitMQManagementAPI.ActivityStatus.SingleActive)
+                    .map(consumer -> consumer.tag)
+                    .collect(Collectors.toList());
+
+                assertThat(currentConsumerName).hasSize(1).element(0).isEqualTo(firstRegisteredConsumer);
+            }
+
+            @Test
+            void rabbitMQShouldDeliverMessageToFallbackSingleActiveConsumer() throws Exception {
+                channel1.exchangeDeclare(EXCHANGE_NAME, "direct", DURABLE);
+                channel1.queueDeclare(WORK_QUEUE, DURABLE, !EXCLUSIVE, !AUTO_DELETE, ImmutableMap.of("x-single-active-consumer", true));
+                channel1.queueBind(WORK_QUEUE, EXCHANGE_NAME, ROUTING_KEY);
+
+                IntStream.range(0, 10)
+                    .mapToObj(String::valueOf)
+                    .map(RabbitMQTest.this::asBytes)
+                    .forEach(Throwing.consumer(
+                        bytes -> channel1.basicPublish(EXCHANGE_NAME, ROUTING_KEY, NO_PROPERTIES, bytes)));
+
+                AtomicInteger firstRegisteredConsumerMessageCount = new AtomicInteger(0);
+                AtomicInteger secondRegisteredConsumerMessageCount = new AtomicInteger(0);
+
+                String firstRegisteredConsumer = "firstRegisteredConsumer";
+                ImmutableMap<String, Object> arguments = ImmutableMap.of();
+                channel2.basicConsume(WORK_QUEUE, !AUTO_ACK, firstRegisteredConsumer, !NO_LOCAL, !EXCLUSIVE, arguments,
+                    (consumerTag, message) -> {
+                        try {
+                            if (firstRegisteredConsumerMessageCount.get() < 5) {
+                                channel2.basicAck(message.getEnvelope().getDeliveryTag(), !MULTIPLE);
+                                firstRegisteredConsumerMessageCount.incrementAndGet();
+                            } else {
+                                channel2.basicNack(message.getEnvelope().getDeliveryTag(), !MULTIPLE, REQUEUE);
+                            }
+                            TimeUnit.SECONDS.sleep(1);
+                        } catch (InterruptedException e) {
+                            //do nothing
+                        }
+                    },
+                    (consumerTag -> { }));
+                channel3.basicConsume(WORK_QUEUE, AUTO_ACK, "fallbackConsumer", !NO_LOCAL, !EXCLUSIVE, arguments,
+                    (consumerTag, message) -> {
+                        secondRegisteredConsumerMessageCount.incrementAndGet();
+                    },
+                    consumerTag -> { });
+
+                awaitAtMostOneMinute.until(() -> firstRegisteredConsumerMessageCount.get() == 5);
+
+                channel2.basicCancel(firstRegisteredConsumer);
+
+                awaitAtMostOneMinute.until(() -> (firstRegisteredConsumerMessageCount.get() + secondRegisteredConsumerMessageCount.get()) == 10);
+
+                assertThat(firstRegisteredConsumerMessageCount.get()).isEqualTo(5);
+                assertThat(secondRegisteredConsumerMessageCount.get()).isEqualTo(5);
+            }
         }
 
         @Nested
