@@ -41,12 +41,21 @@ import org.apache.james.CassandraRabbitMQAwsS3JmapTestRule;
 import org.apache.james.DockerCassandraRule;
 import org.apache.james.GuiceJamesServer;
 import org.apache.james.backends.cassandra.versions.CassandraSchemaVersionManager;
+import org.apache.james.core.User;
 import org.apache.james.core.builder.MimeMessageBuilder;
+import org.apache.james.mailbox.MailboxSession;
+import org.apache.james.mailbox.events.Event;
+import org.apache.james.mailbox.events.EventDeadLetters;
+import org.apache.james.mailbox.events.GenericGroup;
+import org.apache.james.mailbox.events.Group;
+import org.apache.james.mailbox.events.MailboxListener;
+import org.apache.james.mailbox.inmemory.InMemoryId;
 import org.apache.james.mailbox.model.ComposedMessageId;
 import org.apache.james.mailbox.model.MailboxConstants;
 import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.probe.MailboxProbe;
+import org.apache.james.mailbox.store.event.EventFactory;
 import org.apache.james.mailrepository.api.MailRepository;
 import org.apache.james.mailrepository.api.MailRepositoryStore;
 import org.apache.james.mailrepository.api.MailRepositoryUrl;
@@ -688,5 +697,34 @@ public class WebAdminServerIntegrationTest {
             .statusCode(HttpStatus.CREATED_201);
     }
 
+    @Test
+    public void postRedeliverGroupEventsShouldCreateATask() {
 
+        String uuid = "6e0dd59d-660e-4d9b-b22f-0354479f47b4";
+        String insertionUuid = "6e0dd59d-660e-4d9b-b22f-0354479f47b7";
+        Group group = new GenericGroup("a");
+        EventDeadLetters.InsertionId insertionId = EventDeadLetters.InsertionId.of(insertionUuid);
+        MailboxListener.MailboxAdded event = EventFactory.mailboxAdded()
+            .eventId(Event.EventId.of(uuid))
+            .user(User.fromUsername(USERNAME))
+            .sessionId(MailboxSession.SessionId.of(452))
+            .mailboxId(InMemoryId.of(453))
+            .mailboxPath(MailboxPath.forUser(USERNAME, "Important-mailbox"))
+            .build();
+
+        guiceJamesServer
+            .getInjector()
+            .getInstance(EventDeadLetters.class)
+            .store(group, event, insertionId)
+            .block();
+
+        given()
+            .queryParam("action", "reDeliver")
+            .when()
+            .post("/events/deadLetter/groups/" + group.asString())
+            .then()
+            .statusCode(HttpStatus.CREATED_201)
+            .header("Location", is(Matchers.notNullValue()))
+            .body("taskId", is(Matchers.notNullValue()));
+    }
 }

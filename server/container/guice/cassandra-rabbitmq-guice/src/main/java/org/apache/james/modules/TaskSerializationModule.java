@@ -14,6 +14,7 @@ import org.apache.james.task.eventsourcing.distributed.TasksSerializationModule;
 import org.apache.james.webadmin.service.CassandraMappingsSolveInconsistenciesTask;
 import org.apache.james.webadmin.service.DeleteMailsFromMailQueueTaskDTO;
 import org.apache.james.webadmin.service.EventDeadLettersRedeliverAllTaskDTO;
+import org.apache.james.webadmin.service.EventDeadLettersRedeliverGroupTaskDTO;
 import org.apache.james.webadmin.service.EventDeadLettersRedeliverService;
 import org.apache.james.webadmin.service.ReprocessingAllMailsTaskDTO;
 import org.apache.james.webadmin.service.ReprocessingOneMailTaskDTO;
@@ -121,6 +122,11 @@ public class TaskSerializationModule extends AbstractModule {
     @ProvidesIntoSet
     public TaskDTOModule<?, ?> eventDeadLettersRedeliverAllTask(EventDeadLettersRedeliverService service) {
         return EventDeadLettersRedeliverAllTaskDTO.module(service);
+    }
+
+    @ProvidesIntoSet
+    public TaskDTOModule<?, ?> eventDeadLettersRedeliverGroupTask(EventDeadLettersRedeliverService service) {
+        return EventDeadLettersRedeliverGroupTaskDTO.module(service);
     }
 
     @ProvidesIntoSet
