@@ -727,4 +727,35 @@ public class WebAdminServerIntegrationTest {
             .header("Location", is(Matchers.notNullValue()))
             .body("taskId", is(Matchers.notNullValue()));
     }
+
+    @Test
+    public void postRedeliverSingleEventShouldCreateATask() {
+        String uuid = "6e0dd59d-660e-4d9b-b22f-0354479f47b4";
+        String insertionUuid = "6e0dd59d-660e-4d9b-b22f-0354479f47b7";
+        Group group = new GenericGroup("a");
+        EventDeadLetters.InsertionId insertionId = EventDeadLetters.InsertionId.of(insertionUuid);
+        MailboxListener.MailboxAdded event = EventFactory.mailboxAdded()
+            .eventId(Event.EventId.of(uuid))
+            .user(User.fromUsername(USERNAME))
+            .sessionId(MailboxSession.SessionId.of(452))
+            .mailboxId(InMemoryId.of(453))
+            .mailboxPath(MailboxPath.forUser(USERNAME, "Important-mailbox"))
+            .build();
+
+        guiceJamesServer
+            .getInjector()
+            .getInstance(EventDeadLetters.class)
+            .store(group, event, insertionId)
+            .block();
+
+        given()
+            .queryParam("action", "reDeliver")
+            .when()
+            .post("/events/deadLetter/groups/" + group.asString() + "/" + insertionUuid)
+            .then()
+            .statusCode(HttpStatus.CREATED_201)
+            .header("Location", is(Matchers.notNullValue()))
+            .body("taskId", is(Matchers.notNullValue()));
+    }
+
 }
