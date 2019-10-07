@@ -22,13 +22,9 @@ package org.apache.james.webadmin.service;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.james.mailbox.events.EventDeadLetters;
-import org.apache.james.mailbox.events.Group;
 import org.apache.james.task.Task;
 import org.apache.james.task.TaskExecutionDetails;
 import org.apache.james.task.TaskType;
-
-import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class EventDeadLettersRedeliverAllTask implements Task {
     public static final TaskType TYPE = TaskType.of("eventDeadLettersRedeliverAllTask");
@@ -82,7 +78,7 @@ public class EventDeadLettersRedeliverAllTask implements Task {
     }
 
     EventDeadLettersRedeliveryTaskAdditionalInformation createAdditionalInformation() {
-        return new EventDeadLettersRedeliveryTaskAdditionalInformation (
+        return new EventDeadLettersRedeliveryTaskAdditionalInformation(
             successfulRedeliveriesCount.get(),
             failedRedeliveriesCount.get(),
             eventRetriever.forGroup(),
