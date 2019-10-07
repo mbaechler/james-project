@@ -18,8 +18,6 @@
  ****************************************************************/
 package org.apache.james.webadmin.vault.routes;
 
-import java.util.function.Function;
-
 import org.apache.james.json.DTOModule;
 import org.apache.james.server.task.json.dto.TaskDTO;
 import org.apache.james.server.task.json.dto.TaskDTOModule;
