@@ -20,8 +20,6 @@
 
 package org.apache.james.webadmin.vault.routes;
 
-import java.util.function.Function;
-
 import javax.inject.Inject;
 
 import org.apache.james.core.User;
