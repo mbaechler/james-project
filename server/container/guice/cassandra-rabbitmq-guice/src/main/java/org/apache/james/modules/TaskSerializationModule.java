@@ -39,18 +39,17 @@ import org.apache.mailbox.tools.indexer.FullReindexingTask;
 import org.apache.mailbox.tools.indexer.MessageIdReIndexingTask;
 import org.apache.mailbox.tools.indexer.MessageIdReindexingTaskDTO;
 import org.apache.mailbox.tools.indexer.ReIndexerPerformer;
-
-import com.github.fge.lambdas.Throwing;
-import com.github.steveash.guavate.Guavate;
-import com.google.inject.AbstractModule;
-import com.google.inject.multibindings.ProvidesIntoSet;
-
 import org.apache.mailbox.tools.indexer.SingleMailboxReindexingTask;
 import org.apache.mailbox.tools.indexer.SingleMailboxReindexingTaskDTO;
 import org.apache.mailbox.tools.indexer.SingleMessageReindexingTask;
 import org.apache.mailbox.tools.indexer.SingleMessageReindexingTaskDTO;
 import org.apache.mailbox.tools.indexer.UserReindexingTask;
 import org.apache.mailbox.tools.indexer.UserReindexingTaskDTO;
+
+import com.github.fge.lambdas.Throwing;
+import com.github.steveash.guavate.Guavate;
+import com.google.inject.AbstractModule;
+import com.google.inject.multibindings.ProvidesIntoSet;
 
 public class TaskSerializationModule extends AbstractModule {
 
