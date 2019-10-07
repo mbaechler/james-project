@@ -28,8 +28,6 @@ import org.apache.james.task.Task;
 import org.apache.james.task.TaskExecutionDetails;
 import org.apache.james.task.TaskType;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-
 public class EventDeadLettersRedeliverOneTask implements Task {
     public static final TaskType TYPE = TaskType.of("eventDeadLettersRedeliverOneTask");
 
