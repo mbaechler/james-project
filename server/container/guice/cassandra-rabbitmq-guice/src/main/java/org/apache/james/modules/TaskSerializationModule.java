@@ -31,6 +31,8 @@ import org.apache.james.webadmin.service.EventDeadLettersRedeliverService;
 import org.apache.james.webadmin.service.ReprocessingAllMailsTaskDTO;
 import org.apache.james.webadmin.service.ReprocessingOneMailTaskDTO;
 import org.apache.james.webadmin.service.ReprocessingService;
+import org.apache.james.webadmin.vault.routes.DeletedMessagesVaultDeleteTask;
+import org.apache.james.webadmin.vault.routes.DeletedMessagesVaultDeleteTaskDTO;
 import org.apache.james.webadmin.vault.routes.DeletedMessagesVaultExportTaskDTO;
 import org.apache.james.webadmin.vault.routes.DeletedMessagesVaultRestoreTaskDTO;
 import org.apache.mailbox.tools.indexer.FullReindexingTask;
@@ -152,6 +154,11 @@ public class TaskSerializationModule extends AbstractModule {
     @ProvidesIntoSet
     public TaskDTOModule<?, ?> deletedMessagesVaultExportTask(DeletedMessagesVaultExportTaskDTO.Factory factory) {
         return DeletedMessagesVaultExportTaskDTO.module(factory);
+    }
+
+    @ProvidesIntoSet
+    public TaskDTOModule<?, ?> deletedMessagesVaultDeleteTask(DeletedMessagesVaultDeleteTask.Factory factory) {
+        return DeletedMessagesVaultDeleteTaskDTO.module(factory);
     }
 
     @ProvidesIntoSet

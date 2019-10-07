@@ -24,6 +24,7 @@ import static io.restassured.RestAssured.when;
 import static io.restassured.RestAssured.with;
 import static org.apache.james.webadmin.Constants.JSON_CONTENT_TYPE;
 import static org.apache.james.webadmin.Constants.SEPARATOR;
+import static org.apache.james.webadmin.vault.routes.DeletedMessagesVaultRoutes.MESSAGE_PATH_PARAM;
 import static org.apache.james.webadmin.vault.routes.DeletedMessagesVaultRoutes.USERS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.hasItems;
@@ -38,6 +39,8 @@ import java.io.ByteArrayInputStream;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Stream;
+
+import javax.mail.Flags;
 
 import org.apache.james.CassandraRabbitMQAwsS3JmapTestRule;
 import org.apache.james.DockerCassandraRule;
@@ -82,6 +85,7 @@ import org.apache.james.webadmin.routes.TasksRoutes;
 import org.apache.james.webadmin.routes.UserMailboxesRoutes;
 import org.apache.james.webadmin.routes.UserRoutes;
 import org.apache.james.webadmin.swagger.routes.SwaggerRoutes;
+import org.apache.james.webadmin.vault.routes.DeletedMessagesVaultDeleteTask;
 import org.apache.james.webadmin.vault.routes.DeletedMessagesVaultRoutes;
 import org.apache.mailbox.tools.indexer.FullReindexingTask;
 import org.apache.mailbox.tools.indexer.MessageIdReIndexingTask;
@@ -90,6 +94,8 @@ import org.apache.mailbox.tools.indexer.SingleMessageReindexingTask;
 import org.apache.mailbox.tools.indexer.UserReindexingTask;
 import org.apache.mailet.base.test.FakeMail;
 
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
 import org.awaitility.Awaitility;
 import org.awaitility.Duration;
 import org.eclipse.jetty.http.HttpStatus;
@@ -99,11 +105,6 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
-
-import io.restassured.RestAssured;
-import io.restassured.http.ContentType;
-
-import javax.mail.Flags;
 
 public class WebAdminServerIntegrationTest {
 
@@ -884,6 +885,35 @@ public class WebAdminServerIntegrationTest {
             .body("status", is("completed"))
             .body("taskId", is(Matchers.notNullValue()))
             .body("type", is(SingleMailboxReindexingTask.MAILBOX_RE_INDEXING.asString()));
+    }
+
+    @Test
+    public void deleteShouldProduceASuccessfulTaskEvenNoDeletedMessageExisted() throws Exception {
+        dataProbe.addUser(USERNAME, "password");
+        MailboxId mailboxId = mailboxProbe.createMailbox(MailboxConstants.USER_NAMESPACE, USERNAME, MailboxConstants.INBOX);
+        ComposedMessageId composedMessageId = mailboxProbe.appendMessage(
+            USERNAME,
+            MailboxPath.forUser(USERNAME, MailboxConstants.INBOX),
+            new ByteArrayInputStream("Subject: test\r\n\r\ntestmail".getBytes()),
+            new Date(),
+            false,
+            new Flags());
+
+        String taskId =
+            with()
+                .basePath(DeletedMessagesVaultRoutes.ROOT_PATH)
+            .delete(USERS + SEPARATOR + USERNAME + SEPARATOR + MESSAGE_PATH_PARAM + SEPARATOR + composedMessageId.getMessageId().serialize())
+                .jsonPath()
+                .get("taskId");
+
+        given()
+            .basePath(TasksRoutes.BASE)
+        .when()
+            .get(taskId + "/await")
+        .then()
+            .body("status", is("completed"))
+            .body("taskId", is(taskId))
+            .body("type", is(DeletedMessagesVaultDeleteTask.TYPE.asString()));
     }
 
 }
