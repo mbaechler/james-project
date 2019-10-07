@@ -19,7 +19,6 @@
 package org.apache.james.webadmin.service;
 
 import java.util.List;
-import java.util.function.Function;
 
 import org.apache.james.json.DTOModule;
 import org.apache.james.mailrepository.api.MailRepository;
