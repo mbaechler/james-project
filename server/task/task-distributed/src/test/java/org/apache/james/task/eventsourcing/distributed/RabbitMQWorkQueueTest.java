@@ -59,8 +59,8 @@ class RabbitMQWorkQueueTest {
     static RabbitMQExtension rabbitMQExtension = RabbitMQExtension.singletonRabbitMQ();
 
     private RabbitMQWorkQueue testee;
-    private ImmediateWorker taskManagerWorker;
-    private JsonTaskSerializer taskSerializer;
+    private ImmediateWorker worker;
+    private JsonTaskSerializer serializer;
 
     private static class ImmediateWorker implements TaskManagerWorker {
 
@@ -92,9 +92,9 @@ class RabbitMQWorkQueueTest {
 
     @BeforeEach
     void setUp() {
-        taskManagerWorker = new ImmediateWorker();
-        taskSerializer = new JsonTaskSerializer(TestTaskDTOModules.COMPLETED_TASK_MODULE);
-        testee = new RabbitMQWorkQueue(taskManagerWorker, rabbitMQExtension.getRabbitConnectionPool(), taskSerializer);
+        worker = new ImmediateWorker();
+        serializer = new JsonTaskSerializer(TestTaskDTOModules.COMPLETED_TASK_MODULE);
+        testee = new RabbitMQWorkQueue(worker, rabbitMQExtension.getRabbitConnectionPool(), serializer);
         testee.start();
     }
 
@@ -104,20 +104,20 @@ class RabbitMQWorkQueueTest {
     }
 
     @Test
-    void workerShouldConsumeSubmittedTask() {
+    void workqueueShouldConsumeSubmittedTask() {
         testee.submit(TASK_WITH_ID);
-        await().atMost(FIVE_HUNDRED_MILLISECONDS).until(() -> !taskManagerWorker.results.isEmpty());
-        assertThat(taskManagerWorker.tasks).containsExactly(TASK_WITH_ID);
-        assertThat(taskManagerWorker.results).containsExactly(Task.Result.COMPLETED);
+        await().atMost(FIVE_HUNDRED_MILLISECONDS).until(() -> !worker.results.isEmpty());
+        assertThat(worker.tasks).containsExactly(TASK_WITH_ID);
+        assertThat(worker.results).containsExactly(Task.Result.COMPLETED);
     }
 
     @Test
-    void workerShouldConsumeTwoSubmittedTask() {
+    void workqueueShouldConsumeTwoSubmittedTask() {
         testee.submit(TASK_WITH_ID);
         testee.submit(TASK_WITH_ID_2);
-        await().atMost(FIVE_HUNDRED_MILLISECONDS).until(() -> taskManagerWorker.results.size() == 2);
-        assertThat(taskManagerWorker.tasks).containsExactly(TASK_WITH_ID, TASK_WITH_ID_2);
-        assertThat(taskManagerWorker.results).allSatisfy(result -> assertThat(result).isEqualTo(Task.Result.COMPLETED));
+        await().atMost(FIVE_HUNDRED_MILLISECONDS).until(() -> worker.results.size() == 2);
+        assertThat(worker.tasks).containsExactly(TASK_WITH_ID, TASK_WITH_ID_2);
+        assertThat(worker.results).allSatisfy(result -> assertThat(result).isEqualTo(Task.Result.COMPLETED));
     }
 
     @Test
@@ -125,13 +125,13 @@ class RabbitMQWorkQueueTest {
         testee.submit(TASK_WITH_ID);
 
         ImmediateWorker otherTaskManagerWorker = new ImmediateWorker();
-        try (RabbitMQWorkQueue otherWorkQueue = new RabbitMQWorkQueue(otherTaskManagerWorker, rabbitMQExtension.getRabbitConnectionPool(), taskSerializer)) {
+        try (RabbitMQWorkQueue otherWorkQueue = new RabbitMQWorkQueue(otherTaskManagerWorker, rabbitMQExtension.getRabbitConnectionPool(), serializer)) {
             otherWorkQueue.start();
 
             IntStream.range(0, 9)
                 .forEach(ignoredIndex -> testee.submit(TASK_WITH_ID_2));
 
-            await().atMost(FIVE_HUNDRED_MILLISECONDS).until(() -> taskManagerWorker.results.size() == 10);
+            await().atMost(FIVE_HUNDRED_MILLISECONDS).until(() -> worker.results.size() == 10);
             assertThat(otherTaskManagerWorker.tasks).isEmpty();
         }
     }
@@ -151,12 +151,12 @@ class RabbitMQWorkQueueTest {
 
             otherWorkQueue.submit(taskWithId);
 
-            await().atMost(FIVE_HUNDRED_MILLISECONDS).until(() -> taskManagerWorker.failedTasks.size() == 1);
-            assertThat(taskManagerWorker.failedTasks).containsExactly(taskWithId.getId());
+            await().atMost(FIVE_HUNDRED_MILLISECONDS).until(() -> worker.failedTasks.size() == 1);
+            assertThat(worker.failedTasks).containsExactly(taskWithId.getId());
 
             testee.submit(TASK_WITH_ID);
-            await().atMost(FIVE_HUNDRED_MILLISECONDS).until(() -> taskManagerWorker.results.size() == 1);
-            assertThat(taskManagerWorker.tasks).containsExactly(TASK_WITH_ID);
+            await().atMost(FIVE_HUNDRED_MILLISECONDS).until(() -> worker.results.size() == 1);
+            assertThat(worker.tasks).containsExactly(TASK_WITH_ID);
         }
     }
 }
