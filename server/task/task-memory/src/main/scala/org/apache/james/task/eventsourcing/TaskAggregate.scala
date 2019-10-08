@@ -43,62 +43,58 @@ class TaskAggregate private(val aggregateId: TaskAggregateId, private val histor
     .status
     .get
 
+  private implicit def toEventList(event: EventId => Event): util.List[Event] =
+    toEventList(Some(event))
+
+  private implicit def toEventList(maybeEvent: Option[EventId => Event]): util.List[Event] =
+    maybeEvent.map(event => event(history.getNextEventId)).toSeq.asJava
+
   private[eventsourcing] def start(hostname: Hostname): util.List[Event] = {
-    if (!currentStatus.isFinished) {
-      createEventWithId(Started(aggregateId, _, hostname))
-    } else {
-      Nil.asJava
-    }
+    if (!currentStatus.isFinished)
+      Started(aggregateId, _, hostname)
+    else
+      None
   }
 
-  def requestCancel(hostname: Hostname): util.List[Event] = {
-    if (!currentStatus.isFinished) {
-      createEventWithId(CancelRequested(aggregateId, _, hostname))
-    } else {
-      Nil.asJava
-    }
+  private[eventsourcing] def requestCancel(hostname: Hostname): util.List[Event] = {
+    if (!currentStatus.isFinished)
+      CancelRequested(aggregateId, _, hostname)
+    else
+      None
   }
 
   private[eventsourcing] def update(additionalInformation: AdditionalInformation): util.List[Event] = {
     currentStatus match {
-      case Status.IN_PROGRESS => createEventWithId(AdditionalInformationUpdated(aggregateId, _, additionalInformation))
-      case Status.CANCEL_REQUESTED => createEventWithId(AdditionalInformationUpdated(aggregateId, _, additionalInformation))
-      case Status.COMPLETED => Nil.asJava
-      case Status.FAILED => Nil.asJava
-      case Status.WAITING => Nil.asJava
-      case Status.CANCELLED => Nil.asJava
-      case _ => Nil.asJava
+      case Status.IN_PROGRESS => AdditionalInformationUpdated(aggregateId, _, additionalInformation)
+      case Status.CANCEL_REQUESTED => AdditionalInformationUpdated(aggregateId, _, additionalInformation)
+      case Status.COMPLETED => None
+      case Status.FAILED => None
+      case Status.WAITING => None
+      case Status.CANCELLED => None
     }
   }
 
   private[eventsourcing] def complete(result: Result, taskType: TaskType, additionalInformation: Option[AdditionalInformation]): util.List[Event] = {
-    if (!currentStatus.isFinished) {
-      createEventWithId(Completed(aggregateId, _, result, taskType, additionalInformation))
-    } else {
-      Nil.asJava
-    }
+    if (!currentStatus.isFinished)
+      Completed(aggregateId, _, result, taskType, additionalInformation)
+    else
+      None
   }
 
   private[eventsourcing] def fail(taskType : TaskType, additionalInformation: Option[AdditionalInformation]): util.List[Event] = {
-    if (!currentStatus.isFinished) {
-      createEventWithId(Failed(aggregateId, _, taskType, additionalInformation))
-    } else {
-      Nil.asJava
-    }
+    if (!currentStatus.isFinished)
+      Failed(aggregateId, _, taskType, additionalInformation)
+    else
+      None
   }
 
   private[eventsourcing] def cancel(taskType: TaskType, additionalInformation: Option[AdditionalInformation]): util.List[Event] = {
-    if (!currentStatus.isFinished) {
-      createEventWithId(Cancelled(aggregateId, _, taskType, additionalInformation))
-    } else {
-      Nil.asJava
-    }
+    if (!currentStatus.isFinished)
+      Cancelled(aggregateId, _, taskType, additionalInformation)
+    else
+      None
   }
 
-  private def createEventWithId(event: EventId => Event): util.List[Event] =
-    List(history.getNextEventId)
-      .map({ eventId => event(eventId) })
-      .asJava
 }
 
 object TaskAggregate {
