@@ -19,6 +19,7 @@
 package org.apache.james.task.eventsourcing;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.Arrays;
 import java.util.function.Function;
@@ -50,6 +51,17 @@ class TaskAggregateTest {
                     Arrays.stream(events),
                     (id, event) -> event.apply(id))
                 .collect(Collectors.toList()));
+    }
+
+    @Test
+    void TaskAggregateShouldThrowWhenHistoryDoesntStartWithCreatedEvent() {
+        assertThatThrownBy(() -> TaskAggregate.fromHistory(ID, buildHistory(eventId -> Started.apply(ID, eventId, HOSTNAME))))
+            .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void TaskAggregateShouldThrowWhenEmptyHistory() {
+        assertThatThrownBy(() -> TaskAggregate.fromHistory(ID, History.empty())).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
