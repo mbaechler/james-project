@@ -100,6 +100,12 @@ class TaskExecutionDetails(val taskId: TaskId,
     case _ => this
   }
 
+  def updateInformation(information: AdditionalInformation): TaskExecutionDetails = status match {
+    case IN_PROGRESS => update(information)
+    case CANCEL_REQUESTED => update(information)
+    case _ => this
+  }
+
   def canEqual(other: Any): Boolean = other.isInstanceOf[TaskExecutionDetails]
 
   override def equals(other: Any): Boolean = other match {
@@ -169,6 +175,14 @@ class TaskExecutionDetails(val taskId: TaskId,
     ranNode = ranNode,
     cancelRequestedNode = Optional.of(hostname),
     canceledDate = Optional.of(ZonedDateTime.now))
+  private def update(updatedInformation: AdditionalInformation) = new TaskExecutionDetails(taskId, `type`, status,
+    submittedDate = submittedDate,
+    submittedNode = submittedNode,
+    additionalInformation = () => Optional.of(updatedInformation),
+    startedDate = startedDate,
+    ranNode = ranNode,
+    cancelRequestedNode = cancelRequestedNode,
+    canceledDate = canceledDate)
   private def cancel(updatedAdditionalInformation: Optional[AdditionalInformation]) = new TaskExecutionDetails(taskId, `type`, TaskManager.Status.CANCELLED,
     submittedDate = submittedDate,
     submittedNode = submittedNode,
