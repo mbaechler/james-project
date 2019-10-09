@@ -18,6 +18,7 @@
  ****************************************************************/
 package org.apache.james.webadmin.vault.routes;
 
+import java.time.Instant;
 import java.util.function.Function;
 
 import org.apache.james.core.User;
@@ -34,17 +35,21 @@ public class DeletedMessagesVaultDeleteTaskAdditionalInformationDTO implements A
         factory ->
             DTOModule.forDomainObject(DeletedMessagesVaultDeleteTask.AdditionalInformation.class)
                 .convertToDTO(DeletedMessagesVaultDeleteTaskAdditionalInformationDTO.class)
-                .toDomainObjectConverter(dto -> new DeletedMessagesVaultDeleteTask.AdditionalInformation(User.fromUsername(dto.userName), factory.fromString(dto.getMessageId())))
-                .toDTOConverter((details, type) -> new DeletedMessagesVaultDeleteTaskAdditionalInformationDTO(details.getUser(), details.getDeleteMessageId()))
+                .toDomainObjectConverter(dto -> new DeletedMessagesVaultDeleteTask.AdditionalInformation(User.fromUsername(dto.userName), factory.fromString(dto.getMessageId()), dto.timestamp))
+                .toDTOConverter((details, type) -> new DeletedMessagesVaultDeleteTaskAdditionalInformationDTO(details.getUser(), details.getDeleteMessageId(), details.timestamp()))
                 .typeName(DeletedMessagesVaultDeleteTask.TYPE.asString())
                 .withFactory(AdditionalInformationDTOModule::new);
 
     private final String userName;
     private final String messageId;
+    private final Instant timestamp;
 
-    public DeletedMessagesVaultDeleteTaskAdditionalInformationDTO(@JsonProperty("userName") String userName, @JsonProperty("messageId") String messageId) {
+    public DeletedMessagesVaultDeleteTaskAdditionalInformationDTO(@JsonProperty("userName") String userName,
+                                                                  @JsonProperty("messageId") String messageId,
+                                                                  @JsonProperty("timestamp") Instant timestamp) {
         this.userName = userName;
         this.messageId = messageId;
+        this.timestamp = timestamp;
     }
 
     public String getMessageId() {

@@ -21,6 +21,7 @@ package org.apache.james.task.eventsourcing.distributed;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -54,6 +55,7 @@ import net.javacrumbs.jsonunit.assertj.JsonAssertions;
 import scala.Option;
 
 class TaskEventsSerializationTest {
+    private static final Instant TIMESTAMP = Instant.parse("2018-11-13T12:00:55Z");
     private static final JsonTaskSerializer TASK_SERIALIZER = new JsonTaskSerializer(TestTaskDTOModules.COMPLETED_TASK_MODULE,
         TestTaskDTOModules.MEMORY_REFERENCE_WITH_COUNTER_TASK_MODULE.apply(new MemoryReferenceWithCounterTaskStore()));
     private static final JsonTaskAdditionalInformationsSerializer TASK_ADDITIONNAL_INFORMATION_SERIALIZER = new JsonTaskAdditionalInformationsSerializer(MemoryReferenceWithCounterTaskAdditionalInformationDTO.SERIALIZATION_MODULE);
@@ -63,7 +65,7 @@ class TaskEventsSerializationTest {
     private static final EventId EVENT_ID = EventId.fromSerialized(42);
     private static final Task TASK = new CompletedTask();
     private static final Hostname HOSTNAME = new Hostname("foo");
-    private static final MemoryReferenceWithCounterTask.AdditionalInformation counterAdditionalInformation = new MemoryReferenceWithCounterTask.AdditionalInformation(3);
+    private static final MemoryReferenceWithCounterTask.AdditionalInformation counterAdditionalInformation = new MemoryReferenceWithCounterTask.AdditionalInformation(3, TIMESTAMP);
 
     @ParameterizedTest
     @MethodSource

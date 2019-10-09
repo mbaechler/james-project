@@ -18,6 +18,8 @@
  ****************************************************************/
 package org.apache.james.webadmin.service;
 
+import java.time.Instant;
+
 import org.apache.james.json.DTOModule;
 import org.apache.james.mailrepository.api.MailRepositoryPath;
 import org.apache.james.server.task.json.dto.AdditionalInformationDTO;
@@ -33,25 +35,30 @@ public class ClearMailRepositoryTaskAdditionalInformationDTO implements Addition
             .toDomainObjectConverter(dto -> new ClearMailRepositoryTask.AdditionalInformation(
                 MailRepositoryPath.from(dto.mailRepositoryPath),
                 dto.initialCount,
-                dto.remainingCount
+                dto.remainingCount,
+                dto.timestamp
             ))
             .toDTOConverter((details, type) -> new ClearMailRepositoryTaskAdditionalInformationDTO(
                 details.getRepositoryPath(),
                 details.getInitialCount(),
-                details.getRemainingCount()))
+                details.getRemainingCount(),
+                details.timestamp()))
             .typeName(ClearMailRepositoryTask.TYPE.asString())
             .withFactory(AdditionalInformationDTOModule::new);
 
     private final String mailRepositoryPath;
     private final long initialCount;
     private final long remainingCount;
+    private final Instant timestamp;
 
     public ClearMailRepositoryTaskAdditionalInformationDTO(@JsonProperty("mailRepositoryPath") String mailRepositoryPath,
                                                            @JsonProperty("initialCount") long initialCount,
-                                                           @JsonProperty("remainingCount") long remainingCount) {
+                                                           @JsonProperty("remainingCount") long remainingCount,
+                                                           @JsonProperty("timestamp") Instant timestamp) {
         this.mailRepositoryPath = mailRepositoryPath;
         this.initialCount = initialCount;
         this.remainingCount = remainingCount;
+        this.timestamp = timestamp;
     }
 
     public String getMailRepositoryPath() {
@@ -66,4 +73,7 @@ public class ClearMailRepositoryTaskAdditionalInformationDTO implements Addition
         return remainingCount;
     }
 
+    public Instant timestamp() {
+        return timestamp;
+    }
 }

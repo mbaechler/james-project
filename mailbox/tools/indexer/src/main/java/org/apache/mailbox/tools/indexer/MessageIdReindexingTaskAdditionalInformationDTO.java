@@ -18,6 +18,8 @@
  ****************************************************************/
 package org.apache.mailbox.tools.indexer;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.util.function.Function;
 
 import org.apache.james.json.DTOModule;
@@ -33,15 +35,18 @@ public class MessageIdReindexingTaskAdditionalInformationDTO implements Addition
         factory ->
             DTOModule.forDomainObject(MessageIdReIndexingTask.AdditionalInformation.class)
                 .convertToDTO(MessageIdReindexingTaskAdditionalInformationDTO.class)
-                .toDomainObjectConverter(dto -> new MessageIdReIndexingTask.AdditionalInformation(factory.fromString(dto.getMessageId())))
-                .toDTOConverter((details, type) -> new MessageIdReindexingTaskAdditionalInformationDTO(details.getMessageId()))
+                .toDomainObjectConverter(dto -> new MessageIdReIndexingTask.AdditionalInformation(factory.fromString(dto.getMessageId()), dto.timestamp))
+                .toDTOConverter((details, type) -> new MessageIdReindexingTaskAdditionalInformationDTO(details.getMessageId(), details.timestamp()))
                 .typeName(MessageIdReIndexingTask.TYPE.asString())
                 .withFactory(AdditionalInformationDTOModule::new);
 
     private final String messageId;
+    private final Instant timestamp;
 
-    private MessageIdReindexingTaskAdditionalInformationDTO(@JsonProperty("messageId") String messageId) {
+    private MessageIdReindexingTaskAdditionalInformationDTO(@JsonProperty("messageId") String messageId,
+                                                            @JsonProperty("timestamp") Instant timestamp) {
         this.messageId = messageId;
+        this.timestamp = timestamp;
     }
 
     public String getMessageId() {
@@ -49,6 +54,6 @@ public class MessageIdReindexingTaskAdditionalInformationDTO implements Addition
     }
 
     public static MessageIdReindexingTaskAdditionalInformationDTO of(MessageIdReIndexingTask task) {
-        return new MessageIdReindexingTaskAdditionalInformationDTO(task.getMessageId().serialize());
+        return new MessageIdReindexingTaskAdditionalInformationDTO(task.getMessageId().serialize(), Clock.systemUTC().instant());
     }
 }

@@ -19,6 +19,8 @@
 
 package org.apache.james.webadmin.service;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,11 +42,13 @@ public class ClearMailRepositoryTask implements Task {
         private final MailRepositoryPath repositoryPath;
         private final long initialCount;
         private final long remainingCount;
+        private final Instant timestamp;
 
-        public AdditionalInformation(MailRepositoryPath repositoryPath, long initialCount, long remainingCount) {
+        public AdditionalInformation(MailRepositoryPath repositoryPath, long initialCount, long remainingCount, Instant timestamp) {
             this.repositoryPath = repositoryPath;
             this.initialCount = initialCount;
             this.remainingCount = remainingCount;
+            this.timestamp = timestamp;
         }
 
         public String getRepositoryPath() {
@@ -57,6 +61,11 @@ public class ClearMailRepositoryTask implements Task {
 
         public long getInitialCount() {
             return initialCount;
+        }
+
+        @Override
+        public Instant timestamp() {
+            return timestamp;
         }
     }
 
@@ -110,7 +119,7 @@ public class ClearMailRepositoryTask implements Task {
 
     @Override
     public Optional<TaskExecutionDetails.AdditionalInformation> details() {
-        return Optional.of(new AdditionalInformation(mailRepositoryPath, initialCount, getRemainingSize()));
+        return Optional.of(new AdditionalInformation(mailRepositoryPath, initialCount, getRemainingSize(), Clock.systemUTC().instant()));
     }
 
     public long getRemainingSize() {

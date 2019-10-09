@@ -19,6 +19,8 @@
 
 package org.apache.james.task.eventsourcing.distributed
 
+import java.time.{Clock, Instant}
+
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.apache.james.eventsourcing.EventId
 import org.apache.james.eventsourcing.eventstore.cassandra.dto.EventDTO
@@ -147,7 +149,9 @@ case class AdditionalInformationUpdatedDTO(@JsonProperty("type") typeName: Strin
   extends TaskEventDTO(typeName, aggregateId, eventId) {
   def toDomainObject(jsonTaskAdditionalInformationsSerializer: JsonTaskAdditionalInformationsSerializer): AdditionalInformationUpdated = {
     //val deserializedAdditionalInformation = Option(getAdditionalInformation).map(jsonTaskAdditionalInformationsSerializer.deserialize(getTaskType, _))
-    val deserializedAdditionalInformation = new AdditionalInformation {}
+    val deserializedAdditionalInformation = new AdditionalInformation {
+      override def timestamp: Instant = Clock.systemUTC().instant()
+    }
     AdditionalInformationUpdated(domainAggregateId, domainEventId, deserializedAdditionalInformation)
   }
 }

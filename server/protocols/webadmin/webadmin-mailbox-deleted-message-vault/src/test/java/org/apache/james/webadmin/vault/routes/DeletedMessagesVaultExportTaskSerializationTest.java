@@ -24,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
+import java.time.Instant;
 
 import javax.mail.internet.AddressException;
 
@@ -43,6 +44,8 @@ import org.junit.jupiter.api.Test;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 class DeletedMessagesVaultExportTaskSerializationTest {
+
+    private static final Instant TIMESTAMP = Instant.parse("2018-11-13T12:00:55Z");
 
     private ExportService exportService;
     private final TestId.Factory mailboxIdFactory = new TestId.Factory();
@@ -67,7 +70,7 @@ class DeletedMessagesVaultExportTaskSerializationTest {
     @BeforeAll
     static void init() throws AddressException {
         exportTo = new MailAddress("james@apache.org");
-        details = new DeletedMessagesVaultExportTask.AdditionalInformation(USER_EXPORT_FROM, exportTo, 42);
+        details = new DeletedMessagesVaultExportTask.AdditionalInformation(USER_EXPORT_FROM, exportTo, 42, TIMESTAMP);
     }
 
     @BeforeEach

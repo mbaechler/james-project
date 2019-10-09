@@ -21,6 +21,7 @@ package org.apache.james.task.eventsourcing;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -36,13 +37,13 @@ import org.apache.james.task.TaskId;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Streams;
-import scala.None;
 import scala.None$;
 
 class TaskAggregateTest {
 
     static final Hostname HOSTNAME = Hostname.apply("foo");
     static final TaskAggregateId ID = TaskAggregateId.apply(TaskId.generateTaskId());
+    static final Instant timestamp = Instant.parse("2018-11-13T12:00:55Z");
 
     History buildHistory(Function<EventId, Event>... events) {
         return History.of(
@@ -70,7 +71,7 @@ class TaskAggregateTest {
             eventId -> Created.apply(ID, eventId, new MemoryReferenceWithCounterTask((counter) -> Task.Result.COMPLETED), HOSTNAME)
         );
         TaskAggregate aggregate = TaskAggregate.fromHistory(ID, history);
-        assertThat(aggregate.update(new MemoryReferenceWithCounterTask.AdditionalInformation(3))).isEmpty();
+        assertThat(aggregate.update(new MemoryReferenceWithCounterTask.AdditionalInformation(3, timestamp))).isEmpty();
     }
 
     @Test
@@ -80,8 +81,8 @@ class TaskAggregateTest {
             eventId -> Started.apply(ID, eventId, HOSTNAME)
         );
         TaskAggregate aggregate = TaskAggregate.fromHistory(ID, history);
-        assertThat(aggregate.update(new MemoryReferenceWithCounterTask.AdditionalInformation(3)))
-            .containsExactly(AdditionalInformationUpdated.apply(ID, history.getNextEventId(), new MemoryReferenceWithCounterTask.AdditionalInformation(3)));
+        assertThat(aggregate.update(new MemoryReferenceWithCounterTask.AdditionalInformation(3, timestamp)))
+            .containsExactly(AdditionalInformationUpdated.apply(ID, history.getNextEventId(), new MemoryReferenceWithCounterTask.AdditionalInformation(3, timestamp)));
     }
 
     @Test
@@ -92,8 +93,8 @@ class TaskAggregateTest {
             eventId -> CancelRequested.apply(ID, eventId, HOSTNAME)
         );
         TaskAggregate aggregate = TaskAggregate.fromHistory(ID, history);
-        assertThat(aggregate.update(new MemoryReferenceWithCounterTask.AdditionalInformation(3)))
-            .containsExactly(AdditionalInformationUpdated.apply(ID, history.getNextEventId(), new MemoryReferenceWithCounterTask.AdditionalInformation(3)));
+        assertThat(aggregate.update(new MemoryReferenceWithCounterTask.AdditionalInformation(3, timestamp)))
+            .containsExactly(AdditionalInformationUpdated.apply(ID, history.getNextEventId(), new MemoryReferenceWithCounterTask.AdditionalInformation(3, timestamp)));
     }
 
     @Test
@@ -105,7 +106,7 @@ class TaskAggregateTest {
             eventId -> Completed.apply(ID, eventId, Task.Result.COMPLETED, task.type(), None$.empty())
         );
         TaskAggregate aggregate = TaskAggregate.fromHistory(ID, history);
-        assertThat(aggregate.update(new MemoryReferenceWithCounterTask.AdditionalInformation(3))).isEmpty();
+        assertThat(aggregate.update(new MemoryReferenceWithCounterTask.AdditionalInformation(3, timestamp))).isEmpty();
     }
 
     @Test
@@ -117,7 +118,7 @@ class TaskAggregateTest {
             eventId -> Failed.apply(ID, eventId, task.type(), None$.empty())
         );
         TaskAggregate aggregate = TaskAggregate.fromHistory(ID, history);
-        assertThat(aggregate.update(new MemoryReferenceWithCounterTask.AdditionalInformation(3))).isEmpty();
+        assertThat(aggregate.update(new MemoryReferenceWithCounterTask.AdditionalInformation(3, timestamp))).isEmpty();
     }
 
     @Test
@@ -129,6 +130,6 @@ class TaskAggregateTest {
             eventId -> Cancelled.apply(ID, eventId, task.type(), None$.empty())
         );
         TaskAggregate aggregate = TaskAggregate.fromHistory(ID, history);
-        assertThat(aggregate.update(new MemoryReferenceWithCounterTask.AdditionalInformation(3))).isEmpty();
+        assertThat(aggregate.update(new MemoryReferenceWithCounterTask.AdditionalInformation(3, timestamp))).isEmpty();
     }
 }

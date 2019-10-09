@@ -25,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -42,6 +43,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import net.javacrumbs.jsonunit.assertj.JsonAssertions;
 
 class ReprocessingOneMailTaskTest {
+
+    private static final Instant TIMESTAMP = Instant.parse("2018-11-13T12:00:55Z");
     private static final ReprocessingService REPROCESSING_SERVICE = mock(ReprocessingService.class);
     private static final String SERIALIZED_TASK_1 = "{\"type\":\"reprocessingOneTask\",\"repositoryPath\":\"a\",\"targetQueue\":\"queue\",\"mailKey\": \"myMail\",\"targetProcessor\":\"targetProcessor\"}";
     private static final String SERIALIZED_TASK_1_ADDITIONAL_INFORMATION = "{\"repositoryPath\":\"a\",\"targetQueue\":\"queue\",\"mailKey\": \"myMail\",\"targetProcessor\":\"targetProcessor\"}";
@@ -104,13 +107,13 @@ class ReprocessingOneMailTaskTest {
 
     @Test
     void additionalInformationShouldBeSerializable() throws JsonProcessingException {
-        ReprocessingOneMailTask.AdditionalInformation details = new ReprocessingOneMailTask.AdditionalInformation(REPOSITORY_PATH, TARGET_QUEUE, MAIL_KEY, TARGET_PROCESSOR);
+        ReprocessingOneMailTask.AdditionalInformation details = new ReprocessingOneMailTask.AdditionalInformation(REPOSITORY_PATH, TARGET_QUEUE, MAIL_KEY, TARGET_PROCESSOR, TIMESTAMP);
         assertThatJson(jsonAdditionalInformationSerializer.serialize(details)).isEqualTo(SERIALIZED_TASK_1_ADDITIONAL_INFORMATION);
     }
 
     @Test
     void additonalInformationShouldBeDeserializable() throws IOException {
-        ReprocessingOneMailTask.AdditionalInformation details = new ReprocessingOneMailTask.AdditionalInformation(REPOSITORY_PATH, TARGET_QUEUE, MAIL_KEY, TARGET_PROCESSOR);
+        ReprocessingOneMailTask.AdditionalInformation details = new ReprocessingOneMailTask.AdditionalInformation(REPOSITORY_PATH, TARGET_QUEUE, MAIL_KEY, TARGET_PROCESSOR, TIMESTAMP);
         assertThat(jsonAdditionalInformationSerializer.deserialize("reprocessingOneTask", SERIALIZED_TASK_1_ADDITIONAL_INFORMATION))
             .isEqualToComparingFieldByField(details);
     }

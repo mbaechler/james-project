@@ -18,6 +18,8 @@
  ****************************************************************/
 package org.apache.james.backends.cassandra.migration;
 
+import java.time.Instant;
+
 import org.apache.james.backends.cassandra.versions.SchemaVersion;
 import org.apache.james.json.DTOModule;
 import org.apache.james.server.task.json.dto.AdditionalInformationDTO;
@@ -30,15 +32,18 @@ public class MigrationTaskAdditionalInformationsDTO implements AdditionalInforma
     static final AdditionalInformationDTOModule<MigrationTask.AdditionalInformations, MigrationTaskAdditionalInformationsDTO> SERIALIZATION_MODULE =
         DTOModule.forDomainObject(MigrationTask.AdditionalInformations.class)
             .convertToDTO(MigrationTaskAdditionalInformationsDTO.class)
-            .toDomainObjectConverter(dto -> new MigrationTask.AdditionalInformations(new SchemaVersion(dto.getTargetVersion())))
-            .toDTOConverter((details, type) -> new MigrationTaskAdditionalInformationsDTO(details.getToVersion()))
+            .toDomainObjectConverter(dto -> new MigrationTask.AdditionalInformations(new SchemaVersion(dto.getTargetVersion()), dto.timestamp))
+            .toDTOConverter((details, type) -> new MigrationTaskAdditionalInformationsDTO(details.getToVersion(), details.timestamp()))
             .typeName(MigrationTask.CASSANDRA_MIGRATION.asString())
             .withFactory(AdditionalInformationDTOModule::new);
 
     private final int targetVersion;
+    private final Instant timestamp;
 
-    public MigrationTaskAdditionalInformationsDTO(@JsonProperty("targetVersion") int targetVersion) {
+    public MigrationTaskAdditionalInformationsDTO(@JsonProperty("targetVersion") int targetVersion,
+                                                  @JsonProperty("timestamp") Instant timestamp) {
         this.targetVersion = targetVersion;
+        this.timestamp = timestamp;
     }
 
     public int getTargetVersion() {

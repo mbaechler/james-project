@@ -24,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Optional;
 
 import org.apache.james.mailbox.events.EventDeadLetters;
@@ -37,6 +38,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import net.javacrumbs.jsonunit.assertj.JsonAssertions;
 
 class EventDeadLettersRedeliverTaskTest {
+
+    private static final Instant TIMESTAMP = Instant.parse("2018-11-13T12:00:55Z");
     private static final String SERIALIZED = "{\"type\":\"eventDeadLettersRedeliverTask\"}";
     private static final String SERIALIZED_TASK_ADDITIONAL_INFORMATION = "{\"successfulRedeliveriesCount\":10,\"failedRedeliveriesCount\":4,\"group\":\"org.apache.james.mailbox.events.GenericGroup-foo\",\"insertionId\":\"53db3dd9-80eb-476f-b25a-722ad364905a\"}";
     private static final String SERIALIZED_TASK_ADDITIONAL_INFORMATION_EMPTY_FIELDS = "{\"successfulRedeliveriesCount\":10,\"failedRedeliveriesCount\":4}";
@@ -78,7 +81,8 @@ class EventDeadLettersRedeliverTaskTest {
         EventDeadLettersRedeliverTask.AdditionalInformation details = new EventDeadLettersRedeliverTask.AdditionalInformation(SUCCESSFUL_REDELIVERY_COUNT,
             FAILED_REDELIVERY_COUNT,
             SOME_GROUP,
-            SOME_INSERTION_ID);
+            SOME_INSERTION_ID,
+            TIMESTAMP);
         assertThatJson(jsonAdditionalInformationSerializer.serialize(details)).isEqualTo(SERIALIZED_TASK_ADDITIONAL_INFORMATION);
     }
 
@@ -87,7 +91,8 @@ class EventDeadLettersRedeliverTaskTest {
         EventDeadLettersRedeliverTask.AdditionalInformation details = new EventDeadLettersRedeliverTask.AdditionalInformation(SUCCESSFUL_REDELIVERY_COUNT,
             FAILED_REDELIVERY_COUNT,
             SOME_GROUP,
-            SOME_INSERTION_ID);
+            SOME_INSERTION_ID,
+            TIMESTAMP);
         assertThat(jsonAdditionalInformationSerializer.deserialize("eventDeadLettersRedeliverTask", SERIALIZED_TASK_ADDITIONAL_INFORMATION))
             .isEqualToComparingFieldByField(details);
     }
@@ -97,7 +102,8 @@ class EventDeadLettersRedeliverTaskTest {
         EventDeadLettersRedeliverTask.AdditionalInformation details = new EventDeadLettersRedeliverTask.AdditionalInformation(SUCCESSFUL_REDELIVERY_COUNT,
             FAILED_REDELIVERY_COUNT,
             NO_GROUP,
-            NO_INSERTION_ID);
+            NO_INSERTION_ID,
+            TIMESTAMP);
         assertThatJson(jsonAdditionalInformationSerializer.serialize(details)).isEqualTo(SERIALIZED_TASK_ADDITIONAL_INFORMATION_EMPTY_FIELDS);
     }
 
@@ -106,7 +112,8 @@ class EventDeadLettersRedeliverTaskTest {
         EventDeadLettersRedeliverTask.AdditionalInformation details = new EventDeadLettersRedeliverTask.AdditionalInformation(SUCCESSFUL_REDELIVERY_COUNT,
             FAILED_REDELIVERY_COUNT,
             NO_GROUP,
-            NO_INSERTION_ID);
+            NO_INSERTION_ID,
+            TIMESTAMP);
         assertThat(jsonAdditionalInformationSerializer.deserialize("eventDeadLettersRedeliverTask", SERIALIZED_TASK_ADDITIONAL_INFORMATION_EMPTY_FIELDS))
             .isEqualToComparingFieldByField(details);
     }

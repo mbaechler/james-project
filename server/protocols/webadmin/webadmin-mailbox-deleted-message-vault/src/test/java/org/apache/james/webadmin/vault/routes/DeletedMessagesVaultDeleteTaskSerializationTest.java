@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
+import java.time.Instant;
 
 import org.apache.james.core.User;
 import org.apache.james.mailbox.model.MessageId;
@@ -36,6 +37,8 @@ import org.junit.jupiter.api.Test;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 class DeletedMessagesVaultDeleteTaskSerializationTest {
+
+    private static final Instant TIMESTAMP = Instant.parse("2018-11-13T12:00:55Z");
 
     private DeletedMessageVault deletedMessageVault;
     private JsonTaskSerializer taskSerializer;
@@ -77,13 +80,13 @@ class DeletedMessagesVaultDeleteTaskSerializationTest {
 
     @Test
     void additionalInformationShouldBeSerializable() throws JsonProcessingException {
-        DeletedMessagesVaultDeleteTask.AdditionalInformation details = new DeletedMessagesVaultDeleteTask.AdditionalInformation(user, messageId);
+        DeletedMessagesVaultDeleteTask.AdditionalInformation details = new DeletedMessagesVaultDeleteTask.AdditionalInformation(user, messageId, TIMESTAMP);
         assertThatJson(jsonAdditionalInformationSerializer.serialize(details)).isEqualTo(serializedAdditionalInformation);
     }
 
     @Test
     void additonalInformationShouldBeDeserializable() throws IOException {
-        DeletedMessagesVaultDeleteTask.AdditionalInformation details = new DeletedMessagesVaultDeleteTask.AdditionalInformation(user, messageId);
+        DeletedMessagesVaultDeleteTask.AdditionalInformation details = new DeletedMessagesVaultDeleteTask.AdditionalInformation(user, messageId, TIMESTAMP);
         assertThat(jsonAdditionalInformationSerializer.deserialize("deletedMessages/delete", serializedAdditionalInformation))
             .isEqualToComparingFieldByField(details);
     }

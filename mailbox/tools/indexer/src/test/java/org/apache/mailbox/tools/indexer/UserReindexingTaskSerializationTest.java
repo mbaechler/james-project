@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 
 import org.apache.james.core.User;
@@ -38,6 +39,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ImmutableList;
 
 class UserReindexingTaskSerializationTest {
+
+    private static final Instant TIMESTAMP = Instant.parse("2018-11-13T12:00:55Z");
 
     private ReIndexerPerformer reIndexerPerformer;
     private JsonTaskSerializer taskSerializer;
@@ -97,13 +100,13 @@ class UserReindexingTaskSerializationTest {
 
     @Test
     void additionalInformationShouldBeSerializable() throws JsonProcessingException {
-        UserReindexingTask.AdditionalInformation details = new UserReindexingTask.AdditionalInformation(user, successfullyReprocessedMailCount, failedReprocessedMailCount, reIndexingExecutionFailures);
+        UserReindexingTask.AdditionalInformation details = new UserReindexingTask.AdditionalInformation(user, successfullyReprocessedMailCount, failedReprocessedMailCount, reIndexingExecutionFailures, TIMESTAMP);
         assertThatJson(jsonAdditionalInformationSerializer.serialize(details)).isEqualTo(SERIALIZED_ADDITIONAL_INFORMATION);
     }
 
     @Test
     void additionalInformationShouldBeDeserializable() throws IOException {
-        UserReindexingTask.AdditionalInformation details = new UserReindexingTask.AdditionalInformation(user, successfullyReprocessedMailCount, failedReprocessedMailCount, reIndexingExecutionFailures);
+        UserReindexingTask.AdditionalInformation details = new UserReindexingTask.AdditionalInformation(user, successfullyReprocessedMailCount, failedReprocessedMailCount, reIndexingExecutionFailures, TIMESTAMP);
         assertThat(jsonAdditionalInformationSerializer.deserialize("userReIndexing", SERIALIZED_ADDITIONAL_INFORMATION))
             .isEqualToComparingFieldByField(details);
     }

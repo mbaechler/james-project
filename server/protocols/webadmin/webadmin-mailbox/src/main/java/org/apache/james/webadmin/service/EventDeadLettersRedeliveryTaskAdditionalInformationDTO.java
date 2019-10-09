@@ -1,5 +1,6 @@
 package org.apache.james.webadmin.service;
 
+import java.time.Instant;
 import java.util.Optional;
 
 import org.apache.james.json.DTOModule;
@@ -27,7 +28,8 @@ public class EventDeadLettersRedeliveryTaskAdditionalInformationDTO implements A
             domainObject.getSuccessfulRedeliveriesCount(),
             domainObject.getFailedRedeliveriesCount(),
             domainObject.getGroup(),
-            domainObject.getInsertionId());
+            domainObject.getInsertionId(),
+            domainObject.timestamp());
     }
 
     private static EventDeadLettersRedeliverTask.AdditionalInformation fromDTO(EventDeadLettersRedeliveryTaskAdditionalInformationDTO dto) {
@@ -35,7 +37,8 @@ public class EventDeadLettersRedeliveryTaskAdditionalInformationDTO implements A
             dto.successfulRedeliveriesCount,
             dto.failedRedeliveriesCount,
             dto.group.map(Throwing.function(Group::deserialize).sneakyThrow()),
-            dto.insertionId.map(EventDeadLetters.InsertionId::of));
+            dto.insertionId.map(EventDeadLetters.InsertionId::of),
+            dto.timestamp);
     }
 
 
@@ -43,16 +46,19 @@ public class EventDeadLettersRedeliveryTaskAdditionalInformationDTO implements A
     private final long failedRedeliveriesCount;
     private final Optional<String> group;
     private final Optional<String> insertionId;
+    private final Instant timestamp;
 
     public EventDeadLettersRedeliveryTaskAdditionalInformationDTO(@JsonProperty("successfulRedeliveriesCount") long successfulRedeliveriesCount,
                                                                   @JsonProperty("failedRedeliveriesCount") long failedRedeliveriesCount,
                                                                   @JsonProperty("group") Optional<String> group,
-                                                                  @JsonProperty("insertionId") Optional<String> insertionId
+                                                                  @JsonProperty("insertionId") Optional<String> insertionId,
+                                                                  @JsonProperty("timestamp") Instant timestamp
     ) {
         this.successfulRedeliveriesCount = successfulRedeliveriesCount;
         this.failedRedeliveriesCount = failedRedeliveriesCount;
         this.group = group;
         this.insertionId = insertionId;
+        this.timestamp = timestamp;
     }
 
 
@@ -71,4 +77,5 @@ public class EventDeadLettersRedeliveryTaskAdditionalInformationDTO implements A
     public Optional<String> getInsertionId() {
         return insertionId;
     }
+
 }

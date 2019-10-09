@@ -19,6 +19,8 @@
 
 package org.apache.james.webadmin.service;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -38,13 +40,16 @@ public class EventDeadLettersRedeliverTask implements Task {
         private final long failedRedeliveriesCount;
         private final Optional<Group> group;
         private final Optional<EventDeadLetters.InsertionId> insertionId;
+        private final Instant timestamp;
 
         AdditionalInformation(long successfulRedeliveriesCount, long failedRedeliveriesCount,
-                              Optional<Group> group, Optional<EventDeadLetters.InsertionId> insertionId) {
+                              Optional<Group> group, Optional<EventDeadLetters.InsertionId> insertionId,
+                              Instant timestamp) {
             this.successfulRedeliveriesCount = successfulRedeliveriesCount;
             this.failedRedeliveriesCount = failedRedeliveriesCount;
             this.group = group;
             this.insertionId = insertionId;
+            this.timestamp = timestamp;
         }
 
         public long getSuccessfulRedeliveriesCount() {
@@ -63,6 +68,11 @@ public class EventDeadLettersRedeliverTask implements Task {
         @JsonInclude(JsonInclude.Include.NON_ABSENT)
         public Optional<String> getInsertionId() {
             return insertionId.map(insertionId -> insertionId.getId().toString());
+        }
+
+        @Override
+        public Instant timestamp() {
+            return timestamp;
         }
     }
 
@@ -115,6 +125,7 @@ public class EventDeadLettersRedeliverTask implements Task {
             successfulRedeliveriesCount.get(),
             failedRedeliveriesCount.get(),
             eventRetriever.forGroup(),
-            eventRetriever.forEvent());
+            eventRetriever.forEvent(),
+            Clock.systemUTC().instant());
     }
 }

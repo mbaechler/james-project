@@ -25,6 +25,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -45,6 +46,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 class DeleteMailsFromMailQueueTaskTest {
 
+    private static final Instant TIMESTAMP = Instant.parse("2018-11-13T12:00:55Z");
     private MailQueueFactory<ManageableMailQueue> mailQueueFactory;
     private ManageableMailQueue mockedQueue;
     private final static String queueName = "anyQueue";
@@ -101,7 +103,7 @@ class DeleteMailsFromMailQueueTaskTest {
         when(mailQueueFactory.getQueue(anyString())).thenReturn(Optional.empty());
         JsonTaskSerializer testee = new JsonTaskSerializer(DeleteMailsFromMailQueueTaskDTO.MODULE.apply(mailQueueFactory));
 
-        String serializedJson = "{\"type\": \"delete-mails-from-mail-queue\", \"queue\": \"anyQueue\", \"sender\": \"a@b.c\"}";
+        String serializedJson = "{\"type\": \"delete-mails-from-mail-queue\", \"queue\": \"anyQueue\", \"sender\": \"a@b.c\", \"timestamp\": \"2018-11-13T12:00:55Z\"}";
         assertThatThrownBy(() -> testee.deserialize(serializedJson))
             .isInstanceOf(DeleteMailsFromMailQueueTask.UnknownSerializedQueue.class);
     }
@@ -110,16 +112,16 @@ class DeleteMailsFromMailQueueTaskTest {
     void taskShouldThrowWhenDeserializeAMalformedMailAddress() throws Exception {
         JsonTaskSerializer testee = new JsonTaskSerializer(DeleteMailsFromMailQueueTaskDTO.MODULE.apply(mailQueueFactory));
 
-        String serializedJson = "{\"type\": \"delete-mails-from-mail-queue\", \"queue\": \"" + queueName + "\", \"sender\": \"a.b.c\"}";
+        String serializedJson = "{\"type\": \"delete-mails-from-mail-queue\", \"queue\": \"" + queueName + "\", \"sender\": \"a.b.c\", \"timestamp\": \"2018-11-13T12:00:55Z\"}";
         assertThatThrownBy(() -> testee.deserialize(serializedJson))
             .isInstanceOf(AddressException.class);
     }
 
     private static Stream<Arguments> validAdditionalInformations() throws Exception {
         return Stream.of(
-            Arguments.of(10L, 5L, Optional.of(new MailAddress("a@b.c")), Optional.empty(), Optional.empty(), "{\"queue\": \"anyQueue\", \"sender\": \"a@b.c\", \"initialCount\" : 10, \"remainingCount\":5}"),
-            Arguments.of(1L, 0L, Optional.empty(), Optional.of("name"), Optional.empty(), "{\"queue\": \"anyQueue\", \"name\": \"name\", \"initialCount\" : 1, \"remainingCount\":0}"),
-            Arguments.of(6L, 6L, Optional.empty(), Optional.empty(), Optional.of(new MailAddress("d@e.f")), "{\"queue\": \"anyQueue\", \"recipient\": \"d@e.f\", \"initialCount\" : 6, \"remainingCount\":6}")
+            Arguments.of(10L, 5L, Optional.of(new MailAddress("a@b.c")), Optional.empty(), Optional.empty(), "{\"queue\": \"anyQueue\", \"sender\": \"a@b.c\", \"initialCount\" : 10, \"remainingCount\":5, \"timestamp\": \"2018-11-13T12:00:55Z\"}"),
+            Arguments.of(1L, 0L, Optional.empty(), Optional.of("name"), Optional.empty(), "{\"queue\": \"anyQueue\", \"name\": \"name\", \"initialCount\" : 1, \"remainingCount\":0, \"timestamp\": \"2018-11-13T12:00:55Z\"}"),
+            Arguments.of(6L, 6L, Optional.empty(), Optional.empty(), Optional.of(new MailAddress("d@e.f")), "{\"queue\": \"anyQueue\", \"recipient\": \"d@e.f\", \"initialCount\" : 6, \"remainingCount\":6, \"timestamp\": \"2018-11-13T12:00:55Z\"}")
         );
     }
 
@@ -133,7 +135,7 @@ class DeleteMailsFromMailQueueTaskTest {
                                                    String serializedAdditionalInformationJson) throws JsonProcessingException {
 
         ManageableMailQueue queue = mailQueueFactory.getQueue(queueName).get();
-        DeleteMailsFromMailQueueTask.AdditionalInformation details = new DeleteMailsFromMailQueueTask.AdditionalInformation(queue.getName(), initialCount, remainingCount, sender, name, recipient);
+        DeleteMailsFromMailQueueTask.AdditionalInformation details = new DeleteMailsFromMailQueueTask.AdditionalInformation(queue.getName(), initialCount, remainingCount, sender, name, recipient, TIMESTAMP);
 
         assertThatJson(jsonAdditionalInformationsSerializer.serialize(details)).isEqualTo(serializedAdditionalInformationJson);
     }
@@ -150,7 +152,7 @@ class DeleteMailsFromMailQueueTaskTest {
                                                      Optional<String> name,
                                                      Optional<MailAddress> recipient,
                                                      String serializedAdditionalInformationJson) throws IOException {
-        DeleteMailsFromMailQueueTask.AdditionalInformation details = new DeleteMailsFromMailQueueTask.AdditionalInformation(queueName, initialCount, remainingCount, sender, name, recipient);
+        DeleteMailsFromMailQueueTask.AdditionalInformation details = new DeleteMailsFromMailQueueTask.AdditionalInformation(queueName, initialCount, remainingCount, sender, name, recipient, TIMESTAMP);
 
         assertThat(jsonAdditionalInformationsSerializer.deserialize("delete-mails-from-mail-queue", serializedAdditionalInformationJson))
             .isEqualToComparingFieldByField(details);

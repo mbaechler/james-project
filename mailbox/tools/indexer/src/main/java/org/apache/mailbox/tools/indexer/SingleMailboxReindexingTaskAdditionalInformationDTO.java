@@ -18,6 +18,7 @@
  ****************************************************************/
 package org.apache.mailbox.tools.indexer;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.function.Function;
 
@@ -38,9 +39,15 @@ public class SingleMailboxReindexingTaskAdditionalInformationDTO implements Addi
                 .toDomainObjectConverter(dto -> new SingleMailboxReindexingTask.AdditionalInformation(factory.fromString(dto.getMailboxId()),
                     dto.getSuccessfullyReprocessedMailCount(),
                     dto.getFailedReprocessedMailCount(),
-                    ReprocessingContextInformationDTO.deserializeFailures(factory, dto.getFailures())))
-                .toDTOConverter((details, type) -> new SingleMailboxReindexingTaskAdditionalInformationDTO(details.getMailboxId(), details.getSuccessfullyReprocessedMailCount(), details.getFailedReprocessedMailCount(),
-                    ReprocessingContextInformationDTO.serializeFailures(details.failures())))
+                    ReprocessingContextInformationDTO.deserializeFailures(factory, dto.getFailures()),
+                    dto.reprocessingContextInformationDTO.timestamp()))
+                .toDTOConverter((details, type) ->
+                    new SingleMailboxReindexingTaskAdditionalInformationDTO(
+                        details.getMailboxId(),
+                        details.getSuccessfullyReprocessedMailCount(),
+                        details.getFailedReprocessedMailCount(),
+                        ReprocessingContextInformationDTO.serializeFailures(details.failures()),
+                        details.timestamp()))
                 .typeName(SingleMailboxReindexingTask.MAILBOX_RE_INDEXING.asString())
                 .withFactory(AdditionalInformationDTOModule::new);
 
@@ -51,11 +58,13 @@ public class SingleMailboxReindexingTaskAdditionalInformationDTO implements Addi
     private SingleMailboxReindexingTaskAdditionalInformationDTO(@JsonProperty("mailboxId") String mailboxId,
                                                                 @JsonProperty("successfullyReprocessedMailCount") int successfullyReprocessedMailCount,
                                                                 @JsonProperty("failedReprocessedMailCount") int failedReprocessedMailCount,
-                                                                @JsonProperty("failures") List<ReprocessingContextInformationDTO.ReindexingFailureDTO> failures) {
+                                                                @JsonProperty("failures") List<ReprocessingContextInformationDTO.ReindexingFailureDTO> failures,
+                                                                @JsonProperty("timestamp") Instant timestamp) {
         this.mailboxId = mailboxId;
         this.reprocessingContextInformationDTO = new ReprocessingContextInformationDTO(
             successfullyReprocessedMailCount,
-            failedReprocessedMailCount, failures);
+            failedReprocessedMailCount, failures,
+            timestamp);
     }
 
     public String getMailboxId() {

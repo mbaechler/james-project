@@ -20,6 +20,7 @@
 
 package org.apache.james.vault.blob;
 
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Collection;
 
@@ -35,7 +36,8 @@ public class BlobStoreVaultGarbageCollectionTaskAdditionalInformationDTO impleme
     static BlobStoreVaultGarbageCollectionTaskAdditionalInformationDTO fromDomainObject(BlobStoreVaultGarbageCollectionTask.AdditionalInformation additionalInformation, String type) {
         return new BlobStoreVaultGarbageCollectionTaskAdditionalInformationDTO(
             additionalInformation.getBeginningOfRetentionPeriod().toString(),
-            additionalInformation.getDeletedBuckets()
+            additionalInformation.getDeletedBuckets(),
+            additionalInformation.timestamp()
         );
     }
 
@@ -50,11 +52,14 @@ public class BlobStoreVaultGarbageCollectionTaskAdditionalInformationDTO impleme
 
     private final String beginningOfRetentionPeriod;
     private final Collection<String> deletedBuckets;
+    private final Instant timestamp;
 
     BlobStoreVaultGarbageCollectionTaskAdditionalInformationDTO(@JsonProperty("beginningOfRetentionPeriod") String beginningOfRetentionPeriod,
-                                                                @JsonProperty("deletedBuckets") Collection<String> deletedBuckets) {
+                                                                @JsonProperty("deletedBuckets") Collection<String> deletedBuckets,
+                                                                @JsonProperty("timestamp") Instant timestamp) {
         this.beginningOfRetentionPeriod = beginningOfRetentionPeriod;
         this.deletedBuckets = deletedBuckets;
+        this.timestamp = timestamp;
     }
 
     BlobStoreVaultGarbageCollectionTask.AdditionalInformation toDomainObject() {
@@ -63,7 +68,8 @@ public class BlobStoreVaultGarbageCollectionTaskAdditionalInformationDTO impleme
             deletedBuckets
                 .stream()
                 .map(BucketName::of)
-                .collect(Guavate.toImmutableList()));
+                .collect(Guavate.toImmutableList()),
+            timestamp);
     }
 
     public String getBeginningOfRetentionPeriod() {
@@ -72,5 +78,9 @@ public class BlobStoreVaultGarbageCollectionTaskAdditionalInformationDTO impleme
 
     public Collection<String> getDeletedBuckets() {
         return deletedBuckets;
+    }
+
+    public Instant getTimestamp() {
+        return timestamp;
     }
 }

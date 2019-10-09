@@ -20,6 +20,8 @@
 
 package org.apache.james.mailbox.cassandra.mail.migration;
 
+import java.time.Instant;
+
 import org.apache.james.json.DTOModule;
 import org.apache.james.server.task.json.dto.AdditionalInformationDTO;
 import org.apache.james.server.task.json.dto.AdditionalInformationDTOModule;
@@ -31,7 +33,8 @@ public class MailboxPathV2MigrationTaskAdditionalInformationDTO implements Addit
     private static MailboxPathV2MigrationTaskAdditionalInformationDTO fromDomainObject(MailboxPathV2Migration.AdditionalInformation additionalInformation, String type) {
         return new MailboxPathV2MigrationTaskAdditionalInformationDTO(
             additionalInformation.getRemainingCount(),
-            additionalInformation.getInitialCount()
+            additionalInformation.getInitialCount(),
+            additionalInformation.timestamp()
         );
     }
 
@@ -46,10 +49,14 @@ public class MailboxPathV2MigrationTaskAdditionalInformationDTO implements Addit
 
     private final long remainingCount;
     private final long initialCount;
+    private final Instant timestamp;
 
-    public MailboxPathV2MigrationTaskAdditionalInformationDTO(@JsonProperty("remainingCount") long remainingCount, @JsonProperty("initialCount") long initialCount) {
+    public MailboxPathV2MigrationTaskAdditionalInformationDTO(@JsonProperty("remainingCount") long remainingCount,
+                                                              @JsonProperty("initialCount") long initialCount,
+                                                              @JsonProperty("timestamp") Instant timestamp) {
         this.remainingCount = remainingCount;
         this.initialCount = initialCount;
+        this.timestamp = timestamp;
     }
 
     public long getRemainingCount() {
@@ -63,7 +70,8 @@ public class MailboxPathV2MigrationTaskAdditionalInformationDTO implements Addit
     private MailboxPathV2Migration.AdditionalInformation toDomainObject() {
         return new MailboxPathV2Migration.AdditionalInformation(
             remainingCount,
-            initialCount
+            initialCount,
+            timestamp
         );
     }
 }

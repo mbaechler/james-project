@@ -25,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -40,6 +41,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 class ReprocessingAllMailsTaskTest {
+
+    private static final Instant TIMESTAMP = Instant.parse("2018-11-13T12:00:55Z");
     private static final ReprocessingService REPROCESSING_SERVICE = mock(ReprocessingService.class);
     private JsonTaskAdditionalInformationsSerializer jsonAdditionalInformationSerializer = new JsonTaskAdditionalInformationsSerializer(ReprocessingAllMailsTaskAdditionalInformationDTO.SERIALIZATION_MODULE);
     private static final long REPOSITORY_SIZE = 5L;
@@ -120,7 +123,7 @@ class ReprocessingAllMailsTaskTest {
                                                    long repositorySize,
                                                    long remainingCount,
                                                    String serialized) throws JsonProcessingException {
-        ReprocessingAllMailsTask.AdditionalInformation details = new ReprocessingAllMailsTask.AdditionalInformation(repositoryPath, targetQueue, targetProcessor, repositorySize, remainingCount);
+        ReprocessingAllMailsTask.AdditionalInformation details = new ReprocessingAllMailsTask.AdditionalInformation(repositoryPath, targetQueue, targetProcessor, repositorySize, remainingCount, TIMESTAMP);
         assertThatJson(jsonAdditionalInformationSerializer.serialize(details)).isEqualTo(serialized);
     }
 
@@ -136,7 +139,7 @@ class ReprocessingAllMailsTaskTest {
                                                      long repositorySize,
                                                      long remainingCount,
                                                      String serialized) throws IOException {
-        ReprocessingAllMailsTask.AdditionalInformation details = new ReprocessingAllMailsTask.AdditionalInformation(repositoryPath, targetQueue, targetProcessor, repositorySize, remainingCount);
+        ReprocessingAllMailsTask.AdditionalInformation details = new ReprocessingAllMailsTask.AdditionalInformation(repositoryPath, targetQueue, targetProcessor, repositorySize, remainingCount, TIMESTAMP);
         assertThat(jsonAdditionalInformationSerializer.deserialize("reprocessingAllTask", serialized))
             .isEqualToComparingFieldByField(details);
     }

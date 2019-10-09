@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
+import java.time.Instant;
 
 import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.mailbox.model.TestMessageId;
@@ -34,6 +35,8 @@ import org.junit.jupiter.api.Test;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 class MessageIdReindexingTaskSerializationTest {
+
+    private static final Instant TIMESTAMP = Instant.parse("2018-11-13T12:00:55Z");
 
     private ReIndexerPerformer reIndexerPerformer;
     private MessageId.Factory messageIdFactory;
@@ -76,14 +79,14 @@ class MessageIdReindexingTaskSerializationTest {
     @Test
     void additionalInformationShouldBeSerializable() throws JsonProcessingException {
         MessageId messageId = messageIdFactory.fromString("1");
-        MessageIdReIndexingTask.AdditionalInformation details = new MessageIdReIndexingTask.AdditionalInformation(messageId);
+        MessageIdReIndexingTask.AdditionalInformation details = new MessageIdReIndexingTask.AdditionalInformation(messageId, TIMESTAMP);
         assertThatJson(jsonAdditionalInformationSerializer.serialize(details)).isEqualTo(SERIALIZED_ADDITIONAL_INFORMATION);
     }
 
     @Test
     void additonalInformationShouldBeDeserializable() throws IOException {
         MessageId messageId = messageIdFactory.fromString("1");
-        MessageIdReIndexingTask.AdditionalInformation details = new MessageIdReIndexingTask.AdditionalInformation(messageId);
+        MessageIdReIndexingTask.AdditionalInformation details = new MessageIdReIndexingTask.AdditionalInformation(messageId, TIMESTAMP);
         assertThat(jsonAdditionalInformationSerializer.deserialize("MessageIdReIndexingTask", SERIALIZED_ADDITIONAL_INFORMATION))
             .isEqualToComparingFieldByField(details);
     }
