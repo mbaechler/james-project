@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import org.apache.james.eventsourcing.EventId
 import org.apache.james.eventsourcing.eventstore.cassandra.dto.EventDTO
 import org.apache.james.server.task.json.{JsonTaskAdditionalInformationsSerializer, JsonTaskSerializer}
+import org.apache.james.task.TaskExecutionDetails.AdditionalInformation
 import org.apache.james.task.eventsourcing._
 import org.apache.james.task.{Hostname, Task, TaskId, TaskType}
 
@@ -136,5 +137,24 @@ object CancelledDTO {
   def fromDomainObject(jsonTaskAdditionalInformationsSerializer: JsonTaskAdditionalInformationsSerializer)(event: Cancelled, typeName: String): CancelledDTO = {
     val serializedAdditionalInformations = event.additionalInformation.map(jsonTaskAdditionalInformationsSerializer.serialize).getOrElse(null)
     CancelledDTO(typeName, event.aggregateId.taskId.asString(), event.eventId.serialize(), event.taskType.asString(), serializedAdditionalInformations)
+  }
+}
+
+case class AdditionalInformationUpdatedDTO(@JsonProperty("type") typeName: String,
+                     @JsonProperty("aggregate") aggregateId: String,
+                     @JsonProperty("event") eventId: Int,
+                     @JsonProperty("additionalInformation") getAdditionalInformation: String)
+  extends TaskEventDTO(typeName, aggregateId, eventId) {
+  def toDomainObject(jsonTaskAdditionalInformationsSerializer: JsonTaskAdditionalInformationsSerializer): AdditionalInformationUpdated = {
+    //val deserializedAdditionalInformation = Option(getAdditionalInformation).map(jsonTaskAdditionalInformationsSerializer.deserialize(getTaskType, _))
+    val deserializedAdditionalInformation = new AdditionalInformation {}
+    AdditionalInformationUpdated(domainAggregateId, domainEventId, deserializedAdditionalInformation)
+  }
+}
+
+object AdditionalInformationUpdatedDTO {
+  def fromDomainObject(jsonTaskAdditionalInformationsSerializer: JsonTaskAdditionalInformationsSerializer)(event: AdditionalInformationUpdated, typeName: String): AdditionalInformationUpdatedDTO = {
+    val serializedAdditionalInformations = "foo"
+    AdditionalInformationUpdatedDTO(typeName, event.aggregateId.taskId.asString(), event.eventId.serialize(), serializedAdditionalInformations)
   }
 }

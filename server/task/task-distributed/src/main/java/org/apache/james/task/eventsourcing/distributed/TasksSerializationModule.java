@@ -26,6 +26,7 @@ import java.util.stream.Stream;
 import org.apache.james.eventsourcing.eventstore.cassandra.dto.EventDTOModule;
 import org.apache.james.server.task.json.JsonTaskAdditionalInformationsSerializer;
 import org.apache.james.server.task.json.JsonTaskSerializer;
+import org.apache.james.task.eventsourcing.AdditionalInformationUpdated;
 import org.apache.james.task.eventsourcing.CancelRequested;
 import org.apache.james.task.eventsourcing.Cancelled;
 import org.apache.james.task.eventsourcing.Completed;
@@ -84,8 +85,16 @@ public interface TasksSerializationModule {
         .typeName("task-manager-cancelled")
         .withFactory(EventDTOModule::new);
 
+    BiFunction<JsonTaskSerializer, JsonTaskAdditionalInformationsSerializer,  EventDTOModule<AdditionalInformationUpdated, AdditionalInformationUpdatedDTO>> UPDATED = (jsonTaskSerializer, jsonTaskAdditionalInformationsSerializer) -> EventDTOModule
+        .forEvent(AdditionalInformationUpdated.class)
+        .convertToDTO(AdditionalInformationUpdatedDTO.class)
+        .toDomainObjectConverter(dto -> dto.toDomainObject(jsonTaskAdditionalInformationsSerializer))
+        .toDTOConverter((event, typeName) -> AdditionalInformationUpdatedDTO.fromDomainObject(jsonTaskAdditionalInformationsSerializer, event, typeName))
+        .typeName("task-manager-updated")
+        .withFactory(EventDTOModule::new);
+
     BiFunction<JsonTaskSerializer, JsonTaskAdditionalInformationsSerializer, List<EventDTOModule<?, ?>>> MODULES = (jsonTaskSerializer, jsonTaskAdditionalInformationsSerializer) -> Stream
-        .of(CREATED, STARTED, CANCEL_REQUESTED, CANCELLED, COMPLETED, FAILED)
+        .of(CREATED, STARTED, CANCEL_REQUESTED, CANCELLED, COMPLETED, FAILED, UPDATED)
         .map(module -> module.apply(jsonTaskSerializer, jsonTaskAdditionalInformationsSerializer))
         .collect(Guavate.toImmutableList());
 }
