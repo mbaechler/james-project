@@ -161,12 +161,6 @@ class DistributedTaskManagerTest implements TaskManagerContract {
     }
 
     @Test
-    @Disabled("The update of the additional information of a running task is not yet handled")
-    public void additionalInformationShouldBeUpdatedDuringExecution(CountDownLatch countDownLatch) {
-        //disabled
-    }
-
-    @Test
     void givenOneEventStoreTwoEventTaskManagersShareTheSameEvents() {
         try (EventSourcingTaskManager taskManager1 = taskManager();
              EventSourcingTaskManager taskManager2 = taskManager(HOSTNAME_2)) {

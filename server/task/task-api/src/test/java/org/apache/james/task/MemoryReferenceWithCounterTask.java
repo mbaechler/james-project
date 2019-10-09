@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.github.fge.lambdas.functions.ThrowingFunction;
+import com.google.common.base.MoreObjects;
 
 public class MemoryReferenceWithCounterTask implements Task {
     public static final TaskType TYPE = TaskType.of("memory-reference-task-with-counter");
@@ -49,6 +50,13 @@ public class MemoryReferenceWithCounterTask implements Task {
         @Override
         public int hashCode() {
             return Objects.hashCode(this.count);
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                .add("count", count)
+                .toString();
         }
     }
 

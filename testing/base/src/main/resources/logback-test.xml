@@ -19,7 +19,7 @@
                 </encoder>
                 <immediateFlush>false</immediateFlush>
                 <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-                        <level>ERROR</level>
+                        <level>DEBUG</level>
                 </filter>
         </appender>
 
@@ -27,6 +27,6 @@
                 <appender-ref ref="CONSOLE" />
                 <appender-ref ref="FILE" />
         </root>
-        <logger name="org.apache.james" level="DEBUG" />
+        <logger name="reactor" level="DEBUG" />
 
 </configuration>
