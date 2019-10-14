@@ -93,7 +93,9 @@ class GroupRegistration implements Registration {
         this.mailboxListener = mailboxListener;
         this.queueName = WorkQueueName.of(group);
         this.sender = sender;
-        this.receiver = RabbitFlux.createReceiver(new ReceiverOptions().connectionMono(connectionSupplier));
+        this.receiver = RabbitFlux.createReceiver(new ReceiverOptions()
+            .connectionSubscriptionScheduler(Schedulers.boundedElastic())
+            .connectionMono(connectionSupplier));
         this.mailboxListenerExecutor = mailboxListenerExecutor;
         this.receiverSubscriber = Optional.empty();
         this.unregisterGroup = unregisterGroup;

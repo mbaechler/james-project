@@ -50,7 +50,9 @@ public class SimpleChannelPool implements RabbitMQChannelPool {
         this.connectionPool = connectionPool;
         this.channelReference = new AtomicReference<>();
         this.rabbitFlux = RabbitFlux
-            .createReceiver(new ReceiverOptions().connectionMono(connectionPool.getResilientConnection()));
+            .createReceiver(new ReceiverOptions()
+                .connectionSubscriptionScheduler(Schedulers.boundedElastic())
+                .connectionMono(connectionPool.getResilientConnection()));
     }
 
     @Override

@@ -94,7 +94,9 @@ public class RabbitMQTerminationSubscriber implements TerminationSubscriber, Sta
             .subscribeOn(Schedulers.boundedElastic())
             .subscribe();
 
-        listenerReceiver = RabbitFlux.createReceiver(new ReceiverOptions().connectionMono(connectionMono));
+        listenerReceiver = RabbitFlux.createReceiver(new ReceiverOptions()
+            .connectionSubscriptionScheduler(Schedulers.boundedElastic())
+            .connectionMono(connectionMono));
         listener = DirectProcessor.create();
         listenQueueHandle = listenerReceiver
             .consumeAutoAck(queueName)

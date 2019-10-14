@@ -147,7 +147,9 @@ public class RabbitMQWorkQueue implements WorkQueue, Startable {
 
     private void registerCancelRequestsListener(String queueName) {
         cancelRequestListener = RabbitFlux
-            .createReceiver(new ReceiverOptions().connectionMono(connectionMono));
+            .createReceiver(new ReceiverOptions()
+                .connectionSubscriptionScheduler(Schedulers.boundedElastic())
+                .connectionMono(connectionMono));
         cancelRequestListenerHandle = cancelRequestListener
             .consumeAutoAck(queueName)
             .subscribeOn(Schedulers.boundedElastic())

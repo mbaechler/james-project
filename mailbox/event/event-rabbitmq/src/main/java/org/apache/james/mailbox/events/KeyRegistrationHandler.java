@@ -70,7 +70,9 @@ class KeyRegistrationHandler {
         this.sender = sender;
         this.routingKeyConverter = routingKeyConverter;
         this.localListenerRegistry = localListenerRegistry;
-        this.receiver = RabbitFlux.createReceiver(new ReceiverOptions().connectionMono(connectionMono));
+        this.receiver = RabbitFlux.createReceiver(new ReceiverOptions()
+            .connectionSubscriptionScheduler(Schedulers.boundedElastic())
+            .connectionMono(connectionMono));
         this.mailboxListenerExecutor = mailboxListenerExecutor;
         this.registrationQueue = new RegistrationQueueName();
         this.registrationBinder = new RegistrationBinder(sender, registrationQueue);

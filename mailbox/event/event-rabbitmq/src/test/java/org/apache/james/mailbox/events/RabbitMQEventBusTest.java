@@ -78,6 +78,7 @@ import org.mockito.stubbing.Answer;
 import com.rabbitmq.client.Connection;
 
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import reactor.rabbitmq.BindingSpecification;
 import reactor.rabbitmq.ExchangeSpecification;
 import reactor.rabbitmq.QueueSpecification;
@@ -119,7 +120,10 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
         eventBus2.start();
         eventBus3.start();
         resilientConnection = rabbitMQExtension.getRabbitConnectionPool().getResilientConnection();
-        sender = RabbitFlux.createSender(new SenderOptions().connectionMono(resilientConnection));
+        sender = RabbitFlux.createSender(new SenderOptions()
+            .resourceManagementScheduler(Schedulers.boundedElastic())
+            .connectionSubscriptionScheduler(Schedulers.boundedElastic())
+            .connectionMono(resilientConnection));
     }
 
     @AfterEach
@@ -265,7 +269,10 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
 
         @BeforeEach
         void setUp() {
-            SenderOptions senderOption = new SenderOptions().connectionMono(resilientConnection);
+            SenderOptions senderOption = new SenderOptions()
+                .resourceManagementScheduler(Schedulers.boundedElastic())
+                .connectionSubscriptionScheduler(Schedulers.boundedElastic())
+                .connectionMono(resilientConnection);
             sender1 = RabbitFlux.createSender(senderOption);
 
             sender1.declareQueue(QueueSpecification.queue(MAILBOX_WORK_QUEUE_NAME)
@@ -301,7 +308,9 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
         }
 
         private Event dequeueEvent() {
-            try (Receiver receiver = RabbitFlux.createReceiver(new ReceiverOptions().connectionMono(resilientConnection))) {
+            try (Receiver receiver = RabbitFlux.createReceiver(new ReceiverOptions()
+                .connectionSubscriptionScheduler(Schedulers.boundedElastic())
+                .connectionMono(resilientConnection))) {
                 byte[] eventInBytes = receiver.consumeAutoAck(MAILBOX_WORK_QUEUE_NAME)
                     .blockFirst()
                     .getBody();

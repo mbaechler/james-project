@@ -129,6 +129,8 @@ public class ReactorRabbitMQChannelPool implements ChannelPool {
 
     public Sender createSender() {
        return RabbitFlux.createSender(new SenderOptions()
+           .resourceManagementScheduler(Schedulers.boundedElastic())
+           .connectionSubscriptionScheduler(Schedulers.boundedElastic())
            .connectionMono(connectionMono)
            .channelPool(this)
            .resourceManagementChannelMono(
