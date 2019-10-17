@@ -74,7 +74,7 @@ import com.github.steveash.guavate.Guavate;
 
 class DistributedTaskManagerTest implements TaskManagerContract {
 
-    private static class TrackedRabbitMQWorkQueueSupplier implements WorkQueueSupplier {
+    static class TrackedRabbitMQWorkQueueSupplier implements WorkQueueSupplier {
         private final List<RabbitMQWorkQueue> workQueues;
         private final RabbitMQWorkQueueSupplier supplier;
 
@@ -96,51 +96,52 @@ class DistributedTaskManagerTest implements TaskManagerContract {
         }
     }
 
-    private static final JsonTaskSerializer TASK_SERIALIZER = new JsonTaskSerializer(
-        TestTaskDTOModules.COMPLETED_TASK_MODULE,
-        TestTaskDTOModules.FAILED_TASK_MODULE,
-        TestTaskDTOModules.THROWING_TASK_MODULE,
-        TestTaskDTOModules.MEMORY_REFERENCE_TASK_MODULE.apply(new MemoryReferenceTaskStore()),
-        TestTaskDTOModules.MEMORY_REFERENCE_WITH_COUNTER_TASK_MODULE.apply(new MemoryReferenceWithCounterTaskStore())
-        );
+    static final JsonTaskAdditionalInformationsSerializer JSON_TASK_ADDITIONAL_INFORMATIONS_SERIALIZER = new JsonTaskAdditionalInformationsSerializer(MemoryReferenceWithCounterTaskAdditionalInformationDTO.SERIALIZATION_MODULE);
+    static final Hostname HOSTNAME = new Hostname("foo");
+    static final Hostname HOSTNAME_2 = new Hostname("bar");
 
-    private static final JsonTaskAdditionalInformationsSerializer jsonTaskAdditionalInformationsSerializer = new JsonTaskAdditionalInformationsSerializer(MemoryReferenceWithCounterTaskAdditionalInformationDTO.SERIALIZATION_MODULE);
-
-    private static final Hostname HOSTNAME = new Hostname("foo");
-    private static final Hostname HOSTNAME_2 = new Hostname("bar");
-    private static final Set<EventDTOModule<?, ?>> MODULES = TasksSerializationModule.MODULES.apply(TASK_SERIALIZER, jsonTaskAdditionalInformationsSerializer).stream().collect(Guavate.toImmutableSet());
-    private static final JsonEventSerializer EVENT_SERIALIZER = new JsonEventSerializer(MODULES);
+    @RegisterExtension
+    static final RabbitMQExtension RABBIT_MQ_EXTENSION = RabbitMQExtension.singletonRabbitMQ();
 
 
-    static CassandraClusterExtension cassandraCluster = new CassandraClusterExtension(
+    @RegisterExtension
+    static final CassandraClusterExtension CASSANDRA_CLUSTER = new CassandraClusterExtension(
         CassandraModule.aggregateModules(
             CassandraSchemaVersionModule.MODULE,
             CassandraEventStoreModule.MODULE,
             CassandraZonedDateTimeModule.MODULE,
             CassandraTaskExecutionDetailsProjectionModule.MODULE()));
 
-    @RegisterExtension
-    static RabbitMQExtension rabbitMQExtension = RabbitMQExtension.singletonRabbitMQ();
+    JsonTaskSerializer taskSerializer = new JsonTaskSerializer(
+        TestTaskDTOModules.COMPLETED_TASK_MODULE,
+        TestTaskDTOModules.FAILED_TASK_MODULE,
+        TestTaskDTOModules.THROWING_TASK_MODULE,
+        TestTaskDTOModules.MEMORY_REFERENCE_TASK_MODULE.apply(new MemoryReferenceTaskStore()),
+        TestTaskDTOModules.MEMORY_REFERENCE_WITH_COUNTER_TASK_MODULE.apply(new MemoryReferenceWithCounterTaskStore()));
+
+    Set<EventDTOModule<?, ?>> eventDtoModule = TasksSerializationModule.MODULES.apply(taskSerializer, JSON_TASK_ADDITIONAL_INFORMATIONS_SERIALIZER).stream().collect(Guavate.toImmutableSet());
 
     @RegisterExtension
-    static CassandraEventStoreExtension eventStoreExtension = new CassandraEventStoreExtension(cassandraCluster, MODULES);
+    CassandraEventStoreExtension eventStoreExtension = new CassandraEventStoreExtension(CASSANDRA_CLUSTER, eventDtoModule);
 
     @RegisterExtension
-    static CountDownLatchExtension countDownLatchExtension = new CountDownLatchExtension();
+    CountDownLatchExtension countDownLatchExtension = new CountDownLatchExtension();
 
-    private final CassandraCluster cassandra = cassandraCluster.getCassandraCluster();
-    private final CassandraTaskExecutionDetailsProjectionDAO cassandraTaskExecutionDetailsProjectionDAO = new CassandraTaskExecutionDetailsProjectionDAO(cassandra.getConf(), cassandra.getTypesProvider(), jsonTaskAdditionalInformationsSerializer);
-    private final TaskExecutionDetailsProjection executionDetailsProjection = new CassandraTaskExecutionDetailsProjection(cassandraTaskExecutionDetailsProjectionDAO);
-
-    private TrackedRabbitMQWorkQueueSupplier workQueueSupplier;
-    private EventStore eventStore;
-    private List<RabbitMQTerminationSubscriber> terminationSubscribers;
+    TrackedRabbitMQWorkQueueSupplier workQueueSupplier;
+    EventStore eventStore;
+    List<RabbitMQTerminationSubscriber> terminationSubscribers;
+    TaskExecutionDetailsProjection executionDetailsProjection;
+    JsonEventSerializer eventSerializer;
 
     @BeforeEach
     void setUp(EventStore eventStore) {
-        workQueueSupplier = new TrackedRabbitMQWorkQueueSupplier(rabbitMQExtension.getRabbitConnectionPool(), TASK_SERIALIZER);
+        CassandraCluster cassandra = CASSANDRA_CLUSTER.getCassandraCluster();
+        CassandraTaskExecutionDetailsProjectionDAO projectionDAO = new CassandraTaskExecutionDetailsProjectionDAO(cassandra.getConf(), cassandra.getTypesProvider(), JSON_TASK_ADDITIONAL_INFORMATIONS_SERIALIZER);
+        this.executionDetailsProjection = new CassandraTaskExecutionDetailsProjection(projectionDAO);
+        this.workQueueSupplier = new TrackedRabbitMQWorkQueueSupplier(RABBIT_MQ_EXTENSION.getRabbitConnectionPool(), taskSerializer);
         this.eventStore = eventStore;
-        terminationSubscribers = new ArrayList<>();
+        this.terminationSubscribers = new ArrayList<>();
+        this.eventSerializer = new JsonEventSerializer(eventDtoModule);
     }
 
     @AfterEach
@@ -153,8 +154,8 @@ class DistributedTaskManagerTest implements TaskManagerContract {
         return taskManager(HOSTNAME);
     }
 
-    private EventSourcingTaskManager taskManager(Hostname hostname) {
-        RabbitMQTerminationSubscriber terminationSubscriber = new RabbitMQTerminationSubscriber(rabbitMQExtension.getRabbitConnectionPool(), EVENT_SERIALIZER);
+    EventSourcingTaskManager taskManager(Hostname hostname) {
+        RabbitMQTerminationSubscriber terminationSubscriber = new RabbitMQTerminationSubscriber(RABBIT_MQ_EXTENSION.getRabbitConnectionPool(), eventSerializer);
         terminationSubscribers.add(terminationSubscriber);
         terminationSubscriber.start();
         return new EventSourcingTaskManager(workQueueSupplier, eventStore, executionDetailsProjection, hostname, terminationSubscriber);
@@ -177,7 +178,7 @@ class DistributedTaskManagerTest implements TaskManagerContract {
     }
 
     @Test
-    void givenTwoTaskManagersAndTwoTaskOnlyOneTaskShouldRunAtTheSameTime() throws InterruptedException {
+    void givenTwoTaskManagersAndTwoTaskOnlyOneTaskShouldRunAtTheSameTime() {
         CountDownLatch waitingForFirstTaskLatch = new CountDownLatch(1);
 
         try (EventSourcingTaskManager taskManager1 = taskManager();
