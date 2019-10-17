@@ -96,7 +96,7 @@ class DistributedTaskManagerTest implements TaskManagerContract {
         }
     }
 
-    static final JsonTaskAdditionalInformationsSerializer JSON_TASK_ADDITIONAL_INFORMATIONS_SERIALIZER = new JsonTaskAdditionalInformationsSerializer(MemoryReferenceWithCounterTaskAdditionalInformationDTO.SERIALIZATION_MODULE);
+    static final JsonTaskAdditionalInformationsSerializer JSON_TASK_ADDITIONAL_INFORMATION_SERIALIZER = new JsonTaskAdditionalInformationsSerializer(MemoryReferenceWithCounterTaskAdditionalInformationDTO.SERIALIZATION_MODULE);
     static final Hostname HOSTNAME = new Hostname("foo");
     static final Hostname HOSTNAME_2 = new Hostname("bar");
 
@@ -119,7 +119,7 @@ class DistributedTaskManagerTest implements TaskManagerContract {
         TestTaskDTOModules.MEMORY_REFERENCE_TASK_MODULE.apply(new MemoryReferenceTaskStore()),
         TestTaskDTOModules.MEMORY_REFERENCE_WITH_COUNTER_TASK_MODULE.apply(new MemoryReferenceWithCounterTaskStore()));
 
-    Set<EventDTOModule<?, ?>> eventDtoModule = TasksSerializationModule.MODULES.apply(taskSerializer, JSON_TASK_ADDITIONAL_INFORMATIONS_SERIALIZER).stream().collect(Guavate.toImmutableSet());
+    Set<EventDTOModule<?, ?>> eventDtoModule = TasksSerializationModule.MODULES.apply(taskSerializer, JSON_TASK_ADDITIONAL_INFORMATION_SERIALIZER).stream().collect(Guavate.toImmutableSet());
 
     @RegisterExtension
     CassandraEventStoreExtension eventStoreExtension = new CassandraEventStoreExtension(CASSANDRA_CLUSTER, eventDtoModule);
@@ -136,7 +136,7 @@ class DistributedTaskManagerTest implements TaskManagerContract {
     @BeforeEach
     void setUp(EventStore eventStore) {
         CassandraCluster cassandra = CASSANDRA_CLUSTER.getCassandraCluster();
-        CassandraTaskExecutionDetailsProjectionDAO projectionDAO = new CassandraTaskExecutionDetailsProjectionDAO(cassandra.getConf(), cassandra.getTypesProvider(), JSON_TASK_ADDITIONAL_INFORMATIONS_SERIALIZER);
+        CassandraTaskExecutionDetailsProjectionDAO projectionDAO = new CassandraTaskExecutionDetailsProjectionDAO(cassandra.getConf(), cassandra.getTypesProvider(), JSON_TASK_ADDITIONAL_INFORMATION_SERIALIZER);
         this.executionDetailsProjection = new CassandraTaskExecutionDetailsProjection(projectionDAO);
         this.workQueueSupplier = new TrackedRabbitMQWorkQueueSupplier(RABBIT_MQ_EXTENSION.getRabbitConnectionPool(), taskSerializer);
         this.eventStore = eventStore;
