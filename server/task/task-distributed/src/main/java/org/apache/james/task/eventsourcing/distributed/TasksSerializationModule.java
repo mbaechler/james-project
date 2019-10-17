@@ -20,7 +20,6 @@
 package org.apache.james.task.eventsourcing.distributed;
 
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import org.apache.james.eventsourcing.eventstore.cassandra.dto.EventDTOModule;
@@ -33,17 +32,16 @@ import org.apache.james.task.eventsourcing.Completed;
 import org.apache.james.task.eventsourcing.Created;
 import org.apache.james.task.eventsourcing.Failed;
 import org.apache.james.task.eventsourcing.Started;
-import org.apache.james.task.eventsourcing.TaskEvent;
 
 import com.github.steveash.guavate.Guavate;
 
 public interface TasksSerializationModule {
     @FunctionalInterface
-    interface TaskSerializationModuleFactory<T extends TaskEvent, U extends TaskEventDTO> {
-        EventDTOModule<T, U> create(JsonTaskSerializer taskSerializer, JsonTaskAdditionalInformationsSerializer additionalInformationsSerializer);
+    interface TaskSerializationModuleFactory {
+        EventDTOModule<?, ?> create(JsonTaskSerializer taskSerializer, JsonTaskAdditionalInformationsSerializer additionalInformationsSerializer);
     }
 
-    TaskSerializationModuleFactory<Created, CreatedDTO> CREATED = (jsonTaskSerializer, jsonTaskAdditionalInformationsSerializer) -> EventDTOModule
+    TaskSerializationModuleFactory CREATED = (jsonTaskSerializer, jsonTaskAdditionalInformationsSerializer) -> EventDTOModule
         .forEvent(Created.class)
         .convertToDTO(CreatedDTO.class)
         .toDomainObjectConverter(dto -> dto.toDomainObject(jsonTaskSerializer))
@@ -51,7 +49,7 @@ public interface TasksSerializationModule {
         .typeName("task-manager-created")
         .withFactory(EventDTOModule::new);
 
-    TaskSerializationModuleFactory<Started, StartedDTO> STARTED = (jsonTaskSerializer, jsonTaskAdditionalInformationsSerializer) -> EventDTOModule
+    TaskSerializationModuleFactory STARTED = (jsonTaskSerializer, jsonTaskAdditionalInformationsSerializer) -> EventDTOModule
         .forEvent(Started.class)
         .convertToDTO(StartedDTO.class)
         .toDomainObjectConverter(StartedDTO::toDomainObject)
@@ -59,7 +57,7 @@ public interface TasksSerializationModule {
         .typeName("task-manager-started")
         .withFactory(EventDTOModule::new);
 
-    TaskSerializationModuleFactory<CancelRequested, CancelRequestedDTO> CANCEL_REQUESTED = (jsonTaskSerializer, jsonTaskAdditionalInformationsSerializer) -> EventDTOModule
+    TaskSerializationModuleFactory CANCEL_REQUESTED = (jsonTaskSerializer, jsonTaskAdditionalInformationsSerializer) -> EventDTOModule
         .forEvent(CancelRequested.class)
         .convertToDTO(CancelRequestedDTO.class)
         .toDomainObjectConverter(CancelRequestedDTO::toDomainObject)
@@ -67,7 +65,7 @@ public interface TasksSerializationModule {
         .typeName("task-manager-cancel-requested")
         .withFactory(EventDTOModule::new);
 
-    TaskSerializationModuleFactory<Completed, CompletedDTO> COMPLETED = (jsonTaskSerializer, jsonTaskAdditionalInformationsSerializer) -> EventDTOModule
+    TaskSerializationModuleFactory COMPLETED = (jsonTaskSerializer, jsonTaskAdditionalInformationsSerializer) -> EventDTOModule
         .forEvent(Completed.class)
         .convertToDTO(CompletedDTO.class)
         .toDomainObjectConverter(dto -> dto.toDomainObject(jsonTaskAdditionalInformationsSerializer))
@@ -75,7 +73,7 @@ public interface TasksSerializationModule {
         .typeName("task-manager-completed")
         .withFactory(EventDTOModule::new);
 
-    TaskSerializationModuleFactory<Failed, FailedDTO> FAILED = (jsonTaskSerializer, jsonTaskAdditionalInformationsSerializer) -> EventDTOModule
+    TaskSerializationModuleFactory FAILED = (jsonTaskSerializer, jsonTaskAdditionalInformationsSerializer) -> EventDTOModule
         .forEvent(Failed.class)
         .convertToDTO(FailedDTO.class)
         .toDomainObjectConverter(dto -> dto.toDomainObject(jsonTaskAdditionalInformationsSerializer))
@@ -83,7 +81,7 @@ public interface TasksSerializationModule {
         .typeName("task-manager-failed")
         .withFactory(EventDTOModule::new);
 
-    TaskSerializationModuleFactory<Cancelled, CancelledDTO> CANCELLED = (jsonTaskSerializer, jsonTaskAdditionalInformationsSerializer) -> EventDTOModule
+    TaskSerializationModuleFactory CANCELLED = (jsonTaskSerializer, jsonTaskAdditionalInformationsSerializer) -> EventDTOModule
         .forEvent(Cancelled.class)
         .convertToDTO(CancelledDTO.class)
         .toDomainObjectConverter(dto -> dto.toDomainObject(jsonTaskAdditionalInformationsSerializer))
@@ -91,7 +89,7 @@ public interface TasksSerializationModule {
         .typeName("task-manager-cancelled")
         .withFactory(EventDTOModule::new);
 
-    TaskSerializationModuleFactory<AdditionalInformationUpdated, AdditionalInformationUpdatedDTO> UPDATED = (jsonTaskSerializer, jsonTaskAdditionalInformationsSerializer) -> EventDTOModule
+    TaskSerializationModuleFactory UPDATED = (jsonTaskSerializer, jsonTaskAdditionalInformationsSerializer) -> EventDTOModule
         .forEvent(AdditionalInformationUpdated.class)
         .convertToDTO(AdditionalInformationUpdatedDTO.class)
         .toDomainObjectConverter(dto -> dto.toDomainObject(jsonTaskAdditionalInformationsSerializer))
@@ -99,8 +97,10 @@ public interface TasksSerializationModule {
         .typeName("task-manager-updated")
         .withFactory(EventDTOModule::new);
 
-    BiFunction<JsonTaskSerializer, JsonTaskAdditionalInformationsSerializer, Set<EventDTOModule<?, ?>>> MODULES = (jsonTaskSerializer, jsonTaskAdditionalInformationsSerializer) -> Stream
-        .of(CREATED, STARTED, CANCEL_REQUESTED, CANCELLED, COMPLETED, FAILED, UPDATED)
-        .map(moduleFactory -> moduleFactory.create(jsonTaskSerializer, jsonTaskAdditionalInformationsSerializer))
-        .collect(Guavate.toImmutableSet());
+    static Set<EventDTOModule<?, ?>> list(JsonTaskSerializer jsonTaskSerializer, JsonTaskAdditionalInformationsSerializer jsonTaskAdditionalInformationsSerializer) {
+        return Stream
+            .of(CREATED, STARTED, CANCEL_REQUESTED, CANCELLED, COMPLETED, FAILED, UPDATED)
+            .map(moduleFactory -> moduleFactory.create(jsonTaskSerializer, jsonTaskAdditionalInformationsSerializer))
+            .collect(Guavate.toImmutableSet());
+    }
 }

@@ -117,7 +117,7 @@ class DistributedTaskManagerTest implements TaskManagerContract {
         TestTaskDTOModules.MEMORY_REFERENCE_TASK_MODULE.apply(new MemoryReferenceTaskStore()),
         TestTaskDTOModules.MEMORY_REFERENCE_WITH_COUNTER_TASK_MODULE.apply(new MemoryReferenceWithCounterTaskStore()));
 
-    Set<EventDTOModule<?, ?>> eventDtoModule = TasksSerializationModule.MODULES.apply(taskSerializer, JSON_TASK_ADDITIONAL_INFORMATION_SERIALIZER);
+    Set<EventDTOModule<?, ?>> eventDtoModule = TasksSerializationModule.list(taskSerializer, JSON_TASK_ADDITIONAL_INFORMATION_SERIALIZER);
 
     @RegisterExtension
     CassandraEventStoreExtension eventStoreExtension = new CassandraEventStoreExtension(CASSANDRA_CLUSTER, eventDtoModule);
