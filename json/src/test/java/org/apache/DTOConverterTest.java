@@ -40,10 +40,10 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class DTOConverterTest {
-    private static final FirstDomainObject FIRST = new FirstDomainObject(Optional.of(1L), ZonedDateTime.parse("2016-04-03T02:01+07:00[Asia/Vientiane]"), "first payload");
-    private static final FirstDTO FIRST_DTO = new FirstDTO("first", Optional.of(1L), "2016-04-03T02:01+07:00[Asia/Vientiane]", "first payload");
-    private static final SecondDomainObject SECOND = new SecondDomainObject(UUID.fromString("4a2c853f-7ffc-4ce3-9410-a47e85b3b741"), "second payload");
-    private static final SecondDTO SECOND_DTO = new SecondDTO("second", "4a2c853f-7ffc-4ce3-9410-a47e85b3b741", "second payload");
+    private static final FirstDomainObject FIRST = new FirstDomainObject(Optional.of(1L), ZonedDateTime.parse("2016-04-03T02:01+07:00[Asia/Vientiane]"), "first payload", Optional.empty());
+    private static final FirstDTO FIRST_DTO = new FirstDTO("first", Optional.of(1L), "2016-04-03T02:01+07:00[Asia/Vientiane]", "first payload", Optional.empty());
+    private static final SecondDomainObject SECOND = new SecondDomainObject(UUID.fromString("4a2c853f-7ffc-4ce3-9410-a47e85b3b741"), "second payload", Optional.empty());
+    private static final SecondDTO SECOND_DTO = new SecondDTO("second", "4a2c853f-7ffc-4ce3-9410-a47e85b3b741", "second payload", Optional.empty());
 
     @SuppressWarnings("unchecked")
     @Test
