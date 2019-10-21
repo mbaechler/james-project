@@ -20,19 +20,28 @@
 package org.apache.james.task.eventsourcing.distributed
 
 import java.util.Optional
+import java.util.function.Function
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.apache.james.eventsourcing.EventId
 import org.apache.james.eventsourcing.eventstore.cassandra.dto.EventDTO
-import org.apache.james.server.task.json.{JsonTaskAdditionalInformationsSerializer, JsonTaskSerializer}
+import org.apache.james.json.DTOConverter
+import org.apache.james.server.task.json.JsonTaskSerializer
+import org.apache.james.server.task.json.dto.AdditionalInformationDTO
 import org.apache.james.task.eventsourcing._
-import org.apache.james.task.{Hostname, Task, TaskId}
+import org.apache.james.task.eventsourcing.distributed.distributed.AdditionalInformationConverter
+import org.apache.james.task.{Hostname, Task, TaskExecutionDetails, TaskId}
 
 import scala.compat.java8.OptionConverters._
+
+package object distributed {
+  type AdditionalInformationConverter = DTOConverter[TaskExecutionDetails.AdditionalInformation, AdditionalInformationDTO]
+}
 
 sealed abstract class TaskEventDTO(val getType: String, val getAggregate: String, val getEvent: Int) extends EventDTO {
   protected def domainAggregateId: TaskAggregateId = TaskAggregateId(TaskId.fromString(getAggregate))
   protected def domainEventId: EventId = EventId.fromSerialized(getEvent)
+
 }
 
 case class CreatedDTO(@JsonProperty("type") typeName: String,
@@ -79,12 +88,11 @@ case class CompletedDTO(@JsonProperty("type") typeName: String,
                         @JsonProperty("aggregate") aggregateId: String,
                         @JsonProperty("event") eventId: Int,
                         @JsonProperty("result") getResult: String,
-                        @JsonProperty("additionalInformation") getAdditionalInformation: Optional[String])
+                        @JsonProperty("additionalInformation") getAdditionalInformation: Optional[AdditionalInformationDTO])
   extends TaskEventDTO(typeName, aggregateId, eventId) {
-  def toDomainObject(jsonTaskAdditionalInformationsSerializer: JsonTaskAdditionalInformationsSerializer): Completed = {
-    val deserializedAdditionalInformation = getAdditionalInformation.asScala.map(jsonTaskAdditionalInformationsSerializer.deserialize)
-    Completed(domainAggregateId, domainEventId, domainResult, deserializedAdditionalInformation)
-
+  def toDomainObject(additionalInformationConverter: AdditionalInformationConverter): Completed = {
+    val additionalInformation: Optional[TaskExecutionDetails.AdditionalInformation] = getAdditionalInformation.map(additionalInformationConverter.convert(_).orElseThrow())
+    Completed(domainAggregateId, domainEventId, domainResult, additionalInformation.asScala)
   }
   private def domainResult: Task.Result = getResult match {
     case "COMPLETED" => Task.Result.COMPLETED
@@ -93,9 +101,9 @@ case class CompletedDTO(@JsonProperty("type") typeName: String,
 }
 
 object CompletedDTO {
-  def fromDomainObject(jsonTaskAdditionalInformationsSerializer: JsonTaskAdditionalInformationsSerializer)(event: Completed, typeName: String): CompletedDTO = {
-    val serializedAdditionalInformations = event.additionalInformation.map(jsonTaskAdditionalInformationsSerializer.serialize).asJava
-    CompletedDTO(typeName, event.aggregateId.taskId.asString(), event.eventId.serialize(), resultToString(event.result), serializedAdditionalInformations)
+  def fromDomainObject(dtoConverter: AdditionalInformationConverter)(event: Completed, typeName: String): CompletedDTO = {
+    val additionalInformationDTO: Optional[AdditionalInformationDTO] = event.additionalInformation.asJava.map(dtoConverter.convert(_).orElseThrow())
+    CompletedDTO(typeName, event.aggregateId.taskId.asString(), event.eventId.serialize(), resultToString(event.result), additionalInformationDTO)
   }
 
   private def resultToString(result: Task.Result): String = result match {
@@ -107,55 +115,57 @@ object CompletedDTO {
 case class FailedDTO(@JsonProperty("type") typeName: String,
                      @JsonProperty("aggregate") aggregateId: String,
                      @JsonProperty("event") eventId: Int,
-                     @JsonProperty("additionalInformation") getAdditionalInformation: Optional[String],
+                     @JsonProperty("additionalInformation") getAdditionalInformation: Optional[AdditionalInformationDTO],
                      @JsonProperty("errorMessage") getErrorMessage: Optional[String],
                      @JsonProperty("exception") getException: Optional[String])
   extends TaskEventDTO(typeName, aggregateId, eventId) {
-  def toDomainObject(jsonTaskAdditionalInformationsSerializer: JsonTaskAdditionalInformationsSerializer): Failed = {
-    val deserializedAdditionalInformation = getAdditionalInformation.asScala.map(jsonTaskAdditionalInformationsSerializer.deserialize)
-    Failed(domainAggregateId, domainEventId, deserializedAdditionalInformation, getErrorMessage.asScala, getException.asScala)
+  def toDomainObject(additionalInformationConverter: AdditionalInformationConverter): Failed = {
+    val additionalInformation: Optional[TaskExecutionDetails.AdditionalInformation] = getAdditionalInformation.map(additionalInformationConverter.convert(_).orElseThrow())
+    Failed(domainAggregateId, domainEventId, additionalInformation.asScala, getErrorMessage.asScala, getException.asScala)
   }
 }
 
 object FailedDTO {
-  def fromDomainObject(jsonTaskAdditionalInformationsSerializer: JsonTaskAdditionalInformationsSerializer)(event: Failed, typeName: String): FailedDTO = {
-    val serializedAdditionalInformations = event.additionalInformation.map(jsonTaskAdditionalInformationsSerializer.serialize).asJava
-    FailedDTO(typeName, event.aggregateId.taskId.asString(), event.eventId.serialize(), serializedAdditionalInformations, event.errorMessage.asJava, event.exception.asJava)
+  def fromDomainObject(dtoConverter: AdditionalInformationConverter)(event: Failed, typeName: String): FailedDTO = {
+    val additionalInformationDTO: Optional[AdditionalInformationDTO] = event.additionalInformation.asJava.map(dtoConverter.convert(_).orElseThrow())
+    FailedDTO(typeName, event.aggregateId.taskId.asString(), event.eventId.serialize(), additionalInformationDTO, event.errorMessage.asJava, event.exception.asJava)
   }
 }
 
 case class CancelledDTO(@JsonProperty("type") typeName: String,
                         @JsonProperty("aggregate") aggregateId: String,
                         @JsonProperty("event") eventId: Int,
-                        @JsonProperty("additionalInformation") getAdditionalInformation: Optional[String])
+                        @JsonProperty("additionalInformation") getAdditionalInformation: Optional[AdditionalInformationDTO])
   extends TaskEventDTO(typeName, aggregateId, eventId) {
-  def toDomainObject(jsonTaskAdditionalInformationsSerializer: JsonTaskAdditionalInformationsSerializer): Cancelled = {
-    val deserializedAdditionalInformation = getAdditionalInformation.asScala.map(jsonTaskAdditionalInformationsSerializer.deserialize)
-    Cancelled(domainAggregateId, domainEventId, deserializedAdditionalInformation)
+  def toDomainObject(additionalInformationConverter: AdditionalInformationConverter): Cancelled = {
+    val additionalInformation: Optional[TaskExecutionDetails.AdditionalInformation] = getAdditionalInformation.map(additionalInformationConverter.convert(_).orElseThrow())
+    Cancelled(domainAggregateId, domainEventId, additionalInformation.asScala)
   }
 }
 
 object CancelledDTO {
-  def fromDomainObject(jsonTaskAdditionalInformationsSerializer: JsonTaskAdditionalInformationsSerializer)(event: Cancelled, typeName: String): CancelledDTO = {
-    val serializedAdditionalInformations = event.additionalInformation.map(jsonTaskAdditionalInformationsSerializer.serialize).asJava
-    CancelledDTO(typeName, event.aggregateId.taskId.asString(), event.eventId.serialize(), serializedAdditionalInformations)
+  def fromDomainObject(additionalInformationConverter: AdditionalInformationConverter)(event: Cancelled, typeName: String): CancelledDTO = {
+    val additionalInformationDTO: Optional[AdditionalInformationDTO] = event.additionalInformation.asJava.map(additionalInformationConverter.convert(_).orElseThrow())
+    CancelledDTO(typeName, event.aggregateId.taskId.asString(), event.eventId.serialize(), additionalInformationDTO)
   }
 }
 
 case class AdditionalInformationUpdatedDTO(@JsonProperty("type") typeName: String,
                      @JsonProperty("aggregate") aggregateId: String,
                      @JsonProperty("event") eventId: Int,
-                     @JsonProperty("additionalInformation") getAdditionalInformation: String)
+                     @JsonProperty("additionalInformation") getAdditionalInformation: AdditionalInformationDTO)
   extends TaskEventDTO(typeName, aggregateId, eventId) {
-  def toDomainObject(jsonTaskAdditionalInformationsSerializer: JsonTaskAdditionalInformationsSerializer): AdditionalInformationUpdated = {
-    val deserializedAdditionalInformation = jsonTaskAdditionalInformationsSerializer.deserialize(getAdditionalInformation)
-    AdditionalInformationUpdated(domainAggregateId, domainEventId, deserializedAdditionalInformation)
+  def toDomainObject(additionalInformationConverter: AdditionalInformationConverter): AdditionalInformationUpdated = {
+    val additionalInformation = additionalInformationConverter.convert(getAdditionalInformation)
+        .orElseThrow()
+    AdditionalInformationUpdated(domainAggregateId, domainEventId, additionalInformation)
   }
 }
 
 object AdditionalInformationUpdatedDTO {
-  def fromDomainObject(jsonTaskAdditionalInformationsSerializer: JsonTaskAdditionalInformationsSerializer)(event: AdditionalInformationUpdated, typeName: String): AdditionalInformationUpdatedDTO = {
-    val serializedAdditionalInformations = jsonTaskAdditionalInformationsSerializer.serialize(event.additionalInformation)
-    AdditionalInformationUpdatedDTO(typeName, event.aggregateId.taskId.asString(), event.eventId.serialize(), serializedAdditionalInformations)
+  def fromDomainObject(additionalInformationConverter: AdditionalInformationConverter)(event: AdditionalInformationUpdated, typeName: String): AdditionalInformationUpdatedDTO = {
+    val additionalInformationDTO = additionalInformationConverter.convert(event.additionalInformation)
+        .orElseThrow()
+    AdditionalInformationUpdatedDTO(typeName, event.aggregateId.taskId.asString(), event.eventId.serialize(), additionalInformationDTO)
   }
 }
