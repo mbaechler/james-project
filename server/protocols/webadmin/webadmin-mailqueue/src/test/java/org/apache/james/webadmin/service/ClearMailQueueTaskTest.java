@@ -28,10 +28,12 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Optional;
 
+import org.apache.james.json.JsonGenericSerializer;
 import org.apache.james.queue.api.MailQueueFactory;
 import org.apache.james.queue.api.ManageableMailQueue;
-import org.apache.james.server.task.json.JsonTaskAdditionalInformationsSerializer;
 import org.apache.james.server.task.json.JsonTaskSerializer;
+import org.apache.james.server.task.json.dto.AdditionalInformationDTO;
+import org.apache.james.task.TaskExecutionDetails;
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -44,8 +46,10 @@ class ClearMailQueueTaskTest {
     private static final String QUEUE_NAME = "anyQueue";
     private static final long INITIAL_COUNT = 0L;
     private static final long REMAINING_COUNT = 10L;
-    private JsonTaskAdditionalInformationsSerializer jsonAdditionalInformationSerializer = new JsonTaskAdditionalInformationsSerializer(
-        ClearMailQueueTaskAdditionalInformationDTO.SERIALIZATION_MODULE);
+    private static final JsonGenericSerializer<TaskExecutionDetails.AdditionalInformation, AdditionalInformationDTO> JSON_TASK_ADDITIONAL_INFORMATION_SERIALIZER =
+        JsonGenericSerializer.<TaskExecutionDetails.AdditionalInformation, AdditionalInformationDTO>forModules(ClearMailQueueTaskAdditionalInformationDTO.SERIALIZATION_MODULE)
+            .withoutNestedType();
+
     private static final String SERIALIZED_TASK_ADDITIONAL_INFORMATION = "{\"type\": \"clear-mail-queue\", \"mailQueueName\":\"anyQueue\",\"initialCount\":0,\"remainingCount\":10, \"timestamp\":\"2018-11-13T12:00:55Z\"}";
 
     @Test
@@ -88,13 +92,13 @@ class ClearMailQueueTaskTest {
     @Test
     void additionalInformationShouldBeSerializable() throws JsonProcessingException {
         ClearMailQueueTask.AdditionalInformation details = new ClearMailQueueTask.AdditionalInformation(QUEUE_NAME, INITIAL_COUNT, REMAINING_COUNT, TIMESTAMP);
-        assertThatJson(jsonAdditionalInformationSerializer.serialize(details)).isEqualTo(SERIALIZED_TASK_ADDITIONAL_INFORMATION);
+        assertThatJson(JSON_TASK_ADDITIONAL_INFORMATION_SERIALIZER.serialize(details)).isEqualTo(SERIALIZED_TASK_ADDITIONAL_INFORMATION);
     }
 
     @Test
     void additionalInformationShouldBeDeserializable() throws IOException {
         ClearMailQueueTask.AdditionalInformation details = new ClearMailQueueTask.AdditionalInformation(QUEUE_NAME, INITIAL_COUNT, REMAINING_COUNT, TIMESTAMP);
-        assertThat(jsonAdditionalInformationSerializer.deserialize(SERIALIZED_TASK_ADDITIONAL_INFORMATION))
+        assertThat(JSON_TASK_ADDITIONAL_INFORMATION_SERIALIZER.deserialize(SERIALIZED_TASK_ADDITIONAL_INFORMATION))
             .isEqualToComparingFieldByField(details);
     }
 }

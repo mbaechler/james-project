@@ -31,10 +31,12 @@ import java.time.ZoneId;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.apache.james.json.JsonGenericSerializer;
 import org.apache.james.mailrepository.api.MailKey;
 import org.apache.james.mailrepository.api.MailRepositoryPath;
-import org.apache.james.server.task.json.JsonTaskAdditionalInformationsSerializer;
 import org.apache.james.server.task.json.JsonTaskSerializer;
+import org.apache.james.server.task.json.dto.AdditionalInformationDTO;
+import org.apache.james.task.TaskExecutionDetails;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -55,7 +57,9 @@ class ReprocessingOneMailTaskTest {
     private static final String TARGET_QUEUE = "queue";
     private static final MailKey MAIL_KEY = new MailKey("myMail");
     private static final Optional<String> TARGET_PROCESSOR = Optional.of("targetProcessor");
-    private JsonTaskAdditionalInformationsSerializer jsonAdditionalInformationSerializer = new JsonTaskAdditionalInformationsSerializer(ReprocessingOneMailTaskAdditionalInformationDTO.SERIALIZATION_MODULE);
+    private static final JsonGenericSerializer<TaskExecutionDetails.AdditionalInformation, AdditionalInformationDTO> JSON_TASK_ADDITIONAL_INFORMATION_SERIALIZER =
+        JsonGenericSerializer.<TaskExecutionDetails.AdditionalInformation, AdditionalInformationDTO>forModules(ReprocessingOneMailTaskAdditionalInformationDTO.SERIALIZATION_MODULE)
+            .withoutNestedType();
 
     @ParameterizedTest
     @MethodSource
@@ -111,13 +115,13 @@ class ReprocessingOneMailTaskTest {
     @Test
     void additionalInformationShouldBeSerializable() throws JsonProcessingException {
         ReprocessingOneMailTask.AdditionalInformation details = new ReprocessingOneMailTask.AdditionalInformation(REPOSITORY_PATH, TARGET_QUEUE, MAIL_KEY, TARGET_PROCESSOR, TIMESTAMP);
-        assertThatJson(jsonAdditionalInformationSerializer.serialize(details)).isEqualTo(SERIALIZED_TASK_1_ADDITIONAL_INFORMATION);
+        assertThatJson(JSON_TASK_ADDITIONAL_INFORMATION_SERIALIZER.serialize(details)).isEqualTo(SERIALIZED_TASK_1_ADDITIONAL_INFORMATION);
     }
 
     @Test
     void additonalInformationShouldBeDeserializable() throws IOException {
         ReprocessingOneMailTask.AdditionalInformation details = new ReprocessingOneMailTask.AdditionalInformation(REPOSITORY_PATH, TARGET_QUEUE, MAIL_KEY, TARGET_PROCESSOR, TIMESTAMP);
-        assertThat(jsonAdditionalInformationSerializer.deserialize(SERIALIZED_TASK_1_ADDITIONAL_INFORMATION))
+        assertThat(JSON_TASK_ADDITIONAL_INFORMATION_SERIALIZER.deserialize(SERIALIZED_TASK_1_ADDITIONAL_INFORMATION))
             .isEqualToComparingFieldByField(details);
     }
 }

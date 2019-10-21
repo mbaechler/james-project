@@ -35,9 +35,9 @@ import org.apache.james.backends.cassandra.CassandraClusterExtension;
 import org.apache.james.backends.cassandra.components.CassandraModule;
 import org.apache.james.backends.cassandra.init.CassandraZonedDateTimeModule;
 import org.apache.james.backends.cassandra.versions.CassandraSchemaVersionModule;
-import org.apache.james.server.task.json.JsonTaskAdditionalInformationsSerializer;
+import org.apache.james.json.JsonGenericSerializer;
+import org.apache.james.server.task.json.dto.AdditionalInformationDTO;
 import org.apache.james.task.TaskExecutionDetails;
-import org.apache.james.task.eventsourcing.cassandra.CassandraTaskExecutionDetailsProjectionDAO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -48,13 +48,15 @@ class CassandraTaskExecutionDetailsProjectionDAOTest {
     @RegisterExtension
     static CassandraClusterExtension cassandraCluster = new CassandraClusterExtension(
         CassandraModule.aggregateModules(CassandraSchemaVersionModule.MODULE, CassandraZonedDateTimeModule.MODULE, CassandraTaskExecutionDetailsProjectionModule.MODULE()));
-    private static final JsonTaskAdditionalInformationsSerializer jsonTaskAdditionalInformationsSerializer = new JsonTaskAdditionalInformationsSerializer();
+    private static final JsonGenericSerializer<TaskExecutionDetails.AdditionalInformation, AdditionalInformationDTO> JSON_TASK_ADDITIONAL_INFORMATION_SERIALIZER =
+        JsonGenericSerializer.<TaskExecutionDetails.AdditionalInformation, AdditionalInformationDTO>forModules()
+            .withoutNestedType();
 
     private CassandraTaskExecutionDetailsProjectionDAO testee;
 
     @BeforeEach
     void setUp(CassandraCluster cassandra) {
-        testee = new CassandraTaskExecutionDetailsProjectionDAO(cassandra.getConf(), cassandra.getTypesProvider(), jsonTaskAdditionalInformationsSerializer);
+        testee = new CassandraTaskExecutionDetailsProjectionDAO(cassandra.getConf(), cassandra.getTypesProvider(), JSON_TASK_ADDITIONAL_INFORMATION_SERIALIZER);
     }
 
     @Test

@@ -25,10 +25,12 @@ import static org.mockito.Mockito.mock;
 import java.io.IOException;
 import java.time.Instant;
 
+import org.apache.james.json.JsonGenericSerializer;
 import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.mailbox.model.TestMessageId;
-import org.apache.james.server.task.json.JsonTaskAdditionalInformationsSerializer;
 import org.apache.james.server.task.json.JsonTaskSerializer;
+import org.apache.james.server.task.json.dto.AdditionalInformationDTO;
+import org.apache.james.task.TaskExecutionDetails;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -44,13 +46,14 @@ class MessageIdReindexingTaskSerializationTest {
     private final String serializedMessageIdReIndexingTask = "{\"type\": \"MessageIdReIndexingTask\", \"messageId\": \"1\"}";
     private final String SERIALIZED_ADDITIONAL_INFORMATION = "{\"type\": \"MessageIdReIndexingTask\", \"messageId\": \"1\", \"timestamp\":\"2018-11-13T12:00:55Z\"}";
 
-    private JsonTaskAdditionalInformationsSerializer jsonAdditionalInformationSerializer;
+    private JsonGenericSerializer<TaskExecutionDetails.AdditionalInformation, AdditionalInformationDTO> jsonAdditionalInformationSerializer;
 
     @BeforeEach
     void setUp() {
         messageIdFactory = new TestMessageId.Factory();
-        jsonAdditionalInformationSerializer = new JsonTaskAdditionalInformationsSerializer(
-            MessageIdReindexingTaskAdditionalInformationDTO.serializationModule(messageIdFactory));
+        jsonAdditionalInformationSerializer = JsonGenericSerializer
+            .<TaskExecutionDetails.AdditionalInformation, AdditionalInformationDTO>forModules(MessageIdReindexingTaskAdditionalInformationDTO.serializationModule(messageIdFactory))
+                .withoutNestedType();
         reIndexerPerformer = mock(ReIndexerPerformer.class);
         MessageIdReIndexingTask.Factory factory = new MessageIdReIndexingTask.Factory(reIndexerPerformer, messageIdFactory);
         taskSerializer = new JsonTaskSerializer(MessageIdReindexingTaskDTO.module(factory));

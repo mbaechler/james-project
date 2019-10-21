@@ -25,13 +25,14 @@ import static org.mockito.Mockito.mock;
 import java.io.IOException;
 import java.time.Instant;
 
+import org.apache.james.json.JsonGenericSerializer;
 import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.indexer.ReIndexingExecutionFailures;
 import org.apache.james.mailbox.model.TestId;
-import org.apache.james.server.task.json.JsonTaskAdditionalInformationsSerializer;
 import org.apache.james.server.task.json.JsonTaskSerializer;
+import org.apache.james.server.task.json.dto.AdditionalInformationDTO;
+import org.apache.james.task.TaskExecutionDetails;
 import org.apache.mailbox.tools.indexer.ReprocessingContextInformationDTO.ReprocessingContextInformationForFullReindexingTask;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -44,7 +45,7 @@ class FullReindexingTaskSerializationTest {
 
     private ReIndexerPerformer reIndexerPerformer;
     private JsonTaskSerializer taskSerializer;
-    private JsonTaskAdditionalInformationsSerializer jsonAdditionalInformationSerializer;
+    private JsonGenericSerializer<TaskExecutionDetails.AdditionalInformation, AdditionalInformationDTO> jsonAdditionalInformationSerializer;
 
     private final TestId mailboxId2 = TestId.of(2L);
     private final MessageUid messageUid2 = MessageUid.of(20L);
@@ -63,8 +64,9 @@ class FullReindexingTaskSerializationTest {
         reIndexerPerformer = mock(ReIndexerPerformer.class);
         taskSerializer = new JsonTaskSerializer(FullReindexingTask.module(reIndexerPerformer));
 
-        jsonAdditionalInformationSerializer = new JsonTaskAdditionalInformationsSerializer(
-            ReprocessingContextInformationForFullReindexingTask.serializationModule(new TestId.Factory()));
+        jsonAdditionalInformationSerializer = JsonGenericSerializer
+            .<TaskExecutionDetails.AdditionalInformation, AdditionalInformationDTO>forModules(ReprocessingContextInformationForFullReindexingTask.serializationModule(new TestId.Factory()))
+                .withoutNestedType();
 
         reIndexingExecutionFailures = new ReIndexingExecutionFailures(ImmutableList.of(
             new ReIndexingExecutionFailures.ReIndexingFailure(mailboxId, messageUid),

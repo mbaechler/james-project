@@ -26,14 +26,15 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 
+import org.apache.james.json.JsonGenericSerializer;
 import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.indexer.ReIndexingExecutionFailures;
 import org.apache.james.mailbox.model.TestId;
-import org.apache.james.server.task.json.JsonTaskAdditionalInformationsSerializer;
 import org.apache.james.server.task.json.JsonTaskSerializer;
+import org.apache.james.server.task.json.dto.AdditionalInformationDTO;
 import org.apache.james.task.Task;
+import org.apache.james.task.TaskExecutionDetails;
 import org.apache.mailbox.tools.indexer.ReprocessingContextInformationDTO.ReprocessingContextInformationForErrorRecoveryIndexationTask;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -46,7 +47,7 @@ class ErrorRecoveryIndexationTaskSerializationTest {
     private final TestId.Factory mailboxIdFactory = new TestId.Factory();
     private ReIndexerPerformer reIndexerPerformer;
     private JsonTaskSerializer taskSerializer;
-    private JsonTaskAdditionalInformationsSerializer jsonAdditionalInformationSerializer;
+    private JsonGenericSerializer<TaskExecutionDetails.AdditionalInformation, AdditionalInformationDTO> jsonAdditionalInformationSerializer;
 
     private final int successfullyReprocessedMailCount = 42;
     private final int failedReprocessedMailCount = 2;
@@ -73,8 +74,9 @@ class ErrorRecoveryIndexationTaskSerializationTest {
         ErrorRecoveryIndexationTask.Factory factory = new ErrorRecoveryIndexationTask.Factory(reIndexerPerformer, mailboxIdFactory);
         taskSerializer = new JsonTaskSerializer(ErrorRecoveryIndexationTaskDTO.module(factory));
 
-        jsonAdditionalInformationSerializer = new JsonTaskAdditionalInformationsSerializer(
-            ReprocessingContextInformationForErrorRecoveryIndexationTask.serializationModule(mailboxIdFactory));
+        jsonAdditionalInformationSerializer = JsonGenericSerializer
+            .<TaskExecutionDetails.AdditionalInformation, AdditionalInformationDTO>forModules(ReprocessingContextInformationForErrorRecoveryIndexationTask.serializationModule(mailboxIdFactory))
+            .withoutNestedType();
 
         reIndexingExecutionFailures = new ReIndexingExecutionFailures(ImmutableList.of(
             new ReIndexingExecutionFailures.ReIndexingFailure(mailboxId, messageUid),

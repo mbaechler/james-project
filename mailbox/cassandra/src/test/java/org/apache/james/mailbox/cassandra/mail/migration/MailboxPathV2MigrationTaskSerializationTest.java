@@ -27,12 +27,12 @@ import static org.mockito.Mockito.mock;
 import java.io.IOException;
 import java.time.Instant;
 
-import org.apache.james.server.task.json.JsonTaskAdditionalInformationsSerializer;
+import org.apache.james.json.JsonGenericSerializer;
 import org.apache.james.server.task.json.JsonTaskSerializer;
 import org.apache.james.task.TaskExecutionDetails;
+import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.jupiter.api.Test;
 
 class MailboxPathV2MigrationTaskSerializationTest {
     private static final Instant TIMESTAMP = Instant.parse("2018-11-13T12:00:55Z");
@@ -43,7 +43,8 @@ class MailboxPathV2MigrationTaskSerializationTest {
     private static final String SERIALIZED_ADDITIONAL_INFORMATION = "{\"type\": \"Cassandra_mailboxPathV2Migration\", \"remainingCount\":42,\"initialCount\":10, \"timestamp\":\"2018-11-13T12:00:55Z\"}";
 
     private static final JsonTaskSerializer TASK_SERIALIZER = new JsonTaskSerializer(MailboxPathV2MigrationTaskDTO.MODULE.apply(MIGRATION));
-    private static final JsonTaskAdditionalInformationsSerializer JSON_TASK_ADDITIONAL_INFORMATIONS_SERIALIZER = new JsonTaskAdditionalInformationsSerializer(MailboxPathV2MigrationTaskAdditionalInformationDTO.MODULE);
+    private static final JsonGenericSerializer<MailboxPathV2Migration.AdditionalInformation, MailboxPathV2MigrationTaskAdditionalInformationDTO> JSON_TASK_ADDITIONAL_INFORMATION_SERIALIZER =
+        JsonGenericSerializer.forModules(MailboxPathV2MigrationTaskAdditionalInformationDTO.MODULE).withoutNestedType();
 
     @Test
     void taskShouldBeSerializable() throws JsonProcessingException {
@@ -59,16 +60,17 @@ class MailboxPathV2MigrationTaskSerializationTest {
 
     @Test
     void additionalInformationShouldBeSerializable() throws JsonProcessingException {
-        assertThatJson(JSON_TASK_ADDITIONAL_INFORMATIONS_SERIALIZER.serialize(DETAILS)).isEqualTo(SERIALIZED_ADDITIONAL_INFORMATION);
+        assertThatJson(JSON_TASK_ADDITIONAL_INFORMATION_SERIALIZER.serialize(DETAILS)).isEqualTo(SERIALIZED_ADDITIONAL_INFORMATION);
     }
 
     @Test
-    void additonalInformationShouldBeDeserializable() throws IOException {
-        TaskExecutionDetails.AdditionalInformation deserialized = JSON_TASK_ADDITIONAL_INFORMATIONS_SERIALIZER.deserialize(SERIALIZED_ADDITIONAL_INFORMATION);
-        assertThat(deserialized).isInstanceOf(MailboxPathV2Migration.AdditionalInformation.class);
-
-        MailboxPathV2Migration.AdditionalInformation additionalInformation = (MailboxPathV2Migration.AdditionalInformation) deserialized;
-        assertThat(additionalInformation.getRemainingCount()).isEqualTo(DETAILS.getRemainingCount());
-        assertThat(additionalInformation.getInitialCount()).isEqualTo(DETAILS.getInitialCount());
+    void additionalInformationShouldBeDeserializable() throws IOException {
+        TaskExecutionDetails.AdditionalInformation deserialized = JSON_TASK_ADDITIONAL_INFORMATION_SERIALIZER.deserialize(SERIALIZED_ADDITIONAL_INFORMATION);
+        assertThat(deserialized).isInstanceOfSatisfying(MailboxPathV2Migration.AdditionalInformation.class,
+            additionalInformation -> {
+                assertThat(additionalInformation.getRemainingCount()).isEqualTo(DETAILS.getRemainingCount());
+                assertThat(additionalInformation.getInitialCount()).isEqualTo(DETAILS.getInitialCount());
+            }
+        );
     }
 }

@@ -27,8 +27,7 @@ import java.time.Instant;
 
 import org.apache.james.backends.cassandra.versions.CassandraSchemaVersionDAO;
 import org.apache.james.backends.cassandra.versions.SchemaVersion;
-import org.apache.james.server.task.json.JsonTaskAdditionalInformationsSerializer;
-import org.apache.james.server.task.json.JsonTaskSerializer;
+import org.apache.james.json.JsonGenericSerializer;
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -43,8 +42,11 @@ class MigrationTaskSerializationTest {
     private final CassandraSchemaVersionDAO cassandraSchemaVersionDAO = mock(CassandraSchemaVersionDAO.class);
     private final CassandraSchemaTransitions transitions = mock(CassandraSchemaTransitions.class);
     private final MigrationTask.Factory factory = target -> new MigrationTask(cassandraSchemaVersionDAO, transitions, target);
-    private final JsonTaskSerializer taskSerializer = new JsonTaskSerializer(MigrationTaskDTO.module(factory));
-    private JsonTaskAdditionalInformationsSerializer jsonAdditionalInformationSerializer = new JsonTaskAdditionalInformationsSerializer(MigrationTaskAdditionalInformationsDTO.serializationModule());
+
+    private final JsonGenericSerializer<MigrationTask, MigrationTaskDTO> taskSerializer = JsonGenericSerializer.forModules(MigrationTaskDTO.module(factory)).withoutNestedType();
+    private final JsonGenericSerializer<MigrationTask.AdditionalInformations, MigrationTaskAdditionalInformationsDTO> jsonAdditionalInformationSerializer = JsonGenericSerializer
+        .forModules(MigrationTaskAdditionalInformationsDTO.serializationModule())
+        .withoutNestedType();
 
     @Test
     void taskShouldBeSerializable() throws JsonProcessingException {

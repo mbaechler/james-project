@@ -29,10 +29,12 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.apache.james.json.JsonGenericSerializer;
 import org.apache.james.mailrepository.api.MailKey;
 import org.apache.james.mailrepository.api.MailRepositoryPath;
-import org.apache.james.server.task.json.JsonTaskAdditionalInformationsSerializer;
 import org.apache.james.server.task.json.JsonTaskSerializer;
+import org.apache.james.server.task.json.dto.AdditionalInformationDTO;
+import org.apache.james.task.TaskExecutionDetails;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -44,7 +46,9 @@ class ReprocessingAllMailsTaskTest {
 
     private static final Instant TIMESTAMP = Instant.parse("2018-11-13T12:00:55Z");
     private static final ReprocessingService REPROCESSING_SERVICE = mock(ReprocessingService.class);
-    private JsonTaskAdditionalInformationsSerializer jsonAdditionalInformationSerializer = new JsonTaskAdditionalInformationsSerializer(ReprocessingAllMailsTaskAdditionalInformationDTO.SERIALIZATION_MODULE);
+    private static final JsonGenericSerializer<TaskExecutionDetails.AdditionalInformation, AdditionalInformationDTO> JSON_TASK_ADDITIONAL_INFORMATION_SERIALIZER =
+        JsonGenericSerializer.<TaskExecutionDetails.AdditionalInformation, AdditionalInformationDTO>forModules(ReprocessingAllMailsTaskAdditionalInformationDTO.SERIALIZATION_MODULE)
+            .withoutNestedType();
     private static final long REPOSITORY_SIZE = 5L;
     private static final MailRepositoryPath REPOSITORY_PATH = MailRepositoryPath.from("a");
     private static final String TARGET_QUEUE = "queue";
@@ -124,7 +128,7 @@ class ReprocessingAllMailsTaskTest {
                                                    long remainingCount,
                                                    String serialized) throws JsonProcessingException {
         ReprocessingAllMailsTask.AdditionalInformation details = new ReprocessingAllMailsTask.AdditionalInformation(repositoryPath, targetQueue, targetProcessor, repositorySize, remainingCount, TIMESTAMP);
-        assertThatJson(jsonAdditionalInformationSerializer.serialize(details)).isEqualTo(serialized);
+        assertThatJson(JSON_TASK_ADDITIONAL_INFORMATION_SERIALIZER.serialize(details)).isEqualTo(serialized);
     }
 
     private static Stream<Arguments> additionalInformationShouldBeSerializable() {
@@ -140,7 +144,7 @@ class ReprocessingAllMailsTaskTest {
                                                      long remainingCount,
                                                      String serialized) throws IOException {
         ReprocessingAllMailsTask.AdditionalInformation details = new ReprocessingAllMailsTask.AdditionalInformation(repositoryPath, targetQueue, targetProcessor, repositorySize, remainingCount, TIMESTAMP);
-        assertThat(jsonAdditionalInformationSerializer.deserialize(serialized))
+        assertThat(JSON_TASK_ADDITIONAL_INFORMATION_SERIALIZER.deserialize(serialized))
             .isEqualToComparingFieldByField(details);
     }
 

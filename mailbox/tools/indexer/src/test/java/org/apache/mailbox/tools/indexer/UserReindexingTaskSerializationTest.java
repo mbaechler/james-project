@@ -27,11 +27,13 @@ import java.time.Instant;
 import java.util.List;
 
 import org.apache.james.core.User;
+import org.apache.james.json.JsonGenericSerializer;
 import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.indexer.ReIndexingExecutionFailures;
 import org.apache.james.mailbox.model.TestId;
-import org.apache.james.server.task.json.JsonTaskAdditionalInformationsSerializer;
 import org.apache.james.server.task.json.JsonTaskSerializer;
+import org.apache.james.server.task.json.dto.AdditionalInformationDTO;
+import org.apache.james.task.TaskExecutionDetails;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -44,7 +46,7 @@ class UserReindexingTaskSerializationTest {
 
     private ReIndexerPerformer reIndexerPerformer;
     private JsonTaskSerializer taskSerializer;
-    private JsonTaskAdditionalInformationsSerializer jsonAdditionalInformationSerializer;
+    private JsonGenericSerializer<TaskExecutionDetails.AdditionalInformation, AdditionalInformationDTO> jsonAdditionalInformationSerializer;
 
     private final User user = User.fromUsername("foo@apache.org");
     private final int successfullyReprocessedMailCount = 42;
@@ -69,8 +71,9 @@ class UserReindexingTaskSerializationTest {
         reIndexerPerformer = mock(ReIndexerPerformer.class);
         UserReindexingTask.Factory factory = new UserReindexingTask.Factory(reIndexerPerformer);
         taskSerializer = new JsonTaskSerializer(UserReindexingTaskDTO.module(factory));
-        jsonAdditionalInformationSerializer = new JsonTaskAdditionalInformationsSerializer(
-            UserReindexingTaskAdditionalInformationDTO.serializationModule(new TestId.Factory()));
+        jsonAdditionalInformationSerializer = JsonGenericSerializer
+            .<TaskExecutionDetails.AdditionalInformation, AdditionalInformationDTO>forModules(UserReindexingTaskAdditionalInformationDTO.serializationModule(new TestId.Factory()))
+                .withoutNestedType();
 
         reIndexingExecutionFailures = new ReIndexingExecutionFailures(ImmutableList.of(
             new ReIndexingExecutionFailures.ReIndexingFailure(mailboxId, messageUid),

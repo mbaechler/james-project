@@ -42,7 +42,7 @@ import org.apache.james.eventsourcing.eventstore.cassandra.CassandraEventStoreMo
 import org.apache.james.eventsourcing.eventstore.cassandra.JsonEventSerializer;
 import org.apache.james.eventsourcing.eventstore.cassandra.dto.EventDTOModule;
 import org.apache.james.json.DTOConverter;
-import org.apache.james.server.task.json.JsonTaskAdditionalInformationsSerializer;
+import org.apache.james.json.JsonGenericSerializer;
 import org.apache.james.server.task.json.JsonTaskSerializer;
 import org.apache.james.server.task.json.dto.AdditionalInformationDTO;
 import org.apache.james.server.task.json.dto.MemoryReferenceTaskStore;
@@ -98,7 +98,9 @@ class DistributedTaskManagerTest implements TaskManagerContract {
         }
     }
 
-    static final JsonTaskAdditionalInformationsSerializer JSON_TASK_ADDITIONAL_INFORMATION_SERIALIZER = new JsonTaskAdditionalInformationsSerializer(MemoryReferenceWithCounterTaskAdditionalInformationDTO.SERIALIZATION_MODULE);
+    static final JsonGenericSerializer<TaskExecutionDetails.AdditionalInformation, AdditionalInformationDTO> JSON_TASK_ADDITIONAL_INFORMATION_SERIALIZER =
+        JsonGenericSerializer.<TaskExecutionDetails.AdditionalInformation, AdditionalInformationDTO>forModules(MemoryReferenceWithCounterTaskAdditionalInformationDTO.SERIALIZATION_MODULE)
+            .withoutNestedType();
     static final DTOConverter<TaskExecutionDetails.AdditionalInformation, AdditionalInformationDTO> DTO_CONVERTER = DTOConverter.of(MemoryReferenceWithCounterTaskAdditionalInformationDTO.SERIALIZATION_MODULE);
     static final Hostname HOSTNAME = new Hostname("foo");
     static final Hostname HOSTNAME_2 = new Hostname("bar");
