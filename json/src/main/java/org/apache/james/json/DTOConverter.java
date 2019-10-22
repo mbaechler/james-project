@@ -49,6 +49,7 @@ public class DTOConverter<T, U extends DTO> {
                 Function.identity()));
     }
 
+    @SuppressWarnings("unchecked")
     public Optional<U> convert(T domainObject) {
         return Optional
             .ofNullable(domainClassToModule.get(domainObject.getClass()))
@@ -56,6 +57,7 @@ public class DTOConverter<T, U extends DTO> {
             .map(module -> module.toDTO(domainObject));
     }
 
+    @SuppressWarnings("unchecked")
     public Optional<T> convert(U dto) {
         String type = dto.getType();
         return Optional
