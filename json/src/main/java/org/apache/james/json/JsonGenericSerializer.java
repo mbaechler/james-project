@@ -142,6 +142,7 @@ public class JsonGenericSerializer<T, U extends DTO> {
         return objectMapper.readTree(value);
     }
 
+    @SuppressWarnings("rawtypes")
     private U parseAsPolymorphicDTO(JsonNode jsonTree) throws IOException {
         return (U) objectMapper.readValue(objectMapper.treeAsTokens(jsonTree), DTO.class);
     }
