@@ -146,56 +146,56 @@ class DTOTest {
 
     @Test
     void shouldSerializeQuotaThresholdChangedEvent() throws Exception {
-        assertThatJson(new JsonEventSerializer(QuotaEventDTOModules.QUOTA_THRESHOLD_CHANGE)
+        assertThatJson(JsonEventSerializer.forModules(QuotaEventDTOModules.QUOTA_THRESHOLD_CHANGE).withoutNestedType()
             .serialize(EVENT))
             .isEqualTo(EVENT_JSON);
     }
 
     @Test
     void shouldDeserializeQuotaThresholdChangedEvent() throws Exception {
-        assertThatJson(new JsonEventSerializer(QuotaEventDTOModules.QUOTA_THRESHOLD_CHANGE)
+        assertThatJson(JsonEventSerializer.forModules(QuotaEventDTOModules.QUOTA_THRESHOLD_CHANGE).withoutNestedType()
             .deserialize(EVENT_JSON))
             .isEqualTo(EVENT);
     }
 
     @Test
     void shouldSerializeEvent2() throws Exception {
-        assertThatJson(new JsonEventSerializer(QuotaEventDTOModules.QUOTA_THRESHOLD_CHANGE)
+        assertThatJson(JsonEventSerializer.forModules(QuotaEventDTOModules.QUOTA_THRESHOLD_CHANGE).withoutNestedType()
             .serialize(EVENT_2))
             .isEqualTo(EVENT_JSON_2);
     }
 
     @Test
     void shouldDeserializeEvent2() throws Exception {
-        assertThatJson(new JsonEventSerializer(QuotaEventDTOModules.QUOTA_THRESHOLD_CHANGE)
+        assertThatJson(JsonEventSerializer.forModules(QuotaEventDTOModules.QUOTA_THRESHOLD_CHANGE).withoutNestedType()
             .deserialize(EVENT_JSON_2))
             .isEqualTo(EVENT_2);
     }
 
     @Test
     void shouldSerializeEvent3() throws Exception {
-        assertThatJson(new JsonEventSerializer(QuotaEventDTOModules.QUOTA_THRESHOLD_CHANGE)
+        assertThatJson(JsonEventSerializer.forModules(QuotaEventDTOModules.QUOTA_THRESHOLD_CHANGE).withoutNestedType()
             .serialize(EVENT_3))
             .isEqualTo(EVENT_JSON_3);
     }
 
     @Test
     void shouldDeserializeEvent3() throws Exception {
-        assertThatJson(new JsonEventSerializer(QuotaEventDTOModules.QUOTA_THRESHOLD_CHANGE)
+        assertThatJson(JsonEventSerializer.forModules(QuotaEventDTOModules.QUOTA_THRESHOLD_CHANGE).withoutNestedType()
             .deserialize(EVENT_JSON_3))
             .isEqualTo(EVENT_3);
     }
 
     @Test
     void shouldSerializeEvent4() throws Exception {
-        assertThatJson(new JsonEventSerializer(QuotaEventDTOModules.QUOTA_THRESHOLD_CHANGE)
+        assertThatJson(JsonEventSerializer.forModules(QuotaEventDTOModules.QUOTA_THRESHOLD_CHANGE).withoutNestedType()
             .serialize(EVENT_4))
             .isEqualTo(EVENT_JSON_4);
     }
 
     @Test
     void shouldDeserializeEvent4() throws Exception {
-        assertThatJson(new JsonEventSerializer(QuotaEventDTOModules.QUOTA_THRESHOLD_CHANGE)
+        assertThatJson(JsonEventSerializer.forModules(QuotaEventDTOModules.QUOTA_THRESHOLD_CHANGE).withoutNestedType()
             .deserialize(EVENT_JSON_4))
             .isEqualTo(EVENT_4);
     }

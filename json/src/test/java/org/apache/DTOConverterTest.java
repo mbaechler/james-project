@@ -40,15 +40,16 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class DTOConverterTest {
-    private static final FirstDomainObject FIRST = new FirstDomainObject(Optional.of(1L), ZonedDateTime.parse("2016-04-03T02:01+07:00[Asia/Vientiane]"), "first payload", Optional.empty());
-    private static final FirstDTO FIRST_DTO = new FirstDTO("first", Optional.of(1L), "2016-04-03T02:01+07:00[Asia/Vientiane]", "first payload", Optional.empty());
-    private static final SecondDomainObject SECOND = new SecondDomainObject(UUID.fromString("4a2c853f-7ffc-4ce3-9410-a47e85b3b741"), "second payload", Optional.empty());
-    private static final SecondDTO SECOND_DTO = new SecondDTO("second", "4a2c853f-7ffc-4ce3-9410-a47e85b3b741", "second payload", Optional.empty());
+    private static final BaseType FIRST = new FirstDomainObject(Optional.of(1L), ZonedDateTime.parse("2016-04-03T02:01+07:00[Asia/Vientiane]"), "first payload", Optional.empty());
+    private static final DTO FIRST_DTO = new FirstDTO("first", Optional.of(1L), "2016-04-03T02:01+07:00[Asia/Vientiane]", "first payload", Optional.empty());
+    private static final BaseType SECOND = new SecondDomainObject(UUID.fromString("4a2c853f-7ffc-4ce3-9410-a47e85b3b741"), "second payload", Optional.empty());
+    private static final DTO SECOND_DTO = new SecondDTO("second", "4a2c853f-7ffc-4ce3-9410-a47e85b3b741", "second payload", Optional.empty());
 
     @SuppressWarnings("unchecked")
     @Test
     void shouldConvertFromKnownDTO() throws Exception {
-        assertThat(DTOConverter.of(TestModules.FIRST_TYPE)
+        assertThat(DTOConverter
+            .<BaseType, DTO>of(TestModules.FIRST_TYPE)
             .convert(FIRST_DTO))
             .contains(FIRST);
     }
@@ -102,7 +103,7 @@ class DTOConverterTest {
     @SuppressWarnings("unchecked")
     @Test
     void shouldConvertFromKnownDomainObject() throws Exception {
-        assertThat(DTOConverter.of(TestModules.FIRST_TYPE)
+        assertThat(DTOConverter.<BaseType, DTO>of(TestModules.FIRST_TYPE)
             .convert(FIRST))
             .hasValueSatisfying(result -> assertThat(result).isInstanceOf(FirstDTO.class).isEqualToComparingFieldByField(FIRST_DTO));
     }

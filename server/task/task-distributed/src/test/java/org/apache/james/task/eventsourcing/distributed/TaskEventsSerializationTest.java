@@ -25,10 +25,8 @@ import java.time.Instant;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import org.apache.james.eventsourcing.Event;
 import org.apache.james.eventsourcing.EventId;
 import org.apache.james.eventsourcing.eventstore.cassandra.JsonEventSerializer;
-import org.apache.james.eventsourcing.eventstore.cassandra.dto.EventDTO;
 import org.apache.james.eventsourcing.eventstore.cassandra.dto.EventDTOModule;
 import org.apache.james.json.DTOConverter;
 import org.apache.james.server.task.json.JsonTaskAdditionalInformationsSerializer;
@@ -55,15 +53,13 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 import net.javacrumbs.jsonunit.assertj.JsonAssertions;
 import scala.Option;
 
 class TaskEventsSerializationTest {
     static Instant TIMESTAMP = Instant.parse("2018-11-13T12:00:55Z");
     static DTOConverter<TaskExecutionDetails.AdditionalInformation, AdditionalInformationDTO> ADDITIONAL_INFORMATION_CONVERTER = DTOConverter.of(MemoryReferenceWithCounterTaskAdditionalInformationDTO.SERIALIZATION_MODULE);
-    static JsonTaskAdditionalInformationsSerializer TASK_ADDITIONNAL_INFORMATION_SERIALIZER = new JsonTaskAdditionalInformationsSerializer(MemoryReferenceWithCounterTaskAdditionalInformationDTO.SERIALIZATION_MODULE);
+    static JsonTaskAdditionalInformationsSerializer TASK_ADDITIONNAL_INFORMATION_SERIALIZER = JsonTaskAdditionalInformationsSerializer.of(MemoryReferenceWithCounterTaskAdditionalInformationDTO.SERIALIZATION_MODULE);
     static TaskAggregateId AGGREGATE_ID = new TaskAggregateId(TaskId.fromString("2c7f4081-aa30-11e9-bf6c-2d3b9e84aafd"));
     static EventId EVENT_ID = EventId.fromSerialized(42);
     static Task TASK = new CompletedTask();
@@ -71,12 +67,14 @@ class TaskEventsSerializationTest {
     static MemoryReferenceWithCounterTask.AdditionalInformation COUNTER_ADDITIONAL_INFORMATION = new MemoryReferenceWithCounterTask.AdditionalInformation(3, TIMESTAMP);
 
     private final Set<EventDTOModule<?, ?>> list = TasksSerializationModule.list(
-        new JsonTaskSerializer(
+        JsonTaskSerializer.of(
             TestTaskDTOModules.COMPLETED_TASK_MODULE,
             TestTaskDTOModules.MEMORY_REFERENCE_WITH_COUNTER_TASK_MODULE.apply(new MemoryReferenceWithCounterTaskStore())),
         ADDITIONAL_INFORMATION_CONVERTER);
 
-    JsonEventSerializer serializer = new JsonEventSerializer(new DTOConverter<>(list), list, ImmutableSet.of(MemoryReferenceWithCounterTaskAdditionalInformationDTO.SERIALIZATION_MODULE));
+    JsonEventSerializer serializer = JsonEventSerializer
+        .forModules(list)
+        .withNestedTypeModules(MemoryReferenceWithCounterTaskAdditionalInformationDTO.SERIALIZATION_MODULE);
 
     @ParameterizedTest
     @MethodSource

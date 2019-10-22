@@ -45,14 +45,14 @@ class SingleMessageReindexingTaskSerializationTest {
     private final String SERIALIZED_ADDITIONAL_INFORMATION = "{\"type\": \"messageReIndexing\", \"mailboxId\": \"1\", \"uid\": 10, \"timestamp\":\"2018-11-13T12:00:55Z\"}";
     private final TestId mailboxId = TestId.of(1L);
     private final MessageUid messageUid = MessageUid.of(10L);
-    private JsonTaskAdditionalInformationsSerializer jsonAdditionalInformationSerializer = new JsonTaskAdditionalInformationsSerializer(
+    private JsonTaskAdditionalInformationsSerializer jsonAdditionalInformationSerializer = JsonTaskAdditionalInformationsSerializer.of(
         SingleMessageReindexingTaskAdditionalInformationDTO.serializationModule(mailboxIdFactory));
 
     @BeforeEach
     void setUp() {
         reIndexerPerformer = mock(ReIndexerPerformer.class);
         SingleMessageReindexingTask.Factory factory = new SingleMessageReindexingTask.Factory(reIndexerPerformer, mailboxIdFactory);
-        taskSerializer = new JsonTaskSerializer(SingleMessageReindexingTaskDTO.module(factory));
+        taskSerializer = JsonTaskSerializer.of(SingleMessageReindexingTaskDTO.module(factory));
     }
 
     @Test

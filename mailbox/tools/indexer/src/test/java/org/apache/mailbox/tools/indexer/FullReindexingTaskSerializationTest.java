@@ -61,9 +61,9 @@ class FullReindexingTaskSerializationTest {
     @BeforeEach
     void setUp() {
         reIndexerPerformer = mock(ReIndexerPerformer.class);
-        taskSerializer = new JsonTaskSerializer(FullReindexingTask.module(reIndexerPerformer));
+        taskSerializer = JsonTaskSerializer.of(FullReindexingTask.module(reIndexerPerformer));
 
-        jsonAdditionalInformationSerializer = new JsonTaskAdditionalInformationsSerializer(
+        jsonAdditionalInformationSerializer = JsonTaskAdditionalInformationsSerializer.of(
             ReprocessingContextInformationForFullReindexingTask.serializationModule(new TestId.Factory()));
 
         reIndexingExecutionFailures = new ReIndexingExecutionFailures(ImmutableList.of(

@@ -48,7 +48,7 @@ class CassandraTaskExecutionDetailsProjectionDAOTest {
     @RegisterExtension
     static CassandraClusterExtension cassandraCluster = new CassandraClusterExtension(
         CassandraModule.aggregateModules(CassandraSchemaVersionModule.MODULE, CassandraZonedDateTimeModule.MODULE, CassandraTaskExecutionDetailsProjectionModule.MODULE()));
-    private static final JsonTaskAdditionalInformationsSerializer jsonTaskAdditionalInformationsSerializer = new JsonTaskAdditionalInformationsSerializer();
+    private static final JsonTaskAdditionalInformationsSerializer jsonTaskAdditionalInformationsSerializer = JsonTaskAdditionalInformationsSerializer.of();
 
     private CassandraTaskExecutionDetailsProjectionDAO testee;
 
