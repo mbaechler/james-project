@@ -47,6 +47,7 @@ public final class CassandraSmtpTestRuleFactory {
         return GuiceJamesServer.forConfiguration(configuration)
             .combineWith(CassandraJamesServerMain.CASSANDRA_SERVER_CORE_MODULE,
                 SmtpTestRule.SMTP_PROTOCOL_MODULE,
+                CassandraJamesServerMain.CASSANDRA_EVENT_STORE_JSON_SERIALIZATION_DEFAULT_MODULE,
                 binder -> binder.bind(MailQueueItemDecoratorFactory.class).to(RawMailQueueItemDecoratorFactory.class),
                 binder -> binder.bind(CamelMailetContainerModule.DefaultProcessorsConfigurationSupplier.class)
                     .toInstance(BaseHierarchicalConfiguration::new))
