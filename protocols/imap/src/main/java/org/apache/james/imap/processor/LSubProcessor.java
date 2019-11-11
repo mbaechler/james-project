@@ -25,8 +25,8 @@ import java.util.Collection;
 
 import org.apache.james.imap.api.ImapCommand;
 import org.apache.james.imap.api.ImapSessionUtils;
-import org.apache.james.imap.api.display.ModifiedUtf7;
 import org.apache.james.imap.api.display.HumanReadableText;
+import org.apache.james.imap.api.display.ModifiedUtf7;
 import org.apache.james.imap.api.message.response.StatusResponseFactory;
 import org.apache.james.imap.api.process.ImapProcessor;
 import org.apache.james.imap.api.process.ImapSession;

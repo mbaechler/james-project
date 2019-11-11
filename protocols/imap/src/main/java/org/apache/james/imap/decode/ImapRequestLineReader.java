@@ -35,8 +35,8 @@ import java.util.List;
 import javax.mail.Flags;
 
 import org.apache.james.imap.api.ImapConstants;
-import org.apache.james.imap.api.display.ModifiedUtf7;
 import org.apache.james.imap.api.display.HumanReadableText;
+import org.apache.james.imap.api.display.ModifiedUtf7;
 import org.apache.james.imap.api.message.IdRange;
 import org.apache.james.imap.api.message.UidRange;
 import org.apache.james.imap.api.message.request.DayMonthYear;
