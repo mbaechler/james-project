@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -152,14 +153,9 @@ public class FileMailRepository implements MailRepository, Configurable, Initial
             }
 
             // Finds non-matching pairs and deletes the extra files
-            HashSet<String> streamKeys = new HashSet<>();
-            for (Iterator<String> i = streamRepository.list(); i.hasNext(); ) {
-                streamKeys.add(i.next());
-            }
-            HashSet<String> objectKeys = new HashSet<>();
-            for (Iterator<String> i = objectRepository.list(); i.hasNext(); ) {
-                objectKeys.add(i.next());
-            }
+
+            HashSet<String> streamKeys = streamRepository.list().collect(Collectors.toCollection(HashSet::new));
+            HashSet<String> objectKeys = objectRepository.list().collect(Collectors.toCollection(HashSet::new));
 
             @SuppressWarnings("unchecked")
             Collection<String> strandedStreams = (Collection<String>) streamKeys.clone();
@@ -181,9 +177,7 @@ public class FileMailRepository implements MailRepository, Configurable, Initial
                 // Next get a list from the object repository
                 // and use that for the list of keys
                 keys.clear();
-                for (Iterator<String> i = objectRepository.list(); i.hasNext(); ) {
-                    keys.add(i.next());
-                }
+                objectRepository.list().forEach(keys::add);
             }
             LOGGER.debug("{} created in {}", getClass().getName(), destination);
         } catch (Exception e) {
@@ -362,10 +356,7 @@ public class FileMailRepository implements MailRepository, Configurable, Initial
                 clone = new ArrayList<>(keys);
             }
         } else {
-            clone = new ArrayList<>();
-            for (Iterator<String> i = objectRepository.list(); i.hasNext(); ) {
-                clone.add(i.next());
-            }
+            clone = objectRepository.list().collect(Collectors.toCollection(ArrayList::new));
         }
         if (fifo) {
             Collections.sort(clone); // Keys is a HashSet; impose FIFO for apps
