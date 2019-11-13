@@ -236,7 +236,6 @@ public class FileMailRepository implements MailRepository, Configurable, Initial
             keys.add(key);
         }
         boolean saveStream = true;
-        boolean update = true;
 
         MimeMessage message = mc.getMessage();
         // if the message is a Copy on Write proxy we check the wrapped message
@@ -265,13 +264,12 @@ public class FileMailRepository implements MailRepository, Configurable, Initial
                 }
 
                 // its an update
-                update = true;
             }
         }
         if (saveStream) {
             OutputStream out = null;
             try {
-                if (update && message instanceof MimeMessageWrapper) {
+                if (message instanceof MimeMessageWrapper) {
                     // we need to force the loading of the message from the
                     // stream as we want to override the old message
                     ((MimeMessageWrapper) message).loadMessage();
