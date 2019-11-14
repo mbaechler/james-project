@@ -113,6 +113,10 @@ public class CassandraJamesServerMain {
         new BlobStoreAPIModule(),
         new BlobExportMechanismModule());
 
+    private static final Module CASSANDRA_EVENT_STORE_JSON_SERIALIZATION_DEFAULT_MODULE = binder ->
+        binder.bind(new TypeLiteral<Set<DTOModule<?, ?>>>() {}).annotatedWith(Names.named(EVENT_NESTED_TYPES_INJECTION_NAME))
+            .toInstance(ImmutableSet.of());
+
     public static final Module CASSANDRA_SERVER_CORE_MODULE = Modules.combine(
         new ActiveMQQueueModule(),
         new CassandraDomainListModule(),
@@ -125,11 +129,8 @@ public class CassandraJamesServerMain {
         new CassandraSessionModule(),
         new CassandraSieveRepositoryModule(),
         new CassandraUsersRepositoryModule(),
-        BLOB_MODULE);
-
-    public static final Module CASSANDRA_EVENT_STORE_JSON_SERIALIZATION_DEFAULT_MODULE = binder ->
-        binder.bind(new TypeLiteral<Set<DTOModule<?, ?>>>() {}).annotatedWith(Names.named(EVENT_NESTED_TYPES_INJECTION_NAME))
-            .toInstance(ImmutableSet.of());
+        BLOB_MODULE,
+        CASSANDRA_EVENT_STORE_JSON_SERIALIZATION_DEFAULT_MODULE);
 
     public static final Module CASSANDRA_MAILBOX_MODULE = Modules.combine(
         new CassandraMailboxModule(),
