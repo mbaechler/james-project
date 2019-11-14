@@ -346,7 +346,7 @@ public class FileMailRepository implements MailRepository, Configurable, Initial
             .iterator();
     }
 
-    public Stream<MailKey> listStream() {
+    private Stream<MailKey> listStream() {
         // Fix ConcurrentModificationException by cloning
         // the keyset before getting an iterator
         final ArrayList<String> clone;
