@@ -244,8 +244,6 @@ public class FileMailRepository implements MailRepository, Configurable, Initial
                     // retrying to retrieve from a file we'll be overwriting.
                     saveStream = false;
                 }
-
-                // its an update
             }
         }
         if (saveStream) {
