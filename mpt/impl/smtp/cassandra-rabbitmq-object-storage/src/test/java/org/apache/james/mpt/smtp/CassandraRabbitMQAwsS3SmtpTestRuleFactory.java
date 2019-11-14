@@ -22,8 +22,8 @@ import org.apache.commons.configuration2.BaseHierarchicalConfiguration;
 import org.apache.james.CassandraJamesServerMain;
 import org.apache.james.CleanupTasksPerformer;
 import org.apache.james.GuiceJamesServer;
-import org.apache.james.backends.rabbitmq.DockerRabbitMQSingleton;
 import org.apache.james.backends.cassandra.init.configuration.ClusterConfiguration;
+import org.apache.james.backends.rabbitmq.DockerRabbitMQSingleton;
 import org.apache.james.dnsservice.api.DNSService;
 import org.apache.james.modules.TestAwsS3BlobStoreModule;
 import org.apache.james.modules.TestRabbitMQModule;
@@ -54,6 +54,7 @@ public final class CassandraRabbitMQAwsS3SmtpTestRuleFactory {
         return GuiceJamesServer.forConfiguration(configuration)
             .combineWith(CassandraJamesServerMain.CASSANDRA_SERVER_CORE_MODULE,
                 SmtpTestRule.SMTP_PROTOCOL_MODULE,
+                CassandraJamesServerMain.CASSANDRA_EVENT_STORE_JSON_SERIALIZATION_DEFAULT_MODULE,
                 binder -> binder.bind(MailQueueItemDecoratorFactory.class).to(RawMailQueueItemDecoratorFactory.class),
                 binder -> binder.bind(CamelMailetContainerModule.DefaultProcessorsConfigurationSupplier.class)
                     .toInstance(BaseHierarchicalConfiguration::new))
