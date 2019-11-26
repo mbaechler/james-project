@@ -19,6 +19,8 @@
 
 package org.apache.james.mailbox.model;
 
+import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.Objects;
 
 import org.apache.james.mailbox.model.MessageResult.FetchGroup.PartContentDescriptor;
@@ -27,27 +29,25 @@ import org.apache.james.mailbox.model.MessageResult.MimePath;
 
 public class PartContentDescriptorImpl implements PartContentDescriptor {
 
-    private int content = 0;
+    private final EnumSet<MessageResult.FetchGroupEnum> content;
 
     private final MimePath path;
 
     public PartContentDescriptorImpl(MimePath path) {
-        super();
+        this(EnumSet.noneOf(MessageResult.FetchGroupEnum.class), path);
+    }
+
+    public PartContentDescriptorImpl(EnumSet<MessageResult.FetchGroupEnum> content, MimePath path) {
+        this.content = EnumSet.copyOf(content);
         this.path = path;
     }
 
-    public PartContentDescriptorImpl(int content, MimePath path) {
-        super();
-        this.content = content;
-        this.path = path;
-    }
-
-    public void or(int content) {
-        this.content = this.content | content;
+    public void union(MessageResult.FetchGroupEnum... content) {
+        this.content.addAll(Arrays.asList(content));
     }
 
     @Override
-    public int content() {
+    public EnumSet<MessageResult.FetchGroupEnum> content() {
         return content;
     }
 

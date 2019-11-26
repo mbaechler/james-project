@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -54,8 +55,10 @@ public class MailboxAdapter implements Mailbox {
     private static final FetchGroup FULL_GROUP = new POP3FetchGroup() {
 
         @Override
-        public int content() {
-            return BODY_CONTENT | HEADERS;
+        public EnumSet<MessageResult.FetchGroupEnum> content() {
+            return EnumSet.of(
+                MessageResult.FetchGroupEnum.BODY_CONTENT,
+                MessageResult.FetchGroupEnum.HEADERS);
         }
 
     };
@@ -63,8 +66,9 @@ public class MailboxAdapter implements Mailbox {
     private static final FetchGroup BODY_GROUP = new POP3FetchGroup() {
 
         @Override
-        public int content() {
-            return BODY_CONTENT;
+        public EnumSet<MessageResult.FetchGroupEnum> content() {
+            return EnumSet.of(MessageResult.FetchGroupEnum.BODY_CONTENT);
+
         }
 
     };
@@ -72,16 +76,17 @@ public class MailboxAdapter implements Mailbox {
     private static final FetchGroup HEADERS_GROUP = new POP3FetchGroup() {
 
         @Override
-        public int content() {
-            return HEADERS;
+        public EnumSet<MessageResult.FetchGroupEnum> content() {
+            return EnumSet.of(MessageResult.FetchGroupEnum.HEADERS);
+
         }
     };
 
     private static final FetchGroup METADATA_GROUP = new POP3FetchGroup() {
 
         @Override
-        public int content() {
-            return MINIMAL;
+        public EnumSet<MessageResult.FetchGroupEnum> content() {
+            return EnumSet.noneOf(MessageResult.FetchGroupEnum.class);
         }
     };
 

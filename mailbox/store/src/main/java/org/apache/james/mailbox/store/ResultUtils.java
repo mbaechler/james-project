@@ -23,7 +23,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.Content;
@@ -40,6 +43,8 @@ import org.apache.james.mime4j.stream.MimeConfig;
 import org.apache.james.mime4j.stream.RawField;
 import org.apache.james.mime4j.util.ByteSequence;
 import org.apache.james.mime4j.util.ContentUtil;
+
+import com.google.common.annotations.VisibleForTesting;
 
 public class ResultUtils {
 
@@ -97,22 +102,9 @@ public class ResultUtils {
 
             MessageResultImpl messageResult = new MessageResultImpl(message);
             if (fetchGroup != null) {
-                int content = fetchGroup.content();
-
-                if ((content & FetchGroup.HEADERS) > 0) {
-                    content -= FetchGroup.HEADERS;
-                }
-                if ((content & FetchGroup.BODY_CONTENT) > 0) {
-                    content -= FetchGroup.BODY_CONTENT;
-                }
-                if ((content & FetchGroup.FULL_CONTENT) > 0) {
-                    content -= FetchGroup.FULL_CONTENT;
-                }
-                if ((content & FetchGroup.MIME_DESCRIPTOR) > 0) {
-                    content -= FetchGroup.MIME_DESCRIPTOR;
-                }
-                if (content != 0) {
-                    throw new UnsupportedOperationException("Unsupported result: " + content);
+                Set<MessageResult.FetchGroupEnum> unsupportedFetchGroups = detectUnsupportedFetchGroups(fetchGroup.content());
+                if (!unsupportedFetchGroups.isEmpty()) {
+                    throw new UnsupportedOperationException("Unsupported result: " + unsupportedFetchGroups);
                 }
 
                 addPartContent(fetchGroup, message, messageResult);
@@ -123,6 +115,19 @@ public class ResultUtils {
             throw new MailboxException("Unable to parse message", e);
         }
 
+    }
+
+    @VisibleForTesting
+    static Set<MessageResult.FetchGroupEnum> detectUnsupportedFetchGroups(EnumSet<MessageResult.FetchGroupEnum> fetchGroup) {
+        EnumSet<MessageResult.FetchGroupEnum> supportedGroups = EnumSet.of(
+            MessageResult.FetchGroupEnum.HEADERS,
+            MessageResult.FetchGroupEnum.BODY_CONTENT,
+            MessageResult.FetchGroupEnum.FULL_CONTENT,
+            MessageResult.FetchGroupEnum.MIME_DESCRIPTOR);
+        return fetchGroup
+            .stream()
+            .filter(value -> !supportedGroups.contains(value))
+            .collect(Collectors.toSet());
     }
 
     private static void addPartContent(FetchGroup fetchGroup, MailboxMessage message, MessageResultImpl messageResult)
@@ -138,20 +143,20 @@ public class ResultUtils {
     private static void addPartContent(FetchGroup.PartContentDescriptor descriptor, MailboxMessage message, MessageResultImpl messageResult)
             throws MailboxException, IOException, MimeException {
         MimePath mimePath = descriptor.path();
-        int content = descriptor.content();
-        if ((content & MessageResult.FetchGroup.FULL_CONTENT) > 0) {
+        EnumSet<MessageResult.FetchGroupEnum> content = descriptor.content();
+        if (content.contains(MessageResult.FetchGroupEnum.FULL_CONTENT)) {
             addFullContent(message, messageResult, mimePath);
         }
-        if ((content & MessageResult.FetchGroup.BODY_CONTENT) > 0) {
+        if (content.contains(MessageResult.FetchGroupEnum.BODY_CONTENT)) {
             addBodyContent(message, messageResult, mimePath);
         }
-        if ((content & MessageResult.FetchGroup.MIME_CONTENT) > 0) {
+        if (content.contains(MessageResult.FetchGroupEnum.MIME_CONTENT)) {
             addMimeBodyContent(message, messageResult, mimePath);
         }
-        if ((content & MessageResult.FetchGroup.HEADERS) > 0) {
+        if (content.contains(MessageResult.FetchGroupEnum.HEADERS)) {
             addHeaders(message, messageResult, mimePath);
         }
-        if ((content & MessageResult.FetchGroup.MIME_HEADERS) > 0) {
+        if (content.contains(MessageResult.FetchGroupEnum.MIME_HEADERS)) {
             addMimeHeaders(message, messageResult, mimePath);
         }
     }

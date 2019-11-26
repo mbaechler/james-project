@@ -21,6 +21,7 @@ package org.apache.james.mailbox.model;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -74,6 +75,38 @@ public interface MessageResult extends Comparable<MessageResult> {
 
     long getModSeq();
 
+    enum FetchGroupEnum {
+        MIME_DESCRIPTOR,
+        HEADERS,
+        FULL_CONTENT,
+        BODY_CONTENT,
+        MIME_HEADERS,
+        MIME_CONTENT;
+
+        public static EnumSet<FetchGroupEnum> of(int content) {
+            EnumSet<FetchGroupEnum> result = EnumSet.noneOf(FetchGroupEnum.class);
+            if ((content & FetchGroup.MIME_DESCRIPTOR) > 0) {
+                result.add(MIME_DESCRIPTOR);
+            }
+            if ((content & FetchGroup.HEADERS) > 0) {
+                result.add(HEADERS);
+            }
+            if ((content & FetchGroup.FULL_CONTENT) > 0) {
+                result.add(FULL_CONTENT);
+            }
+            if ((content & FetchGroup.BODY_CONTENT) > 0) {
+                result.add(BODY_CONTENT);
+            }
+            if ((content & FetchGroup.MIME_HEADERS) > 0) {
+                result.add(MIME_HEADERS);
+            }
+            if ((content & FetchGroup.MIME_CONTENT) > 0) {
+                result.add(MIME_CONTENT);
+            }
+            return result;
+        }
+    }
+
     /**
      * Indicates the results fetched.
      */
@@ -112,7 +145,7 @@ public interface MessageResult extends Comparable<MessageResult> {
          * @see #MIME_HEADERS
          * @see #MIME_CONTENT
          */
-        int content();
+        EnumSet<FetchGroupEnum> content();
 
         /**
          * Gets contents to be fetched for contained parts. For each part to be
@@ -141,7 +174,7 @@ public interface MessageResult extends Comparable<MessageResult> {
              * @see #MIME_HEADERS
              * @see #MIME_CONTENT
              */
-            int content();
+            EnumSet<FetchGroupEnum> content();
 
             /**
              * Path describing the part to be fetched.

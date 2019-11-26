@@ -19,6 +19,8 @@
 
 package org.apache.james.mailbox.model;
 
+import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -29,38 +31,42 @@ import org.apache.james.mailbox.model.MessageResult.MimePath;
  */
 public class FetchGroupImpl implements MessageResult.FetchGroup {
 
-    public static final MessageResult.FetchGroup MINIMAL = new FetchGroupImpl(MessageResult.FetchGroup.MINIMAL);
+    public static final MessageResult.FetchGroup MINIMAL = new FetchGroupImpl(EnumSet.noneOf(MessageResult.FetchGroupEnum.class));
 
-    public static final MessageResult.FetchGroup HEADERS = new FetchGroupImpl(MessageResult.FetchGroup.HEADERS);
+    public static final MessageResult.FetchGroup HEADERS = new FetchGroupImpl(EnumSet.of(MessageResult.FetchGroupEnum.HEADERS));
 
-    public static final MessageResult.FetchGroup FULL_CONTENT = new FetchGroupImpl(MessageResult.FetchGroup.FULL_CONTENT);
+    public static final MessageResult.FetchGroup FULL_CONTENT = new FetchGroupImpl(EnumSet.of(MessageResult.FetchGroupEnum.FULL_CONTENT));
 
-    public static final MessageResult.FetchGroup BODY_CONTENT = new FetchGroupImpl(MessageResult.FetchGroup.BODY_CONTENT);
+    public static final MessageResult.FetchGroup BODY_CONTENT = new FetchGroupImpl(EnumSet.of(MessageResult.FetchGroupEnum.BODY_CONTENT));
 
-    private int content = MessageResult.FetchGroup.MINIMAL;
+    private EnumSet<MessageResult.FetchGroupEnum> content;
 
     private Set<PartContentDescriptor> partContentDescriptors;
 
     public FetchGroupImpl() {
-        this(0, new HashSet<>());
+        this(EnumSet.noneOf(MessageResult.FetchGroupEnum.class), new HashSet<>());
     }
 
-    public FetchGroupImpl(int content) {
+    public FetchGroupImpl(EnumSet<MessageResult.FetchGroupEnum> content) {
         this(content, new HashSet<>());
     }
 
-    public FetchGroupImpl(int content, Set<PartContentDescriptor> partContentDescriptors) {
-        this.content = content;
+    public FetchGroupImpl(EnumSet<MessageResult.FetchGroupEnum> content, Set<PartContentDescriptor> partContentDescriptors) {
+        this.content = EnumSet.copyOf(content);
         this.partContentDescriptors = partContentDescriptors;
     }
 
     @Override
-    public int content() {
-        return content;
+    public EnumSet<MessageResult.FetchGroupEnum> content() {
+        return EnumSet.copyOf(content);
     }
 
-    public void or(int content) {
-        this.content = this.content | content;
+    public void union(MessageResult.FetchGroupEnum... additions) {
+        this.content.addAll(Arrays.asList(additions));
+    }
+
+    public void union(EnumSet<MessageResult.FetchGroupEnum> addition) {
+        this.content.addAll(addition);
     }
 
     public String toString() {
@@ -80,7 +86,7 @@ public class FetchGroupImpl implements MessageResult.FetchGroup {
      * @param content
      *            bitwise content constant
      */
-    public void addPartContent(MimePath path, int content) {
+    public void addPartContent(MimePath path, MessageResult.FetchGroupEnum content) {
         if (partContentDescriptors == null) {
             partContentDescriptors = new HashSet<>();
         }
@@ -93,6 +99,6 @@ public class FetchGroupImpl implements MessageResult.FetchGroup {
                 return result;
             });
 
-        currentDescriptor.or(content);
+        currentDescriptor.union(content);
     }
 }

@@ -72,7 +72,7 @@ public class MailboxAppenderTest {
         testee.append(mimeMessage, USER, FOLDER);
 
         MessageResultIterator messages = mailboxManager.getMailbox(MailboxPath.forUser(USER, FOLDER), session)
-            .getMessages(MessageRange.all(), new FetchGroupImpl(MessageResult.FetchGroup.FULL_CONTENT), session);
+            .getMessages(MessageRange.all(), FetchGroupImpl.FULL_CONTENT, session);
 
         assertThat(messages).toIterable()
             .hasSize(1);
@@ -86,7 +86,7 @@ public class MailboxAppenderTest {
         testee.append(mimeMessage, USER, FOLDER);
 
         MessageResultIterator messages = mailboxManager.getMailbox(mailboxPath, session)
-            .getMessages(MessageRange.all(), new FetchGroupImpl(MessageResult.FetchGroup.FULL_CONTENT), session);
+            .getMessages(MessageRange.all(), FetchGroupImpl.FULL_CONTENT, session);
 
         assertThat(messages).toIterable()
             .hasSize(1);
@@ -103,7 +103,7 @@ public class MailboxAppenderTest {
         testee.append(mimeMessage, USER, "." + FOLDER);
 
         MessageResultIterator messages = mailboxManager.getMailbox(MailboxPath.forUser(USER, FOLDER), session)
-            .getMessages(MessageRange.all(), new FetchGroupImpl(MessageResult.FetchGroup.FULL_CONTENT), session);
+            .getMessages(MessageRange.all(), FetchGroupImpl.FULL_CONTENT, session);
 
         assertThat(messages).toIterable()
             .hasSize(1);
@@ -114,7 +114,7 @@ public class MailboxAppenderTest {
         testee.append(mimeMessage, USER, FOLDER + "/any");
 
         MessageResultIterator messages = mailboxManager.getMailbox(MailboxPath.forUser(USER, FOLDER + ".any"), session)
-            .getMessages(MessageRange.all(), new FetchGroupImpl(MessageResult.FetchGroup.FULL_CONTENT), session);
+            .getMessages(MessageRange.all(), FetchGroupImpl.FULL_CONTENT, session);
 
         assertThat(messages).toIterable()
             .hasSize(1);

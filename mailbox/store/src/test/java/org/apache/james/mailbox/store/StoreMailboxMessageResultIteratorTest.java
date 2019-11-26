@@ -24,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -31,18 +32,21 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import javax.mail.Flags;
 import javax.mail.util.SharedByteArrayInputStream;
 
 import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.exception.MailboxException;
+import org.apache.james.mailbox.model.FetchGroupImpl;
 import org.apache.james.mailbox.model.Mailbox;
 import org.apache.james.mailbox.model.MailboxCounters;
-import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MessageMetaData;
 import org.apache.james.mailbox.model.MessageRange;
+import org.apache.james.mailbox.model.MessageResult;
 import org.apache.james.mailbox.model.MessageResult.FetchGroup;
+import org.apache.james.mailbox.model.MessageResult.FetchGroupEnum;
 import org.apache.james.mailbox.model.TestId;
 import org.apache.james.mailbox.model.UpdatedFlags;
 import org.apache.james.mailbox.store.mail.MessageMapper;
@@ -51,6 +55,9 @@ import org.apache.james.mailbox.store.mail.model.MailboxMessage;
 import org.apache.james.mailbox.store.mail.model.impl.PropertyBuilder;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailboxMessage;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import com.google.common.collect.Iterables;
 
@@ -63,8 +70,8 @@ public class StoreMailboxMessageResultIteratorTest {
         }
 
         @Override
-        public int content() {
-            return FetchGroup.MINIMAL;
+        public EnumSet<FetchGroupEnum> content() {
+            return EnumSet.noneOf(FetchGroupEnum.class);
         }
     }
 
@@ -235,5 +242,24 @@ public class StoreMailboxMessageResultIteratorTest {
         BatchSizes batchSize = BatchSizes.uniqueBatchSize(42);
         StoreMessageResultIterator iterator = new StoreMessageResultIterator(new TestMessageMapper(messages), null, findRange, batchSize, new TestFetchGroup());
         assertThat(iterator.hasNext()).isFalse();
+    }
+
+    static Stream<Arguments> getFetchTypeShouldSelectTheRightProfile() {
+        return Stream.of(
+            Arguments.arguments(EnumSet.noneOf(FetchGroupEnum.class), MessageMapper.FetchType.Metadata),
+            Arguments.arguments(EnumSet.of(FetchGroupEnum.HEADERS), MessageMapper.FetchType.Headers),
+            Arguments.arguments(EnumSet.of(FetchGroupEnum.BODY_CONTENT), MessageMapper.FetchType.Body),
+            Arguments.arguments(EnumSet.of(FetchGroupEnum.BODY_CONTENT, FetchGroupEnum.HEADERS), MessageMapper.FetchType.Full),
+            Arguments.arguments(EnumSet.of(FetchGroupEnum.FULL_CONTENT), MessageMapper.FetchType.Full),
+            Arguments.arguments(EnumSet.of(FetchGroupEnum.MIME_HEADERS), MessageMapper.FetchType.Metadata),
+            Arguments.arguments(EnumSet.of(FetchGroupEnum.MIME_DESCRIPTOR), MessageMapper.FetchType.Metadata),
+            Arguments.arguments(EnumSet.of(FetchGroupEnum.MIME_CONTENT), MessageMapper.FetchType.Metadata)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void getFetchTypeShouldSelectTheRightProfile(EnumSet<FetchGroupEnum> fetchGroups, MessageMapper.FetchType fetchType) {
+        assertThat(StoreMessageResultIterator.getFetchType(new FetchGroupImpl(fetchGroups))).isEqualTo(fetchType);
     }
 }

@@ -47,6 +47,8 @@ import org.apache.james.mailbox.store.mail.model.MailboxMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.annotations.VisibleForTesting;
+
 public class StoreMessageResultIterator implements MessageResultIterator {
     private static final Logger LOGGER = LoggerFactory.getLogger(StoreMessageResultIterator.class);
 
@@ -79,36 +81,13 @@ public class StoreMessageResultIterator implements MessageResultIterator {
      * Use the passed {@link FetchGroup} and calculate the right
      * {@link FetchType} for it
      */
-    private static FetchType getFetchType(FetchGroup group) {
-        int content = group.content();
-        boolean headers = false;
-        boolean body = false;
-        boolean full = false;
+    @VisibleForTesting
+    static FetchType getFetchType(FetchGroup group) {
+        boolean headers = group.content().contains(MessageResult.FetchGroupEnum.HEADERS);
+        boolean body = group.content().contains(MessageResult.FetchGroupEnum.BODY_CONTENT);
+        boolean full = group.getPartContentDescriptors().size() > 0
+                || group.content().contains(MessageResult.FetchGroupEnum.FULL_CONTENT);
 
-        if ((content & FetchGroup.HEADERS) > 0) {
-            headers = true;
-            content -= FetchGroup.HEADERS;
-        }
-        if (group.getPartContentDescriptors().size() > 0) {
-            full = true;
-        }
-        if ((content & FetchGroup.BODY_CONTENT) > 0) {
-            body = true;
-            content -= FetchGroup.BODY_CONTENT;
-        }
-
-        if ((content & FetchGroup.FULL_CONTENT) > 0) {
-            full = true;
-            content -= FetchGroup.FULL_CONTENT;
-        }
-
-        if ((content & FetchGroup.MIME_DESCRIPTOR) > 0) {
-            // If we need the mimedescriptor we MAY need the full content later
-            // too.
-            // This gives us no other choice then request it
-            full = true;
-            content -= FetchGroup.MIME_DESCRIPTOR;
-        }
         if (full || (body && headers)) {
             return FetchType.Full;
         } else if (body) {

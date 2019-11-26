@@ -20,6 +20,7 @@ package org.apache.james.mailbox.tools.copier;
 
 import java.io.IOException;
 import java.util.Calendar;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -52,8 +53,8 @@ public class MailboxCopierImpl implements MailboxCopier {
     private static final FetchGroup GROUP = new FetchGroup() {
 
         @Override
-        public int content() {
-            return FULL_CONTENT;
+        public EnumSet<MessageResult.FetchGroupEnum> content() {
+            return EnumSet.of(MessageResult.FetchGroupEnum.FULL_CONTENT);
         }
 
         @Override
