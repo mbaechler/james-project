@@ -27,8 +27,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.james.mailbox.model.MessageResult;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class MailboxMessageResultUtilsTest {
 
@@ -42,13 +42,13 @@ public class MailboxMessageResultUtilsTest {
 
     List<MessageResult.Header> headers;
 
-    private static class Header implements MessageResult.Header {
+    static class Header implements MessageResult.Header {
 
         public String name;
 
         public String value;
 
-        public Header(String name) {
+        Header(String name) {
             this.name = name;
             value = "Value";
         }
@@ -77,8 +77,8 @@ public class MailboxMessageResultUtilsTest {
 
     }
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         headerOne = new Header("One");
         headerTwo = new Header("Two");
         headerThree = new Header("Three");
@@ -89,7 +89,7 @@ public class MailboxMessageResultUtilsTest {
     }
 
     @Test
-    public void testGetAllContent() {
+    void testGetAllContent() {
         List<MessageResult.Header> results = MessageResultUtils.getAll(headers.iterator());
         assertThat(results.size()).isEqualTo(3);
         assertThat(results.get(0)).isEqualTo(headerOne);
@@ -98,7 +98,7 @@ public class MailboxMessageResultUtilsTest {
     }
 
     @Test
-    public void testGetMatching() throws Exception {
+    void testGetMatching() throws Exception {
 
         List<MessageResult.Header> results = MessageResultUtils
                 .getMatching(NAMES, headers.iterator());
@@ -108,7 +108,7 @@ public class MailboxMessageResultUtilsTest {
     }
 
     @Test
-    public void testGetNotMatching() throws Exception {
+    void testGetNotMatching() throws Exception {
 
         List<MessageResult.Header> results = MessageResultUtils.getNotMatching(NAMES, headers
                 .iterator());
@@ -117,7 +117,7 @@ public class MailboxMessageResultUtilsTest {
     }
 
     @Test
-    public void testGetMatchingSingle() throws Exception {
+    void testGetMatchingSingle() throws Exception {
         assertThat(MessageResultUtils.getMatching("One", headers
                 .iterator())).isEqualTo(headerOne);
         assertThat(MessageResultUtils.getMatching("Three",
