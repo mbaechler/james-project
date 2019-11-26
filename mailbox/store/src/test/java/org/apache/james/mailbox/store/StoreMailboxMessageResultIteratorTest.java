@@ -20,6 +20,7 @@
 package org.apache.james.mailbox.store;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,13 +50,13 @@ import org.apache.james.mailbox.store.mail.model.DefaultMessageId;
 import org.apache.james.mailbox.store.mail.model.MailboxMessage;
 import org.apache.james.mailbox.store.mail.model.impl.PropertyBuilder;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailboxMessage;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Iterables;
 
 public class StoreMailboxMessageResultIteratorTest {
 
-    private final class TestFetchGroup implements FetchGroup {
+    static class TestFetchGroup implements FetchGroup {
         @Override
         public Set<PartContentDescriptor> getPartContentDescriptors() {
             return new HashSet<>();
@@ -67,7 +68,7 @@ public class StoreMailboxMessageResultIteratorTest {
         }
     }
 
-    private final class TestMessageMapper implements MessageMapper {
+    static class TestMessageMapper implements MessageMapper {
         private final MessageRange messageRange;
 
         public TestMessageMapper(MessageRange messageRange) {
@@ -200,7 +201,7 @@ public class StoreMailboxMessageResultIteratorTest {
     }
 
     @Test
-    public void testBatching() {
+    void testBatching() {
         MessageRange range = MessageRange.range(MessageUid.of(1), MessageUid.of(10));
         BatchSizes batchSize = BatchSizes.uniqueBatchSize(3);
         StoreMessageResultIterator it = new StoreMessageResultIterator(new TestMessageMapper(MessageRange.all()), null, range, batchSize, new TestFetchGroup());
@@ -211,24 +212,24 @@ public class StoreMailboxMessageResultIteratorTest {
     }
 
     @Test
-    public void nextShouldReturnFirstElement() {
+    void nextShouldReturnFirstElement() {
         MessageRange range = MessageUid.of(1).toRange();
         BatchSizes batchSize = BatchSizes.uniqueBatchSize(42);
         StoreMessageResultIterator iterator = new StoreMessageResultIterator(new TestMessageMapper(range), null, range, batchSize, new TestFetchGroup());
         assertThat(iterator.next()).isNotNull();
     }
     
-    @Test(expected = NoSuchElementException.class)
-    public void nextShouldThrowWhenNoElement() {
+    @Test
+    void nextShouldThrowWhenNoElement() {
         MessageRange messages = MessageUid.of(1).toRange();
         MessageRange findRange = MessageUid.of(2).toRange();
         BatchSizes batchSize = BatchSizes.uniqueBatchSize(42);
         StoreMessageResultIterator iterator = new StoreMessageResultIterator(new TestMessageMapper(messages), null, findRange, batchSize, new TestFetchGroup());
-        iterator.next();
+        assertThatThrownBy(iterator::next).isInstanceOf(NoSuchElementException.class);
     }
     
     @Test
-    public void hasNextShouldReturnFalseWhenNoElement() {
+    void hasNextShouldReturnFalseWhenNoElement() {
         MessageRange messages = MessageUid.of(1).toRange();
         MessageRange findRange = MessageUid.of(2).toRange();
         BatchSizes batchSize = BatchSizes.uniqueBatchSize(42);
