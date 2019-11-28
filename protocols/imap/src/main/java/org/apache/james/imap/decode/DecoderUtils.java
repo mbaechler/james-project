@@ -19,6 +19,8 @@
 
 package org.apache.james.imap.decode;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -97,7 +99,7 @@ public final class DecoderUtils {
      * @throws DecodingException
      *             when this conversion fails
      */
-    public static Date decodeDateTime(CharSequence chars) throws DecodingException {
+    public static LocalDateTime decodeDateTime(CharSequence chars) throws DecodingException {
         if (isDateTime(chars)) {
             char dayHigh = chars.charAt(0);
             char dayLow = chars.charAt(1);
@@ -136,7 +138,7 @@ public final class DecoderUtils {
             GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("GMT"), Locale.US);
             calendar.clear();
             calendar.set(year, month, day, hour, minute, second);
-            return calendar.getTime();
+            return LocalDateTime.ofInstant(calendar.getTime().toInstant(), ZoneId.systemDefault());
         } else {
             final String message;
             if (chars == null) {
