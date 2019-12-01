@@ -22,7 +22,6 @@ package org.apache.james.imap.decode;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.TimeZone;
