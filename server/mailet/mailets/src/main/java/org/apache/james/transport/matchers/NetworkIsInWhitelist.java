@@ -37,6 +37,9 @@ import org.apache.mailet.Mail;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
 /**
  * <p>
  * Matcher which lookup whitelisted networks in a database. The networks can be
@@ -56,11 +59,6 @@ public class NetworkIsInWhitelist extends AbstractSQLWhitelistMatcher {
     private DNSService dns;
     private String selectNetworks;
 
-    /**
-     * Injection setter for the DNSService.
-     * 
-     * @param dns
-     */
     @Inject
     public void setDNSService(DNSService dns) {
         this.dns = dns;
@@ -80,59 +78,38 @@ public class NetworkIsInWhitelist extends AbstractSQLWhitelistMatcher {
 
     @Override
     protected boolean matchedWhitelist(MailAddress recipientMailAddress, Mail mail) throws MessagingException {
-        Connection conn = null;
-        PreparedStatement selectStmt = null;
-        ResultSet selectRS = null;
-        try {
-            String recipientUser = recipientMailAddress.getLocalPart().toLowerCase(Locale.US);
-            String recipientHost = recipientMailAddress.getDomain().asString();
-
-            if (conn == null) {
-                conn = datasource.getConnection();
-            }
-
-            List<String> nets = new ArrayList<>();
-            try {
-                if (selectStmt == null) {
-                    selectStmt = conn.prepareStatement(selectNetworks);
-                }
-                selectStmt.setString(1, recipientUser);
-                selectStmt.setString(2, recipientHost);
-                selectRS = selectStmt.executeQuery();
-                while (selectRS.next()) {
-                    nets.add(selectRS.getString(1));
-                }
-            } finally {
-                jdbcUtil.closeJDBCResultSet(selectRS);
-                jdbcUtil.closeJDBCStatement(selectStmt);
-            }
-            NetMatcher matcher = new NetMatcher(nets, dns);
-            boolean matched = matcher.matchInetNetwork(mail.getRemoteAddr());
-
-            if (!matched) {
-                try {
-                    selectStmt = conn.prepareStatement(selectNetworks);
-                    selectStmt.setString(1, "*");
-                    selectStmt.setString(2, recipientHost);
-                    selectRS = selectStmt.executeQuery();
-                    nets = new ArrayList<>();
-                    while (selectRS.next()) {
-                        nets.add(selectRS.getString(1));
-                    }
-                } finally {
-                    jdbcUtil.closeJDBCResultSet(selectRS);
-                    jdbcUtil.closeJDBCStatement(selectStmt);
-                }
-                matcher = new NetMatcher(nets, dns);
-                matched = matcher.matchInetNetwork(mail.getRemoteAddr());
-            }
-            return matched;
+        String recipientUser = recipientMailAddress.getLocalPart().toLowerCase(Locale.US);
+        String recipientHost = recipientMailAddress.getDomain().asString();
+        try (Connection conn = datasource.getConnection()) {
+            return Flux
+                .concat(
+                    Mono.fromCallable(() -> loadNetworks(recipientUser, recipientHost, conn)),
+                    Mono.fromCallable(() -> loadNetworksForHost(recipientHost, conn)))
+                .map(nets -> new NetMatcher(nets, dns))
+                .any(matcher -> matcher.matchInetNetwork(mail.getRemoteAddr()))
+                .block();
         } catch (SQLException sqle) {
             LOGGER.error("Error accessing database", sqle);
             throw new MessagingException("Exception thrown", sqle);
-        } finally {
-            theJDBCUtil.closeJDBCConnection(conn);
         }
+    }
+
+    private List<String> loadNetworksForHost(String recipientHost, Connection conn) throws SQLException {
+        return loadNetworks("*", recipientHost, conn);
+    }
+
+    private List<String> loadNetworks(String recipientUser, String recipientHost, Connection conn) throws SQLException {
+        List<String> nets = new ArrayList<>();
+        try (PreparedStatement statement = conn.prepareStatement(selectNetworks)) {
+            statement.setString(1, recipientUser);
+            statement.setString(2, recipientHost);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    nets.add(resultSet.getString(1));
+                }
+            }
+        }
+        return nets;
     }
 
     @Override
