@@ -125,17 +125,14 @@ class InVmEventDeliveryTest {
         }
 
         @Test
-        void deliverShouldNotDeliverWhenListenerGetException() {
+        void deliverShouldNotFailWhenListenerGetException() {
             when(listener.getExecutionMode()).thenReturn(MailboxListener.ExecutionMode.ASYNCHRONOUS);
             doThrow(new RuntimeException())
                 .when(listener).event(EVENT);
 
-            assertThatThrownBy(() -> inVmEventDelivery.deliver(listener, EVENT, DeliveryOption.none())
+            assertThatCode(() -> inVmEventDelivery.deliver(listener, EVENT, DeliveryOption.none())
                 .block())
-            .isInstanceOf(RuntimeException.class);
-
-            assertThat(listener.numberOfEventCalls())
-                .isEqualTo(0);
+            .doesNotThrowAnyException();
         }
 
         @Test
