@@ -138,7 +138,7 @@ public class SimpleMessageSearchIndex implements MessageSearchIndex {
                 hitSet.add(m);
             }
         }
-        return ImmutableList.copyOf(new MessageSearches(hitSet.iterator(), query, textExtractor).iterator());
+        return ImmutableList.copyOf(new MessageSearches(hitSet.iterator(), query, textExtractor, attachment -> attachment.getStream()).iterator());
     }
 
     @Override

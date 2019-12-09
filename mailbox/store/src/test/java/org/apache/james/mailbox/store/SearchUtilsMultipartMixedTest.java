@@ -29,6 +29,7 @@ import java.util.Locale;
 
 import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.extractor.TextExtractor;
+import org.apache.james.mailbox.model.Attachment;
 import org.apache.james.mailbox.model.SearchQuery;
 import org.apache.james.mailbox.store.mail.model.MailboxMessage;
 import org.apache.james.mailbox.store.search.MessageSearches;
@@ -129,7 +130,7 @@ class SearchUtilsMultipartMixedTest {
         Iterator<MailboxMessage> messages = null;
         SearchQuery query = null; 
         TextExtractor textExtractor = null;
-        messageSearches = new MessageSearches(messages, query, textExtractor);
+        messageSearches = new MessageSearches(messages, query, textExtractor, Attachment::getStream);
     }
     
 

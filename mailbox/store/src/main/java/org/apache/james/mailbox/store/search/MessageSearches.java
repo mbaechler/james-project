@@ -39,6 +39,7 @@ import java.util.stream.Stream;
 
 import javax.mail.Flags;
 
+import org.apache.james.mailbox.AttachmentContentLoader;
 import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.ModSeq;
 import org.apache.james.mailbox.exception.MailboxException;
@@ -92,11 +93,13 @@ public class MessageSearches implements Iterable<SimpleMessageSearchIndex.Search
     private final Iterator<MailboxMessage> messages;
     private final SearchQuery query;
     private final TextExtractor textExtractor;
+    private final AttachmentContentLoader attachmentContentLoader;
 
-    public MessageSearches(Iterator<MailboxMessage> messages, SearchQuery query, TextExtractor textExtractor) {
+    public MessageSearches(Iterator<MailboxMessage> messages, SearchQuery query, TextExtractor textExtractor, AttachmentContentLoader attachmentContentLoader) {
         this.messages = messages;
         this.query = query;
         this.textExtractor = textExtractor;
+        this.attachmentContentLoader = attachmentContentLoader;
     }
 
     @Override
@@ -260,10 +263,11 @@ public class MessageSearches implements Iterable<SimpleMessageSearchIndex.Search
 
     private Stream<String> toAttachmentContent(Attachment attachment) {
         try {
+            InputStream rawData = attachmentContentLoader.load(attachment);
             return OptionalUtils.toStream(
                     textExtractor
                          .extractContent(
-                             attachment.getStream(),
+                             rawData,
                              attachment.getType())
                         .getTextualContent());
             } catch (Exception e) {
