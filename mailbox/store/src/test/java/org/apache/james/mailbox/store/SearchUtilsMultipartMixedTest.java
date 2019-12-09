@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Locale;
 
+import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.extractor.TextExtractor;
 import org.apache.james.mailbox.model.Attachment;
@@ -130,7 +131,8 @@ class SearchUtilsMultipartMixedTest {
         Iterator<MailboxMessage> messages = null;
         SearchQuery query = null; 
         TextExtractor textExtractor = null;
-        messageSearches = new MessageSearches(messages, query, textExtractor, Attachment::getStream);
+        MailboxSession session = null;
+        messageSearches = new MessageSearches(messages, query, textExtractor, (attachment, ignore) -> attachment.getStream(), session);
     }
     
 

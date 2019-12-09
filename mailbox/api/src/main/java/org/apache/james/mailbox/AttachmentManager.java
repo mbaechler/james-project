@@ -19,6 +19,8 @@
 
 package org.apache.james.mailbox;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
 
@@ -28,7 +30,7 @@ import org.apache.james.mailbox.model.Attachment;
 import org.apache.james.mailbox.model.AttachmentId;
 import org.apache.james.mailbox.model.MessageId;
 
-public interface AttachmentManager {
+public interface AttachmentManager extends AttachmentContentLoader {
 
     boolean exists(AttachmentId attachmentId, MailboxSession session) throws MailboxException;
 
@@ -39,4 +41,12 @@ public interface AttachmentManager {
     void storeAttachment(Attachment attachment, MailboxSession mailboxSession) throws MailboxException;
 
     void storeAttachmentsForMessage(Collection<Attachment> attachments, MessageId ownerMessageId, MailboxSession mailboxSession) throws MailboxException;
+
+    InputStream loadAttachmentContent(AttachmentId attachmentId, MailboxSession mailboxSession) throws AttachmentNotFoundException, IOException;
+
+    @Override
+    default InputStream load(Attachment attachment, MailboxSession mailboxSession) throws IOException, AttachmentNotFoundException {
+        return loadAttachmentContent(attachment.getAttachmentId(), mailboxSession);
+    }
+
 }

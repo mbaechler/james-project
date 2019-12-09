@@ -19,6 +19,8 @@
 
 package org.apache.james.mailbox.store;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
 
@@ -34,7 +36,6 @@ import org.apache.james.mailbox.model.Attachment;
 import org.apache.james.mailbox.model.AttachmentId;
 import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.mailbox.store.mail.AttachmentMapperFactory;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -113,4 +114,11 @@ public class StoreAttachmentManager implements AttachmentManager {
         return attachmentMapperFactory.getAttachmentMapper(mailboxSession).getRelatedMessageIds(attachmentId);
     }
 
+    @Override
+    public InputStream loadAttachmentContent(AttachmentId attachmentId, MailboxSession mailboxSession) throws AttachmentNotFoundException, IOException {
+        if (!userHasAccessToAttachment(attachmentId, mailboxSession)) {
+            throw new AttachmentNotFoundException(attachmentId.getId());
+        }
+        return attachmentMapperFactory.getAttachmentMapper(mailboxSession).loadAttachmentContent(attachmentId);
+    }
 }

@@ -22,10 +22,11 @@ package org.apache.james.mailbox;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.james.mailbox.exception.AttachmentNotFoundException;
 import org.apache.james.mailbox.model.Attachment;
 
 public interface AttachmentContentLoader {
 
-    InputStream load(Attachment attachment) throws IOException;
+    InputStream load(Attachment attachment, MailboxSession mailboxSession) throws IOException, AttachmentNotFoundException;
 
 }
