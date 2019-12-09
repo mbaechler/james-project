@@ -36,6 +36,7 @@ import org.apache.james.mailbox.model.Attachment;
 import org.apache.james.mailbox.model.AttachmentId;
 import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.mailbox.store.mail.AttachmentMapper;
+import org.apache.james.mailbox.store.streaming.CountingInputStream;
 import org.apache.james.util.ReactorUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -120,12 +121,19 @@ public class CassandraAttachmentMapper implements AttachmentMapper {
     }
 
     @Override
-    public void storeAttachmentForOwner(Attachment attachment, Username owner) throws MailboxException {
-        ownerDAO.addOwner(attachment.getAttachmentId(), owner)
-            .then(blobStore.save(blobStore.getDefaultBucketName(), attachment.getBytes()))
-            .map(blobId -> CassandraAttachmentDAOV2.from(attachment, blobId))
+    public Attachment storeAttachmentForOwner(String contentType, InputStream inputStream, Username owner) throws MailboxException {
+        //FIXME: try to find a more performant counting inputstream
+        CountingInputStream countingInputStream = new CountingInputStream(inputStream);
+        AttachmentId attachmentId = AttachmentId.random();
+        ownerDAO.addOwner(attachmentId, owner)
+            .then(blobStore.save(blobStore.getDefaultBucketName(), countingInputStream))
+            .map(blobId -> new DAOAttachment(attachmentId, blobId, contentType, countingInputStream.getOctetCount()))
             .flatMap(attachmentDAOV2::storeAttachment)
             .block();
+        return Attachment.builder()
+            .attachmentId(attachmentId)
+            .type(contentType)
+            .build();
     }
 
     @Override

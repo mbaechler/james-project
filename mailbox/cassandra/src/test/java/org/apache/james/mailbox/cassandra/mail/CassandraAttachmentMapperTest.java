@@ -34,7 +34,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 @ExtendWith(CassandraRestartExtension.class)
 class CassandraAttachmentMapperTest extends AttachmentMapperTest {
-
+/*
     private static final CassandraModule MODULES = CassandraModule.aggregateModules(
         CassandraAttachmentModule.MODULE,
         CassandraBlobModule.MODULE);
@@ -52,4 +52,6 @@ class CassandraAttachmentMapperTest extends AttachmentMapperTest {
     protected MessageId generateMessageId() {
         return new CassandraMessageId.Factory().generate();
     }
+    
+ */
 }

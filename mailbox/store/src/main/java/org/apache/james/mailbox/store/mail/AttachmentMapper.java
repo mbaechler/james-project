@@ -20,6 +20,7 @@ package org.apache.james.mailbox.store.mail;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.util.Collection;
 import java.util.List;
 
@@ -39,7 +40,7 @@ public interface AttachmentMapper extends Mapper {
 
     List<Attachment> getAttachments(Collection<AttachmentId> attachmentIds);
 
-    void storeAttachmentForOwner(Attachment attachment, Username owner) throws MailboxException;
+    Attachment storeAttachmentForOwner(String contentType, InputStream attachmentContent, Username owner) throws MailboxException, UncheckedIOException;
 
     void storeAttachmentsForMessage(Collection<Attachment> attachments, MessageId ownerMessageId) throws MailboxException;
 

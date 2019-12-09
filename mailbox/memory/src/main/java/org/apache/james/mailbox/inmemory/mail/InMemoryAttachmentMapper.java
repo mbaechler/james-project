@@ -21,11 +21,13 @@ package org.apache.james.mailbox.inmemory.mail;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.james.core.Username;
 import org.apache.james.mailbox.exception.AttachmentNotFoundException;
 import org.apache.james.mailbox.exception.MailboxException;
@@ -78,10 +80,26 @@ public class InMemoryAttachmentMapper implements AttachmentMapper {
     }
 
     @Override
-    public void storeAttachmentForOwner(Attachment attachment, Username owner) throws MailboxException {
-        attachmentsById.put(attachment.getAttachmentId(), attachment);
-        attachmentsRawContentById.put(attachment.getAttachmentId(), attachment.getBytes());
-        ownersByAttachmentId.put(attachment.getAttachmentId(), owner);
+    public Attachment storeAttachmentForOwner(String contentType, InputStream inputStream, Username owner) throws MailboxException, UncheckedIOException {
+        byte[] bytes = readToBytes(inputStream);
+        Attachment attachment = Attachment.builder()
+                .bytes(bytes)
+                .type(contentType)
+                .attachmentId(AttachmentId.random())
+                .build();
+            attachmentsById.put(attachment.getAttachmentId(), attachment);
+            attachmentsRawContentById.put(attachment.getAttachmentId(), bytes);
+            ownersByAttachmentId.put(attachment.getAttachmentId(), owner);
+            return attachment;
+
+    }
+
+    private byte[] readToBytes(InputStream inputStream) {
+        try (InputStream closableInputStream = inputStream) {
+            return IOUtils.toByteArray(closableInputStream);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override
