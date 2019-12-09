@@ -71,6 +71,7 @@ public class Attachment {
             if (attachmentId != null) {
                 return attachmentId;
             }
+            //EVIL
             return AttachmentId.random();
         }
 

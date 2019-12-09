@@ -517,6 +517,7 @@ public class StoreMessageManager implements MessageManager {
      * Create a new {@link MailboxMessage} for the given data
      */
     protected MailboxMessage createMessage(Date internalDate, int size, int bodyStartOctet, SharedInputStream content, Flags flags, PropertyBuilder propertyBuilder, List<MessageAttachment> attachments) throws MailboxException {
+        //EVIL
         return new SimpleMailboxMessage(messageIdFactory.generate(), internalDate, size, bodyStartOctet, content, flags, propertyBuilder, getMailboxEntity().getMailboxId(), attachments);
     }
 
