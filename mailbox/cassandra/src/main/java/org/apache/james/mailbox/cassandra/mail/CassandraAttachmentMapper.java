@@ -19,6 +19,9 @@
 
 package org.apache.james.mailbox.cassandra.mail;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
 
@@ -90,6 +93,15 @@ public class CassandraAttachmentMapper implements AttachmentMapper {
             .flatMap(this::getAttachmentsAsMono)
             .collect(Guavate.toImmutableList())
             .block();
+    }
+
+    @Override
+    public InputStream loadAttachmentContent(AttachmentId attachmentId) throws AttachmentNotFoundException, IOException {
+        return attachmentDAOV2.getAttachment(attachmentId)
+            .map(daoAttachment -> blobStore.read(blobStore.getDefaultBucketName(), daoAttachment.getBlobId()))
+            .switchIfEmpty(attachmentDAO.getAttachmentAsBytes(attachmentId).map(ByteArrayInputStream::new))
+            .blockOptional()
+            .orElseThrow(() -> new AttachmentNotFoundException(attachmentId.toString()));
     }
 
     public Mono<Attachment> getAttachmentsAsMono(AttachmentId attachmentId) {

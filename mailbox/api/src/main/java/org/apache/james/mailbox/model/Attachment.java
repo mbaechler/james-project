@@ -104,10 +104,6 @@ public class Attachment {
         return size;
     }
 
-    public InputStream getStream() throws IOException {
-        return new ByteArrayInputStream(bytes);
-    }
-
     /**
      * Be careful the returned array is not a copy of the attachment byte array.
      * Mutating it will mutate the attachment!

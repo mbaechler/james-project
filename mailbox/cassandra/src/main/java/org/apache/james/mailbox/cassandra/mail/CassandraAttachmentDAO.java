@@ -32,6 +32,7 @@ import static org.apache.james.mailbox.cassandra.table.CassandraAttachmentTable.
 import static org.apache.james.mailbox.cassandra.table.CassandraAttachmentTable.TYPE;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 
 import javax.inject.Inject;
@@ -103,6 +104,15 @@ public class CassandraAttachmentDAO {
                 .setString(ID, attachmentId.getId()))
             .map(this::attachment);
     }
+
+    public Mono<byte[]> getAttachmentAsBytes(AttachmentId attachmentId) {
+        Preconditions.checkArgument(attachmentId != null);
+        return cassandraAsyncExecutor.executeSingleRow(
+            selectStatement.bind()
+                .setString(ID, attachmentId.getId()))
+            .map(row -> row.getBytes(PAYLOAD).array());
+    }
+
 
     public Flux<Attachment> retrieveAll() {
         return cassandraAsyncExecutor.executeRows(
