@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import org.apache.james.mailbox.AttachmentContentLoader;
 import org.apache.james.mailbox.MailboxManager.MessageCapabilities;
 import org.apache.james.mailbox.MailboxManager.SearchCapabilities;
 import org.apache.james.mailbox.MailboxSession;
@@ -69,12 +70,14 @@ public class SimpleMessageSearchIndex implements MessageSearchIndex {
     private final MessageMapperFactory messageMapperFactory;
     private final MailboxMapperFactory mailboxMapperFactory;
     private final TextExtractor textExtractor;
-    
+    private final AttachmentContentLoader attachmentContentLoader;
+
     @Inject
-    public SimpleMessageSearchIndex(MessageMapperFactory messageMapperFactory, MailboxMapperFactory mailboxMapperFactory, TextExtractor textExtractor) {
+    public SimpleMessageSearchIndex(MessageMapperFactory messageMapperFactory, MailboxMapperFactory mailboxMapperFactory, TextExtractor textExtractor, AttachmentContentLoader attachmentContentLoader) {
         this.messageMapperFactory = messageMapperFactory;
         this.mailboxMapperFactory = mailboxMapperFactory;
         this.textExtractor = textExtractor;
+        this.attachmentContentLoader = attachmentContentLoader;
     }
     
     @Override
@@ -138,7 +141,7 @@ public class SimpleMessageSearchIndex implements MessageSearchIndex {
                 hitSet.add(m);
             }
         }
-        return ImmutableList.copyOf(new MessageSearches(hitSet.iterator(), query, textExtractor, (attachment, ignore) -> attachment.getStream(), session).iterator());
+        return ImmutableList.copyOf(new MessageSearches(hitSet.iterator(), query, textExtractor, attachmentContentLoader, session).iterator());
     }
 
     @Override

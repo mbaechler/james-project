@@ -92,7 +92,7 @@ class StoreMailboxManagerTest {
         StoreMailboxAnnotationManager annotationManager = new StoreMailboxAnnotationManager(mockedMapperFactory, storeRightManager);
         SessionProviderImpl sessionProvider = new SessionProviderImpl(authenticator, FakeAuthorizator.forUserAndAdmin(ADMIN, CURRENT_USER));
         QuotaComponents quotaComponents = QuotaComponents.disabled(sessionProvider, mockedMapperFactory);
-        MessageSearchIndex index = new SimpleMessageSearchIndex(mockedMapperFactory, mockedMapperFactory, new DefaultTextExtractor());
+        MessageSearchIndex index = new SimpleMessageSearchIndex(mockedMapperFactory, mockedMapperFactory, new DefaultTextExtractor(), null);
 
         storeMailboxManager = new StoreMailboxManager(mockedMapperFactory, sessionProvider,
                 new JVMMailboxPathLocker(), new MessageParser(), messageIdFactory,

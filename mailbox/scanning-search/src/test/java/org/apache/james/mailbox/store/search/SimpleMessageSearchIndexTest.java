@@ -40,7 +40,8 @@ public class SimpleMessageSearchIndexTest extends AbstractMessageSearchIndexTest
             .searchIndex(preInstanciationStage -> new SimpleMessageSearchIndex(
                 preInstanciationStage.getMapperFactory(),
                 preInstanciationStage.getMapperFactory(),
-                new PDFTextExtractor()))
+                new PDFTextExtractor(),
+                null))
             .noPreDeletionHooks()
             .storeQuotaManager()
             .build();
