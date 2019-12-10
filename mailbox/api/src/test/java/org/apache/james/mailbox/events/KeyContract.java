@@ -109,7 +109,7 @@ public interface KeyContract extends EventBusContract {
 
 
                 WAIT_CONDITION.atMost(org.awaitility.Duration.TEN_SECONDS)
-                    .untilAsserted(() -> assertThat(threads.size()).isEqualTo(3));
+                    .untilAsserted(() -> assertThat(threads).hasSize(3));
                 assertThat(threads).doesNotHaveDuplicates();
             } finally {
                 countDownLatch.countDown();
