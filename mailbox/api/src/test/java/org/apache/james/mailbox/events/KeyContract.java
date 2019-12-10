@@ -328,22 +328,9 @@ public interface KeyContract extends EventBusContract {
 
         @Test
         default void dispatchShouldNotifyAsynchronousListener() throws Exception {
-            MailboxListener stack = new MailboxListener() {
-
-                @Override
-                public ExecutionMode getExecutionMode() {
-                    return ExecutionMode.ASYNCHRONOUS;
-                }
-
-                @Override
-                public void event(Event event) throws Exception {
-                    new Throwable().printStackTrace();
-                }
-            };
             MailboxListener listener = newListener();
             when(listener.getExecutionMode()).thenReturn(MailboxListener.ExecutionMode.ASYNCHRONOUS);
             eventBus().register(listener, KEY_1);
-            eventBus().register(stack, KEY_1);
 
             eventBus().dispatch(EVENT, KEY_1).block();
 
