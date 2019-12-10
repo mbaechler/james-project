@@ -108,12 +108,7 @@ public interface GroupContract {
                 eventBus().register(new MailboxListener.GroupMailboxListener() {
                     @Override
                     public Group getDefaultGroup() {
-                        return new GenericGroup("group");
-                    }
-
-                    @Override
-                    public boolean isHandling(Event event) {
-                        return true;
+                        return new GenericGroup("groupA");
                     }
 
                     @Override
@@ -129,11 +124,6 @@ public interface GroupContract {
                     }
 
                     @Override
-                    public boolean isHandling(Event event) {
-                        return true;
-                    }
-
-                    @Override
                     public void event(Event event) throws Exception {
                         threads.add(Thread.currentThread().getName());
                         countDownLatch.await();
@@ -143,11 +133,6 @@ public interface GroupContract {
                     @Override
                     public Group getDefaultGroup() {
                         return new GenericGroup("groupC");
-                    }
-
-                    @Override
-                    public boolean isHandling(Event event) {
-                        return true;
                     }
 
                     @Override
