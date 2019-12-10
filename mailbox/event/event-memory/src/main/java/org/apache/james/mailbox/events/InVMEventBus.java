@@ -106,7 +106,7 @@ public class InVMEventBus implements EventBus {
 
     private Mono<Void> groupDeliveries(Event event) {
         return Flux.fromIterable(groups.entrySet())
-            .flatMap(entry -> groupDelivery(event, entry.getValue(), entry.getKey()))
+            .flatMap(entry -> groupDelivery(event, entry.getValue(), entry.getKey()).subscribeOn(Schedulers.boundedElastic()))
             .then();
     }
 
