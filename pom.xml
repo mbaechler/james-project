@@ -585,6 +585,7 @@
         -->
         <deployTechnicalSiteDirectory />
 
+        <buildId>${git.commit.id.describe}</buildId>
         <james.groupId>org.apache.james</james.groupId>
         <james.protocols.groupId>${james.groupId}.protocols</james.protocols.groupId>
         <activemq.version>5.15.9</activemq.version>
@@ -2474,6 +2475,13 @@
                 <version>${jetty.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.glowroot</groupId>
+                <artifactId>glowroot-agent</artifactId>
+                <version>0.13.5</version>
+                <classifier>dist</classifier>
+                <type>zip</type>
+            </dependency>
+            <dependency>
                 <groupId>org.hamcrest</groupId>
                 <artifactId>java-hamcrest</artifactId>
                 <version>2.0.0.0</version>
@@ -2696,7 +2704,7 @@
                 <plugin>
                     <groupId>com.google.cloud.tools</groupId>
                     <artifactId>jib-maven-plugin</artifactId>
-                    <version>1.5.1</version>
+                    <version>1.8.0</version>
                 </plugin>
                 <plugin>
                     <groupId>net.alchim31.maven</groupId>
@@ -3242,6 +3250,7 @@
                     <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
                     <prefix>git</prefix>
                     <verbose>false</verbose>
+                    <injectAllReactorProjects>true</injectAllReactorProjects>
                     <generateGitPropertiesFile>true</generateGitPropertiesFile>
                     <generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
                     <format>json</format>

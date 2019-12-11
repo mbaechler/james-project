@@ -203,6 +203,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>${james.groupId}</groupId>
+            <artifactId>james-server-cli</artifactId>
+            <scope>runtime</scope> <!-- we want the cli into the docker image -->
+        </dependency>
+        <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
         </dependency>
@@ -221,10 +226,61 @@
             <artifactId>testcontainers</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.glowroot</groupId>
+            <artifactId>glowroot-agent</artifactId>
+            <classifier>dist</classifier>
+            <type>zip</type>
+            <scope>provided</scope> <!-- it will be unzip, we don't want jib to include it as a runtime dependency-->
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>com.google.cloud.tools</groupId>
+                <artifactId>jib-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>docker packaging</id>
+                        <goals>
+                            <goal>dockerBuild</goal>
+                        </goals>
+                        <phase>package</phase>
+                        <configuration>
+                            <to>
+                                <image>james-server-memory:${buildId}</image>
+                            </to>
+                            <container>
+                                <mainClass>org.apache.james.MemoryJamesServerMain</mainClass>
+                                <volumes>
+                                    <volume>/root/conf</volume>
+                                    <volume>/logs</volume>
+                                </volumes>
+                                <jvmFlags>
+                                    <jvmFlag>-Dworking.directory=/root</jvmFlag>
+                                    <jvmFlag>-Dlogback.configurationFile=/root/conf/logback.xml</jvmFlag>
+                                </jvmFlags>
+                                <ports>
+                                    <port>25</port>
+                                    <port>80</port>
+                                    <port>143</port>
+                                    <port>465</port>
+                                    <port>587</port>
+                                    <port>993</port>
+                                    <port>8000</port>
+                                </ports>
+                            </container>
+                            <extraDirectories>
+                                <paths>
+                                    <path>${project.build.directory}/glowroot/</path>
+                                    <path>src/main/jib/</path>
+                                </paths>
+                            </extraDirectories>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
@@ -239,6 +295,19 @@
                             <includeScope>compile</includeScope>
                             <includeScope>runtime</includeScope>
                             <outputDirectory>${project.build.directory}/${project.artifactId}.lib</outputDirectory>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>unpack-glowroot</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>unpack-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <includeGroupIds>org.glowroot</includeGroupIds>
+                            <includeArtifactIds>glowroot-agent</includeArtifactIds>
+                            <outputDirectory>${project.build.directory}/glowroot</outputDirectory>
+                            <excludes>glowroot/lib/glowroot-central-collector-https-linux-alpine.jar,glowroot/lib/glowroot-central-collector-https-osx.jar,glowroot/lib/glowroot-central-collector-https-windows.jar</excludes>
                         </configuration>
                     </execution>
                 </executions>
