@@ -33,7 +33,7 @@ import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
 
 public final class CassandraCluster implements AutoCloseable {
-    public static final String KEYSPACE = "testing";
+    public static final String DEFAULT_TEST_KEYSPACE = "testing";
 
     private static Optional<Exception> startStackTrace = Optional.empty();
     private final CassandraModule module;
@@ -43,7 +43,14 @@ public final class CassandraCluster implements AutoCloseable {
 
     public static CassandraCluster create(CassandraModule module, Host host) {
         assertClusterNotRunning();
-        CassandraCluster cassandraCluster = new CassandraCluster(module, host);
+        CassandraCluster cassandraCluster = new CassandraCluster(module, host, DEFAULT_TEST_KEYSPACE);
+        startStackTrace = Optional.of(new Exception("initial connection call trace"));
+        return cassandraCluster;
+    }
+
+    public static CassandraCluster create(CassandraModule module, Host host, String keyspace) {
+        assertClusterNotRunning();
+        CassandraCluster cassandraCluster = new CassandraCluster(module, host, keyspace);
         startStackTrace = Optional.of(new Exception("initial connection call trace"));
         return cassandraCluster;
     }
@@ -54,12 +61,12 @@ public final class CassandraCluster implements AutoCloseable {
       });
     }
 
-    private CassandraCluster(CassandraModule module, Host host) throws RuntimeException {
+    private CassandraCluster(CassandraModule module, Host host,String keyspace) throws RuntimeException {
         this.module = module;
         try {
             ClusterConfiguration clusterConfiguration = ClusterConfiguration.builder()
                 .host(host)
-                .keyspace(KEYSPACE)
+                .keyspace(keyspace)
                 .createKeyspace()
                 .disableDurableWrites()
                 .build();

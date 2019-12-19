@@ -37,6 +37,10 @@ public class DockerCassandraExtension implements BeforeAllCallback, AfterAllCall
         cassandraContainer = new DockerCassandraRule();
     }
 
+    public DockerCassandraExtension(org.apache.james.backends.cassandra.DockerCassandra container) {
+        cassandraContainer = new DockerCassandraRule(container, container::start, container::stop, ignore -> {});
+    }
+
     @Override
     public void beforeAll(ExtensionContext context) {
         cassandraContainer.start();

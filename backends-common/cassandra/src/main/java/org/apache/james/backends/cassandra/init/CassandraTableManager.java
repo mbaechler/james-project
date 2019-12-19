@@ -19,6 +19,8 @@
 
 package org.apache.james.backends.cassandra.init;
 
+import java.util.List;
+
 import javax.inject.Inject;
 
 import org.apache.james.backends.cassandra.components.CassandraModule;
@@ -26,9 +28,11 @@ import org.apache.james.backends.cassandra.components.CassandraTable;
 import org.apache.james.backends.cassandra.components.CassandraTable.InitializationStatus;
 import org.apache.james.backends.cassandra.utils.CassandraAsyncExecutor;
 
+import com.datastax.driver.core.AbstractTableMetadata;
 import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
+import com.github.steveash.guavate.Guavate;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -58,12 +62,21 @@ public class CassandraTableManager {
 
     public void clearAllTables() {
         CassandraAsyncExecutor executor = new CassandraAsyncExecutor(session);
-        Flux.fromIterable(module.moduleTables())
+        Flux.fromIterable(listAllTables(executor))
                 .publishOn(Schedulers.elastic())
-                .map(CassandraTable::getName)
                 .flatMap(name -> truncate(executor, name))
                 .then()
                 .block();
+    }
+
+    private List<String> listAllTables(CassandraAsyncExecutor executor) {
+        return session.getCluster()
+            .getMetadata()
+            .getKeyspace(session.getLoggedKeyspace())
+            .getTables()
+            .stream()
+            .map(AbstractTableMetadata::getName)
+            .collect(Guavate.toImmutableList());
     }
 
     private Mono<Void> truncate(CassandraAsyncExecutor executor, String name) {

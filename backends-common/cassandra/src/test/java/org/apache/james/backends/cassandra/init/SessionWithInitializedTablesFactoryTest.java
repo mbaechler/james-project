@@ -20,7 +20,7 @@
 package org.apache.james.backends.cassandra.init;
 
 import static com.datastax.driver.core.DataType.text;
-import static org.apache.james.backends.cassandra.CassandraCluster.KEYSPACE;
+import static org.apache.james.backends.cassandra.CassandraCluster.DEFAULT_TEST_KEYSPACE;
 import static org.apache.james.backends.cassandra.versions.CassandraSchemaVersionManager.MAX_VERSION;
 import static org.apache.james.backends.cassandra.versions.CassandraSchemaVersionManager.MIN_VERSION;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -122,7 +122,7 @@ class SessionWithInitializedTablesFactoryTest {
     private static Supplier<Session> createSession(DockerCassandraExtension.DockerCassandra cassandraServer) {
         ClusterConfiguration clusterConfiguration = ClusterConfiguration.builder()
             .host(cassandraServer.getHost())
-            .keyspace(KEYSPACE)
+            .keyspace(DEFAULT_TEST_KEYSPACE)
             .createKeyspace()
             .replicationFactor(1)
             .disableDurableWrites()

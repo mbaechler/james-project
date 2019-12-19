@@ -32,7 +32,8 @@ public class CassandraAuthenticationExtension implements GuiceModuleTestExtensio
     private static final String INVALID_PASSWORD = "bad";
     private static final DockerCassandra authenticatedCassandra = new DockerCassandra("cassandra_3_11_3_auth",
         dockerfileBuilder -> dockerfileBuilder
-            .run("echo 'authenticator: PasswordAuthenticator' >> /etc/cassandra/cassandra.yaml"));
+            .run("echo 'authenticator: PasswordAuthenticator' >> /etc/cassandra/cassandra.yaml"),
+        DockerCassandra.AdditionalContainerStep.IDENTITY);
 
     static {
         authenticatedCassandra.start();

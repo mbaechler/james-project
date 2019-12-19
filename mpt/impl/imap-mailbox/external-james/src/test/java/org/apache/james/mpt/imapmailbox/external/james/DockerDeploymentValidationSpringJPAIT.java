@@ -21,13 +21,13 @@ package org.apache.james.mpt.imapmailbox.external.james;
 
 import org.apache.james.mpt.imapmailbox.external.james.host.docker.CliProvisioningAPI;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.testcontainers.containers.Network;
 
 public class DockerDeploymentValidationSpringJPAIT implements DeploymentValidation {
 
     @RegisterExtension
     DockerJamesExtension dockerJamesRule =
         DockerJamesExtension
-            .imageFromProperty("docker.image.spring.jpa")
+            .imageFromProperty("docker.image.spring.jpa", Network.newNetwork())
             .withProvisioning(CliProvisioningAPI.CliType.SH);
-
 }

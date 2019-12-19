@@ -352,7 +352,7 @@
                                 <image>${docker.openjdk8}</image>
                             </from>
                             <to>
-                                <image>james-server-cassandra:${buildId}</image>
+                                <image>${docker.image.cassandra}</image>
                             </to>
                             <container>
                                 <mainClass>org.apache.james.CassandraJamesServerMain</mainClass>

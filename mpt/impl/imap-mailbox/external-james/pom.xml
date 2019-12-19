@@ -33,6 +33,18 @@
     <dependencies>
         <dependency>
             <groupId>${james.groupId}</groupId>
+            <artifactId>apache-james-backends-cassandra</artifactId>
+            <scope>test</scope>
+            <type>test-jar</type>
+        </dependency>
+        <dependency>
+            <groupId>${james.groupId}</groupId>
+            <artifactId>apache-james-backends-es</artifactId>
+            <scope>test</scope>
+            <type>test-jar</type>
+        </dependency>
+        <dependency>
+            <groupId>${james.groupId}</groupId>
             <artifactId>james-server-app</artifactId>
             <scope>test</scope>
             <version>${project.version}</version>
@@ -42,6 +54,11 @@
                     <artifactId>slf4j-log4j12</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>${james.groupId}</groupId>
+            <artifactId>james-server-cassandra-guice</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>${james.groupId}</groupId>
@@ -98,6 +115,7 @@
                 <configuration>
                     <systemPropertyVariables>
                         <docker.image.jpa>${docker.image.jpa}</docker.image.jpa>
+                        <docker.image.cassandra>${docker.image.cassandra}</docker.image.cassandra>
                         <docker.image.spring.jpa>${docker.image.spring.jpa}</docker.image.spring.jpa>
                     </systemPropertyVariables>
                 </configuration>

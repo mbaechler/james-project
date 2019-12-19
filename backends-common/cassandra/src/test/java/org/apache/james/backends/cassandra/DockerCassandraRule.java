@@ -20,13 +20,37 @@
 package org.apache.james.backends.cassandra;
 
 import org.apache.james.util.Host;
+import org.junit.jupiter.api.function.ThrowingConsumer;
 import org.junit.rules.ExternalResource;
 import org.testcontainers.containers.GenericContainer;
 
 
 public class DockerCassandraRule extends ExternalResource {
 
+    private final DockerCassandra container;
+    private final Runnable start;
+    private final Runnable stop;
+    private final ThrowingConsumer<Boolean> before;
     private boolean allowRestart = false;
+
+
+    public DockerCassandraRule(DockerCassandra container, Runnable start, Runnable stop, ThrowingConsumer<Boolean> before) {
+        this.container = container;
+        this.start = start;
+        this.stop = stop;
+        this.before = before;
+    }
+
+    public DockerCassandraRule() {
+        this(DockerCassandraSingleton.singleton, DockerCassandraSingleton.singleton::start, () -> {
+        }, allowRestart -> {
+            if (allowRestart) {
+                DockerCassandraSingleton.restartAfterMaxTestsPlayed();
+            }
+            DockerCassandraSingleton.incrementTestsPlayed();
+        });
+    }
+
 
     public DockerCassandraRule allowRestart() {
         allowRestart = true;
@@ -35,42 +59,45 @@ public class DockerCassandraRule extends ExternalResource {
 
     @Override
     protected void before() throws Exception {
-        if (allowRestart) {
-            DockerCassandraSingleton.restartAfterMaxTestsPlayed();
+        try {
+            before.accept(allowRestart);
+        } catch (Exception exception) {
+            throw exception;
+        } catch (Throwable throwable) {
+            throw new Exception(throwable);
         }
-        DockerCassandraSingleton.incrementTestsPlayed();
     }
 
     public void start() {
-        DockerCassandraSingleton.singleton.start();
+        start.run();
     }
 
     public void stop() {
-
+        stop.run();
     }
 
     public Host getHost() {
-        return DockerCassandraSingleton.singleton.getHost();
+        return container.getHost();
     }
-    
+
     public String getIp() {
-        return DockerCassandraSingleton.singleton.getIp();
+        return container.getIp();
     }
 
     public int getBindingPort() {
-        return DockerCassandraSingleton.singleton.getBindingPort();
+        return container.getBindingPort();
     }
 
     public GenericContainer<?> getRawContainer() {
-        return DockerCassandraSingleton.singleton.getRawContainer();
+        return container.getRawContainer();
     }
 
     public void pause() {
-        DockerCassandraSingleton.singleton.pause();
+        container.pause();
     }
 
     public void unpause() {
-        DockerCassandraSingleton.singleton.unpause();
+        container.unpause();
     }
 
 }

@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.OutputFrame;
 import org.testcontainers.images.builder.ImageFromDockerfile;
 import org.testcontainers.images.builder.dockerfile.DockerfileBuilder;
@@ -41,6 +42,11 @@ public class DockerCassandra {
 
         DockerfileBuilder applyStep(DockerfileBuilder builder);
     }
+    @FunctionalInterface
+    public interface AdditionalContainerStep {
+        AdditionalContainerStep IDENTITY = builder -> builder;
+        GenericContainer<?> applyStep(GenericContainer<?> container);
+    }
 
     private static final int CASSANDRA_PORT = 9042;
     private static final int CASSANDRA_MEMORY = 650;
@@ -53,13 +59,13 @@ public class DockerCassandra {
 
     @SuppressWarnings("resource")
     public DockerCassandra() {
-        this("cassandra_3_11_3", AdditionalDockerFileStep.IDENTITY);
+        this("cassandra_3_11_3", AdditionalDockerFileStep.IDENTITY, AdditionalContainerStep.IDENTITY);
     }
 
-    public DockerCassandra(String imageName, AdditionalDockerFileStep additionalSteps) {
+    public DockerCassandra(String imageName, AdditionalDockerFileStep additionalSteps, AdditionalContainerStep additionalContainerStep) {
         client = DockerClientFactory.instance().client();
         boolean doNotDeleteImageAfterUsage = false;
-        cassandraContainer = new GenericContainer<>(
+        cassandraContainer = additionalContainerStep.applyStep(new GenericContainer<>(
             new ImageFromDockerfile(imageName,doNotDeleteImageAfterUsage)
                 .withDockerfileFromBuilder(builder ->
                     additionalSteps.applyStep(builder
@@ -71,7 +77,8 @@ public class DockerCassandra {
                         .build()))
             .withTmpFs(ImmutableMap.of("/var/lib/cassandra", "rw,noexec,nosuid,size=200m"))
             .withExposedPorts(CASSANDRA_PORT)
-            .withLogConsumer(DockerCassandra::displayDockerLog);
+            .withLogConsumer(DockerCassandra::displayDockerLog));
+
         cassandraContainer
             .waitingFor(new CassandraWaitStrategy(cassandraContainer));
     }

@@ -19,15 +19,29 @@
 
 package org.apache.james.backends.es;
 
+import org.apache.james.util.docker.DockerContainer;
+import org.apache.james.util.docker.Images;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
+import org.testcontainers.containers.Network;
 
 public class DockerElasticSearchExtension implements AfterEachCallback, ParameterResolver {
 
-    private final DockerElasticSearch elasticSearch = DockerElasticSearchSingleton.INSTANCE;
+    private final DockerElasticSearch elasticSearch;
+
+    public DockerElasticSearchExtension() {
+        elasticSearch = DockerElasticSearchSingleton.INSTANCE;
+    }
+    public DockerElasticSearchExtension(Network network, String networkAlias) {
+        DockerContainer eSContainer = DockerElasticSearch.NoAuth.defaultContainer(Images.ELASTICSEARCH_6)
+            .withNetwork(network)
+            .withNetworkAliases(networkAlias);
+        elasticSearch = new DockerElasticSearch.NoAuth(eSContainer);
+    }
+
 
     @Override
     public void afterEach(ExtensionContext context) {
@@ -50,5 +64,13 @@ public class DockerElasticSearchExtension implements AfterEachCallback, Paramete
 
     public DockerElasticSearch getDockerElasticSearch() {
         return elasticSearch;
+    }
+
+    public void start() {
+        elasticSearch.start();
+    }
+
+    public void stop() {
+        elasticSearch.stop();
     }
 }

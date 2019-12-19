@@ -35,6 +35,8 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.Network;
+import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy;
 
 import com.google.common.collect.ImmutableSet;
@@ -57,8 +59,8 @@ public class DockerJamesExtension implements BeforeEachCallback, AfterEachCallba
     private ProvisioningAPI provisioningAPI;
     private StaticJamesConfiguration configuration;
 
-    public static RequireProvisioningAPI imageFromProperty(String property) {
-        return cliType -> new DockerJamesExtension(retrieveDockerImageName(property), cliType);
+    public static RequireProvisioningAPI imageFromProperty(String property, Network network) {
+        return cliType -> new DockerJamesExtension(retrieveDockerImageName(property), cliType, network);
     }
 
     interface RequireProvisioningAPI {
@@ -73,12 +75,12 @@ public class DockerJamesExtension implements BeforeEachCallback, AfterEachCallba
         return imageName;
     }
 
-    private DockerJamesExtension(DockerContainer container, CliProvisioningAPI.CliType cliProvisioningType) {
-        this.container = container;
+    private DockerJamesExtension(DockerContainer container, CliProvisioningAPI.CliType cliProvisioningType, Network network) {
+        this.container = container.withNetwork(network);
         this.cliProvisioningType = cliProvisioningType;
     }
 
-    private DockerJamesExtension(String image, CliProvisioningAPI.CliType cliProvisioningType) {
+    private DockerJamesExtension(String image, CliProvisioningAPI.CliType cliProvisioningType, Network network) {
         this(DockerContainer.fromName(image)
             .withExposedPorts(SMTP_PORT, IMAP_PORT)
             .waitingFor(new HostPortWaitStrategy())
@@ -93,7 +95,7 @@ public class DockerJamesExtension implements BeforeEachCallback, AfterEachCallba
                     case END:
                         break; //Ignore
                 }
-            }), cliProvisioningType);
+            }), cliProvisioningType, network);
     }
 
 

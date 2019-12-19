@@ -656,6 +656,7 @@
 
         <docker.openjdk8>openjdk:8u222-jre</docker.openjdk8>
         <docker.image.jpa>james-server-jpa:${buildId}</docker.image.jpa>
+        <docker.image.cassandra>james-server-cassandra:${buildId}</docker.image.cassandra>
         <docker.image.spring.jpa.image>james-server-spring-jpa</docker.image.spring.jpa.image>
         <docker.image.spring.jpa.tag>${buildId}</docker.image.spring.jpa.tag>
         <docker.image.spring.jpa>${docker.image.spring.jpa.image}:${docker.image.spring.jpa.tag}</docker.image.spring.jpa>
