@@ -24,6 +24,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.File;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.james.filesystem.api.FileSystem;
+import org.apache.james.junit.ManagedTestResource;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -34,22 +36,21 @@ class FileSystemExtensionTest {
     private static ExtensionContext DUMMY_EXTENSION_CONTEXT = null;
 
     @RegisterExtension
-    static FileSystemExtension fileSystemExtension = new FileSystemExtension();
+    static ManagedTestResource fileSystemExtension = FileSystemExtension.defaultFilesystem();
 
     @Nested
     class DeletingFileSystemBaseDir {
 
         @Test
-        void extensionShouldDeleteWhenTestDoesntCreateNewFiles() throws Exception {
+        void extensionShouldDeleteWhenTestDoesntCreateNewFiles(FileSystem fileSystem) throws Exception {
             fileSystemExtension.afterAll(DUMMY_EXTENSION_CONTEXT);
 
-            assertThat(fileSystemExtension.getFileSystem().getBasedir())
-                .doesNotExist();
+            assertThat(fileSystem.getBasedir()).doesNotExist();
         }
 
         @Test
-        void extensionShouldDeleteWhenTestCreateNewFiles() throws Exception {
-            File baseDir = fileSystemExtension.getFileSystem().getBasedir();
+        void extensionShouldDeleteWhenTestCreateNewFiles(FileSystem fileSystem) throws Exception {
+            File baseDir = fileSystem.getBasedir();
             FileUtils.forceMkdir(baseDir);
 
             File fileInsideBaseDir = new File(baseDir.getPath() + "/fileInsideBaseDir.temp");
@@ -57,8 +58,7 @@ class FileSystemExtensionTest {
 
             fileSystemExtension.afterAll(DUMMY_EXTENSION_CONTEXT);
 
-            assertThat(fileSystemExtension.getFileSystem().getBasedir())
-                .doesNotExist();
+            assertThat(fileSystem.getBasedir()).doesNotExist();
         }
     }
 }

@@ -23,45 +23,22 @@ import java.util.UUID;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.james.filesystem.api.FileSystem;
+import org.apache.james.junit.ManagedTestResource;
 import org.apache.james.server.core.JamesServerResourceLoader;
 import org.apache.james.server.core.filesystem.FileSystemImpl;
-import org.junit.jupiter.api.extension.AfterAllCallback;
-import org.junit.jupiter.api.extension.BeforeAllCallback;
-import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.ParameterContext;
-import org.junit.jupiter.api.extension.ParameterResolutionException;
-import org.junit.jupiter.api.extension.ParameterResolver;
 
-import com.google.common.annotations.VisibleForTesting;
+public class FileSystemExtension {
 
-public class FileSystemExtension implements ParameterResolver, BeforeAllCallback, AfterAllCallback {
-
-    private FileSystemImpl fileSystem;
-
-    @Override
-    public void beforeAll(ExtensionContext context) {
-        fileSystem = new FileSystemImpl(new JamesServerResourceLoader("../testsFileSystemExtension/" + UUID.randomUUID()));
+    public static ManagedTestResource defaultFilesystem() {
+        return ManagedTestResource
+            .forResource(new FileSystemImpl(new JamesServerResourceLoader("../testsFileSystemExtension/" + UUID.randomUUID())))
+            .afterAll(fileSystem -> {
+                if (fileSystem.getBasedir().exists()) {
+                    FileUtils.forceDelete(fileSystem.getBasedir());
+                }
+            })
+            .resolveAs(FileSystem.class)
+            .build();
     }
 
-    @Override
-    public void afterAll(ExtensionContext context) throws Exception {
-        if (fileSystem.getBasedir().exists()) {
-            FileUtils.forceDelete(fileSystem.getBasedir());
-        }
-    }
-
-    @Override
-    public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-        return (parameterContext.getParameter().getType() == FileSystem.class);
-    }
-
-    @Override
-    public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-        return fileSystem;
-    }
-
-    @VisibleForTesting
-    FileSystemImpl getFileSystem() {
-        return fileSystem;
-    }
 }

@@ -44,20 +44,23 @@ import org.apache.james.blob.export.file.LocalFileBlobExportMechanism.Configurat
 import org.apache.james.blob.memory.MemoryBlobStore;
 import org.apache.james.dnsservice.api.DNSService;
 import org.apache.james.filesystem.api.FileSystem;
+import org.apache.james.junit.ManagedTestResource;
 import org.apache.james.util.MimeMessageUtil;
 import org.apache.mailet.base.MailAddressFixture;
 import org.apache.mailet.base.test.FakeMailContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 
-@ExtendWith(FileSystemExtension.class)
 class LocalFileBlobExportMechanismTest {
     private static final String BLOB_CONTENT = "blob_content";
     private static final String JAMES_HOST = "james-host";
+
+    @RegisterExtension
+    ManagedTestResource fileSystemExtension = FileSystemExtension.defaultFilesystem();
 
     private BlobStore blobStore;
     private FakeMailContext mailetContext;
