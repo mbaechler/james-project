@@ -23,6 +23,7 @@ import javax.jms.ConnectionFactory;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.ActiveMQPrefetchPolicy;
 import org.apache.activemq.broker.BrokerService;
+import org.apache.james.junit.ManagedTestResource;
 import org.apache.james.metrics.api.GaugeRegistry;
 import org.apache.james.metrics.api.MetricFactory;
 import org.apache.james.queue.api.DelayedManageableMailQueueContract;
@@ -40,11 +41,13 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-@ExtendWith(BrokerExtension.class)
-@Tag(BrokerExtension.STATISTICS)
 public class ActiveMQMailQueueTest implements DelayedManageableMailQueueContract, DelayedPriorityMailQueueContract, PriorityManageableMailQueueContract,
     MailQueueMetricContract {
+
+    @RegisterExtension
+    static ManagedTestResource brokerExtension = BrokerExtension.brokerWithStatistics();
 
     static final boolean USE_BLOB = true;
 

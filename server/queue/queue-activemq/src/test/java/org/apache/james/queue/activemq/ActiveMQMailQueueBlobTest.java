@@ -31,6 +31,7 @@ import org.apache.activemq.ActiveMQPrefetchPolicy;
 import org.apache.activemq.broker.BrokerService;
 import org.apache.commons.io.FileUtils;
 import org.apache.james.filesystem.api.FileSystem;
+import org.apache.james.junit.ManagedTestResource;
 import org.apache.james.metrics.api.GaugeRegistry;
 import org.apache.james.metrics.api.MetricFactory;
 import org.apache.james.queue.api.DelayedManageableMailQueueContract;
@@ -45,19 +46,19 @@ import org.apache.james.queue.jms.BrokerExtension;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@ExtendWith(BrokerExtension.class)
-@Tag(BrokerExtension.STATISTICS)
 public class ActiveMQMailQueueBlobTest implements DelayedManageableMailQueueContract, DelayedPriorityMailQueueContract, PriorityManageableMailQueueContract,
     MailQueueMetricContract {
 
     static final String BASE_DIR = "file://target/james-test";
     static final boolean USE_BLOB = true;
+
+    @RegisterExtension
+    static ManagedTestResource brokerExtension = BrokerExtension.brokerWithStatistics();
 
     ActiveMQMailQueue mailQueue;
     MyFileSystem fileSystem;

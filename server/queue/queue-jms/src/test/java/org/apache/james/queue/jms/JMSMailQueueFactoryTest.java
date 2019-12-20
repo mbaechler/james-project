@@ -23,6 +23,7 @@ import javax.jms.ConnectionFactory;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.broker.BrokerService;
+import org.apache.james.junit.ManagedTestResource;
 import org.apache.james.metrics.api.GaugeRegistry;
 import org.apache.james.metrics.api.NoopGaugeRegistry;
 import org.apache.james.metrics.tests.RecordingMetricFactory;
@@ -33,11 +34,13 @@ import org.apache.james.queue.api.ManageableMailQueueFactoryContract;
 import org.apache.james.queue.api.RawMailQueueItemDecoratorFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 
-@ExtendWith(BrokerExtension.class)
 public class JMSMailQueueFactoryTest implements MailQueueFactoryContract<ManageableMailQueue>, ManageableMailQueueFactoryContract {
+
+    @RegisterExtension
+    static ManagedTestResource brokerExtension = BrokerExtension.defaultBroker();
 
     private JMSMailQueueFactory mailQueueFactory;
 

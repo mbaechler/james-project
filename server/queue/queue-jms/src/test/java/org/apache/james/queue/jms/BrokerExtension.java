@@ -25,18 +25,11 @@ import org.apache.activemq.broker.region.policy.PolicyEntry;
 import org.apache.activemq.broker.region.policy.PolicyMap;
 import org.apache.activemq.plugin.StatisticsBrokerPlugin;
 import org.apache.commons.text.RandomStringGenerator;
-import org.junit.jupiter.api.extension.AfterAllCallback;
-import org.junit.jupiter.api.extension.BeforeAllCallback;
-import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.ParameterContext;
-import org.junit.jupiter.api.extension.ParameterResolutionException;
-import org.junit.jupiter.api.extension.ParameterResolver;
+import org.apache.james.junit.ManagedTestResource;
 
 import com.google.common.collect.ImmutableList;
 
-public class BrokerExtension  implements ParameterResolver, BeforeAllCallback, AfterAllCallback {
-
-    public static final String STATISTICS = "Statistics";
+public class BrokerExtension {
 
     public static String generateRandomQueueName(BrokerService broker) {
         String queueName = new RandomStringGenerator.Builder().withinRange('a', 'z').build().generate(10);
@@ -53,40 +46,41 @@ public class BrokerExtension  implements ParameterResolver, BeforeAllCallback, A
         aBroker.setDestinationPolicy(pMap);
     }
 
-    private final BrokerService broker;
-
-    public BrokerExtension() throws Exception  {
-        broker = new BrokerService();
+    public static BrokerService buildBroker() {
+        BrokerService broker = new BrokerService();
         broker.setPersistent(false);
         broker.setUseJmx(false);
-        broker.addConnector("tcp://127.0.0.1:61616");
-    }
-
-    @Override
-    public void beforeAll(ExtensionContext context) throws Exception {
-        if (context.getTags().contains(STATISTICS)) {
-            enableStatistics(broker);
+        try {
+            broker.addConnector("tcp://127.0.0.1:61616");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-        broker.start();
+        return broker;
     }
 
-    @Override
-    public void afterAll(ExtensionContext context) throws Exception {
-        broker.stop();
+    public static ManagedTestResource defaultBroker() {
+        return managed(buildBroker());
     }
 
-    private void enableStatistics(BrokerService broker) {
+    public static ManagedTestResource brokerWithStatistics() {
+        BrokerService broker = buildBroker();
+        enableStatistics(broker);
+
+        return managed(broker);
+    }
+
+    public static ManagedTestResource managed(BrokerService broker) {
+        return ManagedTestResource.forResource(broker)
+            .beforeAll(BrokerService::start)
+            .afterAll(BrokerService::stop)
+            .resolveAs(BrokerService.class)
+            .build();
+    }
+
+
+    private static void enableStatistics(BrokerService broker) {
         broker.setPlugins(new BrokerPlugin[]{new StatisticsBrokerPlugin()});
         broker.setEnableStatistics(true);
     }
 
-    @Override
-    public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-        return (parameterContext.getParameter().getType() == BrokerService.class);
-    }
-
-    @Override
-    public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-        return broker;
-    }
 }

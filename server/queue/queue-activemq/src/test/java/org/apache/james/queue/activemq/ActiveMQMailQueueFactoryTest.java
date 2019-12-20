@@ -23,6 +23,7 @@ import javax.jms.ConnectionFactory;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.broker.BrokerService;
+import org.apache.james.junit.ManagedTestResource;
 import org.apache.james.metrics.api.NoopGaugeRegistry;
 import org.apache.james.metrics.tests.RecordingMetricFactory;
 import org.apache.james.queue.api.MailQueueFactory;
@@ -35,13 +36,16 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 public class ActiveMQMailQueueFactoryTest {
 
     @Nested
-    @ExtendWith(BrokerExtension.class)
     public static class ActiveMQMailQueueFactoryNoBlobsTest implements MailQueueFactoryContract<ManageableMailQueue>, ManageableMailQueueFactoryContract {
         ActiveMQMailQueueFactory mailQueueFactory;
+
+        @RegisterExtension
+        static ManagedTestResource brokerExtension = BrokerExtension.defaultBroker();
 
         @BeforeEach
         public void setUp(BrokerService brokerService) {
@@ -66,8 +70,10 @@ public class ActiveMQMailQueueFactoryTest {
     }
 
     @Nested
-    @ExtendWith(BrokerExtension.class)
     public static class ActiveMQMailQueueFactoryBlobsTest implements MailQueueFactoryContract<ManageableMailQueue>, ManageableMailQueueFactoryContract {
+
+        @RegisterExtension
+        static ManagedTestResource brokerExtension = BrokerExtension.defaultBroker();
 
         static final String BASE_DIR = "file://target/james-test";
 
