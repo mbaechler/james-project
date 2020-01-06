@@ -64,7 +64,7 @@ public interface DeleteBlobStoreContract {
         BlobId blobId = store.save(defaultBucketName, SHORT_BYTEARRAY).block();
         store.delete(defaultBucketName, blobId).block();
 
-        assertThatThrownBy(() -> store.read(defaultBucketName, blobId))
+        assertThatThrownBy(() -> store.read(defaultBucketName, blobId).read())
             .isInstanceOf(ObjectStoreException.class);
     }
 

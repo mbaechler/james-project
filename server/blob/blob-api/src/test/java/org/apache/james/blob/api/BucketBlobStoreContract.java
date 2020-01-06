@@ -54,7 +54,7 @@ public interface BucketBlobStoreContract {
         BlobId blobId = store.save(CUSTOM, SHORT_BYTEARRAY).block();
         store.deleteBucket(CUSTOM).block();
 
-        assertThatThrownBy(() -> store.read(CUSTOM, blobId))
+        assertThatThrownBy(() -> store.read(CUSTOM, blobId).read())
             .isInstanceOf(ObjectStoreException.class);
     }
 
@@ -116,7 +116,7 @@ public interface BucketBlobStoreContract {
         BlobStore store = testee();
 
         BlobId blobId = store.save(BucketName.DEFAULT, SHORT_BYTEARRAY).block();
-        assertThatThrownBy(() -> store.read(CUSTOM, blobId))
+        assertThatThrownBy(() -> store.read(CUSTOM, blobId).read())
             .isInstanceOf(ObjectStoreException.class);
     }
 
