@@ -40,6 +40,7 @@
         <module>blob-export-file</module>
         <module>blob-memory</module>
         <module>blob-objectstorage</module>
+        <module>blob-s3</module>
         <module>blob-union</module>
 
         <module>mail-store</module>
