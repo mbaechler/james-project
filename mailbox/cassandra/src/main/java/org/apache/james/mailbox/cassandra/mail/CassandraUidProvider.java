@@ -29,6 +29,7 @@ import static org.apache.james.mailbox.cassandra.table.CassandraMessageUidTable.
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageUidTable.NEXT_UID;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageUidTable.TABLE_NAME;
 
+import java.time.Duration;
 import java.util.Optional;
 
 import javax.inject.Inject;
@@ -47,6 +48,7 @@ import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Session;
 
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 public class CassandraUidProvider implements UidProvider {
     private static final String CONDITION = "Condition";
@@ -100,6 +102,7 @@ public class CassandraUidProvider implements UidProvider {
     }
 
     public Mono<MessageUid> nextUid(CassandraId cassandraId) {
+        Duration forever = Duration.ofMillis(Long.MAX_VALUE);
         Mono<MessageUid> updateUid = findHighestUid(cassandraId)
             .flatMap(messageUid -> tryUpdateUid(cassandraId, messageUid));
 
@@ -107,7 +110,7 @@ public class CassandraUidProvider implements UidProvider {
             .switchIfEmpty(tryInsert(cassandraId))
             .switchIfEmpty(updateUid)
             .single()
-            .retry(maxUidRetries);
+            .retryBackoff(maxUidRetries, Duration.ofMillis(10), forever, Schedulers.elastic());
     }
 
     @Override
