@@ -31,7 +31,7 @@ public interface DumbBlobStoreFixture {
     byte[] EMPTY_BYTEARRAY = {};
     byte[] SHORT_BYTEARRAY = SHORT_STRING.getBytes(StandardCharsets.UTF_8);
     byte[] ELEVEN_KILOBYTES = Strings.repeat("2103456789\n", 1000).getBytes(StandardCharsets.UTF_8);
-    String TWELVE_MEGABYTES_STRING = Strings.repeat("7893456789\r\n", 1024 * 10);
+    String TWELVE_MEGABYTES_STRING = Strings.repeat("7893456789\r\n", 1024 * 1024);
     byte[] TWELVE_MEGABYTES = TWELVE_MEGABYTES_STRING.getBytes(StandardCharsets.UTF_8);
 
 }
