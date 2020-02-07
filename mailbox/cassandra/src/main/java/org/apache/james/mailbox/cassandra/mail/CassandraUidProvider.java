@@ -102,15 +102,16 @@ public class CassandraUidProvider implements UidProvider {
     }
 
     public Mono<MessageUid> nextUid(CassandraId cassandraId) {
-        Duration forever = Duration.ofMillis(Long.MAX_VALUE);
         Mono<MessageUid> updateUid = findHighestUid(cassandraId)
             .flatMap(messageUid -> tryUpdateUid(cassandraId, messageUid));
 
+        Duration forever = Duration.ofMillis(Long.MAX_VALUE);
+        Duration firstBackoff = Duration.ofMillis(10);
         return updateUid
             .switchIfEmpty(tryInsert(cassandraId))
             .switchIfEmpty(updateUid)
             .single()
-            .retryBackoff(maxUidRetries, Duration.ofMillis(10), forever, Schedulers.elastic());
+            .retryBackoff(maxUidRetries, firstBackoff, forever, Schedulers.elastic());
     }
 
     @Override
