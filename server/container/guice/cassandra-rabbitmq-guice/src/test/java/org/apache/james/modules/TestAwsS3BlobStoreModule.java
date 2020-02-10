@@ -39,7 +39,7 @@ public class TestAwsS3BlobStoreModule extends AbstractModule {
         Module testAwsS3BlobStoreModule = Modules
             .override(dockerAwsS3TestRule.getModule())
             .with(binder -> binder.bind(BlobStoreChoosingConfiguration.class)
-                    .toInstance(BlobStoreChoosingConfiguration.objectStorage()));
+                    .toInstance(BlobStoreChoosingConfiguration.s3()));
 
         install(testAwsS3BlobStoreModule);
     }

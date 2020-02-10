@@ -33,7 +33,7 @@ public class BlobStoreChoosingConfiguration {
 
     public enum BlobStoreImplName {
         CASSANDRA("cassandra"),
-        OBJECTSTORAGE("objectstorage"),
+        S3("s3"),
         HYBRID("hybrid");
 
         static String supportedImplNames() {
@@ -78,8 +78,8 @@ public class BlobStoreChoosingConfiguration {
         return new BlobStoreChoosingConfiguration(BlobStoreImplName.CASSANDRA);
     }
 
-    public static BlobStoreChoosingConfiguration objectStorage() {
-        return new BlobStoreChoosingConfiguration(BlobStoreImplName.OBJECTSTORAGE);
+    public static BlobStoreChoosingConfiguration s3() {
+        return new BlobStoreChoosingConfiguration(BlobStoreImplName.S3);
     }
 
     public static BlobStoreChoosingConfiguration hybrid() {

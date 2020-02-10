@@ -32,10 +32,10 @@ import org.apache.james.blob.api.BlobStore;
 import org.apache.james.blob.api.MetricableBlobStore;
 import org.apache.james.blob.cassandra.CassandraBlobModule;
 import org.apache.james.blob.cassandra.CassandraBlobStore;
-import org.apache.james.blob.objectstorage.ObjectStorageBlobStore;
+import org.apache.james.blob.objectstorage.aws.S3BlobStore;
 import org.apache.james.blob.union.HybridBlobStore;
 import org.apache.james.modules.mailbox.ConfigurationComponent;
-import org.apache.james.modules.objectstorage.ObjectStorageDependenciesModule;
+import org.apache.james.modules.objectstorage.S3BlobStoreModule;
 import org.apache.james.utils.PropertiesProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,8 +50,7 @@ public class BlobStoreChoosingModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        install(new ObjectStorageDependenciesModule());
-
+        install(new S3BlobStoreModule());
         Multibinder<CassandraModule> cassandraDataDefinitions = Multibinder.newSetBinder(binder(), CassandraModule.class);
         cassandraDataDefinitions.addBinding().toInstance(CassandraBlobModule.MODULE);
     }
@@ -75,17 +74,17 @@ public class BlobStoreChoosingModule extends AbstractModule {
     @Singleton
     BlobStore provideBlobStore(BlobStoreChoosingConfiguration choosingConfiguration,
                                Provider<CassandraBlobStore> cassandraBlobStoreProvider,
-                               Provider<ObjectStorageBlobStore> objectStorageBlobStoreProvider,
+                               Provider<S3BlobStore> s3BlobStoreProvider,
                                HybridBlobStore.Configuration hybridBlobStoreConfiguration) {
 
         switch (choosingConfiguration.getImplementation()) {
-            case OBJECTSTORAGE:
-                return objectStorageBlobStoreProvider.get();
+            case S3:
+                return s3BlobStoreProvider.get();
             case CASSANDRA:
                 return cassandraBlobStoreProvider.get();
             case HYBRID:
                 return HybridBlobStore.builder()
-                    .lowCost(objectStorageBlobStoreProvider.get())
+                    .lowCost(s3BlobStoreProvider.get())
                     .highPerformance(cassandraBlobStoreProvider.get())
                     .configuration(hybridBlobStoreConfiguration)
                     .build();

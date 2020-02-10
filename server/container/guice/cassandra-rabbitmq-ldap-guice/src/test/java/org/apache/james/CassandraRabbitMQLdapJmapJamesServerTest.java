@@ -30,7 +30,6 @@ import org.apache.commons.net.imap.IMAPClient;
 import org.apache.james.jmap.draft.JmapJamesServerContract;
 import org.apache.james.modules.AwsS3BlobStoreExtension;
 import org.apache.james.modules.RabbitMQExtension;
-import org.apache.james.modules.SwiftBlobStoreExtension;
 import org.apache.james.modules.TestJMAPServerModule;
 import org.apache.james.modules.blobstore.BlobStoreChoosingConfiguration;
 import org.apache.james.modules.protocols.ImapGuiceProbe;
@@ -55,23 +54,12 @@ class CassandraRabbitMQLdapJmapJamesServerTest {
 
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-    class WithSwift implements ContractSuite {
-        @RegisterExtension
-        JamesServerExtension testExtension = baseJamesServerExtensionBuilder()
-            .extension(new SwiftBlobStoreExtension())
-            .overrideServerModule(binder -> binder.bind(BlobStoreChoosingConfiguration.class)
-                .toInstance(BlobStoreChoosingConfiguration.objectStorage()))
-            .build();
-    }
-
-    @Nested
-    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     class WithAwsS3 implements ContractSuite {
         @RegisterExtension
         JamesServerExtension testExtension = baseJamesServerExtensionBuilder()
             .extension(new AwsS3BlobStoreExtension())
             .overrideServerModule(binder -> binder.bind(BlobStoreChoosingConfiguration.class)
-                .toInstance(BlobStoreChoosingConfiguration.objectStorage()))
+                .toInstance(BlobStoreChoosingConfiguration.s3()))
             .build();
     }
 

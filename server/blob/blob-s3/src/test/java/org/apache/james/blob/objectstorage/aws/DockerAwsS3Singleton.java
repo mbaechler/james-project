@@ -17,33 +17,16 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.jmap.rabbitmq;
+package org.apache.james.blob.objectstorage.aws;
 
-import java.io.IOException;
+public class DockerAwsS3Singleton {
 
-import org.apache.james.CassandraRabbitMQSwiftJmapTestRule;
-import org.apache.james.DockerCassandraRule;
-import org.apache.james.GuiceJamesServer;
-import org.apache.james.jmap.draft.methods.integration.FilterTest;
-import org.apache.james.mailbox.cassandra.ids.CassandraId;
-import org.apache.james.mailbox.model.MailboxId;
-import org.junit.Rule;
+    public static final DockerAwsS3Container singleton = new DockerAwsS3Container();
 
-public class RabbitMQSwiftFilterTest extends FilterTest {
-
-    @Rule
-    public DockerCassandraRule cassandra = new DockerCassandraRule();
-
-    @Rule
-    public CassandraRabbitMQSwiftJmapTestRule rule = CassandraRabbitMQSwiftJmapTestRule.defaultTestRule();
-
-    @Override
-    protected GuiceJamesServer createJmapServer() throws IOException {
-        return rule.jmapServer(cassandra.getModule());
+    static {
+        singleton.start();
     }
 
-    @Override
-    protected MailboxId randomMailboxId() {
-        return CassandraId.timeBased();
-    }
+    // Cleanup will be performed by test namespace resource reaper
 }
+

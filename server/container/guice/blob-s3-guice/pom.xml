@@ -18,92 +18,62 @@
     under the License.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>org.apache.james</groupId>
-        <artifactId>webadmin-integration-test</artifactId>
+        <artifactId>james-server-guice</artifactId>
         <version>3.5.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>rabbitmq-webadmin-integration-test</artifactId>
+    <artifactId>blob-s3-guice</artifactId>
     <packaging>jar</packaging>
 
-    <name>Apache James :: Server :: Web Admin server integration tests :: Distributed</name>
+    <name>Apache James :: Server :: Blob S3 - guice injection</name>
+    <description>An advanced email server - S3 based Blob Store bindings</description>
 
     <dependencies>
         <dependency>
             <groupId>${james.groupId}</groupId>
-            <artifactId>apache-james-backends-cassandra</artifactId>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>${james.groupId}</groupId>
-            <artifactId>apache-james-backends-rabbitmq</artifactId>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>${james.groupId}</groupId>
-            <artifactId>apache-james-mailbox-elasticsearch</artifactId>
-            <type>test-jar</type>
-            <scope>test</scope>
+            <artifactId>blob-api-guice</artifactId>
         </dependency>
         <dependency>
             <groupId>${james.groupId}</groupId>
             <artifactId>blob-s3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${james.groupId}</groupId>
+            <artifactId>blob-s3</artifactId>
+            <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>${james.groupId}</groupId>
-            <artifactId>blob-s3-guice</artifactId>
+            <artifactId>james-server-guice-configuration</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${james.groupId}</groupId>
+            <artifactId>james-server-guice-common</artifactId>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>${james.groupId}</groupId>
-            <artifactId>james-server-cassandra-guice</artifactId>
-            <type>test-jar</type>
+            <artifactId>james-server-testing</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>${james.groupId}</groupId>
-            <artifactId>james-server-cassandra-rabbitmq-guice</artifactId>
+            <artifactId>testing-base</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>${james.groupId}</groupId>
-            <artifactId>james-server-cassandra-rabbitmq-guice</artifactId>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>${james.groupId}</groupId>
-            <artifactId>james-server-webadmin-cassandra-data</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>${james.groupId}</groupId>
-            <artifactId>james-server-webadmin-integration-test-common</artifactId>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <argLine>-Xms512m -Xmx1024m</argLine>
-                    <reuseForks>true</reuseForks>
-                    <!-- Fail tests longer than 2 hours, prevent form random locking tests -->
-                    <forkedProcessTimeoutInSeconds>7200</forkedProcessTimeoutInSeconds>
-                    <groups combine.self="override">BasicFeature</groups>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
 </project>

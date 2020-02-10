@@ -46,7 +46,6 @@ import org.apache.james.junit.categories.BasicFeature;
 import org.apache.james.modules.AwsS3BlobStoreExtension;
 import org.apache.james.modules.RabbitMQExtension;
 import org.apache.james.modules.TestJMAPServerModule;
-import org.apache.james.modules.objectstorage.PayloadCodecFactory;
 import org.apache.james.util.Port;
 import org.apache.james.utils.DataProbeImpl;
 import org.apache.james.utils.WebAdminGuiceProbe;
@@ -91,7 +90,7 @@ class RabbitMQReindexingWithEventDeadLettersTest {
         .extension(dockerElasticSearch)
         .extension(new CassandraExtension())
         .extension(new RabbitMQExtension())
-        .extension(new AwsS3BlobStoreExtension(PayloadCodecFactory.AES256))
+        .extension(new AwsS3BlobStoreExtension())
         .server(CONFIGURATION_BUILDER)
         .build();
 

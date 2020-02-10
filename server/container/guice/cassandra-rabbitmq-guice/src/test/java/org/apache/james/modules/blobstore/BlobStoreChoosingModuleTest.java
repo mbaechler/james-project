@@ -26,7 +26,7 @@ import static org.mockito.Mockito.mock;
 import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.james.FakePropertiesProvider;
 import org.apache.james.blob.cassandra.CassandraBlobStore;
-import org.apache.james.blob.objectstorage.ObjectStorageBlobStore;
+import org.apache.james.blob.objectstorage.aws.S3BlobStore;
 import org.apache.james.blob.union.HybridBlobStore;
 import org.apache.james.modules.blobstore.BlobStoreChoosingConfiguration.BlobStoreImplName;
 import org.apache.james.modules.mailbox.ConfigurationComponent;
@@ -38,8 +38,8 @@ class BlobStoreChoosingModuleTest {
 
     private static CassandraBlobStore CASSANDRA_BLOBSTORE = mock(CassandraBlobStore.class);
     private static Provider<CassandraBlobStore> CASSANDRA_BLOBSTORE_PROVIDER = () -> CASSANDRA_BLOBSTORE;
-    private static ObjectStorageBlobStore OBJECT_STORAGE_BLOBSTORE = mock(ObjectStorageBlobStore.class);
-    private static Provider<ObjectStorageBlobStore> OBJECT_STORAGE_BLOBSTORE_PROVIDER = () -> OBJECT_STORAGE_BLOBSTORE;
+    private static S3BlobStore S3_BLOBSTORE = mock(S3BlobStore.class);
+    private static Provider<S3BlobStore> S3_BLOBSTORE_PROVIDER = () -> S3_BLOBSTORE;
 
     @Test
     void provideChoosingConfigurationShouldThrowWhenMissingPropertyField() {
@@ -95,13 +95,13 @@ class BlobStoreChoosingModuleTest {
     void provideChoosingConfigurationShouldReturnObjectStorageFactoryWhenConfigurationImplIsObjectStorage() throws Exception {
         BlobStoreChoosingModule module = new BlobStoreChoosingModule();
         PropertiesConfiguration configuration = new PropertiesConfiguration();
-        configuration.addProperty("implementation", BlobStoreImplName.OBJECTSTORAGE.getName());
+        configuration.addProperty("implementation", BlobStoreImplName.S3.getName());
         FakePropertiesProvider propertyProvider = FakePropertiesProvider.builder()
             .register(ConfigurationComponent.NAME, configuration)
             .build();
 
         assertThat(module.provideChoosingConfiguration(propertyProvider))
-            .isEqualTo(BlobStoreChoosingConfiguration.objectStorage());
+            .isEqualTo(BlobStoreChoosingConfiguration.s3());
     }
 
     @Test
@@ -187,7 +187,7 @@ class BlobStoreChoosingModuleTest {
         BlobStoreChoosingModule module = new BlobStoreChoosingModule();
 
         assertThat(module.provideBlobStore(BlobStoreChoosingConfiguration.cassandra(),
-            CASSANDRA_BLOBSTORE_PROVIDER, OBJECT_STORAGE_BLOBSTORE_PROVIDER, HybridBlobStore.Configuration.DEFAULT))
+            CASSANDRA_BLOBSTORE_PROVIDER, S3_BLOBSTORE_PROVIDER, HybridBlobStore.Configuration.DEFAULT))
             .isEqualTo(CASSANDRA_BLOBSTORE);
     }
 
@@ -196,7 +196,7 @@ class BlobStoreChoosingModuleTest {
         BlobStoreChoosingModule module = new BlobStoreChoosingModule();
 
         assertThat(module.provideBlobStore(BlobStoreChoosingConfiguration.cassandra(),
-            CASSANDRA_BLOBSTORE_PROVIDER, OBJECT_STORAGE_BLOBSTORE_PROVIDER, HybridBlobStore.Configuration.DEFAULT))
+            CASSANDRA_BLOBSTORE_PROVIDER, S3_BLOBSTORE_PROVIDER, HybridBlobStore.Configuration.DEFAULT))
             .isEqualTo(CASSANDRA_BLOBSTORE);
     }
 
@@ -205,7 +205,7 @@ class BlobStoreChoosingModuleTest {
         BlobStoreChoosingModule module = new BlobStoreChoosingModule();
 
         assertThat(module.provideBlobStore(BlobStoreChoosingConfiguration.hybrid(),
-            CASSANDRA_BLOBSTORE_PROVIDER, OBJECT_STORAGE_BLOBSTORE_PROVIDER, HybridBlobStore.Configuration.DEFAULT))
+            CASSANDRA_BLOBSTORE_PROVIDER, S3_BLOBSTORE_PROVIDER, HybridBlobStore.Configuration.DEFAULT))
             .isInstanceOf(HybridBlobStore.class);
     }
 }
