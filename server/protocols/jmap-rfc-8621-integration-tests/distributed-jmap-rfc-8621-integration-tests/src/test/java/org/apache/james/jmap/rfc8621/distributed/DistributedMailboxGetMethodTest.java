@@ -42,7 +42,7 @@ public class DistributedMailboxGetMethodTest implements MailboxGetMethodContract
         CassandraRabbitMQJamesConfiguration.builder()
             .workingDirectory(tmpDir)
             .configurationFromClasspath()
-            .blobStore(BlobStoreConfiguration.objectStorage().disableCache())
+            .blobStore(BlobStoreConfiguration.s3().disableCache())
             .build())
         .extension(new DockerElasticSearchExtension())
         .extension(new CassandraExtension())

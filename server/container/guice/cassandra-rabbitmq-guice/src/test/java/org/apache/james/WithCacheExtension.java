@@ -42,7 +42,7 @@ public class WithCacheExtension implements BeforeAllCallback, AfterAllCallback, 
             CassandraRabbitMQJamesConfiguration.builder()
                 .workingDirectory(tmpDir)
                 .configurationFromClasspath()
-                .blobStore(BlobStoreConfiguration.objectStorage().enableCache())
+                .blobStore(BlobStoreConfiguration.s3().enableCache())
                 .searchConfiguration(SearchConfiguration.elasticSearch())
                 .build())
             .extension(new DockerElasticSearchExtension())

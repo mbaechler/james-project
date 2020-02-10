@@ -25,9 +25,9 @@ import org.apache.james.blob.api.BlobStore;
 import org.apache.james.blob.api.DumbBlobStore;
 import org.apache.james.blob.cassandra.CassandraDumbBlobStore;
 import org.apache.james.blob.cassandra.cache.CachedBlobStore;
-import org.apache.james.blob.objectstorage.ObjectStorageBlobStore;
+import org.apache.james.blob.objectstorage.aws.S3BlobStore;
 import org.apache.james.modules.mailbox.CassandraBlobStoreDependenciesModule;
-import org.apache.james.modules.objectstorage.ObjectStorageDependenciesModule;
+import org.apache.james.modules.objectstorage.S3BlobStoreModule;
 import org.apache.james.server.blob.deduplication.DeDuplicationBlobStore;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -53,11 +53,10 @@ public class BlobStoreModulesChooser {
     static class ObjectStorageDeclarationModule extends AbstractModule {
         @Override
         protected void configure() {
-            install(new ObjectStorageDependenciesModule());
-            bind(DumbBlobStore.class).to(NoopDumbBlobStore.class);
+            install(new S3BlobStoreModule());
             bind(BlobStore.class)
                 .annotatedWith(Names.named(CachedBlobStore.BACKEND))
-                .to(ObjectStorageBlobStore.class);
+                .to(S3BlobStore.class);
         }
     }
 
@@ -66,7 +65,7 @@ public class BlobStoreModulesChooser {
         switch (choosingConfiguration.getImplementation()) {
             case CASSANDRA:
                 return ImmutableList.of(new CassandraDeclarationModule());
-            case OBJECTSTORAGE:
+            case S3:
                 return ImmutableList.of(new ObjectStorageDeclarationModule());
             default:
                 throw new RuntimeException("Unsuported blobStore implementation " + choosingConfiguration.getImplementation());

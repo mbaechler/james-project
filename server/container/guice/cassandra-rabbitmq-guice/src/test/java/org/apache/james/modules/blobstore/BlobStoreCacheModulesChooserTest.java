@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
 class BlobStoreCacheModulesChooserTest {
     @Test
     void chooseModulesShouldReturnCacheDisabledModuleWhenCacheDisabled() {
-        assertThat(BlobStoreCacheModulesChooser.chooseModules(BlobStoreConfiguration.objectStorage().disableCache()))
+        assertThat(BlobStoreCacheModulesChooser.chooseModules(BlobStoreConfiguration.s3().disableCache()))
             .hasSize(1)
             .first()
             .isInstanceOf(BlobStoreCacheModulesChooser.CacheDisabledModule.class);
@@ -35,7 +35,7 @@ class BlobStoreCacheModulesChooserTest {
 
     @Test
     void chooseModulesShouldReturnCacheEnabledAndCassandraCacheModulesWhenCacheEnabled() {
-        assertThat(BlobStoreCacheModulesChooser.chooseModules(BlobStoreConfiguration.objectStorage().enableCache()))
+        assertThat(BlobStoreCacheModulesChooser.chooseModules(BlobStoreConfiguration.s3().enableCache()))
             .hasSize(2)
             .allSatisfy(module ->
                 assertThat(module).isOfAnyClassIn(

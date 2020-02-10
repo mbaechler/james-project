@@ -57,7 +57,7 @@ public class BlobStoreConfiguration {
 
     public enum BlobStoreImplName {
         CASSANDRA("cassandra"),
-        OBJECTSTORAGE("objectstorage");
+        S3("s3");
 
         static String supportedImplNames() {
             return Stream.of(BlobStoreImplName.values())
@@ -122,8 +122,8 @@ public class BlobStoreConfiguration {
         return new BlobStoreConfiguration(BlobStoreImplName.CASSANDRA, !CACHE_ENABLED);
     }
 
-    public static CacheChoice objectStorage() {
-        return new CacheChoice(BlobStoreImplName.OBJECTSTORAGE);
+    public static CacheChoice s3() {
+        return new CacheChoice(BlobStoreImplName.S3);
     }
 
     private final BlobStoreImplName implementation;

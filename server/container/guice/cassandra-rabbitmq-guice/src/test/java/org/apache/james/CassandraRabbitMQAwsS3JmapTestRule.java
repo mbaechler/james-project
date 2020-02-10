@@ -41,7 +41,7 @@ public class CassandraRabbitMQAwsS3JmapTestRule implements TestRule {
     private final TemporaryFolder temporaryFolder;
 
     public static CassandraRabbitMQAwsS3JmapTestRule defaultTestRule() {
-        return new CassandraRabbitMQAwsS3JmapTestRule(new DockerAwsS3TestRule());
+        return new CassandraRabbitMQAwsS3JmapTestRule();
     }
 
     private final GuiceModuleTestRule guiceModuleTestRule;
@@ -62,12 +62,13 @@ public class CassandraRabbitMQAwsS3JmapTestRule implements TestRule {
         CassandraRabbitMQJamesConfiguration configuration = CassandraRabbitMQJamesConfiguration.builder()
             .workingDirectory(temporaryFolder.newFolder())
             .configurationFromClasspath()
-            .blobStore(BlobStoreConfiguration.objectStorage().disableCache())
+            .blobStore(BlobStoreConfiguration.s3().disableCache())
             .searchConfiguration(SearchConfiguration.elasticSearch())
             .build();
 
         return CassandraRabbitMQJamesServerMain.createServer(configuration)
             .overrideWith(new TestRabbitMQModule(DockerRabbitMQSingleton.SINGLETON))
+            .overrideWith(new DockerAwsS3TestRule().getModule())
             .overrideWith(new TestJMAPServerModule())
             .overrideWith(new TestDockerESMetricReporterModule(dockerElasticSearchRule.getDockerEs().getHttpHost()))
             .overrideWith(guiceModuleTestRule.getModule())
