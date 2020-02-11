@@ -84,10 +84,11 @@ public class S3BlobStore implements BlobStore {
     }
 
     private Mono<BlobId> saveAndGenerateBlobId(BucketName bucketName, HashingInputStream hashingInputStream, FileBackedOutputStream fileBackedOutputStream) {
-        return Mono.fromCallable(() -> {
-            IOUtils.copy(hashingInputStream, fileBackedOutputStream);
-            return Tuples.of(blobIdFactory.from(hashingInputStream.hash().toString()), fileBackedOutputStream.asByteSource());
-        })
+        return Mono
+            .fromCallable(() -> {
+                IOUtils.copy(hashingInputStream, fileBackedOutputStream);
+                return Tuples.of(blobIdFactory.from(hashingInputStream.hash().toString()), fileBackedOutputStream.asByteSource());
+            })
             .flatMap(tuple -> dumbBlobStore.save(bucketName, tuple.getT1(), tuple.getT2()).thenReturn(tuple.getT1()));
     }
 
