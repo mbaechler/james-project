@@ -19,6 +19,7 @@
 
 package org.apache.james.blob.objectstorage.aws;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -27,6 +28,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 
 import org.apache.commons.io.IOUtils;
@@ -70,7 +72,7 @@ import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
-public class S3DumbBlobStore implements DumbBlobStore {
+public class S3DumbBlobStore implements DumbBlobStore, Closeable {
 
     private static final int CHUNK_SIZE = 1024 * 1024;
     private static final int EMPTY_BUCKET_BATCH_SIZE = 1000;
@@ -96,6 +98,8 @@ public class S3DumbBlobStore implements DumbBlobStore {
             .build();
     }
 
+    @Override
+    @PreDestroy
     public void close() {
         client.close();
     }
