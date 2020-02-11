@@ -41,12 +41,87 @@ import reactor.util.Loggers;
 public class RetryWithAsyncCallback<T> extends AbstractRetry<T, Throwable> implements Retry<T> {
 
     static final Logger log = Loggers.getLogger(RetryWithAsyncCallback.class);
-    static final Consumer<? super RetryContext<?>> NOOP_ON_RETRY = r -> {
-    };
+    static final Consumer<? super RetryContext<?>> NOOP_ON_RETRY = r -> {};
     static final Function<? super RetryContext<?>, Mono<?>> NOOP_ON_RETRY_MONO = r -> Mono.empty();
 
+    /**
+     * Returns a retry function that retries any exception, once.
+     * More constraints may be added using {@link #retryMax(long)} or {@link #timeout(Duration)}.
+     *
+     * @return retry function that retries on any exception
+     */
+    public static <T> RetryWithAsyncCallback<T> any() {
+        return RetryWithAsyncCallback.<T>create(context -> true);
+    }
+
+    /**
+     * Returns a retry function that retries errors resulting from any of the
+     * specified exceptions, once.
+     * More constraints may be added using {@link #retryMax(long)}
+     * or {@link #timeout(Duration)}.
+     *
+     * @param retriableExceptions Exceptions that may be retried
+     * @return retry function that retries indefinitely, only for specified exceptions
+     */
+    @SafeVarargs
+    public static <T> RetryWithAsyncCallback<T> anyOf(Class<? extends Throwable>... retriableExceptions) {
+        Predicate<? super RetryContext<T>> predicate = context -> {
+            Throwable exception = context.exception();
+            if (exception == null)
+                return true;
+            for (Class<? extends Throwable> clazz : retriableExceptions) {
+                if (clazz.isInstance(exception))
+                    return true;
+            }
+            return false;
+        };
+        return RetryWithAsyncCallback.<T>create(predicate);
+    }
+
+    /**
+     * Returns a retry function that retries errors resulting from all exceptions except
+     * the specified non-retriable exceptions, once.
+     * More constraints may be added using
+     * {@link #retryMax(long)} or {@link #timeout(Duration)}.
+     *
+     * @param nonRetriableExceptions exceptions that may not be retried
+     * @return retry function that retries all exceptions except the specified non-retriable exceptions.
+     */
+    @SafeVarargs
+    public static <T> RetryWithAsyncCallback<T> allBut(final Class<? extends Throwable>... nonRetriableExceptions) {
+        Predicate<? super RetryContext<T>> predicate = context -> {
+            Throwable exception = context.exception();
+            if (exception == null)
+                return true;
+            for (Class<? extends Throwable> clazz : nonRetriableExceptions) {
+                if (clazz.isInstance(exception))
+                    return false;
+            }
+            return true;
+        };
+        return RetryWithAsyncCallback.<T>create(predicate);
+    }
+
+    /**
+     * Retry function that retries only if the predicate returns true, with no limit to
+     * the number of attempts.
+     * @param predicate Predicate that determines if next retry is performed
+     * @return Retry function with predicate
+     */
     public static <T> RetryWithAsyncCallback<T> onlyIf(Predicate<? super RetryContext<T>> predicate) {
         return RetryWithAsyncCallback.create(predicate).retryMax(Long.MAX_VALUE);
+    }
+
+    public static <T> RetryWithAsyncCallback<T> create(Predicate<? super RetryContext<T>> retryPredicate) {
+        return new RetryWithAsyncCallback<T>(retryPredicate,
+            Long.MAX_VALUE,
+            null,
+            Backoff.zero(),
+            Jitter.noJitter(),
+            null,
+            NOOP_ON_RETRY,
+            NOOP_ON_RETRY_MONO,
+            (T) null);
     }
 
     final Predicate<? super RetryContext<T>> retryPredicate;
@@ -66,18 +141,6 @@ public class RetryWithAsyncCallback<T> extends AbstractRetry<T, Throwable> imple
         this.retryPredicate = retryPredicate;
         this.onRetry = onRetry;
         this.onRetryMono = onRetryMono;
-    }
-
-    public static <T> RetryWithAsyncCallback<T> create(Predicate<? super RetryContext<T>> retryPredicate) {
-        return new RetryWithAsyncCallback<T>(retryPredicate,
-            Long.MAX_VALUE,
-            null,
-            Backoff.zero(),
-            Jitter.noJitter(),
-            null,
-            NOOP_ON_RETRY,
-            NOOP_ON_RETRY_MONO,
-            (T) null);
     }
 
     @Override
@@ -120,6 +183,11 @@ public class RetryWithAsyncCallback<T> extends AbstractRetry<T, Throwable> imple
     public RetryWithAsyncCallback<T> onRetryWithMono(Function<? super RetryContext<T>, Mono<?>> onRetryMono) {
         return new RetryWithAsyncCallback<>(retryPredicate, maxIterations, timeout,
             backoff, jitter, backoffScheduler, onRetry, onRetryMono, applicationContext);
+    }
+
+    @Override
+    public RetryWithAsyncCallback<T> retryOnce() {
+        return retryMax(1);
     }
 
     @Override
