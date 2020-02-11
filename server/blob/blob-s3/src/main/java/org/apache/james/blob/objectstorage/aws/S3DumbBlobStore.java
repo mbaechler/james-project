@@ -39,6 +39,7 @@ import org.apache.james.util.DataChunker;
 import org.apache.james.util.ReactorUtils;
 
 import com.github.fge.lambdas.Throwing;
+import com.github.steveash.guavate.Guavate;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.io.ByteSource;
@@ -244,7 +245,7 @@ public class S3DumbBlobStore implements DumbBlobStore {
     private Mono<List<ObjectIdentifier>> buildListForBatch(Flux<S3Object> batch) {
         return batch
             .map(element -> ObjectIdentifier.builder().key(element.key()).build())
-            .collectList();
+            .collect(Guavate.toImmutableList());
     }
 
     private Mono<DeleteObjectsResponse> deleteObjects(BucketName bucketName, List<ObjectIdentifier> identifiers) {
