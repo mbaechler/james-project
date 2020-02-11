@@ -23,6 +23,8 @@ import static org.apache.james.backends.cassandra.Scenario.Builder.fail;
 import static org.apache.james.mailbox.model.MailboxAssertingTool.softly;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 
 import java.util.List;
 
@@ -56,6 +58,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import com.github.fge.lambdas.Throwing;
 import com.github.fge.lambdas.runnable.ThrowingRunnable;
+import reactor.core.publisher.Mono;
 
 class CassandraMailboxMapperTest {
     private static final int UID_VALIDITY = 52;
@@ -445,7 +448,7 @@ class CassandraMailboxMapperTest {
                 .isNotEqualTo(testee.findMailboxById(inboxId).getName());
         }
 
-        @Disabled("JAMES-3057 org.apache.james.mailbox.exception.MailboxNotFoundException: INBOX can not be found")
+        @Disabled("JAMES-3056 org.apache.james.mailbox.exception.MailboxNotFoundException: 'mailboxId' can not be found")
         @Test
         void createAfterPreviousFailedCreateShouldCreateAMailbox(CassandraCluster cassandra) throws MailboxException {
             cassandra.getConf()
