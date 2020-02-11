@@ -30,6 +30,7 @@ import org.apache.james.blob.api.BucketName;
 import org.apache.james.blob.api.HashBlobId;
 import org.apache.james.blob.objectstorage.aws.AwsS3AuthConfiguration;
 import org.apache.james.blob.objectstorage.aws.Region;
+import org.apache.james.blob.objectstorage.aws.S3BlobStoreConfiguration;
 import org.apache.james.modules.mailbox.ConfigurationComponent;
 import org.apache.james.utils.PropertiesProvider;
 
@@ -46,10 +47,10 @@ public class S3BlobStoreModule extends AbstractModule {
 
     @Provides
     @Singleton
-    private S3BlobConfiguration getObjectStorageConfiguration(PropertiesProvider propertiesProvider) throws ConfigurationException {
+    private S3BlobStoreConfiguration getObjectStorageConfiguration(PropertiesProvider propertiesProvider) throws ConfigurationException {
         try {
             Configuration configuration = propertiesProvider.getConfigurations(ConfigurationComponent.NAMES);
-            return S3BlobConfiguration.from(configuration);
+            return S3BlobStoreConfigurationReader.from(configuration);
         } catch (FileNotFoundException e) {
             throw new ConfigurationException(ConfigurationComponent.NAME + " configuration was not found");
         }
@@ -57,20 +58,20 @@ public class S3BlobStoreModule extends AbstractModule {
 
     @Provides
     @Singleton
-    private AwsS3AuthConfiguration awsS3AuthConfiguration(S3BlobConfiguration s3BlobConfiguration) {
-        return s3BlobConfiguration.getSpecificAuthConfiguration();
+    private AwsS3AuthConfiguration awsS3AuthConfiguration(S3BlobStoreConfiguration s3BlobStoreConfiguration) {
+        return s3BlobStoreConfiguration.getSpecificAuthConfiguration();
     }
 
     @Provides
     @Singleton
-    private BucketName defaultBucket(S3BlobConfiguration s3BlobConfiguration) {
-        return s3BlobConfiguration.getNamespace().orElse(BucketName.DEFAULT);
+    private BucketName defaultBucket(S3BlobStoreConfiguration s3BlobStoreConfiguration) {
+        return s3BlobStoreConfiguration.getNamespace().orElse(BucketName.DEFAULT);
     }
 
     @Provides
     @Singleton
-    private Region region(S3BlobConfiguration s3BlobConfiguration) {
-        return s3BlobConfiguration.getRegion();
+    private Region region(S3BlobStoreConfiguration s3BlobStoreConfiguration) {
+        return s3BlobStoreConfiguration.getRegion();
     }
 
 }
