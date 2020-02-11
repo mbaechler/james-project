@@ -22,7 +22,6 @@ package org.apache.james.blob.objectstorage.aws;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.List;
@@ -93,7 +92,7 @@ public class S3DumbBlobStore implements DumbBlobStore, Closeable {
                 .maxConcurrency(100)
                 .maxPendingConnectionAcquires(10_000)
                 .build())
-            .endpointOverride(URI.create(configuration.getEndpoint()))
+            .endpointOverride(configuration.getEndpoint())
             .region(region.asAws())
             .build();
     }

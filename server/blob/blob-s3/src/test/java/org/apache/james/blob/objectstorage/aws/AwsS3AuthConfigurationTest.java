@@ -22,7 +22,8 @@ package org.apache.james.blob.objectstorage.aws;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
-import org.apache.james.blob.objectstorage.aws.AwsS3AuthConfiguration;
+import java.net.URI;
+
 import org.junit.jupiter.api.Test;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
@@ -46,20 +47,9 @@ public class AwsS3AuthConfigurationTest {
     }
 
     @Test
-    public void builderShouldThrowWhenEndpointIsEmpty() {
-        assertThatThrownBy(() -> AwsS3AuthConfiguration.builder()
-                                    .endpoint("")
-                                    .accessKeyId("myAccessKeyId")
-                                    .secretKey("mySecretKey")
-                                    .build())
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessage("'endpoint' is mandatory");
-    }
-
-    @Test
     public void builderShouldThrowWhenAccessKeyIdIsNull() {
         assertThatThrownBy(() -> AwsS3AuthConfiguration.builder()
-                                    .endpoint("myEndpoint")
+                                    .endpoint(URI.create("http://myEndpoint"))
                                     .accessKeyId(null)
                                     .secretKey("mySecretKey")
                                     .build())
@@ -70,7 +60,7 @@ public class AwsS3AuthConfigurationTest {
     @Test
     public void builderShouldThrowWhenAccessKeyIdIsEmpty() {
         assertThatThrownBy(() -> AwsS3AuthConfiguration.builder()
-                                    .endpoint("myEndpoint")
+                                    .endpoint(URI.create("http://myEndpoint"))
                                     .accessKeyId("")
                                     .secretKey("mySecretKey")
                                     .build())
@@ -81,7 +71,7 @@ public class AwsS3AuthConfigurationTest {
     @Test
     public void builderShouldThrowWhenSecretKeyIsNull() {
         assertThatThrownBy(() -> AwsS3AuthConfiguration.builder()
-                                    .endpoint("myEndpoint")
+                                    .endpoint(URI.create("http://myEndpoint"))
                                     .accessKeyId("myAccessKeyId")
                                     .secretKey(null)
                                     .build())
@@ -92,7 +82,7 @@ public class AwsS3AuthConfigurationTest {
     @Test
     public void builderShouldThrowWhenSecretKeyIsEmpty() {
         assertThatThrownBy(() -> AwsS3AuthConfiguration.builder()
-                                    .endpoint("myEndpoint")
+                                    .endpoint(URI.create("http://myEndpoint"))
                                     .accessKeyId("myAccessKeyId")
                                     .secretKey("")
                                     .build())
@@ -102,7 +92,7 @@ public class AwsS3AuthConfigurationTest {
 
     @Test
     public void builderShouldWork() {
-        String endpoint = "myEndpoint";
+        URI endpoint = URI.create("http://myEndpoint");
         String accessKeyId = "myAccessKeyId";
         String secretKey = "mySecretKey";
         AwsS3AuthConfiguration configuration = AwsS3AuthConfiguration.builder()
