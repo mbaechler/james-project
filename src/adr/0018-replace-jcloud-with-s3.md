@@ -24,6 +24,7 @@ When we implemented Object Storage blob-store in the past, we decided to impleme
 [Apache jcloud library](https://jclouds.apache.org/) because we wanted to target both S3 and Swift API.
 
 However, we found that our implementation was complex and it didn't fit the Reactive style we now have in the codebase.
+It also contribute negatively to the project build time.
 
 At the same time, we figured out Swift was providing a good compatibility layer for S3 and that we may drop
 our Swift code without dropping Swift support at the same time. 
@@ -36,6 +37,7 @@ our Swift code without dropping Swift support at the same time.
 
 ## Consequences
 
-We have to document carefully how to transition from `blob-store-objectstorage` with `blobstore-s3`  in the
+* We have to document carefully how to transition from `blob-store-objectstorage` with `blobstore-s3`  in the
 configuration and how to handle existing data
 
+* We need to work on a new implementation of blob encryption.
