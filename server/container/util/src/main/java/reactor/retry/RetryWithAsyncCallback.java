@@ -41,7 +41,7 @@ import reactor.util.Loggers;
 public class RetryWithAsyncCallback<T> extends AbstractRetry<T, Throwable> implements Retry<T> {
 
     static final Logger log = Loggers.getLogger(RetryWithAsyncCallback.class);
-    static final Consumer<? super RetryContext<?>> NOOP_ON_RETRY = r -> {};
+    static final Consumer<? super RetryContext<?>> NOOP_ON_RETRY = r -> { };
     static final Function<? super RetryContext<?>, Mono<?>> NOOP_ON_RETRY_MONO = r -> Mono.empty();
 
     /**
@@ -67,11 +67,13 @@ public class RetryWithAsyncCallback<T> extends AbstractRetry<T, Throwable> imple
     public static <T> RetryWithAsyncCallback<T> anyOf(Class<? extends Throwable>... retriableExceptions) {
         Predicate<? super RetryContext<T>> predicate = context -> {
             Throwable exception = context.exception();
-            if (exception == null)
+            if (exception == null) {
                 return true;
+            }
             for (Class<? extends Throwable> clazz : retriableExceptions) {
-                if (clazz.isInstance(exception))
+                if (clazz.isInstance(exception)) {
                     return true;
+                }
             }
             return false;
         };
@@ -91,11 +93,13 @@ public class RetryWithAsyncCallback<T> extends AbstractRetry<T, Throwable> imple
     public static <T> RetryWithAsyncCallback<T> allBut(final Class<? extends Throwable>... nonRetriableExceptions) {
         Predicate<? super RetryContext<T>> predicate = context -> {
             Throwable exception = context.exception();
-            if (exception == null)
+            if (exception == null) {
                 return true;
+            }
             for (Class<? extends Throwable> clazz : nonRetriableExceptions) {
-                if (clazz.isInstance(exception))
+                if (clazz.isInstance(exception)) {
                     return false;
+                }
             }
             return true;
         };
