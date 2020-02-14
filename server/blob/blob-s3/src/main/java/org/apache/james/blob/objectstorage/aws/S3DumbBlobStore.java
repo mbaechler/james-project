@@ -88,10 +88,9 @@ public class S3DumbBlobStore implements DumbBlobStore, Closeable {
         client = S3AsyncClient.builder()
             .credentialsProvider(StaticCredentialsProvider.create(
                 AwsBasicCredentials.create(configuration.getAccessKeyId(), configuration.getSecretKey())))
-            .httpClient(NettyNioAsyncHttpClient.builder()
+            .httpClientBuilder(NettyNioAsyncHttpClient.builder()
                 .maxConcurrency(100)
-                .maxPendingConnectionAcquires(10_000)
-                .build())
+                .maxPendingConnectionAcquires(10_000))
             .endpointOverride(configuration.getEndpoint())
             .region(region.asAws())
             .build();
