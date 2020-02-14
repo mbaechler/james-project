@@ -29,7 +29,7 @@ import nl.jqno.equalsverifier.EqualsVerifier;
 
 class BlobStoreChoosingConfigurationTest {
 
-    private static final String OBJECT_STORAGE = "objectstorage";
+    private static final String S3 = "s3";
     private static final String CASSANDRA = "cassandra";
     private static final String HYBRID = "hybrid";
 
@@ -45,7 +45,7 @@ class BlobStoreChoosingConfigurationTest {
 
         assertThatThrownBy(() -> BlobStoreChoosingConfiguration.from(configuration))
             .isInstanceOf(IllegalStateException.class)
-            .hasMessage("implementation property is missing please use one of supported values in: cassandra, objectstorage, hybrid");
+            .hasMessage("implementation property is missing please use one of supported values in: cassandra, s3, hybrid");
     }
 
     @Test
@@ -55,7 +55,7 @@ class BlobStoreChoosingConfigurationTest {
 
         assertThatThrownBy(() -> BlobStoreChoosingConfiguration.from(configuration))
             .isInstanceOf(IllegalStateException.class)
-            .hasMessage("implementation property is missing please use one of supported values in: cassandra, objectstorage, hybrid");
+            .hasMessage("implementation property is missing please use one of supported values in: cassandra, s3, hybrid");
     }
 
     @Test
@@ -65,7 +65,7 @@ class BlobStoreChoosingConfigurationTest {
 
         assertThatThrownBy(() -> BlobStoreChoosingConfiguration.from(configuration))
             .isInstanceOf(IllegalStateException.class)
-            .hasMessage("implementation property is missing please use one of supported values in: cassandra, objectstorage, hybrid");
+            .hasMessage("implementation property is missing please use one of supported values in: cassandra, s3, hybrid");
     }
 
     @Test
@@ -75,7 +75,7 @@ class BlobStoreChoosingConfigurationTest {
 
         assertThatThrownBy(() -> BlobStoreChoosingConfiguration.from(configuration))
             .isInstanceOf(IllegalArgumentException.class)
-            .hasMessage("un_supported is not a valid name of BlobStores, please use one of supported values in: cassandra, objectstorage, hybrid");
+            .hasMessage("un_supported is not a valid name of BlobStores, please use one of supported values in: cassandra, s3, hybrid");
     }
 
     @Test
@@ -103,27 +103,27 @@ class BlobStoreChoosingConfigurationTest {
     }
 
     @Test
-    void fromShouldReturnConfigurationWhenBlobStoreImplIsObjectStorage() {
+    void fromShouldReturnConfigurationWhenBlobStoreImplIsS3() {
         PropertiesConfiguration configuration = new PropertiesConfiguration();
-        configuration.addProperty("implementation", OBJECT_STORAGE);
+        configuration.addProperty("implementation", S3);
 
         assertThat(
             BlobStoreChoosingConfiguration.from(configuration)
                 .getImplementation()
                 .getName())
-            .isEqualTo(OBJECT_STORAGE);
+            .isEqualTo(S3);
     }
 
     @Test
     void fromShouldReturnConfigurationWhenBlobStoreImplIsSupportedAndCaseInsensitive() {
         PropertiesConfiguration configuration = new PropertiesConfiguration();
-        configuration.addProperty("implementation", "OBjecTStorAGE");
+        configuration.addProperty("implementation", "S3");
 
         assertThat(
             BlobStoreChoosingConfiguration.from(configuration)
                 .getImplementation()
                 .getName())
-            .isEqualTo(OBJECT_STORAGE);
+            .isEqualTo(S3);
     }
 
     @Test
