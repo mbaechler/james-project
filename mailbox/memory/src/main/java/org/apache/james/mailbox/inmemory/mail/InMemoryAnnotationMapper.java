@@ -128,7 +128,7 @@ public class InMemoryAnnotationMapper implements AnnotationMapper {
     public void deleteAnnotation(MailboxId mailboxId, MailboxAnnotationKey key) {
         lock.writeLock().lock();
         try {
-            mailboxesAnnotations.remove(mailboxId, key.asString());
+            mailboxesAnnotations.remove((InMemoryId)mailboxId, key.asString());
         } finally {
             lock.writeLock().unlock();
         }
