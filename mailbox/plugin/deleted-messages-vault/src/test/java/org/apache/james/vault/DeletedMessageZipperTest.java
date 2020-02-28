@@ -182,13 +182,8 @@ class DeletedMessageZipperTest {
         @Test
         void zipShouldStopLoadingResourcesWhenGettingException() throws Exception {
             doThrow(new IOException("mocked exception")).when(zipper).createEntry(any(), any());
-            DeletedMessageContentLoader contentLoader = spy(new DeletedMessageContentLoader() {
-                // lambdas are final and thus can't be spied
-                @Override
-                public Optional<InputStream> load(DeletedMessage deletedMessage) {
-                    return Optional.of(new ByteArrayInputStream(CONTENT));
-                }
-            });
+            // lambdas are final and thus can't be spied
+            DeletedMessageContentLoader contentLoader = spy(deletedMessage -> Optional.of(new ByteArrayInputStream(CONTENT)));
 
             try {
                 zipper.zip(contentLoader, Stream.of(DELETED_MESSAGE, DELETED_MESSAGE_2), new ByteArrayOutputStream());
