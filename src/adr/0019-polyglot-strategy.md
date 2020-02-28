@@ -1,6 +1,6 @@
-# 16. Polyglot codebase
+# 19. Polyglot codebase
 
-Date: 2020-02-03
+Date: 2020-02-28
 
 ## Status
 
@@ -12,7 +12,7 @@ James is written in Java for a very long time. In recent years, Java modernized 
 
 However, in the meantime, most software relying on the JVM started supporting alternative JVM languages to keep being relevant.
 
-It includes Groovy, Clojure, Scala and more recently Kotlin.
+It includes Groovy, Clojure, Scala and more recently Kotlin, to name a few.
 
 Not being open to those alternative languages can be a problem for James adoption.
 
@@ -32,7 +32,7 @@ At the same time, more and more developers and languages adopt Function Programm
 4. Actually implement some mailets in some popular languages
 5. Actually implement some components in some popular languages
 
-About Languages:
+Considered languages:
 
 I. Clojure
 II. Groovy
@@ -41,7 +41,7 @@ IV. Scala
 
 ## Decision
 
-We decided on options 4, 5 and IV.
+We decide for options 4, 5 and IV.
 
 That means we need to write some mailets in Scala and demonstrate how it's done and then used in a running server.
 
@@ -93,20 +93,19 @@ Cons:
 Pros:
 * It's probably not a lot of work, a mailet is just a simple class, probably easy to do in most JVM language
 * It makes us learn how it works and maybe will help us go further than the basic polyglot experience by doing small
-enhancement to the codebase
+enhancements to the codebase
 * We can document the process and illustrate with some actual code
 * It opens James to alternatives and can attract people outside Java developers community
 
 Cons:
-* It makes the codebase more complex, requiring knowledge in another language
 * It can have a negative impact on the build time and dependencies download
 
 ### Option 5: Actually implement some components in some popular languages
 
 Pros:
-* Leverage a modern language for some complex component
+* Leverage a modern language for some complex components
 * It makes us learn how it works and maybe will help us go further than the basic polyglot experience by doing small
-enhancement to the codebase
+enhancements to the codebase
 * We can document the process and illustrate with some actual code
 * It opens James to alternatives and can attract people outside Java developers community
 
@@ -121,7 +120,7 @@ Pros:
 
 Cons:
 * Weak popularity
-* No prior experience in the current team
+* No prior experience in the current active commiters
 * Not statically typed hence less likely to fit the size of the project
 
 ### Option II: Groovy
@@ -130,7 +129,7 @@ Pros:
 * More advanced than current Java on most topics
 
 Cons:
-* No prior experience in the current team
+* No prior experience in the current active commiters
 * Not very FP
 * Replaced in JVM community by Kotlin last years
 
@@ -143,6 +142,7 @@ Pros:
 * Coroutine for handling high-performance IOs
 
 Cons:
+* No prior experience in the current active commiters
 * Lack of some FP constructs like proper Pattern Matching, persistent collections 
 * Despite progress done by Arrow, Kotlin community aims mostly at writing "better Java"
 
@@ -150,7 +150,7 @@ Cons:
 
 Pros:
 * Rich FP community and ecosystem
-* Existing knowledge in the current team
+* Existing knowledge in the current active commiters
 
 Cons:
 * Needs work to master
