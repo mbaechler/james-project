@@ -81,13 +81,9 @@ public class RemoveMimeHeader extends GenericMailet {
                 .stream()
                 .collect(Collectors.toList()) // Streaming for concurrent modifications
                 .forEach(recipient -> {
-                    Iterator<Header> it = mail.getPerRecipientSpecificHeaders().getHeadersForRecipient(recipient).iterator();
-                    while (it.hasNext()) {
-                        Header next = it.next();
-                        if (headers.contains(next.getName())) {
-                            it.remove();
-                        }
-                    }
+                    mail.getPerRecipientSpecificHeaders()
+                        .getHeadersForRecipient(recipient)
+                        .removeIf(next -> headers.contains(next.getName()));
                 });
     }
 }

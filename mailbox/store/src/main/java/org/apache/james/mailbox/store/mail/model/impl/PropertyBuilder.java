@@ -138,12 +138,7 @@ public class PropertyBuilder {
      * @param value null to remove property
      */
     public void setProperty(String namespace, String localName, String value) {
-        for (Iterator<Property> it = properties.iterator();it.hasNext();) {
-            final Property property = it.next();
-            if (property.isNamed(namespace, localName)) {
-                it.remove();
-            }
-        }
+        properties.removeIf(property -> property.isNamed(namespace, localName));
         
         if (value != null) {
             properties.add(new Property(namespace, localName, value));
@@ -157,12 +152,7 @@ public class PropertyBuilder {
      * @param values null to remove property
      */
     public void setProperty(String namespace, String localName, List<String> values) {
-        for (Iterator<Property> it = properties.iterator();it.hasNext();) {
-            final Property property = it.next();
-            if (property.isNamed(namespace, localName)) {
-                it.remove();
-            }
-        }
+        properties.removeIf(property -> property.isNamed(namespace, localName));
         if (values != null) {
             for (String value:values) {
                 properties.add(new Property(namespace, localName, value));
@@ -193,12 +183,7 @@ public class PropertyBuilder {
      * @param valuesByLocalName not null
      */
     public void setProperties(String namespace, Map<String,String> valuesByLocalName) {
-        for (Iterator<Property> it = properties.iterator();it.hasNext();) {
-            final Property property = it.next();
-            if (property.isInSpace(namespace)) {
-                it.remove();
-            }
-        }
+        properties.removeIf(property -> property.isInSpace(namespace));
         for (Map.Entry<String, String> valueByLocalName:valuesByLocalName.entrySet()) {
             properties.add(new Property(namespace, valueByLocalName.getKey().toLowerCase(Locale.US), valueByLocalName.getValue()));
         }
