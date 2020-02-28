@@ -72,7 +72,7 @@ public class Quota<T extends QuotaLimitValue<T>, U extends QuotaUsageValue<U, T>
         public Quota<T, U> build() {
             Preconditions.checkState(used != null);
             Preconditions.checkState(computedLimit != null);
-            return new Quota<T, U>(used, computedLimit, limitsByScope.build());
+            return new Quota<>(used, computedLimit, limitsByScope.build());
         }
 
     }
@@ -107,7 +107,7 @@ public class Quota<T extends QuotaLimitValue<T>, U extends QuotaUsageValue<U, T>
     }
 
     public Quota<T, U> addValueToQuota(U value) {
-        return new Quota<T, U>(used.add(value), limit, limitByScope);
+        return new Quota<>(used.add(value), limit, limitByScope);
     }
 
     /**
