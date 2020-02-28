@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.mail.Header;
 import javax.mail.MessagingException;
@@ -54,6 +55,7 @@ import org.apache.mailet.MailetContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.steveash.guavate.Guavate;
 import com.google.common.collect.Lists;
 
 /**
@@ -383,7 +385,7 @@ public class SieveMailAdapter implements MailAdapter, EnvelopeAccessors, ActionC
                 .contentTypes(Lists.newArrayList("text/plain"))
                 .includeHeaders(false)
                 .caseInsensitive(false)
-                .searchContents(Lists.transform(phrasesCaseInsensitive, s -> s)).build()
+                .searchContents(phrasesCaseInsensitive.stream().map(s -> s).collect(Guavate.toImmutableList())).build()
                 .messageMatches(getMail().getMessage().getInputStream());
         } catch (Exception e) {
             throw new SieveMailException("Error searching in the mail content", e);
@@ -397,7 +399,7 @@ public class SieveMailAdapter implements MailAdapter, EnvelopeAccessors, ActionC
                 .includeHeaders(false)
                 .caseInsensitive(false)
                 .ignoringMime(true)
-                .searchContents(Lists.transform(phrasesCaseInsensitive, s -> s)).build()
+                .searchContents(phrasesCaseInsensitive.stream().map(s -> s).collect(Guavate.toImmutableList())).build()
                 .messageMatches(getMail().getMessage().getInputStream());
         } catch (Exception e) {
             throw new SieveMailException("Error searching in the mail content", e);
@@ -411,7 +413,7 @@ public class SieveMailAdapter implements MailAdapter, EnvelopeAccessors, ActionC
                 .contentTypes(contentTypes)
                 .includeHeaders(false)
                 .caseInsensitive(false)
-                .searchContents(Lists.transform(phrasesCaseInsensitive, s -> s)).build()
+                .searchContents(phrasesCaseInsensitive.stream().map(s -> s).collect(Guavate.toImmutableList())).build()
                 .messageMatches(getMail().getMessage().getInputStream());
         } catch (Exception e) {
             throw new SieveMailException("Error searching in the mail content", e);
