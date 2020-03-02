@@ -19,7 +19,6 @@
 
 package org.apache.james.transport.mailets;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,7 +27,6 @@ import javax.mail.internet.MimeMessage;
 
 import org.apache.mailet.Mail;
 import org.apache.mailet.MailetException;
-import org.apache.mailet.PerRecipientHeaders.Header;
 import org.apache.mailet.base.GenericMailet;
 
 import com.google.common.base.Splitter;
