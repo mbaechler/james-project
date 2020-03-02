@@ -41,7 +41,6 @@ import static org.apache.james.mailbox.store.mail.model.StandardNames.MIME_MIME_
 import static org.apache.james.mailbox.store.mail.model.StandardNames.MIME_SUB_TYPE_NAME;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
