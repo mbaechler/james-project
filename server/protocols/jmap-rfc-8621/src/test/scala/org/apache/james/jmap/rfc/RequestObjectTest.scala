@@ -20,25 +20,46 @@
 package org.apache.james.jmap.rfc
 
 import org.apache.james.jmap.rfc.model.RequestObjectPOJO
+import org.apache.james.jmap.rfc.model.RequestObjectPOJO.{Capability, Invocation}
 import org.scalatestplus.play.PlaySpec
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsArray, JsObject, JsResult, JsString, JsSuccess, JsValue, Json}
 
 class RequestObjectTest extends PlaySpec {
 
   "Serialize Capability" must {
     "succeed " in {
-      val capabilityValue: String = "org.com.test.1"
-      val capabilityJsValue: JsValue = Json.obj("value" -> "org.com.test.1")
-      val capabilityObject =  RequestObjectPOJO.capabilityFormat.reads(capabilityJsValue)
-      capabilityObject.get.value.equals(capabilityValue)
+      val capabilityJsValue: JsValue = JsString("org.com.test.1")
+      Json.fromJson[Capability](capabilityJsValue) must be(JsSuccess(Capability("org.com.test.1")))
     }
 
     "failed" in {
-      val capabilityValue: String = "org.com.test.2"
-      val capabilityJsValue: JsValue = Json.obj("value" -> "org.com.test.1")
-      val capabilityObject =  RequestObjectPOJO.capabilityFormat.reads(capabilityJsValue)
-      !capabilityObject.get.value.equals(capabilityValue)
+      val capabilityJsValue: JsValue = JsString("org.com.test.2")
+      Json.fromJson[Capability](capabilityJsValue) must not be(JsSuccess(Capability("org.com.test.1")))
     }
   }
 
+  "Serialize RequestObject" must {
+    "succeed " in {
+      RequestObjectPOJO.serialize(
+        """
+          |{
+          |  "using": [ "urn:ietf:params:jmap:core"],
+          |  "methodCalls": [
+          |    [ "Core/echo", {
+          |      "arg1": "arg1data",
+          |      "arg2": "arg2data"
+          |    }, "c1" ]
+          |  ]
+          |}
+          |""".stripMargin) must be(
+          RequestObjectPOJO.RequestObject(
+            using = Seq(RequestObjectPOJO.Capability("urn:ietf:params:jmap:core")),
+            methodCalls = Seq(Invocation(Json.parse(
+              """[ "Core/echo", {
+                |      "arg1": "arg1data",
+                |      "arg2": "arg2data"
+                |    }, "c1" ]
+                |""".stripMargin).as[JsArray]))))
+    }
+  }
 }

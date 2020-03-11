@@ -49,7 +49,7 @@
         </dependency>
         <dependency>
             <groupId>org.scalatestplus.play</groupId>
-            <artifactId>scalatestplus-play_2.11</artifactId>
+            <artifactId>scalatestplus-play_${scala.base}</artifactId>
             <version>4.0.3</version>
             <scope>test</scope>
         </dependency>
@@ -57,6 +57,10 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>net.alchim31.maven</groupId>
+                <artifactId>scala-maven-plugin</artifactId>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
