@@ -21,7 +21,6 @@ package org.apache.james.mailbox.elasticsearch.search;
 
 import java.util.Collection;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 import org.apache.james.backends.es.AliasName;
 import org.apache.james.backends.es.NodeMappingFactory;
@@ -46,6 +45,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableList;
+
+import reactor.core.publisher.Flux;
 
 public class ElasticSearchSearcher {
     public static final int DEFAULT_SEARCH_SIZE = 100;
@@ -75,14 +76,14 @@ public class ElasticSearchSearcher {
         this.routingKeyFactory = routingKeyFactory;
     }
 
-    public Stream<MessageSearchIndex.SearchResult> search(Collection<MailboxId> mailboxIds, SearchQuery query,
+    public Flux<MessageSearchIndex.SearchResult> search(Collection<MailboxId> mailboxIds, SearchQuery query,
                                                           Optional<Integer> limit) {
         SearchRequest searchRequest = prepareSearch(mailboxIds, query, limit);
-        Stream<MessageSearchIndex.SearchResult> pairStream = new ScrolledSearch(client, searchRequest)
+        Flux<MessageSearchIndex.SearchResult> pairStream = new ScrolledSearch(client, searchRequest)
             .searchHits()
             .flatMap(this::extractContentFromHit);
 
-        return limit.map(pairStream::limit)
+        return limit.map(pairStream::take)
             .orElse(pairStream);
     }
 
@@ -122,20 +123,20 @@ public class ElasticSearchSearcher {
             .orElse(size);
     }
 
-    private Stream<MessageSearchIndex.SearchResult> extractContentFromHit(SearchHit hit) {
+    private Flux<MessageSearchIndex.SearchResult> extractContentFromHit(SearchHit hit) {
         DocumentField mailboxId = hit.field(JsonMessageConstants.MAILBOX_ID);
         DocumentField uid = hit.field(JsonMessageConstants.UID);
         Optional<DocumentField> id = retrieveMessageIdField(hit);
         if (mailboxId != null && uid != null) {
             Number uidAsNumber = uid.getValue();
-            return Stream.of(
+            return Flux.just(
                 new MessageSearchIndex.SearchResult(
                     id.map(field -> messageIdFactory.fromString(field.getValue())),
                     mailboxIdFactory.fromString(mailboxId.getValue()),
                     MessageUid.of(uidAsNumber.longValue())));
         } else {
             LOGGER.warn("Can not extract UID, MessageID and/or MailboxId for search result {}", hit.getId());
-            return Stream.empty();
+            return Flux.empty();
         }
     }
 

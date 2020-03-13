@@ -34,7 +34,6 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import com.google.common.annotations.VisibleForTesting;
 
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public class DeleteByQueryPerformer {
@@ -54,7 +53,7 @@ public class DeleteByQueryPerformer {
     public Mono<Void> perform(QueryBuilder queryBuilder, RoutingKey routingKey) {
         SearchRequest searchRequest = prepareSearch(queryBuilder, routingKey);
 
-        return Flux.fromStream(new ScrolledSearch(client, searchRequest).searchResponses())
+        return new ScrolledSearch(client, searchRequest).searchResponses()
             .flatMap(searchResponse -> deleteRetrievedIds(client, searchResponse, routingKey))
             .thenEmpty(Mono.empty());
     }

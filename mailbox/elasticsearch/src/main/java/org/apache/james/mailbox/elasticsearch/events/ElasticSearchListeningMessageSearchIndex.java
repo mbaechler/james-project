@@ -112,7 +112,8 @@ public class ElasticSearchListeningMessageSearchIndex extends ListeningMessageSe
 
         return searcher
             .search(ImmutableList.of(mailbox.getMailboxId()), searchQuery, noLimit)
-            .map(SearchResult::getMessageUid);
+            .map(SearchResult::getMessageUid)
+            .toStream();
     }
     
     @Override
@@ -123,7 +124,7 @@ public class ElasticSearchListeningMessageSearchIndex extends ListeningMessageSe
             return ImmutableList.of();
         }
 
-        try (Stream<SearchResult> searchResults = searcher.search(mailboxIds, searchQuery, Optional.empty())) {
+        try (Stream<SearchResult> searchResults = searcher.search(mailboxIds, searchQuery, Optional.empty()).toStream()) {
             return searchResults
                 .peek(this::logIfNoMessageId)
                 .map(SearchResult::getMessageId)

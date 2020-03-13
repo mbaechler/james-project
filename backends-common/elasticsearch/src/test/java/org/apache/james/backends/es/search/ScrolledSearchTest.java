@@ -81,7 +81,7 @@ class ScrolledSearchTest {
                 .query(QueryBuilders.matchAllQuery())
                 .size(SIZE));
 
-        assertThat(new ScrolledSearch(client, searchRequest).searchHits())
+        assertThat(new ScrolledSearch(client, searchRequest).searchHits().toStream())
             .isEmpty();
     }
 
@@ -103,7 +103,7 @@ class ScrolledSearchTest {
                 .query(QueryBuilders.matchAllQuery())
                 .size(SIZE));
 
-        assertThat(new ScrolledSearch(client, searchRequest).searchHits())
+        assertThat(new ScrolledSearch(client, searchRequest).searchHits().toStream())
             .extracting(SearchHit::getId)
             .containsOnly(id);
     }
@@ -133,7 +133,7 @@ class ScrolledSearchTest {
                 .query(QueryBuilders.matchAllQuery())
                 .size(SIZE));
 
-        assertThat(new ScrolledSearch(client, searchRequest).searchHits())
+        assertThat(new ScrolledSearch(client, searchRequest).searchHits().toStream())
             .extracting(SearchHit::getId)
             .containsOnly(id1, id2);
     }
@@ -170,7 +170,7 @@ class ScrolledSearchTest {
                 .query(QueryBuilders.matchAllQuery())
                 .size(SIZE));
 
-        assertThat(new ScrolledSearch(client, searchRequest).searchHits())
+        assertThat(new ScrolledSearch(client, searchRequest).searchHits().toStream())
             .extracting(SearchHit::getId)
             .containsOnly(id1, id2, id3);
     }
