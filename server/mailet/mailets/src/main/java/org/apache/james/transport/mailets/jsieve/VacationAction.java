@@ -81,9 +81,10 @@ public class VacationAction implements MailAction {
 
     private boolean isValidForReply(final Mail mail, ActionVacation actionVacation, final ActionContext context) {
         Set<MailAddress> currentMailAddresses = ImmutableSet.copyOf(mail.getRecipients());
-        Set<MailAddress> allowedMailAddresses = Stream.concat(
-            actionVacation.getAddresses().stream().map(s -> retrieveAddressFromString(s, context)),
-            Stream.of(context.getRecipient()))
+        Set<MailAddress> allowedMailAddresses = Stream
+            .concat(
+                actionVacation.getAddresses().stream().map(s -> retrieveAddressFromString(s, context)),
+                Stream.of(context.getRecipient()))
             .collect(Guavate.toImmutableSet());
         return !Sets.intersection(currentMailAddresses, allowedMailAddresses).isEmpty();
     }
