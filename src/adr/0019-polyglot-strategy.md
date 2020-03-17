@@ -1,6 +1,6 @@
 # 19. Polyglot codebase
 
-Date: 2020-02-28
+Date: 2020-03-17
 
 ## Status
 
@@ -120,7 +120,7 @@ Pros:
 
 Cons:
 * Weak popularity
-* No prior experience in the current active commiters
+* No prior experience among current active commiters
 * Not statically typed hence less likely to fit the size of the project
 
 ### Option II: Groovy
@@ -129,7 +129,7 @@ Pros:
 * More advanced than current Java on most topics
 
 Cons:
-* No prior experience in the current active commiters
+* No prior experience among current active commiters
 * Not very FP
 * Replaced in JVM community by Kotlin last years
 
@@ -142,7 +142,7 @@ Pros:
 * Coroutine for handling high-performance IOs
 
 Cons:
-* No prior experience in the current active commiters
+* No prior experience among current active commiters
 * Lack of some FP constructs like proper Pattern Matching, persistent collections 
 * Despite progress done by Arrow, Kotlin community aims mostly at writing "better Java"
 
@@ -150,7 +150,7 @@ Cons:
 
 Pros:
 * Rich FP community and ecosystem
-* Existing knowledge in the current active commiters
+* Existing knowledge among current active commiters
 
 Cons:
 * Needs work to master
