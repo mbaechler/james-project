@@ -1,4 +1,4 @@
-# 19. Polyglot codebase
+# 20. Polyglot codebase
 
 Date: 2020-03-17
 
@@ -26,14 +26,17 @@ At the same time, more and more developers and languages adopt Function Programm
 
 ## Considered options
 
+### Strategies
+
 1. Let the users figure out how to make polyglot setups
 2. Document the usage of polyglot mailets for some popular languages
 3. Document the usage of polyglot components for some popular languages
 4. Actually implement some mailets in some popular languages
 5. Actually implement some components in some popular languages
 
-Considered languages:
+### Languages:
 
+[upperroman]
 I. Clojure
 II. Groovy
 III. Kotlin
