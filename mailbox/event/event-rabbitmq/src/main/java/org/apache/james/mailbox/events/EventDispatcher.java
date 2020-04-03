@@ -99,20 +99,17 @@ class EventDispatcher {
             .then();
     }
 
-    private Mono<Void> executeListener(Event event, MailboxListener mailboxListener, RegistrationKey registrationKey) {
-        return Mono.from(sink -> {
-            try {
-                mailboxListenerExecutor.execute(mailboxListener,
-                    MDCBuilder.create()
-                        .addContext(EventBus.StructuredLoggingFields.REGISTRATION_KEY, registrationKey),
-                    event);
-            } catch (Exception e) {
-                structuredLogger(event, ImmutableSet.of(registrationKey))
-                    .log(logger -> logger.error("Exception happens when dispatching event", e));
-            }
-            sink.onComplete();
-        });
-
+    private Mono<Void> executeListener(Event event, MailboxListener.ReactiveMailboxListener mailboxListener, RegistrationKey registrationKey) {
+        return mailboxListenerExecutor.execute(
+                    mailboxListener,
+                    MDCBuilder.create().addContext(EventBus.StructuredLoggingFields.REGISTRATION_KEY, registrationKey),
+                    event)
+                .onErrorResume(e -> {
+                    structuredLogger(event, ImmutableSet.of(registrationKey))
+                        .log(logger -> logger.error("Exception happens when dispatching event", e));
+                    return Mono.empty();
+                    }
+                );
     }
 
     private StructuredLogger structuredLogger(Event event, Set<RegistrationKey> keys) {

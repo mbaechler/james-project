@@ -126,7 +126,7 @@ class KeyRegistrationHandler {
             .block();
     }
 
-    Registration register(MailboxListener listener, RegistrationKey key) {
+    Registration register(MailboxListener.ReactiveMailboxListener listener, RegistrationKey key) {
         LocalListenerRegistry.LocalRegistration registration = localListenerRegistry.addListener(key, listener);
         if (registration.isFirstListener()) {
             registrationBinder.bind(key)
@@ -165,7 +165,7 @@ class KeyRegistrationHandler {
             .then();
     }
 
-    private void executeListener(MailboxListener listener, Event event, RegistrationKey key) throws Exception {
+    private void executeListener(MailboxListener.ReactiveMailboxListener listener, Event event, RegistrationKey key) throws Exception {
         mailboxListenerExecutor.execute(listener,
             MDCBuilder.create()
                 .addContext(EventBus.StructuredLoggingFields.REGISTRATION_KEY, key),

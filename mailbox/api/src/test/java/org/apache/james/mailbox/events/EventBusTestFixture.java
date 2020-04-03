@@ -34,13 +34,16 @@ import org.apache.james.mailbox.model.MailboxConstants;
 import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.model.TestId;
+import org.reactivestreams.Publisher;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
+import reactor.core.publisher.Mono;
+
 public interface EventBusTestFixture {
 
-    class MailboxListenerCountingSuccessfulExecution implements MailboxListener {
+    class MailboxListenerCountingSuccessfulExecution implements MailboxListener.ReactiveMailboxListener {
         private final AtomicInteger calls = new AtomicInteger(0);
 
         @Override
@@ -48,9 +51,10 @@ public interface EventBusTestFixture {
             return true;
         }
 
+
         @Override
-        public void event(Event event) {
-            calls.incrementAndGet();
+        public Publisher<Void> reactiveEvent(Event event) {
+            return Mono.fromCallable(() -> calls.incrementAndGet()).then();
         }
 
         public int numberOfEventCalls() {
@@ -71,7 +75,7 @@ public interface EventBusTestFixture {
         }
 
         @Override
-        public void event(Event event) {
+        public void event(Event event) throws Exception {
             if (eventsCauseThrowing.contains(event)) {
                 throw new RuntimeException("event triggers throwing");
             }

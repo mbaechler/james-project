@@ -35,6 +35,7 @@ import org.apache.james.mailbox.events.MailboxListener;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.FetchGroup;
 import org.apache.james.mailbox.model.MessageResult;
+import org.reactivestreams.Publisher;
 
 import com.github.fge.lambdas.Throwing;
 import com.google.common.annotations.VisibleForTesting;
@@ -43,7 +44,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-public class ComputeMessageFastViewProjectionListener implements MailboxListener.GroupMailboxListener {
+public class ComputeMessageFastViewProjectionListener implements MailboxListener.ReactiveGroupMailboxListener {
     public static class ComputeMessageFastViewProjectionListenerGroup extends Group {
 
     }
@@ -71,22 +72,24 @@ public class ComputeMessageFastViewProjectionListener implements MailboxListener
     }
 
     @Override
-    public void event(Event event) throws MailboxException {
+    public Publisher<Void> reactiveEvent(Event event) {
         if (event instanceof Added) {
             MailboxSession session = sessionProvider.createSystemSession(event.getUsername());
-            handleAddedEvent((Added) event, session);
+            return handleAddedEvent((Added) event, session);
         }
+        return Mono.empty();
     }
 
-    private void handleAddedEvent(Added addedEvent, MailboxSession session) throws MailboxException {
-        Flux.fromIterable(messageIdManager.getMessages(addedEvent.getMessageIds(), FetchGroup.FULL_CONTENT, session))
+    private Mono<Void> handleAddedEvent(Added addedEvent, MailboxSession session) {
+        return Mono.fromCallable(() -> messageIdManager.getMessages(addedEvent.getMessageIds(), FetchGroup.FULL_CONTENT, session))
+            .subscribeOn(Schedulers.elastic())
+            .flatMapMany(Flux::fromIterable)
             .flatMap(Throwing.function(messageResult -> Mono.fromCallable(
                 () -> Pair.of(messageResult.getMessageId(), computeFastViewPrecomputedProperties(messageResult)))
                     .subscribeOn(Schedulers.parallel())))
             .publishOn(Schedulers.elastic())
             .flatMap(message -> messageFastViewProjection.store(message.getKey(), message.getValue()))
-            .then()
-            .block();
+            .then();
     }
 
     @VisibleForTesting

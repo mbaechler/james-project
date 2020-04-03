@@ -233,7 +233,7 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
     class AtLeastOnceTest {
 
         @Test
-        void inProcessingEventShouldBeReDispatchedToAnotherEventBusWhenOneIsDown() {
+        void inProcessingEventShouldBeReDispatchedToAnotherEventBusWhenOneIsDown() throws Exception {
             MailboxListenerCountingSuccessfulExecution eventBusListener = spy(new EventBusTestFixture.MailboxListenerCountingSuccessfulExecution());
             MailboxListenerCountingSuccessfulExecution eventBus2Listener = spy(new EventBusTestFixture.MailboxListenerCountingSuccessfulExecution());
             MailboxListenerCountingSuccessfulExecution eventBus3Listener = spy(new EventBusTestFixture.MailboxListenerCountingSuccessfulExecution());

@@ -78,7 +78,7 @@ class InVmEventDeliveryTest {
         }
 
         @Test
-        void deliverShouldNotDeliverWhenListenerGetException() {
+        void deliverShouldNotDeliverWhenListenerGetException() throws Exception {
             when(listener.getExecutionMode()).thenReturn(MailboxListener.ExecutionMode.SYNCHRONOUS);
             doThrow(new RuntimeException())
                 .when(listener).event(EVENT);
@@ -92,7 +92,7 @@ class InVmEventDeliveryTest {
         }
 
         @Test
-        void deliverShouldReturnAnErrorMonoWhenListenerGetException() {
+        void deliverShouldReturnAnErrorMonoWhenListenerGetException() throws Exception {
             when(listener.getExecutionMode()).thenReturn(MailboxListener.ExecutionMode.SYNCHRONOUS);
             doThrow(new RuntimeException())
                 .when(listener).event(EVENT);
@@ -125,7 +125,7 @@ class InVmEventDeliveryTest {
         }
 
         @Test
-        void deliverShouldNotFailWhenListenerGetException() {
+        void deliverShouldNotFailWhenListenerGetException() throws Exception {
             when(listener.getExecutionMode()).thenReturn(MailboxListener.ExecutionMode.ASYNCHRONOUS);
             doThrow(new RuntimeException())
                 .when(listener).event(EVENT);
@@ -136,7 +136,7 @@ class InVmEventDeliveryTest {
         }
 
         @Test
-        void deliverShouldReturnAnSuccessSyncMonoWhenListenerGetException() {
+        void deliverShouldReturnAnSuccessSyncMonoWhenListenerGetException() throws Exception {
             when(listener.getExecutionMode()).thenReturn(MailboxListener.ExecutionMode.ASYNCHRONOUS);
             doThrow(new RuntimeException())
                 .when(listener).event(EVENT);
@@ -151,7 +151,7 @@ class InVmEventDeliveryTest {
     class WithOptions {
 
         @Test
-        void retryShouldWorkWhenDeliverWithRetry() {
+        void retryShouldWorkWhenDeliverWithRetry() throws Exception {
             MailboxListenerCountingSuccessfulExecution listener = newListener();
             doThrow(new RuntimeException())
                 .doThrow(new RuntimeException())
@@ -170,7 +170,7 @@ class InVmEventDeliveryTest {
         }
 
         @Test
-        void failureHandlerShouldWorkWhenDeliverWithFailureHandler() {
+        void failureHandlerShouldWorkWhenDeliverWithFailureHandler() throws Exception {
             MailboxListenerCountingSuccessfulExecution listener = newListener();
             doThrow(new RuntimeException())
                 .when(listener).event(EVENT);
@@ -188,7 +188,7 @@ class InVmEventDeliveryTest {
         }
 
         @Test
-        void failureHandlerShouldNotWorkWhenRetrySuccess() {
+        void failureHandlerShouldNotWorkWhenRetrySuccess() throws Exception {
             MailboxListenerCountingSuccessfulExecution listener = newListener();
             doThrow(new RuntimeException())
                 .doThrow(new RuntimeException())
@@ -213,7 +213,7 @@ class InVmEventDeliveryTest {
 
 
         @Test
-        void failureHandlerShouldWorkWhenRetryFails() {
+        void failureHandlerShouldWorkWhenRetryFails() throws Exception {
             MailboxListenerCountingSuccessfulExecution listener = newListener();
             //do throw  RetryBackoffConfiguration.DEFAULT.DEFAULT_MAX_RETRIES + 1 times
             doThrow(new RuntimeException())

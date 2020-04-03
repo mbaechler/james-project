@@ -26,6 +26,9 @@ import java.io.Closeable;
 import org.apache.james.metrics.api.MetricFactory;
 import org.apache.james.metrics.api.TimeMetric;
 import org.apache.james.util.MDCBuilder;
+import org.apache.james.util.ReactorUtils;
+
+import reactor.core.publisher.Mono;
 
 public class MailboxListenerExecutor {
     private final MetricFactory metricFactory;
@@ -34,25 +37,19 @@ public class MailboxListenerExecutor {
         this.metricFactory = metricFactory;
     }
 
-    void execute(MailboxListener listener, MDCBuilder mdcBuilder, Event event) throws Exception {
+    Mono<Void> execute(MailboxListener.ReactiveMailboxListener listener, MDCBuilder mdcBuilder, Event event) {
         if (listener.isHandling(event)) {
-            try (Closeable mdc = buildMDC(listener, mdcBuilder, event)) {
-                TimeMetric timer = metricFactory.timer(timerName(listener));
-                try {
-                    listener.event(event);
-                } finally {
-                    timer.stopAndPublish();
-                }
-            }
+            return Mono.from(metricFactory.runPublishingTimerMetric(timerName(listener), listener.reactiveEvent(event)))
+                    .subscriberContext(ReactorUtils.context("MailboxListenerExecutor", mdc(listener, mdcBuilder, event)));
         }
+        return Mono.empty();
     }
 
-    private Closeable buildMDC(MailboxListener listener, MDCBuilder mdcBuilder, Event event) {
+    private MDCBuilder mdc(MailboxListener listener, MDCBuilder mdcBuilder, Event event) {
         return mdcBuilder
             .addContext(EventBus.StructuredLoggingFields.EVENT_ID, event.getEventId())
             .addContext(EventBus.StructuredLoggingFields.EVENT_CLASS, event.getClass())
             .addContext(EventBus.StructuredLoggingFields.USER, event.getUsername())
-            .addContext(EventBus.StructuredLoggingFields.LISTENER_CLASS, listener.getClass())
-            .build();
+            .addContext(EventBus.StructuredLoggingFields.LISTENER_CLASS, listener.getClass());
     }
 }

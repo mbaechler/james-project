@@ -73,7 +73,7 @@ class GroupRegistration implements Registration {
     static final String RETRY_COUNT = "retry-count";
     static final int DEFAULT_RETRY_COUNT = 0;
 
-    private final MailboxListener mailboxListener;
+    private final MailboxListener.ReactiveMailboxListener mailboxListener;
     private final WorkQueueName queueName;
     private final Receiver receiver;
     private final Runnable unregisterGroup;
@@ -87,7 +87,7 @@ class GroupRegistration implements Registration {
     private Optional<Disposable> receiverSubscriber;
 
     GroupRegistration(Sender sender, ReceiverProvider receiverProvider, EventSerializer eventSerializer,
-                      MailboxListener mailboxListener, Group group, RetryBackoffConfiguration retryBackoff,
+                      MailboxListener.ReactiveMailboxListener mailboxListener, Group group, RetryBackoffConfiguration retryBackoff,
                       EventDeadLetters eventDeadLetters,
                       Runnable unregisterGroup, MailboxListenerExecutor mailboxListenerExecutor) {
         this.eventSerializer = eventSerializer;

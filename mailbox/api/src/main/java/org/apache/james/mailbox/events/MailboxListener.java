@@ -41,11 +41,14 @@ import org.apache.james.mailbox.model.MessageMetaData;
 import org.apache.james.mailbox.model.Quota;
 import org.apache.james.mailbox.model.QuotaRoot;
 import org.apache.james.mailbox.model.UpdatedFlags;
+import org.reactivestreams.Publisher;
 
 import com.github.steveash.guavate.Guavate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+
+import reactor.core.publisher.Mono;
 
 
 /**
@@ -54,8 +57,24 @@ import com.google.common.collect.ImmutableSet;
  */
 public interface MailboxListener {
 
+    interface ReactiveMailboxListener extends MailboxListener {
+        Publisher<Void> reactiveEvent(Event event);
+
+        default void event(Event event) throws Exception {
+            Mono.from(reactiveEvent(event)).block();
+        }
+    }
+
     interface GroupMailboxListener extends MailboxListener {
         Group getDefaultGroup();
+    }
+
+    interface ReactiveGroupMailboxListener extends GroupMailboxListener {
+        Publisher<Void> reactiveEvent(Event event);
+
+        default void event(Event event) throws Exception {
+            Mono.from(reactiveEvent(event)).block();
+        }
     }
 
     enum ExecutionMode {
