@@ -20,7 +20,7 @@ package org.apache.james.protocols.smtp.core;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
-import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -125,7 +125,7 @@ public class ReceivedDataLineFilter extends SeparatingDataLineFilter {
         header.add(headerLineBuffer.toString());
         headerLineBuffer = new StringBuilder();
 
-        headerLineBuffer.append(DATEFORMAT.format(Instant.now()));
+        headerLineBuffer.append(DATEFORMAT.format(ZonedDateTime.now()));
 
         header.add(headerLineBuffer.toString());
         
