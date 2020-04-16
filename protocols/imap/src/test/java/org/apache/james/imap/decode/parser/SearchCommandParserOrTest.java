@@ -26,18 +26,28 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.List;
 
 import org.apache.james.imap.api.ImapCommand;
 import org.apache.james.imap.api.message.IdRange;
 import org.apache.james.imap.api.message.UidRange;
 import org.apache.james.imap.api.message.request.DayMonthYear;
+import org.apache.james.imap.api.message.request.Draft;
+import org.apache.james.imap.api.message.request.From;
+import org.apache.james.imap.api.message.request.Header;
+import org.apache.james.imap.api.message.request.Or;
 import org.apache.james.imap.api.message.request.SearchKey;
+import org.apache.james.imap.api.message.request.SequenceNumbers;
+import org.apache.james.imap.api.message.request.Since;
+import org.apache.james.imap.api.message.request.Uid;
 import org.apache.james.imap.api.message.response.StatusResponseFactory;
 import org.apache.james.imap.decode.ImapRequestLineReader;
 import org.apache.james.imap.decode.ImapRequestStreamLineReader;
 import org.apache.james.mailbox.MessageUid;
 import org.junit.Before;
 import org.junit.Test;
+
+import scala.jdk.javaapi.CollectionConverters;
 
 public class SearchCommandParserOrTest {
 
@@ -51,45 +61,48 @@ public class SearchCommandParserOrTest {
     }
     
     public Input sequence() {
-        IdRange[] range = { new IdRange(100, Long.MAX_VALUE), new IdRange(110),
-                new IdRange(200, 201), new IdRange(400, Long.MAX_VALUE) };
-        SearchKey key = SearchKey.buildSequenceSet(IdRange.mergeRanges(Arrays.asList(range)).toArray(new IdRange[0]));
+        List<IdRange> ranges = IdRange.mergeRanges(Arrays.asList(
+            new IdRange(100, Long.MAX_VALUE),
+            new IdRange(110),
+            new IdRange(200, 201),
+            new IdRange(400, Long.MAX_VALUE)));
+        SearchKey key = SequenceNumbers.apply(CollectionConverters.asScala(ranges).toSeq());
         return new Input("*:100,110,200:201,400:*", key);
     }
 
     public Input uid() {
-        UidRange[] range = { 
+        List<UidRange> ranges = UidRange.mergeRanges(Arrays.asList(
                 new UidRange(MessageUid.of(100), MessageUid.MAX_VALUE), 
                 new UidRange(MessageUid.of(110)),
                 new UidRange(MessageUid.of(200), MessageUid.of(201)), 
                 new UidRange(MessageUid.of(400), MessageUid.MAX_VALUE) 
-                };
-        SearchKey key = SearchKey.buildUidSet(UidRange.mergeRanges(Arrays.asList(range)).toArray(new UidRange[0]));
+        ));
+        SearchKey key = Uid.apply(CollectionConverters.asScala(ranges).toSeq());
         return new Input("UID *:100,110,200:201,400:*", key);
     }
 
     public Input header() {
-        SearchKey key = SearchKey.buildHeader("FROM", "Smith");
+        SearchKey key = Header.apply("FROM", "Smith");
         return new Input("HEADER FROM Smith", key);
     }
 
     public Input date() {
-        SearchKey key = SearchKey.buildSince(new DayMonthYear(11, 1, 2001));
+        SearchKey key = Since.apply(new DayMonthYear(11, 1, 2001));
         return new Input("since 11-Jan-2001", key);
     }
 
     public Input stringUnquoted() {
-        SearchKey key = SearchKey.buildFrom("Smith");
+        SearchKey key = From.apply("Smith");
         return new Input("FROM Smith", key);
     }
 
     public Input stringQuoted() {
-        SearchKey key = SearchKey.buildFrom("Smith And Jones");
+        SearchKey key = From.apply("Smith And Jones");
         return new Input("FROM \"Smith And Jones\"", key);
     }
 
     public Input draft() {
-        SearchKey key = SearchKey.buildDraft();
+        SearchKey key = Draft.apply();
         return new Input("DRAFT", key);
     }
 
@@ -173,7 +186,7 @@ public class SearchCommandParserOrTest {
     
     private void checkValid(Input one, Input two) throws Exception {
         String input = "OR " + one.input + " " + two.input + "\r\n";
-        SearchKey key = SearchKey.buildOr(one.key, two.key);
+        SearchKey key = Or.apply(one.key, two.key);
         ImapRequestLineReader reader = new ImapRequestStreamLineReader(
                 new ByteArrayInputStream(input.getBytes(StandardCharsets.US_ASCII)),
                 new ByteArrayOutputStream());

@@ -44,9 +44,45 @@ import org.apache.james.imap.api.ImapConstants;
 import org.apache.james.imap.api.display.HumanReadableText;
 import org.apache.james.imap.api.message.IdRange;
 import org.apache.james.imap.api.message.UidRange;
+import org.apache.james.imap.api.message.request.All;
+import org.apache.james.imap.api.message.request.And;
+import org.apache.james.imap.api.message.request.Answered;
+import org.apache.james.imap.api.message.request.Bcc;
+import org.apache.james.imap.api.message.request.Body;
+import org.apache.james.imap.api.message.request.Cc;
 import org.apache.james.imap.api.message.request.DayMonthYear;
+import org.apache.james.imap.api.message.request.Deleted;
+import org.apache.james.imap.api.message.request.Draft;
+import org.apache.james.imap.api.message.request.Flagged;
+import org.apache.james.imap.api.message.request.From;
+import org.apache.james.imap.api.message.request.Header;
+import org.apache.james.imap.api.message.request.Keyword;
+import org.apache.james.imap.api.message.request.Larger;
+import org.apache.james.imap.api.message.request.New;
+import org.apache.james.imap.api.message.request.Not;
+import org.apache.james.imap.api.message.request.Old;
+import org.apache.james.imap.api.message.request.On;
+import org.apache.james.imap.api.message.request.Or;
+import org.apache.james.imap.api.message.request.Recent;
 import org.apache.james.imap.api.message.request.SearchKey;
 import org.apache.james.imap.api.message.request.SearchOperation;
+import org.apache.james.imap.api.message.request.Seen;
+import org.apache.james.imap.api.message.request.SentBefore;
+import org.apache.james.imap.api.message.request.SentOn;
+import org.apache.james.imap.api.message.request.SentSince;
+import org.apache.james.imap.api.message.request.SequenceNumbers;
+import org.apache.james.imap.api.message.request.Since;
+import org.apache.james.imap.api.message.request.Smaller;
+import org.apache.james.imap.api.message.request.Subject;
+import org.apache.james.imap.api.message.request.Text;
+import org.apache.james.imap.api.message.request.To;
+import org.apache.james.imap.api.message.request.Uid;
+import org.apache.james.imap.api.message.request.UnAnswered;
+import org.apache.james.imap.api.message.request.UnDeleted;
+import org.apache.james.imap.api.message.request.UnDraft;
+import org.apache.james.imap.api.message.request.UnFlagged;
+import org.apache.james.imap.api.message.request.UnKeyword;
+import org.apache.james.imap.api.message.request.UnSeen;
 import org.apache.james.imap.api.message.response.StatusResponse;
 import org.apache.james.imap.api.message.response.StatusResponseFactory;
 import org.apache.james.imap.api.process.ImapProcessor;
@@ -71,6 +107,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.google.common.collect.ImmutableList;
+import scala.jdk.javaapi.CollectionConverters;
+
 public class SearchProcessorTest {
     private static final int DAY = 6;
 
@@ -91,10 +130,10 @@ public class SearchProcessorTest {
 
     private static final String SUBJECT = "Myriad Harbour";
 
-    private static final UidRange[] IDS = { 
+    private static final ImmutableList<UidRange> IDS = ImmutableList.of(
             new UidRange(MessageUid.of(1)),
             new UidRange(MessageUid.of(42), MessageUid.of(1048)) 
-            };
+    );
 
     private static final SearchQuery.UidRange[] RANGES = {
             new SearchQuery.UidRange(MessageUid.of(1)),
@@ -144,7 +183,7 @@ public class SearchProcessorTest {
     @Test
     public void testSequenceSetUpperUnlimited() throws Exception {
         expectsGetSelectedMailbox();
-        final IdRange[] ids = { new IdRange(1, Long.MAX_VALUE) };
+        List<IdRange> ids = ImmutableList.of(new IdRange(1, Long.MAX_VALUE));
         final SearchQuery.UidRange[] ranges = { new SearchQuery.UidRange(MessageUid.of(42), MessageUid.of(100)) };
 
         when(selectedMailbox.existsCount()).thenReturn(100L);
@@ -153,13 +192,13 @@ public class SearchProcessorTest {
         when(selectedMailbox.getLastUid()).thenReturn(Optional.of(MessageUid.of(100L)));
 
         allowUnsolicitedResponses();
-        check(SearchKey.buildSequenceSet(ids), SearchQuery.uid(ranges));
+        check(SequenceNumbers.apply(CollectionConverters.asScala(ids).toSeq()), SearchQuery.uid(ranges));
     }
 
     @Test
     public void testSequenceSetMsnRange() throws Exception {
         expectsGetSelectedMailbox();
-        final IdRange[] ids = { new IdRange(1, 5) };
+        List<IdRange> ids = ImmutableList.of(new IdRange(1, 5));
         final SearchQuery.UidRange[] ranges = { new SearchQuery.UidRange(MessageUid.of(42), MessageUid.of(1729)) };
 
         when(selectedMailbox.existsCount()).thenReturn(100L);
@@ -169,26 +208,27 @@ public class SearchProcessorTest {
         when(selectedMailbox.getLastUid()).thenReturn(Optional.of(MessageUid.MAX_VALUE));
 
         allowUnsolicitedResponses();
-        check(SearchKey.buildSequenceSet(ids), SearchQuery.uid(ranges));
+        check(SequenceNumbers.apply(CollectionConverters.asScala(ids).toSeq()), SearchQuery.uid(ranges));
     }
 
     @Test
     public void testSequenceSetSingleMsn() throws Exception {
         expectsGetSelectedMailbox();
-        final IdRange[] ids = { new IdRange(1) };
+        List<IdRange> ids = ImmutableList.of(new IdRange(1));
         final SearchQuery.UidRange[] ranges = { new SearchQuery.UidRange(MessageUid.of(42)) };
 
         when(selectedMailbox.existsCount()).thenReturn(1L);
         when(selectedMailbox.uid(1)).thenReturn(Optional.of(MessageUid.of(42L)));
 
         allowUnsolicitedResponses();
-        check(SearchKey.buildSequenceSet(ids), SearchQuery.uid(ranges));
+        check(SequenceNumbers.apply(CollectionConverters.asScala(ids).toSeq()),
+            SearchQuery.uid(ranges));
     }
 
     @Test
     public void testALL() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildAll(), SearchQuery.all());
+        check(All.apply(), SearchQuery.all());
     }
 
     private void expectsGetSelectedMailbox() throws Exception {
@@ -197,7 +237,7 @@ public class SearchProcessorTest {
         when(selectedMailbox.isRecentUidRemoved()).thenReturn(false);
         when(selectedMailbox.isSizeChanged()).thenReturn(false);
         when(selectedMailbox.getPath()).thenReturn(mailboxPath);
-        when(selectedMailbox.flagUpdateUids()).thenReturn(Collections.<MessageUid>emptyList());
+        when(selectedMailbox.flagUpdateUids()).thenReturn(Collections.emptyList());
         when(selectedMailbox.getRecent()).thenReturn(new ArrayList<>());
     }
 
@@ -214,65 +254,65 @@ public class SearchProcessorTest {
     @Test
     public void testANSWERED() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildAnswered(), SearchQuery.flagIsSet(Flag.ANSWERED));
+        check(Answered.apply(), SearchQuery.flagIsSet(Flag.ANSWERED));
     }
 
     @Test
     public void testBCC() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildBcc(ADDRESS), SearchQuery.address(
+        check(Bcc.apply(ADDRESS), SearchQuery.address(
                 AddressType.Bcc, ADDRESS));
     }
 
     @Test
     public void testBEFORE() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildBefore(DAY_MONTH_YEAR), SearchQuery
+        check(org.apache.james.imap.api.message.request.Before.apply(DAY_MONTH_YEAR), SearchQuery
                 .internalDateBefore(getDate(DAY, MONTH, YEAR), DateResolution.Day));
     }
 
     @Test
     public void testBODY() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildBody(SUBJECT), SearchQuery.bodyContains(SUBJECT));
+        check(Body.apply(SUBJECT), SearchQuery.bodyContains(SUBJECT));
     }
 
     @Test
     public void testCC() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildCc(ADDRESS), SearchQuery.address(
+        check(Cc.apply(ADDRESS), SearchQuery.address(
                 AddressType.Cc, ADDRESS));
     }
 
     @Test
     public void testDELETED() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildDeleted(), SearchQuery.flagIsSet(Flag.DELETED));
+        check(Deleted.apply(), SearchQuery.flagIsSet(Flag.DELETED));
     }
 
     @Test
     public void testDRAFT() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildDraft(), SearchQuery.flagIsSet(Flag.DRAFT));
+        check(Draft.apply(), SearchQuery.flagIsSet(Flag.DRAFT));
     }
 
     @Test
     public void testFLAGGED() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildFlagged(), SearchQuery.flagIsSet(Flag.FLAGGED));
+        check(Flagged.apply(), SearchQuery.flagIsSet(Flag.FLAGGED));
     }
 
     @Test
     public void testFROM() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildFrom(ADDRESS), SearchQuery.address(
+        check(From.apply(ADDRESS), SearchQuery.address(
                 AddressType.From, ADDRESS));
     }
 
     @Test
     public void testHEADER() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildHeader(ImapConstants.RFC822_IN_REPLY_TO, ADDRESS),
+        check(Header.apply(ImapConstants.RFC822_IN_REPLY_TO, ADDRESS),
                 SearchQuery.headerContains(ImapConstants.RFC822_IN_REPLY_TO,
                         ADDRESS));
     }
@@ -280,26 +320,26 @@ public class SearchProcessorTest {
     @Test
     public void testKEYWORD() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildKeyword(KEYWORD), SearchQuery.flagIsSet(KEYWORD));
+        check(Keyword.apply(KEYWORD), SearchQuery.flagIsSet(KEYWORD));
     }
 
     @Test
     public void testLARGER() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildLarger(SIZE), SearchQuery.sizeGreaterThan(SIZE));
+        check(Larger.apply(SIZE), SearchQuery.sizeGreaterThan(SIZE));
     }
 
     @Test
     public void testNEW() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildNew(), SearchQuery.and(SearchQuery
+        check(New.apply(), SearchQuery.and(SearchQuery
                 .flagIsSet(Flag.RECENT), SearchQuery.flagIsUnSet(Flag.SEEN)));
     }
 
     @Test
     public void testNOT() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildNot(SearchKey.buildOn(DAY_MONTH_YEAR)),
+        check(Not.apply(On.apply(DAY_MONTH_YEAR)),
                 SearchQuery.not(SearchQuery.internalDateOn(getDate(DAY, MONTH, YEAR), DateResolution.Day)));
     }
 
@@ -307,13 +347,13 @@ public class SearchProcessorTest {
     @Test
     public void testOLD() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildOld(), SearchQuery.flagIsUnSet(Flag.RECENT));
+        check(Old.apply(), SearchQuery.flagIsUnSet(Flag.RECENT));
     }
 
     @Test
     public void testON() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildOn(DAY_MONTH_YEAR), SearchQuery.internalDateOn(getDate(
+        check(On.apply(DAY_MONTH_YEAR), SearchQuery.internalDateOn(getDate(
                 DAY, MONTH, YEAR), DateResolution.Day));
     }
 
@@ -321,60 +361,59 @@ public class SearchProcessorTest {
     public void testAND() throws Exception {
         expectsGetSelectedMailbox();
         List<SearchKey> keys = new ArrayList<>();
-        keys.add(SearchKey.buildOn(DAY_MONTH_YEAR));
-        keys.add(SearchKey.buildOld());
-        keys.add(SearchKey.buildLarger(SIZE));
+        keys.add(On.apply(DAY_MONTH_YEAR));
+        keys.add(Old.apply());
+        keys.add(Larger.apply(SIZE));
         List<Criterion> criteria = new ArrayList<>();
         criteria.add(SearchQuery.internalDateOn(getDate(DAY, MONTH, YEAR), DateResolution.Day));
         criteria.add(SearchQuery.flagIsUnSet(Flag.RECENT));
         criteria.add(SearchQuery.sizeGreaterThan(SIZE));
-        check(SearchKey.buildAnd(keys), SearchQuery.and(criteria));
+        check(And.apply(CollectionConverters.asScala(keys).toSeq()), SearchQuery.and(criteria));
     }
 
     @Test
     public void testOR() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildOr(SearchKey.buildOn(DAY_MONTH_YEAR), SearchKey
-                .buildOld()), SearchQuery.or(SearchQuery.internalDateOn(getDate(DAY,
+        check(Or.apply(On.apply(DAY_MONTH_YEAR), Old.apply()), SearchQuery.or(SearchQuery.internalDateOn(getDate(DAY,
                 MONTH, YEAR), DateResolution.Day), SearchQuery.flagIsUnSet(Flag.RECENT)));
     }
 
     @Test
     public void testRECENT() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildRecent(), SearchQuery.flagIsSet(Flag.RECENT));
+        check(Recent.apply(), SearchQuery.flagIsSet(Flag.RECENT));
     }
     
     @Test
     public void testSEEN() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildSeen(), SearchQuery.flagIsSet(Flag.SEEN));
+        check(Seen.apply(), SearchQuery.flagIsSet(Flag.SEEN));
     }
 
     @Test
     public void testSENTBEFORE() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildSentBefore(DAY_MONTH_YEAR), SearchQuery.headerDateBefore(ImapConstants.RFC822_DATE, getDate(DAY, MONTH, YEAR), DateResolution.Day));
+        check(SentBefore.apply(DAY_MONTH_YEAR), SearchQuery.headerDateBefore(ImapConstants.RFC822_DATE, getDate(DAY, MONTH, YEAR), DateResolution.Day));
     }
 
     @Test
     public void testSENTON() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildSentOn(DAY_MONTH_YEAR), SearchQuery.headerDateOn(
+        check(SentOn.apply(DAY_MONTH_YEAR), SearchQuery.headerDateOn(
                 ImapConstants.RFC822_DATE, getDate(DAY, MONTH, YEAR), DateResolution.Day));
     }
     
     @Test
     public void testSENTSINCE() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildSentSince(DAY_MONTH_YEAR), SearchQuery.or(SearchQuery.headerDateOn(ImapConstants.RFC822_DATE, getDate(DAY, MONTH, YEAR), DateResolution.Day), SearchQuery
+        check(SentSince.apply(DAY_MONTH_YEAR), SearchQuery.or(SearchQuery.headerDateOn(ImapConstants.RFC822_DATE, getDate(DAY, MONTH, YEAR), DateResolution.Day), SearchQuery
                 .headerDateAfter(ImapConstants.RFC822_DATE, getDate(DAY, MONTH, YEAR), DateResolution.Day)));
     }
 
     @Test
     public void testSINCE() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildSince(DAY_MONTH_YEAR), SearchQuery.or(SearchQuery
+        check(Since.apply(DAY_MONTH_YEAR), SearchQuery.or(SearchQuery
                 .internalDateOn(getDate(DAY, MONTH, YEAR), DateResolution.Day), SearchQuery
                 .internalDateAfter(getDate(DAY, MONTH, YEAR), DateResolution.Day)));
     }
@@ -382,26 +421,26 @@ public class SearchProcessorTest {
     @Test
     public void testSMALLER() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildSmaller(SIZE), SearchQuery.sizeLessThan(SIZE));
+        check(Smaller.apply(SIZE), SearchQuery.sizeLessThan(SIZE));
     }
 
     @Test
     public void testSUBJECT() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildSubject(SUBJECT), SearchQuery.headerContains(
+        check(Subject.apply(SUBJECT), SearchQuery.headerContains(
                 ImapConstants.RFC822_SUBJECT, SUBJECT));
     }
 
     @Test
     public void testTEXT() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildText(SUBJECT), SearchQuery.mailContains(SUBJECT));
+        check(Text.apply(SUBJECT), SearchQuery.mailContains(SUBJECT));
     }
 
     @Test
     public void testTO() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildTo(ADDRESS), SearchQuery.address(
+        check(To.apply(ADDRESS), SearchQuery.address(
                 AddressType.To, ADDRESS));
     }
 
@@ -413,45 +452,45 @@ public class SearchProcessorTest {
 
         expectsGetSelectedMailbox();
 
-        check(SearchKey.buildUidSet(IDS), SearchQuery.uid(RANGES));
+        check(Uid.apply(CollectionConverters.asScala(IDS).toSeq()), SearchQuery.uid(RANGES));
     }
 
     @Test
     public void testUNANSWERED() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildUnanswered(), SearchQuery
+        check(UnAnswered.apply(), SearchQuery
                 .flagIsUnSet(Flag.ANSWERED));
     }
 
     @Test
     public void testUNDELETED() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildUndeleted(), SearchQuery.flagIsUnSet(Flag.DELETED));
+        check(UnDeleted.apply(), SearchQuery.flagIsUnSet(Flag.DELETED));
     }
 
     @Test
     public void testUNDRAFT() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildUndraft(), SearchQuery.flagIsUnSet(Flag.DRAFT));
+        check(UnDraft.apply(), SearchQuery.flagIsUnSet(Flag.DRAFT));
     }
 
     @Test
     public void testUNFLAGGED() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildUnflagged(), SearchQuery.flagIsUnSet(Flag.FLAGGED));
+        check(UnFlagged.apply(), SearchQuery.flagIsUnSet(Flag.FLAGGED));
     }
 
     @Test
     public void testUNKEYWORD() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildUnkeyword(KEYWORD), SearchQuery
+        check(UnKeyword.apply(KEYWORD), SearchQuery
                 .flagIsUnSet(KEYWORD));
     }
 
     @Test
     public void testUNSEEN() throws Exception {
         expectsGetSelectedMailbox();
-        check(SearchKey.buildUnseen(), SearchQuery.flagIsUnSet(Flag.SEEN));
+        check(UnSeen.apply(), SearchQuery.flagIsUnSet(Flag.SEEN));
     }
 
    

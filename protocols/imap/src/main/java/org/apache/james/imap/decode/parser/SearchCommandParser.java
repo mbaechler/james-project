@@ -31,10 +31,50 @@ import org.apache.james.imap.api.Tag;
 import org.apache.james.imap.api.display.HumanReadableText;
 import org.apache.james.imap.api.message.IdRange;
 import org.apache.james.imap.api.message.UidRange;
+import org.apache.james.imap.api.message.request.All;
+import org.apache.james.imap.api.message.request.And;
+import org.apache.james.imap.api.message.request.Answered;
+import org.apache.james.imap.api.message.request.Bcc;
+import org.apache.james.imap.api.message.request.Before;
+import org.apache.james.imap.api.message.request.Body;
+import org.apache.james.imap.api.message.request.Cc;
 import org.apache.james.imap.api.message.request.DayMonthYear;
+import org.apache.james.imap.api.message.request.Deleted;
+import org.apache.james.imap.api.message.request.Draft;
+import org.apache.james.imap.api.message.request.Flagged;
+import org.apache.james.imap.api.message.request.From;
+import org.apache.james.imap.api.message.request.Header;
+import org.apache.james.imap.api.message.request.Keyword;
+import org.apache.james.imap.api.message.request.Larger;
+import org.apache.james.imap.api.message.request.ModSeq;
+import org.apache.james.imap.api.message.request.New;
+import org.apache.james.imap.api.message.request.Not;
+import org.apache.james.imap.api.message.request.Old;
+import org.apache.james.imap.api.message.request.Older;
+import org.apache.james.imap.api.message.request.On;
+import org.apache.james.imap.api.message.request.Or;
+import org.apache.james.imap.api.message.request.Recent;
 import org.apache.james.imap.api.message.request.SearchKey;
 import org.apache.james.imap.api.message.request.SearchOperation;
 import org.apache.james.imap.api.message.request.SearchResultOption;
+import org.apache.james.imap.api.message.request.Seen;
+import org.apache.james.imap.api.message.request.SentBefore;
+import org.apache.james.imap.api.message.request.SentOn;
+import org.apache.james.imap.api.message.request.SentSince;
+import org.apache.james.imap.api.message.request.SequenceNumbers;
+import org.apache.james.imap.api.message.request.Since;
+import org.apache.james.imap.api.message.request.Smaller;
+import org.apache.james.imap.api.message.request.Subject;
+import org.apache.james.imap.api.message.request.Text;
+import org.apache.james.imap.api.message.request.To;
+import org.apache.james.imap.api.message.request.Uid;
+import org.apache.james.imap.api.message.request.UnAnswered;
+import org.apache.james.imap.api.message.request.UnDeleted;
+import org.apache.james.imap.api.message.request.UnDraft;
+import org.apache.james.imap.api.message.request.UnFlagged;
+import org.apache.james.imap.api.message.request.UnKeyword;
+import org.apache.james.imap.api.message.request.UnSeen;
+import org.apache.james.imap.api.message.request.Younger;
 import org.apache.james.imap.api.message.response.StatusResponse;
 import org.apache.james.imap.api.message.response.StatusResponse.ResponseCode;
 import org.apache.james.imap.api.message.response.StatusResponseFactory;
@@ -44,6 +84,10 @@ import org.apache.james.imap.decode.ImapRequestLineReader;
 import org.apache.james.imap.message.request.SearchRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.ImmutableList;
+import scala.jdk.javaapi.CollectionConverters;
+
 
 /**
  * Parse SEARCH commands
@@ -136,13 +180,13 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         nextIsQ(request);
         
         try {
-            return SearchKey.buildModSeq(request.number());
+            return ModSeq.apply(request.number());
         } catch (DecodingException e) {
             // Just consume the [<entry-name> <entry-type-req>] and ignore it
             // See RFC4551 3.4. MODSEQ Search Criterion in SEARCH
             request.consumeQuoted();
             request.consumeWord(chr -> true);
-            return SearchKey.buildModSeq(request.number());
+            return ModSeq.apply(request.number());
         }
     }
 
@@ -150,7 +194,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         request.consume();
         List<SearchKey> keys = new ArrayList<>();
         addUntilParen(session, request, keys, charset);
-        return SearchKey.buildAnd(keys);
+        return And.apply(CollectionConverters.asScala(keys).toSeq());
     }
 
     private void addUntilParen(ImapSession session, ImapRequestLineReader request, List<SearchKey> keys, Charset charset) throws DecodingException {
@@ -173,7 +217,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         final SearchKey result;
         nextIsSpace(request);
         final String value = request.astring(charset);
-        result = SearchKey.buildCc(value);
+        result = Cc.apply(value);
         return result;
     }
 
@@ -334,7 +378,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
             nextIsE(request);
             return older(request);
         } catch (DecodingException e) {
-            return SearchKey.buildOld();
+            return Old.apply();
         }
     }
     
@@ -384,7 +428,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         nextIsD(request);
         nextIsSpace(request);
         final String value = request.atom();
-        result = SearchKey.buildKeyword(value);
+        result = Keyword.apply(value);
         return result;
     }
 
@@ -398,7 +442,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         nextIsD(request);
         nextIsSpace(request);
         final String value = request.atom();
-        result = SearchKey.buildUnkeyword(value);
+        result = UnKeyword.apply(value);
         return result;
     }
 
@@ -413,7 +457,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         final String field = request.astring(charset);
         nextIsSpace(request);
         final String value = request.astring(charset);
-        result = SearchKey.buildHeader(field, value);
+        result = Header.apply(field, value);
         return result;
     }
 
@@ -426,7 +470,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         nextIsR(request);
         nextIsSpace(request);
         final long value = request.number();
-        result = SearchKey.buildLarger(value);
+        result = Larger.apply(value);
         return result;
     }
 
@@ -439,7 +483,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         nextIsR(request);
         nextIsSpace(request);
         final long value = request.number();
-        result = SearchKey.buildSmaller(value);
+        result = Smaller.apply(value);
         return result;
     }
 
@@ -449,7 +493,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         nextIsM(request);
         nextIsSpace(request);
         final String value = request.astring(charset);
-        result = SearchKey.buildFrom(value);
+        result = From.apply(value);
         return result;
     }
 
@@ -460,7 +504,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         nextIsG(request);
         nextIsE(request);
         nextIsD(request);
-        result = SearchKey.buildFlagged();
+        result = Flagged.apply();
         return result;
     }
 
@@ -469,7 +513,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         nextIsE(request);
         nextIsE(request);
         nextIsN(request);
-        result = SearchKey.buildUnseen();
+        result = UnSeen.apply();
         return result;
     }
 
@@ -478,7 +522,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         nextIsA(request);
         nextIsF(request);
         nextIsT(request);
-        result = SearchKey.buildUndraft();
+        result = UnDraft.apply();
         return result;
     }
 
@@ -489,7 +533,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         nextIsT(request);
         nextIsE(request);
         nextIsD(request);
-        result = SearchKey.buildUndeleted();
+        result = UnDeleted.apply();
         return result;
     }
 
@@ -501,7 +545,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         nextIsG(request);
         nextIsE(request);
         nextIsD(request);
-        result = SearchKey.buildUnflagged();
+        result = UnFlagged.apply();
         return result;
     }
 
@@ -514,7 +558,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         nextIsR(request);
         nextIsE(request);
         nextIsD(request);
-        result = SearchKey.buildUnanswered();
+        result = UnAnswered.apply();
         return result;
     }
     
@@ -527,7 +571,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         nextIsE(request);
         nextIsR(request);
         nextIsSpace(request);
-        result = SearchKey.buildYounger(request.nzNumber());
+        result = Younger.apply(request.nzNumber());
         return result;
     }
     
@@ -536,7 +580,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         nextIsR(request);
         
         nextIsSpace(request);
-        result = SearchKey.buildOlder(request.nzNumber());
+        result = Older.apply(request.nzNumber());
         return result;
     }
 
@@ -546,7 +590,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         final SearchKey firstKey = searchKey(session, request, charset, false);
         nextIsSpace(request);
         final SearchKey secondKey = searchKey(session, request, charset, false);
-        result = SearchKey.buildOr(firstKey, secondKey);
+        result = Or.apply(firstKey, secondKey);
         return result;
     }
 
@@ -555,14 +599,14 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         nextIsT(request);
         nextIsSpace(request);
         final SearchKey nextKey = searchKey(session, request, charset, false);
-        result = SearchKey.buildNot(nextKey);
+        result = Not.apply(nextKey);
         return result;
     }
 
     private SearchKey newOperator(ImapRequestLineReader request) throws DecodingException {
         final SearchKey result;
         nextIsW(request);
-        result = SearchKey.buildNew();
+        result = New.apply();
         return result;
     }
 
@@ -573,14 +617,14 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         nextIsE(request);
         nextIsN(request);
         nextIsT(request);
-        result = SearchKey.buildRecent();
+        result = Recent.apply();
         return result;
     }
 
     private SearchKey seen(ImapRequestLineReader request) throws DecodingException {
         final SearchKey result;
         nextIsN(request);
-        result = SearchKey.buildSeen();
+        result = Seen.apply();
         return result;
     }
 
@@ -589,7 +633,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         nextIsA(request);
         nextIsF(request);
         nextIsT(request);
-        result = SearchKey.buildDraft();
+        result = Draft.apply();
         return result;
     }
 
@@ -600,7 +644,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         nextIsT(request);
         nextIsE(request);
         nextIsD(request);
-        result = SearchKey.buildDeleted();
+        result = Deleted.apply();
         return result;
     }
 
@@ -624,7 +668,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         nextIsY(request);
         nextIsSpace(request);
         final String value = request.astring(charset);
-        result = SearchKey.buildBody(value);
+        result = Body.apply(value);
         return result;
     }
 
@@ -632,7 +676,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         final SearchKey result;
         nextIsSpace(request);
         final DayMonthYear value = request.date();
-        result = SearchKey.buildOn(value);
+        result = On.apply(value);
         return result;
     }
 
@@ -645,7 +689,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         nextIsE(request);
         nextIsSpace(request);
         final DayMonthYear value = request.date();
-        result = SearchKey.buildSentBefore(value);
+        result = SentBefore.apply(value);
         return result;
     }
 
@@ -657,7 +701,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         nextIsE(request);
         nextIsSpace(request);
         final DayMonthYear value = request.date();
-        result = SearchKey.buildSentSince(value);
+        result = SentSince.apply(value);
         return result;
     }
 
@@ -668,7 +712,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         nextIsE(request);
         nextIsSpace(request);
         final DayMonthYear value = request.date();
-        result = SearchKey.buildSince(value);
+        result = Since.apply(value);
         return result;
     }
 
@@ -677,7 +721,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         nextIsN(request);
         nextIsSpace(request);
         final DayMonthYear value = request.date();
-        result = SearchKey.buildSentOn(value);
+        result = SentOn.apply(value);
         return result;
     }
 
@@ -689,7 +733,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         nextIsE(request);
         nextIsSpace(request);
         final DayMonthYear value = request.date();
-        result = SearchKey.buildBefore(value);
+        result = Before.apply(value);
         return result;
     }
 
@@ -698,7 +742,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         nextIsC(request);
         nextIsSpace(request);
         final String value = request.astring(charset);
-        result = SearchKey.buildBcc(value);
+        result = Bcc.apply(value);
         return result;
     }
 
@@ -708,7 +752,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         nextIsT(request);
         nextIsSpace(request);
         final String value = request.astring(charset);
-        result = SearchKey.buildText(value);
+        result = Text.apply(value);
         return result;
     }
 
@@ -716,21 +760,21 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         final SearchKey result;
         nextIsD(request);
         nextIsSpace(request);
-        final UidRange[] range = request.parseUidRange();
-        result = SearchKey.buildUidSet(range);
+        final List<UidRange> ranges = ImmutableList.copyOf(request.parseUidRange());
+        result = Uid.apply(CollectionConverters.asScala(ranges).toSeq());
         return result;
     }
 
     private SearchKey sequenceSet(ImapSession session, ImapRequestLineReader request) throws DecodingException {
-        final IdRange[] range = request.parseIdRange(session);
-        return SearchKey.buildSequenceSet(range);
+        final List<IdRange> ranges = ImmutableList.copyOf(request.parseIdRange(session));
+        return SequenceNumbers.apply(CollectionConverters.asScala(ranges).toSeq());
     }
 
     private SearchKey to(ImapRequestLineReader request, Charset charset) throws DecodingException {
         final SearchKey result;
         nextIsSpace(request);
         final String value = request.astring(charset);
-        result = SearchKey.buildTo(value);
+        result = To.apply(value);
         return result;
     }
 
@@ -743,7 +787,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         nextIsT(request);
         nextIsSpace(request);
         final String value = request.astring(charset);
-        result = SearchKey.buildSubject(value);
+        result = Subject.apply(value);
         return result;
     }
 
@@ -767,14 +811,14 @@ public class SearchCommandParser extends AbstractUidCommandParser {
         nextIsR(request);
         nextIsE(request);
         nextIsD(request);
-        result = SearchKey.buildAnswered();
+        result = Answered.apply();
         return result;
     }
 
     private SearchKey all(ImapRequestLineReader request) throws DecodingException {
         final SearchKey result;
         nextIsL(request);
-        result = SearchKey.buildAll();
+        result = All.apply();
         return result;
     }
 
@@ -893,7 +937,7 @@ public class SearchCommandParser extends AbstractUidCommandParser {
                 final SearchKey key = searchKey(session, request, null, false);
                 keys.add(key);
             }
-            result = SearchKey.buildAnd(keys);
+            result = And.apply(CollectionConverters.asScala(keys).toSeq());
         } else {
             result = firstKey;
         }
@@ -1004,7 +1048,8 @@ public class SearchCommandParser extends AbstractUidCommandParser {
                 } else {
                     // Parse the search term from the request
                     final SearchKey key = decode(session, request);
-                    finalKey = SearchKey.buildAnd(Arrays.asList(recent, key));
+                    List<SearchKey> list = Arrays.asList(recent, key);
+                    finalKey = And.apply(CollectionConverters.asScala(list).toSeq());
                 }
             } else {
                 // Parse the search term from the request

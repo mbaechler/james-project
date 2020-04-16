@@ -31,14 +31,26 @@ import java.util.List;
 import org.apache.james.imap.api.ImapCommand;
 import org.apache.james.imap.api.message.IdRange;
 import org.apache.james.imap.api.message.UidRange;
+import org.apache.james.imap.api.message.request.And;
 import org.apache.james.imap.api.message.request.DayMonthYear;
+import org.apache.james.imap.api.message.request.From;
+import org.apache.james.imap.api.message.request.Header;
+import org.apache.james.imap.api.message.request.Keyword;
+import org.apache.james.imap.api.message.request.New;
+import org.apache.james.imap.api.message.request.Not;
 import org.apache.james.imap.api.message.request.SearchKey;
+import org.apache.james.imap.api.message.request.SequenceNumbers;
+import org.apache.james.imap.api.message.request.Since;
+import org.apache.james.imap.api.message.request.Uid;
 import org.apache.james.imap.api.message.response.StatusResponseFactory;
 import org.apache.james.imap.decode.ImapRequestLineReader;
 import org.apache.james.imap.decode.ImapRequestStreamLineReader;
 import org.apache.james.mailbox.MessageUid;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.google.common.collect.ImmutableList;
+import scala.jdk.javaapi.CollectionConverters;
 
 public class SearchCommandParserNotTest {
 
@@ -53,61 +65,63 @@ public class SearchCommandParserNotTest {
 
     @Test
     public void testShouldParseNotSequence() throws Exception {
-        IdRange[] range = { new IdRange(100, Long.MAX_VALUE), new IdRange(110),
-                new IdRange(200, 201), new IdRange(400, Long.MAX_VALUE) };
-        SearchKey notdKey = SearchKey.buildSequenceSet(IdRange.mergeRanges(Arrays.asList(range)).toArray(new IdRange[0]));
-        SearchKey key = SearchKey.buildNot(notdKey);
+        List<IdRange> ranges = IdRange.mergeRanges(Arrays.asList(
+            new IdRange(100, Long.MAX_VALUE),
+            new IdRange(110),
+            new IdRange(200, 201),
+            new IdRange(400, Long.MAX_VALUE)));
+        SearchKey notdKey = SequenceNumbers.apply(CollectionConverters.asScala(ranges).toSeq());
+        SearchKey key = Not.apply(notdKey);
         checkValid("NOT *:100,110,200:201,400:*\r\n", key);
     }
 
     @Test
     public void testShouldParseNotUid() throws Exception {
-        UidRange[] range = { 
-                new UidRange(MessageUid.of(100), MessageUid.MAX_VALUE), 
+        List<UidRange> ranges = UidRange.mergeRanges(Arrays.asList(
+            new UidRange(MessageUid.of(100), MessageUid.MAX_VALUE),
                 new UidRange(MessageUid.of(110)),
                 new UidRange(MessageUid.of(200), MessageUid.of(201)), 
-                new UidRange(MessageUid.of(400), MessageUid.MAX_VALUE) 
-                };
-        SearchKey notdKey = SearchKey.buildUidSet(UidRange.mergeRanges(Arrays.asList(range)).toArray(new UidRange[0]));
-        SearchKey key = SearchKey.buildNot(notdKey);
+                new UidRange(MessageUid.of(400), MessageUid.MAX_VALUE)));
+        SearchKey notdKey = Uid.apply(CollectionConverters.asScala(ranges).toSeq());
+        SearchKey key = Not.apply(notdKey);
         checkValid("NOT UID *:100,110,200:201,400:*\r\n", key);
     }
 
     @Test
     public void testShouldParseNotHeaderKey() throws Exception {
-        SearchKey notdKey = SearchKey.buildHeader("FROM", "Smith");
-        SearchKey key = SearchKey.buildNot(notdKey);
+        SearchKey notdKey = Header.apply("FROM", "Smith");
+        SearchKey key = Not.apply(notdKey);
         checkValid("NOT HEADER FROM Smith\r\n", key);
         checkValid("NOT header FROM Smith\r\n", key);
     }
 
     @Test
     public void testShouldParseNotDateParameterKey() throws Exception {
-        SearchKey notdKey = SearchKey.buildSince(new DayMonthYear(11, 1, 2001));
-        SearchKey key = SearchKey.buildNot(notdKey);
+        SearchKey notdKey = Since.apply(new DayMonthYear(11, 1, 2001));
+        SearchKey key = Not.apply(notdKey);
         checkValid("NOT since 11-Jan-2001\r\n", key);
         checkValid("NOT SINCE 11-Jan-2001\r\n", key);
     }
 
     @Test
     public void testShouldParseNotStringParameterKey() throws Exception {
-        SearchKey notdKey = SearchKey.buildFrom("Smith");
-        SearchKey key = SearchKey.buildNot(notdKey);
+        SearchKey notdKey = From.apply("Smith");
+        SearchKey key = Not.apply(notdKey);
         checkValid("NOT FROM Smith\r\n", key);
         checkValid("NOT FROM \"Smith\"\r\n", key);
     }
 
     @Test
     public void testShouldParseNotStringQuotedParameterKey() throws Exception {
-        SearchKey notdKey = SearchKey.buildFrom("Smith And Jones");
-        SearchKey key = SearchKey.buildNot(notdKey);
+        SearchKey notdKey = From.apply("Smith And Jones");
+        SearchKey key = Not.apply(notdKey);
         checkValid("NOT FROM \"Smith And Jones\"\r\n", key);
     }
 
     @Test
     public void testShouldParseNotNoParameterKey() throws Exception {
-        SearchKey notdKey = SearchKey.buildNew();
-        SearchKey key = SearchKey.buildNot(notdKey);
+        SearchKey notdKey = New.apply();
+        SearchKey key = Not.apply(notdKey);
         checkValid("NOT NEW\r\n", key);
         checkValid("Not NEW\r\n", key);
         checkValid("not new\r\n", key);
@@ -119,11 +133,8 @@ public class SearchCommandParserNotTest {
                 new ByteArrayInputStream("NOT (KEYWORD bar KEYWORD foo)".getBytes(StandardCharsets.US_ASCII)),
                 new ByteArrayOutputStream()); 
         SearchKey key = parser.searchKey(null, reader, null, false); 
-        List<SearchKey> keys = key.getKeys().get(0).getKeys(); 
-        assertThat(keys.size()).isEqualTo(2);
-        assertThat(keys.get(0).getValue()).isEqualTo("bar");
-        assertThat(keys.get(1).getValue()).isEqualTo("foo");
-    } 
+        assertThat(key).isEqualTo(Not.apply(And.apply(CollectionConverters.asScala(ImmutableList.<SearchKey>of(Keyword.apply("bar"), Keyword.apply("foo"))).toSeq())));
+    }
 
     private void checkValid(String input, SearchKey key) throws Exception {
         ImapRequestLineReader reader = new ImapRequestStreamLineReader(

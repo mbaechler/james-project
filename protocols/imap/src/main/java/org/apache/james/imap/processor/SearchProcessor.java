@@ -22,19 +22,14 @@ package org.apache.james.imap.processor;
 import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Stream;
 
-import javax.mail.Flags.Flag;
-
-import org.apache.james.imap.api.ImapConstants;
 import org.apache.james.imap.api.display.HumanReadableText;
 import org.apache.james.imap.api.message.Capability;
 import org.apache.james.imap.api.message.IdRange;
 import org.apache.james.imap.api.message.UidRange;
-import org.apache.james.imap.api.message.request.DayMonthYear;
+import org.apache.james.imap.api.message.request.Criterion$;
 import org.apache.james.imap.api.message.request.SearchKey;
 import org.apache.james.imap.api.message.request.SearchOperation;
 import org.apache.james.imap.api.message.request.SearchResultOption;
@@ -59,9 +54,6 @@ import org.apache.james.mailbox.model.FetchGroup;
 import org.apache.james.mailbox.model.MessageRange;
 import org.apache.james.mailbox.model.MessageResultIterator;
 import org.apache.james.mailbox.model.SearchQuery;
-import org.apache.james.mailbox.model.SearchQuery.AddressType;
-import org.apache.james.mailbox.model.SearchQuery.Criterion;
-import org.apache.james.mailbox.model.SearchQuery.DateResolution;
 import org.apache.james.metrics.api.MetricFactory;
 import org.apache.james.util.MDCBuilder;
 import org.slf4j.Logger;
@@ -73,7 +65,7 @@ import com.google.common.collect.ImmutableList;
 public class SearchProcessor extends AbstractMailboxProcessor<SearchRequest> implements CapabilityImplementingProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(SearchProcessor.class);
 
-    protected static final String SEARCH_MODSEQ = "SEARCH_MODSEQ";
+    static final String SEARCH_MODSEQ = "SEARCH_MODSEQ";
     private static final List<Capability> CAPS = ImmutableList.of(Capability.of("WITHIN"), Capability.of("ESEARCH"), Capability.of("SEARCHRES"));
     
     public SearchProcessor(ImapProcessor next, MailboxManager mailboxManager, StatusResponseFactory factory,
@@ -92,7 +84,7 @@ public class SearchProcessor extends AbstractMailboxProcessor<SearchRequest> imp
 
             final MessageManager mailbox = getSelectedMailbox(session);
 
-            final SearchQuery query = toQuery(searchKey, session);
+            final SearchQuery query = Criterion$.MODULE$.toQuery(searchKey, session);
             MailboxSession msession = session.getMailboxSession();
 
             final Collection<MessageUid> uids = performUidSearch(mailbox, query, msession);
@@ -257,245 +249,6 @@ public class SearchProcessor extends AbstractMailboxProcessor<SearchRequest> imp
             
         }
         return highestModSeq;
-    }
-
-
-    private SearchQuery toQuery(SearchKey key, ImapSession session) throws MessageRangeException {
-        final SearchQuery result = new SearchQuery();
-        final SelectedMailbox selected = session.getSelected();
-        if (selected != null) {
-            result.addRecentMessageUids(selected.getRecent());
-        }
-        final SearchQuery.Criterion criterion = toCriterion(key, session);
-        result.andCriteria(criterion);
-        return result;
-    }
-
-    private SearchQuery.Criterion toCriterion(SearchKey key, ImapSession session) throws MessageRangeException {
-        final SearchKey.Type type = key.getType();
-        final DayMonthYear date = key.getDate();
-        switch (type) {
-        case TYPE_ALL:
-            return SearchQuery.all();
-        case TYPE_AND:
-            return and(key.getKeys(), session);
-        case TYPE_ANSWERED:
-            return SearchQuery.flagIsSet(Flag.ANSWERED);
-        case TYPE_BCC:
-            return SearchQuery.address(AddressType.Bcc, key.getValue());
-        case TYPE_BEFORE:
-            return SearchQuery.internalDateBefore(date.toDate(), DateResolution.Day);
-        case TYPE_BODY:
-            return SearchQuery.bodyContains(key.getValue());
-        case TYPE_CC:
-            return SearchQuery.address(AddressType.Cc, key.getValue());
-        case TYPE_DELETED:
-            return SearchQuery.flagIsSet(Flag.DELETED);
-        case TYPE_DRAFT:
-            return SearchQuery.flagIsSet(Flag.DRAFT);
-        case TYPE_FLAGGED:
-            return SearchQuery.flagIsSet(Flag.FLAGGED);
-        case TYPE_FROM:
-            return SearchQuery.address(AddressType.From, key.getValue());
-        case TYPE_HEADER:
-            String value = key.getValue();
-            // Check if header exists if the value is empty. See IMAP-311
-            if (value == null || value.length() == 0) {
-                return SearchQuery.headerExists(key.getName());
-            } else {
-                return SearchQuery.headerContains(key.getName(), value);
-            }
-        case TYPE_KEYWORD:
-            return SearchQuery.flagIsSet(key.getValue());
-        case TYPE_LARGER:
-            return SearchQuery.sizeGreaterThan(key.getSize());
-        case TYPE_NEW:
-            return SearchQuery.and(SearchQuery.flagIsSet(Flag.RECENT), SearchQuery.flagIsUnSet(Flag.SEEN));
-        case TYPE_NOT:
-            return not(key.getKeys(), session);
-        case TYPE_OLD:
-            return SearchQuery.flagIsUnSet(Flag.RECENT);
-        case TYPE_ON:
-            return SearchQuery.internalDateOn(date.toDate(), DateResolution.Day);
-        case TYPE_OR:
-            return or(key.getKeys(), session);
-        case TYPE_RECENT:
-            return SearchQuery.flagIsSet(Flag.RECENT);
-        case TYPE_SEEN:
-            return SearchQuery.flagIsSet(Flag.SEEN);
-        case TYPE_SENTBEFORE:
-            return SearchQuery.headerDateBefore(ImapConstants.RFC822_DATE, date.toDate(), DateResolution.Day);
-        case TYPE_SENTON:
-            return SearchQuery.headerDateOn(ImapConstants.RFC822_DATE, date.toDate(), DateResolution.Day);
-        case TYPE_SENTSINCE:
-            // Include the date which is used as search param. See IMAP-293
-            Criterion onCrit = SearchQuery.headerDateOn(ImapConstants.RFC822_DATE, date.toDate(), DateResolution.Day);
-            Criterion afterCrit = SearchQuery.headerDateAfter(ImapConstants.RFC822_DATE, date.toDate(), DateResolution.Day);
-            return SearchQuery.or(onCrit, afterCrit);
-        case TYPE_SEQUENCE_SET:
-            return sequence(key.getSequenceNumbers(), session);
-        case TYPE_SINCE:
-            // Include the date which is used as search param. See IMAP-293
-            return SearchQuery.or(SearchQuery.internalDateOn(date.toDate(), DateResolution.Day), SearchQuery.internalDateAfter(date.toDate(), DateResolution.Day));
-        case TYPE_SMALLER:
-            return SearchQuery.sizeLessThan(key.getSize());
-        case TYPE_SUBJECT:
-            return SearchQuery.headerContains(ImapConstants.RFC822_SUBJECT, key.getValue());
-        case TYPE_TEXT:
-            return SearchQuery.mailContains(key.getValue());
-        case TYPE_TO:
-            return SearchQuery.address(AddressType.To, key.getValue());
-        case TYPE_UID:
-            return uids(key.getUidRanges(), session);
-        case TYPE_UNANSWERED:
-            return SearchQuery.flagIsUnSet(Flag.ANSWERED);
-        case TYPE_UNDELETED:
-            return SearchQuery.flagIsUnSet(Flag.DELETED);
-        case TYPE_UNDRAFT:
-            return SearchQuery.flagIsUnSet(Flag.DRAFT);
-        case TYPE_UNFLAGGED:
-            return SearchQuery.flagIsUnSet(Flag.FLAGGED);
-        case TYPE_UNKEYWORD:
-            return SearchQuery.flagIsUnSet(key.getValue());
-        case TYPE_UNSEEN:
-            return SearchQuery.flagIsUnSet(Flag.SEEN);
-        case TYPE_OLDER:
-            Date withinDate = createWithinDate(key);
-            return SearchQuery.or(SearchQuery.internalDateOn(withinDate, DateResolution.Second), SearchQuery.internalDateBefore(withinDate, DateResolution.Second));
-        case TYPE_YOUNGER:
-            Date withinDate2 = createWithinDate(key);
-            return SearchQuery.or(SearchQuery.internalDateOn(withinDate2, DateResolution.Second), SearchQuery.internalDateAfter(withinDate2, DateResolution.Second));
-        case TYPE_MODSEQ: 
-            session.setAttribute(SEARCH_MODSEQ, true);
-            long modSeq = key.getModSeq();
-            return SearchQuery.or(SearchQuery.modSeqEquals(modSeq), SearchQuery.modSeqGreaterThan(modSeq));
-        default:
-            LOGGER.warn("Ignoring unknown search key {}", type);
-            return SearchQuery.all();
-        }
-    }
-    
-    private Date createWithinDate(SearchKey key) {
-        long seconds = key.getSeconds();
-        long res = System.currentTimeMillis() - seconds * 1000;
-        return new Date(res);
-    }
-
-    /**
-     * Create a {@link Criterion} for the given sequence-sets. 
-     * This include special handling which is needed for SEARCH to not return a BAD response on a invalid message-set. 
-     * See IMAP-292 for more details.
-     */
-    private Criterion sequence(IdRange[] sequenceNumbers, ImapSession session) throws MessageRangeException {
-        
-        final SelectedMailbox selected = session.getSelected();
-
-        // First of check if we have any messages in the mailbox
-        // if not we don't need to go through all of this
-        final List<SearchQuery.UidRange> ranges = new ArrayList<>();
-        if (selected.existsCount() > 0) {
-            for (IdRange range : sequenceNumbers) {
-                long lowVal = range.getLowVal();
-                long highVal = range.getHighVal();
-                // Take care of "*" and "*:*" values by return the last
-                // message in
-                // the mailbox. See IMAP-289
-                if (lowVal == Long.MAX_VALUE && highVal == Long.MAX_VALUE) {
-                    MessageUid highUid = selected.getLastUid().orElse(MessageUid.MIN_VALUE);
-
-                    ranges.add(new SearchQuery.UidRange(highUid));
-                } else {
-                    Optional<MessageUid> lowUid;
-                    if (lowVal != Long.MIN_VALUE) {
-                        lowUid = selected.uid((int) lowVal);
-                    } else {
-                        lowUid = selected.getFirstUid();
-                    }
-
-                    // The lowVal should never be
-                    // SelectedMailbox.NO_SUCH_MESSAGE but we check for it
-                    // just to be safe
-                    if (lowUid.isPresent()) {
-                        Optional<MessageUid> highUid = Optional.empty();
-                        if (highVal != Long.MAX_VALUE) {
-                            highUid = selected.uid((int) highVal);
-                            if (!highUid.isPresent()) {
-                                // we requested a message with a MSN higher
-                                // then
-                                // the current msg count. So just use the
-                                // highest uid as max
-                                highUid = selected.getLastUid();
-                            }
-                        } else {
-                            highUid = selected.getLastUid();
-                        }
-                        ranges.add(new SearchQuery.UidRange(lowUid.orElse(MessageUid.MIN_VALUE), highUid.orElse(MessageUid.MAX_VALUE)));
-                    }
-                }
-            }
-        }
-
-        return SearchQuery.uid(ranges.toArray(new SearchQuery.UidRange[0]));
-    }
-    
-    /**
-     * Create a {@link Criterion} for the given uid-sets. 
-     * This include special handling which is needed for SEARCH to not return a BAD response on a invalid message-set. 
-     * See IMAP-292 for more details.
-     */
-    private Criterion uids(UidRange[] uids, ImapSession session) throws MessageRangeException {
-        
-        final SelectedMailbox selected = session.getSelected();
-
-        // First of check if we have any messages in the mailbox
-        // if not we don't need to go through all of this
-        final List<SearchQuery.UidRange> ranges = new ArrayList<>();
-        if (selected.existsCount() > 0) {
-            for (UidRange range : uids) {
-                MessageUid lowVal = range.getLowVal();
-                MessageUid highVal = range.getHighVal();
-                // Take care of "*" and "*:*" values by return the last
-                // message in
-                // the mailbox. See IMAP-289
-                if (lowVal.equals(MessageUid.MAX_VALUE) && highVal.equals(MessageUid.MAX_VALUE)) {
-                    ranges.add(new SearchQuery.UidRange(selected.getLastUid().orElse(MessageUid.MIN_VALUE)));
-                } else if (highVal.equals(MessageUid.MAX_VALUE) && selected.getLastUid().orElse(MessageUid.MIN_VALUE).compareTo(lowVal) < 0) {
-                    // Sequence uid ranges which use
-                    // *:<uid-higher-then-last-uid>
-                    // MUST return at least the highest uid in the mailbox
-                    // See IMAP-291
-                    ranges.add(new SearchQuery.UidRange(selected.getLastUid().orElse(MessageUid.MIN_VALUE)));
-                } else {
-                    ranges.add(new SearchQuery.UidRange(lowVal, highVal));
-                }
-            }
-        }
-
-        return SearchQuery.uid(ranges.toArray(new SearchQuery.UidRange[0]));
-    }
-
-    private Criterion or(List<SearchKey> keys, ImapSession session) throws MessageRangeException {
-        final SearchKey keyOne = keys.get(0);
-        final SearchKey keyTwo = keys.get(1);
-        final Criterion criterionOne = toCriterion(keyOne, session);
-        final Criterion criterionTwo = toCriterion(keyTwo, session);
-        return SearchQuery.or(criterionOne, criterionTwo);
-    }
-
-    private Criterion not(List<SearchKey> keys, ImapSession session) throws MessageRangeException {
-        final SearchKey key = keys.get(0);
-        final Criterion criterion = toCriterion(key, session);
-        return SearchQuery.not(criterion);
-    }
-
-    private Criterion and(List<SearchKey> keys, ImapSession session) throws MessageRangeException {
-        final int size = keys.size();
-        final List<Criterion> criteria = new ArrayList<>(size);
-        for (SearchKey key : keys) {
-            final Criterion criterion = toCriterion(key, session);
-            criteria.add(criterion);
-        }
-        return SearchQuery.and(criteria);
     }
 
     @Override

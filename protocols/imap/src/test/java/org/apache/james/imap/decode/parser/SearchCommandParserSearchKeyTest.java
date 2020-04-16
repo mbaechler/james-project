@@ -26,13 +26,49 @@ import static org.mockito.Mockito.mock;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import org.apache.james.imap.api.ImapCommand;
 import org.apache.james.imap.api.ImapMessage;
 import org.apache.james.imap.api.message.IdRange;
 import org.apache.james.imap.api.message.UidRange;
+import org.apache.james.imap.api.message.request.All;
+import org.apache.james.imap.api.message.request.Answered;
+import org.apache.james.imap.api.message.request.Bcc;
+import org.apache.james.imap.api.message.request.Body;
+import org.apache.james.imap.api.message.request.Cc;
 import org.apache.james.imap.api.message.request.DayMonthYear;
+import org.apache.james.imap.api.message.request.Deleted;
+import org.apache.james.imap.api.message.request.Draft;
+import org.apache.james.imap.api.message.request.Flagged;
+import org.apache.james.imap.api.message.request.From;
+import org.apache.james.imap.api.message.request.Header;
+import org.apache.james.imap.api.message.request.Keyword;
+import org.apache.james.imap.api.message.request.Larger;
+import org.apache.james.imap.api.message.request.New;
+import org.apache.james.imap.api.message.request.Not;
+import org.apache.james.imap.api.message.request.Old;
+import org.apache.james.imap.api.message.request.On;
+import org.apache.james.imap.api.message.request.Or;
+import org.apache.james.imap.api.message.request.Recent;
 import org.apache.james.imap.api.message.request.SearchKey;
+import org.apache.james.imap.api.message.request.Seen;
+import org.apache.james.imap.api.message.request.SentBefore;
+import org.apache.james.imap.api.message.request.SentOn;
+import org.apache.james.imap.api.message.request.SentSince;
+import org.apache.james.imap.api.message.request.SequenceNumbers;
+import org.apache.james.imap.api.message.request.Since;
+import org.apache.james.imap.api.message.request.Smaller;
+import org.apache.james.imap.api.message.request.Subject;
+import org.apache.james.imap.api.message.request.Text;
+import org.apache.james.imap.api.message.request.To;
+import org.apache.james.imap.api.message.request.Uid;
+import org.apache.james.imap.api.message.request.UnAnswered;
+import org.apache.james.imap.api.message.request.UnDeleted;
+import org.apache.james.imap.api.message.request.UnDraft;
+import org.apache.james.imap.api.message.request.UnFlagged;
+import org.apache.james.imap.api.message.request.UnKeyword;
+import org.apache.james.imap.api.message.request.UnSeen;
 import org.apache.james.imap.api.message.response.StatusResponseFactory;
 import org.apache.james.imap.decode.DecodingException;
 import org.apache.james.imap.decode.ImapRequestLineReader;
@@ -40,6 +76,9 @@ import org.apache.james.imap.decode.ImapRequestStreamLineReader;
 import org.apache.james.mailbox.MessageUid;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.google.common.collect.ImmutableList;
+import scala.jdk.javaapi.CollectionConverters;
 
 public class SearchCommandParserSearchKeyTest {
 
@@ -57,7 +96,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseAll() throws Exception {
-        SearchKey key = SearchKey.buildAll();
+        SearchKey key = All.apply();
         checkValid("ALL\r\n", key);
         checkValid("all\r\n", key);
         checkValid("alL\r\n", key);
@@ -68,7 +107,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseAnswered() throws Exception {
-        SearchKey key = SearchKey.buildAnswered();
+        SearchKey key = Answered.apply();
         checkValid("ANSWERED\r\n", key);
         checkValid("answered\r\n", key);
         checkValid("aNSWEred\r\n", key);
@@ -83,7 +122,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseBcc() throws Exception {
-        SearchKey key = SearchKey.buildBcc("Somebody");
+        SearchKey key = Bcc.apply("Somebody");
         checkValid("BCC Somebody\r\n", key);
         checkValid("BCC \"Somebody\"\r\n", key);
         checkValid("bcc Somebody\r\n", key);
@@ -98,7 +137,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseOn() throws Exception {
-        SearchKey key = SearchKey.buildOn(DATE);
+        SearchKey key = On.apply(DATE);
         checkValid("ON 1-Jan-2000\r\n", key);
         checkValid("on 1-Jan-2000\r\n", key);
         checkValid("oN 1-Jan-2000\r\n", key);
@@ -116,7 +155,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseSentBefore() throws Exception {
-        SearchKey key = SearchKey.buildSentBefore(DATE);
+        SearchKey key = SentBefore.apply(DATE);
         checkValid("SENTBEFORE 1-Jan-2000\r\n", key);
         checkValid("sentbefore 1-Jan-2000\r\n", key);
         checkValid("SentBefore 1-Jan-2000\r\n", key);
@@ -139,7 +178,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseSentOn() throws Exception {
-        SearchKey key = SearchKey.buildSentOn(DATE);
+        SearchKey key = SentOn.apply(DATE);
         checkValid("SENTON 1-Jan-2000\r\n", key);
         checkValid("senton 1-Jan-2000\r\n", key);
         checkValid("SentOn 1-Jan-2000\r\n", key);
@@ -158,7 +197,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseSentSince() throws Exception {
-        SearchKey key = SearchKey.buildSentSince(DATE);
+        SearchKey key = SentSince.apply(DATE);
         checkValid("SENTSINCE 1-Jan-2000\r\n", key);
         checkValid("sentsince 1-Jan-2000\r\n", key);
         checkValid("SentSince 1-Jan-2000\r\n", key);
@@ -180,7 +219,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseSince() throws Exception {
-        SearchKey key = SearchKey.buildSince(DATE);
+        SearchKey key = Since.apply(DATE);
         checkValid("SINCE 1-Jan-2000\r\n", key);
         checkValid("since 1-Jan-2000\r\n", key);
         checkValid("Since 1-Jan-2000\r\n", key);
@@ -199,7 +238,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseBefore() throws Exception {
-        SearchKey key = SearchKey.buildBefore(DATE);
+        SearchKey key = org.apache.james.imap.api.message.request.Before.apply(DATE);
         checkValid("BEFORE 1-Jan-2000\r\n", key);
         checkValid("before 1-Jan-2000\r\n", key);
         checkValid("BEforE 1-Jan-2000\r\n", key);
@@ -222,7 +261,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseBody() throws Exception {
-        SearchKey key = SearchKey.buildBody("Text");
+        SearchKey key = Body.apply("Text");
         checkValid("BODY Text\r\n", key);
         checkValid("BODY \"Text\"\r\n", key);
         checkValid("body Text\r\n", key);
@@ -238,7 +277,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseTo() throws Exception {
-        SearchKey key = SearchKey.buildTo("AnAddress");
+        SearchKey key = To.apply("AnAddress");
         checkValid("TO AnAddress\r\n", key);
         checkValid("TO \"AnAddress\"\r\n", key);
         checkValid("to AnAddress\r\n", key);
@@ -253,7 +292,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseText() throws Exception {
-        SearchKey key = SearchKey.buildText("SomeText");
+        SearchKey key = Text.apply("SomeText");
         checkValid("TEXT SomeText\r\n", key);
         checkValid("TEXT \"SomeText\"\r\n", key);
         checkValid("text SomeText\r\n", key);
@@ -269,7 +308,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseSubject() throws Exception {
-        SearchKey key = SearchKey.buildSubject("ASubject");
+        SearchKey key = Subject.apply("ASubject");
         checkValid("SUBJECT ASubject\r\n", key);
         checkValid("SUBJECT \"ASubject\"\r\n", key);
         checkValid("subject ASubject\r\n", key);
@@ -288,7 +327,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseCc() throws Exception {
-        SearchKey key = SearchKey.buildCc("SomeText");
+        SearchKey key = Cc.apply("SomeText");
         checkValid("CC SomeText\r\n", key);
         checkValid("CC \"SomeText\"\r\n", key);
         checkValid("cc SomeText\r\n", key);
@@ -302,7 +341,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseFrom() throws Exception {
-        SearchKey key = SearchKey.buildFrom("Someone");
+        SearchKey key = From.apply("Someone");
         checkValid("FROM Someone\r\n", key);
         checkValid("FROM \"Someone\"\r\n", key);
         checkValid("from Someone\r\n", key);
@@ -317,7 +356,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseKeyword() throws Exception {
-        SearchKey key = SearchKey.buildKeyword("AFlag");
+        SearchKey key = Keyword.apply("AFlag");
         checkValid("KEYWORD AFlag\r\n", key);
         checkInvalid("KEYWORD \"AFlag\"\r\n", key);
         checkValid("keyword AFlag\r\n", key);
@@ -336,7 +375,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseUnKeyword() throws Exception {
-        SearchKey key = SearchKey.buildUnkeyword("AFlag");
+        SearchKey key = UnKeyword.apply("AFlag");
         checkValid("UNKEYWORD AFlag\r\n", key);
         checkInvalid("UNKEYWORD \"AFlag\"\r\n", key);
         checkValid("unkeyword AFlag\r\n", key);
@@ -357,7 +396,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseHeader() throws Exception {
-        SearchKey key = SearchKey.buildHeader("Field", "Value");
+        SearchKey key = Header.apply("Field", "Value");
         checkValid("HEADER Field Value\r\n", key);
         checkValid("HEADER \"Field\" \"Value\"\r\n", key);
         checkValid("header Field Value\r\n", key);
@@ -385,7 +424,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseDeleted() throws Exception {
-        SearchKey key = SearchKey.buildDeleted();
+        SearchKey key = Deleted.apply();
         checkValid("DELETED\r\n", key);
         checkValid("deleted\r\n", key);
         checkValid("deLEteD\r\n", key);
@@ -399,91 +438,91 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testEShouldBeInvalid() throws Exception {
-        SearchKey key = SearchKey.buildDeleted();
+        SearchKey key = Deleted.apply();
         checkInvalid("e\r\n", key);
         checkInvalid("ee\r\n", key);
     }
 
     @Test
     public void testGShouldBeInvalid() throws Exception {
-        SearchKey key = SearchKey.buildDeleted();
+        SearchKey key = Deleted.apply();
         checkInvalid("g\r\n", key);
         checkInvalid("G\r\n", key);
     }
 
     @Test
     public void testIShouldBeInvalid() throws Exception {
-        SearchKey key = SearchKey.buildDeleted();
+        SearchKey key = Deleted.apply();
         checkInvalid("i\r\n", key);
         checkInvalid("I\r\n", key);
     }
 
     @Test
     public void testJShouldBeInvalid() throws Exception {
-        SearchKey key = SearchKey.buildDeleted();
+        SearchKey key = Deleted.apply();
         checkInvalid("j\r\n", key);
         checkInvalid("J\r\n", key);
     }
 
     @Test
     public void testMShouldBeInvalid() throws Exception {
-        SearchKey key = SearchKey.buildDeleted();
+        SearchKey key = Deleted.apply();
         checkInvalid("m\r\n", key);
         checkInvalid("M\r\n", key);
     }
     
     @Test
     public void testPShouldBeInvalid() throws Exception {
-        SearchKey key = SearchKey.buildDeleted();
+        SearchKey key = Deleted.apply();
         checkInvalid("p\r\n", key);
         checkInvalid("Pp\r\n", key);
     }
 
     @Test
     public void testQShouldBeInvalid() throws Exception {
-        SearchKey key = SearchKey.buildDeleted();
+        SearchKey key = Deleted.apply();
         checkInvalid("q\r\n", key);
         checkInvalid("Qq\r\n", key);
     }
 
     @Test
     public void testWShouldBeInvalid() throws Exception {
-        SearchKey key = SearchKey.buildDeleted();
+        SearchKey key = Deleted.apply();
         checkInvalid("w\r\n", key);
         checkInvalid("ww\r\n", key);
     }
 
     @Test
     public void testVShouldBeInvalid() throws Exception {
-        SearchKey key = SearchKey.buildDeleted();
+        SearchKey key = Deleted.apply();
         checkInvalid("v\r\n", key);
         checkInvalid("vv\r\n", key);
     }
 
     @Test
     public void testXShouldBeInvalid() throws Exception {
-        SearchKey key = SearchKey.buildDeleted();
+        SearchKey key = Deleted.apply();
         checkInvalid("x\r\n", key);
         checkInvalid("xx\r\n", key);
     }
 
     @Test
     public void testYShouldBeInvalid() throws Exception {
-        SearchKey key = SearchKey.buildDeleted();
+        SearchKey key = Deleted.apply();
         checkInvalid("y\r\n", key);
         checkInvalid("yy\r\n", key);
     }
 
     @Test
     public void testZShouldBeInvalid() throws Exception {
-        SearchKey key = SearchKey.buildDeleted();
+        SearchKey key = Deleted.apply();
         checkInvalid("z\r\n", key);
         checkInvalid("zz\r\n", key);
     }
 
     @Test
     public void testShouldParseRecent() throws Exception {
-        SearchKey key = SearchKey.buildRecent();
+        SearchKey key = Recent.apply();
         checkValid("RECENT\r\n", key);
         checkValid("recent\r\n", key);
         checkValid("reCENt\r\n", key);
@@ -496,7 +535,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseDraft() throws Exception {
-        SearchKey key = SearchKey.buildDraft();
+        SearchKey key = Draft.apply();
         checkValid("DRAFT\r\n", key);
         checkValid("draft\r\n", key);
         checkValid("DRaft\r\n", key);
@@ -508,7 +547,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseUnanswered() throws Exception {
-        SearchKey key = SearchKey.buildUnanswered();
+        SearchKey key = UnAnswered.apply();
         checkValid("UNANSWERED\r\n", key);
         checkValid("unanswered\r\n", key);
         checkValid("UnAnswered\r\n", key);
@@ -525,7 +564,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseUndeleted() throws Exception {
-        SearchKey key = SearchKey.buildUndeleted();
+        SearchKey key = UnDeleted.apply();
         checkValid("UNDELETED\r\n", key);
         checkValid("undeleted\r\n", key);
         checkValid("UnDeleted\r\n", key);
@@ -541,7 +580,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseUnseen() throws Exception {
-        SearchKey key = SearchKey.buildUnseen();
+        SearchKey key = UnSeen.apply();
         checkValid("UNSEEN\r\n", key);
         checkValid("unseen\r\n", key);
         checkValid("UnSeen\r\n", key);
@@ -554,7 +593,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseUndraft() throws Exception {
-        SearchKey key = SearchKey.buildUndraft();
+        SearchKey key = UnDraft.apply();
         checkValid("UNDRAFT\r\n", key);
         checkValid("undraft\r\n", key);
         checkValid("UnDraft\r\n", key);
@@ -568,7 +607,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseUnflagged() throws Exception {
-        SearchKey key = SearchKey.buildUnflagged();
+        SearchKey key = UnFlagged.apply();
         checkValid("UNFLAGGED\r\n", key);
         checkValid("unflagged\r\n", key);
         checkValid("UnFlagged\r\n", key);
@@ -584,7 +623,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseSeen() throws Exception {
-        SearchKey key = SearchKey.buildSeen();
+        SearchKey key = Seen.apply();
         checkValid("SEEN\r\n", key);
         checkValid("seen\r\n", key);
         checkValid("SEen\r\n", key);
@@ -595,7 +634,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseNew() throws Exception {
-        SearchKey key = SearchKey.buildNew();
+        SearchKey key = New.apply();
         checkValid("NEW\r\n", key);
         checkValid("new\r\n", key);
         checkValid("NeW\r\n", key);
@@ -606,7 +645,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseOld() throws Exception {
-        SearchKey key = SearchKey.buildOld();
+        SearchKey key = Old.apply();
         checkValid("OLD\r\n", key);
         checkValid("old\r\n", key);
         checkValid("oLd\r\n", key);
@@ -617,7 +656,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseFlagged() throws Exception {
-        SearchKey key = SearchKey.buildFlagged();
+        SearchKey key = Flagged.apply();
         checkValid("FLAGGED\r\n", key);
         checkValid("flagged\r\n", key);
         checkValid("FLAGged\r\n", key);
@@ -632,7 +671,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseSmaller() throws Exception {
-        SearchKey key = SearchKey.buildSmaller(1729);
+        SearchKey key = Smaller.apply(1729);
         checkValid("SMALLER 1729\r\n", key);
         checkValid("smaller 1729\r\n", key);
         checkValid("SMaller 1729\r\n", key);
@@ -648,7 +687,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseLarger() throws Exception {
-        SearchKey key = SearchKey.buildLarger(1234);
+        SearchKey key = Larger.apply(1234);
         checkValid("LARGER 1234\r\n", key);
         checkValid("lArGEr 1234\r\n", key);
         checkValid("larger 1234\r\n", key);
@@ -664,8 +703,8 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseUid() throws Exception {
-        UidRange[] range = { new UidRange(MessageUid.of(1)) };
-        SearchKey key = SearchKey.buildUidSet(range);
+        List<UidRange> range = ImmutableList.of(new UidRange(MessageUid.of(1)));
+        SearchKey key = Uid.apply(CollectionConverters.asScala(range).toSeq());
         checkValid("UID 1\r\n", key);
         checkValid("Uid 1\r\n", key);
         checkValid("uid 1\r\n", key);
@@ -677,8 +716,8 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseNot() throws Exception {
-        SearchKey notdKey = SearchKey.buildSeen();
-        SearchKey key = SearchKey.buildNot(notdKey);
+        SearchKey notdKey = Seen.apply();
+        SearchKey key = Not.apply(notdKey);
         checkValid("NOT SEEN\r\n", key);
         checkValid("Not seen\r\n", key);
         checkValid("not Seen\r\n", key);
@@ -690,9 +729,9 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseOr() throws Exception {
-        SearchKey oneKey = SearchKey.buildSeen();
-        SearchKey twoKey = SearchKey.buildDraft();
-        SearchKey key = SearchKey.buildOr(oneKey, twoKey);
+        SearchKey oneKey = Seen.apply();
+        SearchKey twoKey = Draft.apply();
+        SearchKey key = Or.apply(oneKey, twoKey);
         checkValid("OR SEEN DRAFT\r\n", key);
         checkValid("oR seen draft\r\n", key);
         checkValid("or Seen drAFT\r\n", key);
@@ -722,8 +761,8 @@ public class SearchCommandParserSearchKeyTest {
     }
 
     private void checkSequenceSet(int number) throws Exception {
-        IdRange[] range = { new IdRange(number) };
-        SearchKey key = SearchKey.buildSequenceSet(range);
+        List<IdRange> range = ImmutableList.of(new IdRange(number));
+        SearchKey key = SequenceNumbers.apply(CollectionConverters.asScala(range).toSeq());
         checkValid(number + "\r\n", key);
     }
 

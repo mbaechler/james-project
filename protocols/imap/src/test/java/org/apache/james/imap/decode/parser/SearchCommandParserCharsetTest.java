@@ -36,7 +36,15 @@ import java.nio.charset.StandardCharsets;
 import org.apache.james.imap.api.ImapConstants;
 import org.apache.james.imap.api.ImapMessage;
 import org.apache.james.imap.api.display.HumanReadableText;
+import org.apache.james.imap.api.message.request.Bcc;
+import org.apache.james.imap.api.message.request.Body;
+import org.apache.james.imap.api.message.request.Cc;
+import org.apache.james.imap.api.message.request.From;
+import org.apache.james.imap.api.message.request.Header;
 import org.apache.james.imap.api.message.request.SearchKey;
+import org.apache.james.imap.api.message.request.Subject;
+import org.apache.james.imap.api.message.request.Text;
+import org.apache.james.imap.api.message.request.To;
 import org.apache.james.imap.api.message.response.StatusResponse;
 import org.apache.james.imap.api.message.response.StatusResponseFactory;
 import org.apache.james.imap.decode.ImapRequestLineReader;
@@ -94,63 +102,62 @@ public class SearchCommandParserCharsetTest {
 
     @Test
     public void testBCCShouldConvertCharset() throws Exception {
-        SearchKey key = SearchKey.buildBcc(NON_ASCII_SEARCH_TERM);
+        SearchKey key = Bcc.apply(NON_ASCII_SEARCH_TERM);
         checkUTF8Valid("BCC".getBytes(StandardCharsets.US_ASCII), key);
     }
 
     @Test
     public void testBODYShouldConvertCharset() throws Exception {
-        SearchKey key = SearchKey.buildBody(NON_ASCII_SEARCH_TERM);
+        SearchKey key = Body.apply(NON_ASCII_SEARCH_TERM);
         checkUTF8Valid("BODY".getBytes(StandardCharsets.US_ASCII), key);
     }
 
     @Test
     public void testCCShouldConvertCharset() throws Exception {
-        SearchKey key = SearchKey.buildCc(NON_ASCII_SEARCH_TERM);
+        SearchKey key = Cc.apply(NON_ASCII_SEARCH_TERM);
         checkUTF8Valid("CC".getBytes(StandardCharsets.US_ASCII), key);
     }
 
     @Test
     public void testFROMShouldConvertCharset() throws Exception {
-        SearchKey key = SearchKey.buildFrom(NON_ASCII_SEARCH_TERM);
+        SearchKey key = From.apply(NON_ASCII_SEARCH_TERM);
         checkUTF8Valid("FROM".getBytes(StandardCharsets.US_ASCII), key);
     }
 
     @Test
     public void testHEADERShouldConvertCharset() throws Exception {
-        SearchKey key = SearchKey
-                .buildHeader("whatever", NON_ASCII_SEARCH_TERM);
+        SearchKey key = Header.apply("whatever", NON_ASCII_SEARCH_TERM);
         checkUTF8Valid("HEADER whatever".getBytes(StandardCharsets.US_ASCII), key);
     }
 
     @Test
     public void testSUBJECTShouldConvertCharset() throws Exception {
-        SearchKey key = SearchKey.buildSubject(NON_ASCII_SEARCH_TERM);
+        SearchKey key = Subject.apply(NON_ASCII_SEARCH_TERM);
         checkUTF8Valid("SUBJECT".getBytes(StandardCharsets.US_ASCII), key);
     }
 
     @Test
     public void testTEXTShouldConvertCharset() throws Exception {
-        SearchKey key = SearchKey.buildText(NON_ASCII_SEARCH_TERM);
+        SearchKey key = Text.apply(NON_ASCII_SEARCH_TERM);
         checkUTF8Valid("TEXT".getBytes(StandardCharsets.US_ASCII), key);
     }
 
     @Test
     public void testTOShouldConvertCharset() throws Exception {
-        SearchKey key = SearchKey.buildTo(NON_ASCII_SEARCH_TERM);
+        SearchKey key = To.apply(NON_ASCII_SEARCH_TERM);
         checkUTF8Valid("TO".getBytes(StandardCharsets.US_ASCII), key);
     }
 
     @Test
     public void testASCIICharset() throws Exception {
-        SearchKey key = SearchKey.buildBcc(ASCII_SEARCH_TERM);
+        SearchKey key = Bcc.apply(ASCII_SEARCH_TERM);
         checkValid("CHARSET US-ASCII BCC \"" + ASCII_SEARCH_TERM + "\"", key,
                 true, "US-ASCII");
     }
 
     @Test
     public void testSimpleUTF8Charset() throws Exception {
-        SearchKey key = SearchKey.buildBcc(ASCII_SEARCH_TERM);
+        SearchKey key = Bcc.apply(ASCII_SEARCH_TERM);
         checkValid("CHARSET UTF-8 BCC \"" + ASCII_SEARCH_TERM + "\"", key,
                 true, "US-ASCII");
     }

@@ -26,13 +26,12 @@ import java.util.List;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
-
 import nl.jqno.equalsverifier.EqualsVerifier;
 
 public class SearchKeyTest {
 
-    private static final SearchKey RED = SearchKey.buildFrom("red");
-    private static final SearchKey BLACK = SearchKey.buildTo("black");
+    private static final SearchKey RED = From.apply("red");
+    private static final SearchKey BLACK = To.apply("black");
 
     @Test
     public void shouldMatchBeanContract() {
@@ -44,8 +43,8 @@ public class SearchKeyTest {
 
     @Test
     public void modSeqSearchKeyShouldBeOfTypeModSeq() {
-        SearchKey searchKey = SearchKey.buildModSeq(36);
+        SearchKey searchKey = ModSeq.apply(36);
 
-        assertThat(searchKey.getType()).isEqualTo(SearchKey.Type.TYPE_MODSEQ);
+        assertThat(searchKey).isInstanceOf(ModSeq.class);
     }
 }

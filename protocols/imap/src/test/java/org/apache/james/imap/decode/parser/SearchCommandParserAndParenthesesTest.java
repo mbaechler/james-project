@@ -32,8 +32,18 @@ import java.util.List;
 import org.apache.james.imap.api.ImapCommand;
 import org.apache.james.imap.api.message.IdRange;
 import org.apache.james.imap.api.message.UidRange;
+import org.apache.james.imap.api.message.request.And;
 import org.apache.james.imap.api.message.request.DayMonthYear;
+import org.apache.james.imap.api.message.request.Draft;
+import org.apache.james.imap.api.message.request.From;
+import org.apache.james.imap.api.message.request.Header;
+import org.apache.james.imap.api.message.request.On;
 import org.apache.james.imap.api.message.request.SearchKey;
+import org.apache.james.imap.api.message.request.SequenceNumbers;
+import org.apache.james.imap.api.message.request.Since;
+import org.apache.james.imap.api.message.request.To;
+import org.apache.james.imap.api.message.request.Uid;
+import org.apache.james.imap.api.message.request.UnAnswered;
 import org.apache.james.imap.api.message.response.StatusResponseFactory;
 import org.apache.james.imap.decode.DecodingException;
 import org.apache.james.imap.decode.ImapRequestLineReader;
@@ -41,6 +51,8 @@ import org.apache.james.imap.decode.ImapRequestStreamLineReader;
 import org.apache.james.mailbox.MessageUid;
 import org.junit.Before;
 import org.junit.Test;
+
+import scala.jdk.javaapi.CollectionConverters;
 
 public class SearchCommandParserAndParenthesesTest {
 
@@ -64,42 +76,44 @@ public class SearchCommandParserAndParenthesesTest {
         if (parens) {
             builder.append(")");
         }
-        return new Input(builder.toString(), SearchKey.buildAnd(keys));
+        return new Input(builder.toString(), And.apply(CollectionConverters.asScala(keys).toSeq()));
     }
 
     public static Input sequence() {
-        IdRange[] range = { new IdRange(100, Long.MAX_VALUE), new IdRange(110),
-                new IdRange(200, 201), new IdRange(400, Long.MAX_VALUE) };
-        SearchKey key = SearchKey.buildSequenceSet(IdRange.mergeRanges(Arrays.asList(range)).toArray(new IdRange[0]));
+        List<IdRange> ranges = IdRange.mergeRanges(Arrays.asList(
+            new IdRange(100, Long.MAX_VALUE),
+            new IdRange(110),
+            new IdRange(200, 201),
+            new IdRange(400, Long.MAX_VALUE)));
+        SearchKey key = SequenceNumbers.apply(CollectionConverters.asScala(ranges).toSeq());
         return new Input("*:100,110,200:201,400:*", key);
     }
 
     public static Input uid() {
-        UidRange[] range = { 
+        List<UidRange> ranges = UidRange.mergeRanges(Arrays.asList(
                 new UidRange(MessageUid.of(100), MessageUid.MAX_VALUE), 
                 new UidRange(MessageUid.of(110)),
                 new UidRange(MessageUid.of(200), MessageUid.of(201)), 
                 new UidRange(MessageUid.of(400), MessageUid.MAX_VALUE) 
-                };
-        SearchKey key = SearchKey.buildUidSet(UidRange.mergeRanges(Arrays.asList(range)).toArray(new UidRange[0]));
+        ));
+        SearchKey key = Uid.apply(CollectionConverters.asScala(ranges).toSeq());
         return new Input("UID *:100,110,200:201,400:*", key);
     }
 
     public static Input fromHeader() {
-        SearchKey key = SearchKey.buildHeader("FROM", "Smith");
+        SearchKey key = Header.apply("FROM", "Smith");
         return new Input("HEADER FROM Smith", key);
     }
 
     public static Input to() {
-        SearchKey key = SearchKey
-                .buildTo("JAMES Server Development <server-dev@james.apache.org>");
+        SearchKey key = To.apply("JAMES Server Development <server-dev@james.apache.org>");
         return new Input(
                 "To \"JAMES Server Development <server-dev@james.apache.org>\"",
                 key);
     }
 
     public static Input mailingListHeader() {
-        SearchKey key = SearchKey.buildHeader("Mailing-List",
+        SearchKey key = Header.apply("Mailing-List",
                 "contact server-dev-help@james.apache.org; run by ezmlm");
         return new Input(
                 "HEADER Mailing-List \"contact server-dev-help@james.apache.org; run by ezmlm\"",
@@ -107,32 +121,32 @@ public class SearchCommandParserAndParenthesesTest {
     }
 
     public static Input since() {
-        SearchKey key = SearchKey.buildSince(new DayMonthYear(11, 1, 2001));
+        SearchKey key = Since.apply(new DayMonthYear(11, 1, 2001));
         return new Input("since 11-Jan-2001", key);
     }
 
     public static Input on() {
-        SearchKey key = SearchKey.buildOn(new DayMonthYear(1, 2, 2001));
+        SearchKey key = On.apply(new DayMonthYear(1, 2, 2001));
         return new Input("on 1-Feb-2001", key);
     }
 
     public static Input stringUnquoted() {
-        SearchKey key = SearchKey.buildFrom("Smith");
+        SearchKey key = From.apply("Smith");
         return new Input("FROM Smith", key);
     }
 
     public static Input stringQuoted() {
-        SearchKey key = SearchKey.buildFrom("Smith And Jones");
+        SearchKey key = From.apply("Smith And Jones");
         return new Input("FROM \"Smith And Jones\"", key);
     }
 
     public static Input draft() {
-        SearchKey key = SearchKey.buildDraft();
+        SearchKey key = Draft.apply();
         return new Input("DRAFT", key);
     }
 
     public static Input unanswered() {
-        SearchKey key = SearchKey.buildUnanswered();
+        SearchKey key = UnAnswered.apply();
         return new Input("unanswered", key);
     }
 
