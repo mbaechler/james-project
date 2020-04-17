@@ -66,6 +66,7 @@ import org.apache.james.imap.api.message.request.Or;
 import org.apache.james.imap.api.message.request.Recent;
 import org.apache.james.imap.api.message.request.SearchKey;
 import org.apache.james.imap.api.message.request.SearchOperation;
+import org.apache.james.imap.api.message.request.SearchResultOption;
 import org.apache.james.imap.api.message.request.Seen;
 import org.apache.james.imap.api.message.request.SentBefore;
 import org.apache.james.imap.api.message.request.SentOn;
@@ -507,7 +508,7 @@ public class SearchProcessorTest {
         when(selectedMailbox.getApplicableFlags()).thenReturn(new Flags());
         when(selectedMailbox.hasNewApplicableFlags()).thenReturn(false);
 
-        SearchRequest message = new SearchRequest(new SearchOperation(key, new ArrayList<>()), false, TAG);
+        SearchRequest message = new SearchRequest(new SearchOperation(key, CollectionConverters.asScala(ImmutableList.<SearchResultOption>of()).toSeq()), false, TAG);
         processor.processRequest(message, session, responder);
     }
 

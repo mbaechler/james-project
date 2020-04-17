@@ -673,8 +673,7 @@ class SearchCommandParser(val statusResponseFactory: StatusResponseFactory) exte
       }
     }.getOrElse(decode(session, request))
 
-    import scala.jdk.CollectionConverters._
-    new SearchRequest(new SearchOperation(finalKey, options.asJava), useUids, tag)
+    new SearchRequest(SearchOperation(finalKey, options), useUids, tag)
   } catch {
     case e@(_: IllegalCharsetNameException | _: UnsupportedCharsetException) =>
       SearchCommandParser.LOGGER.debug("Unable to decode request", e)

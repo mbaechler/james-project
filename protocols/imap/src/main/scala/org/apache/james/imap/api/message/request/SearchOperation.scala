@@ -1,4 +1,3 @@
-
 /****************************************************************
  * Licensed to the Apache Software Foundation (ASF) under one   *
  * or more contributor license agreements.  See the NOTICE file *
@@ -17,37 +16,7 @@
  * specific language governing permissions and limitations      *
  * under the License.                                           *
  ****************************************************************/
-package org.apache.james.imap.api.message.request;
 
-import java.util.List;
+package org.apache.james.imap.api.message.request
 
-import com.google.common.base.MoreObjects;
-
-public final class SearchOperation {
-
-    private final SearchKey key;
-    private final List<SearchResultOption> options;
-
-    public SearchOperation(SearchKey key, List<SearchResultOption> options) {
-        this.key = key;
-        this.options = options;
-    }
-    
-    public SearchKey getSearchKey() {
-        return key;
-    }
-    
-    public List<SearchResultOption> getResultOptions() {
-        return options;
-    }
-
-
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-            .add("key", key)
-            .toString();
-    }
- 
-    
-}
+case class SearchOperation(key: SearchKey, options: Seq[SearchResultOption])

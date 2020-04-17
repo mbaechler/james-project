@@ -49,9 +49,9 @@ object SearchProcessor {
 class SearchProcessor(val next: ImapProcessor, val mailboxManager: MailboxManager, val factory: StatusResponseFactory, val metricFactory: MetricFactory) extends AbstractMailboxProcessor[SearchRequest](classOf[SearchRequest], next, mailboxManager, factory, metricFactory) with CapabilityImplementingProcessor {
   override protected def processRequest(request: SearchRequest, session: ImapSession, responder: ImapProcessor.Responder): Unit = {
     val operation = request.operation
-    val searchKey = operation.getSearchKey
+    val searchKey = operation.key
     val useUids = request.useUids
-    val resultOptions = operation.getResultOptions
+    val resultOptions = operation.options
     try {
       val mailbox = getSelectedMailbox(session)
       val query = Criterion.toQuery(searchKey, session)
@@ -77,7 +77,7 @@ class SearchProcessor(val next: ImapProcessor, val mailboxManager: MailboxManage
           import scala.jdk.CollectionConverters._
           val idRanges = IdRange.mergeRanges(ids.map(new IdRange(_)).asJava).asScala
           val uidRanges = UidRange.mergeRanges(uids.map(new UidRange(_)).asJava).asScala
-          val esearch = resultOptions.stream().anyMatch(SearchResultOption.SAVE != _)
+          val esearch = resultOptions.exists(SearchResultOption.SAVE != _)
           if (esearch) {
             val min = ids.headOption.getOrElse(-1L)
             val max = ids.lastOption.getOrElse(-1L)
@@ -98,7 +98,7 @@ class SearchProcessor(val next: ImapProcessor, val mailboxManager: MailboxManage
                   }
               SearchResUtil.saveSequenceSet(session, toSave.toArray)
             }
-            new ESearchResponse(min, max, count, idRanges.toArray, uidRanges.toArray, highestModSeq, request.getTag, useUids, resultOptions)
+            new ESearchResponse(min, max, count, idRanges.toArray, uidRanges.toArray, highestModSeq, request.getTag, useUids, resultOptions.asJava)
 
           } else {
             // Just save the returned sequence-set as this is not SEARCHRES + ESEARCH
