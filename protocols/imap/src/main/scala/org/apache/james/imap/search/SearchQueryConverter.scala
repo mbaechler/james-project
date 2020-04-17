@@ -4,7 +4,6 @@ import java.util.{Date, Optional}
 
 import javax.mail.Flags.Flag
 import org.apache.james.imap.api.ImapConstants
-import org.apache.james.imap.api.message.request.DayMonthYear
 import org.apache.james.imap.api.message.{IdRange, UidRange}
 import org.apache.james.imap.api.process.ImapSession
 import org.apache.james.mailbox.MessageUid
@@ -15,89 +14,7 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.immutable.Iterable
 
-sealed trait SearchKey
-
-final case class All() extends SearchKey
-
-final case class And(keys: Seq[SearchKey]) extends SearchKey
-
-final case class Answered() extends SearchKey
-
-final case class Bcc(value: String) extends SearchKey
-
-final case class Before(date: DayMonthYear) extends SearchKey
-
-final case class Body(value: String) extends SearchKey
-
-final case class Cc(value: String) extends SearchKey
-
-final case class Deleted() extends SearchKey
-
-final case class Draft() extends SearchKey
-
-final case class Header(name: String, value: String) extends SearchKey
-
-final case class Flagged() extends SearchKey
-
-final case class From(value: String) extends SearchKey
-
-final case class Keyword(value: String) extends SearchKey
-
-final case class Larger(size: Long) extends SearchKey
-
-final case class New() extends SearchKey
-
-final case class ModSeq(modSeq: Long) extends SearchKey
-
-final case class Not(key: SearchKey) extends SearchKey
-
-final case class Old() extends SearchKey
-
-final case class Older(seconds: Long) extends SearchKey
-
-final case class Or(keyOne: SearchKey, keyTwo: SearchKey) extends SearchKey
-
-final case class On(date: DayMonthYear) extends SearchKey
-
-final case class Recent() extends SearchKey
-
-final case class Seen() extends SearchKey
-
-final case class SentBefore(date: DayMonthYear) extends SearchKey
-
-final case class SentOn(date: DayMonthYear) extends SearchKey
-
-final case class SentSince(date: DayMonthYear) extends SearchKey
-
-final case class SequenceNumbers(ids: Seq[IdRange]) extends SearchKey
-
-final case class Since(date: DayMonthYear) extends SearchKey
-
-final case class Smaller(size: Long) extends SearchKey
-
-final case class Subject(value: String) extends SearchKey
-
-final case class Text(value: String) extends SearchKey
-
-final case class To(value: String) extends SearchKey
-
-final case class Uid(ids: Iterable[UidRange]) extends SearchKey
-
-final case class UnAnswered() extends SearchKey
-
-final case class UnDeleted() extends SearchKey
-
-final case class UnDraft() extends SearchKey
-
-final case class UnFlagged() extends SearchKey
-
-final case class UnKeyword(value: String) extends SearchKey
-
-final case class UnSeen() extends SearchKey
-
-final case class Younger(seconds: Long) extends SearchKey
-
-object Criterion {
+private[search] object SearchQueryConverter {
 
   private val LOGGER = LoggerFactory.getLogger(classOf[Criterion])
 

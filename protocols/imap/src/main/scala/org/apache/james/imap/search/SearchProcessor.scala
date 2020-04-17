@@ -54,7 +54,7 @@ class SearchProcessor(val next: ImapProcessor, val mailboxManager: MailboxManage
     val resultOptions = operation.options
     try {
       val mailbox = getSelectedMailbox(session)
-      val query = Criterion.toQuery(searchKey, session)
+      val query = SearchQueryConverter.toQuery(searchKey, session)
       val msession = session.getMailboxSession
       val uids = performUidSearch(mailbox, query, msession)
       val ids: Seq[Long] = asResults(session, useUids, uids)
