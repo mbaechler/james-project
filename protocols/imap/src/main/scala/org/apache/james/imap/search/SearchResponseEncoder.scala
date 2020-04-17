@@ -16,42 +16,38 @@
  * specific language governing permissions and limitations      *
  * under the License.                                           *
  ****************************************************************/
-package org.apache.james.imap.encode;
 
-import java.io.IOException;
+package org.apache.james.imap.search
 
-import org.apache.james.imap.api.ImapConstants;
-import org.apache.james.imap.message.response.SearchResponse;
-import org.apache.james.mailbox.ModSeq;
+import java.io.IOException
+import org.apache.james.imap.api.ImapConstants
+import org.apache.james.imap.encode.ImapResponseComposer
+import org.apache.james.imap.encode.ImapResponseEncoder
+import org.apache.james.imap.message.response.SearchResponse
+import org.apache.james.mailbox.ModSeq
 
 /**
  * Encoders IMAP4rev1 <code>SEARCH</code> responses.
  */
-public class SearchResponseEncoder implements ImapResponseEncoder<SearchResponse> {
-    @Override
-    public Class<SearchResponse> acceptableMessages() {
-        return SearchResponse.class;
-    }
+class SearchResponseEncoder extends ImapResponseEncoder[SearchResponse] {
+  override def acceptableMessages: Class[SearchResponse] = classOf[SearchResponse]
 
-    @Override
-    public void encode(SearchResponse response, ImapResponseComposer composer) throws IOException {
-        final long[] ids = response.getIds();
-        ModSeq highestModSeq = response.getHighestModSeq();
-        composer.untagged();
-        composer.commandName(ImapConstants.SEARCH_COMMAND);
-        if (ids != null) {
-            for (long id : ids) {
-                composer.message(id);
-            }
-        }
-        
-        // add MODSEQ
-        if (highestModSeq != null) {
-            composer.openParen();
-            composer.message("MODSEQ");
-            composer.message(highestModSeq.asLong());
-            composer.closeParen();
-        }
-        composer.end();
+  @throws[IOException]
+  override def encode(response: SearchResponse, composer: ImapResponseComposer): Unit = {
+    val ids = response.getIds
+    val highestModSeq = response.getHighestModSeq
+    composer.untagged
+    composer.commandName(ImapConstants.SEARCH_COMMAND)
+    if (ids != null) for (id <- ids) {
+      composer.message(id)
     }
+    // add MODSEQ
+    if (highestModSeq != null) {
+      composer.openParen
+      composer.message("MODSEQ")
+      composer.message(highestModSeq.asLong)
+      composer.closeParen
+    }
+    composer.end
+  }
 }

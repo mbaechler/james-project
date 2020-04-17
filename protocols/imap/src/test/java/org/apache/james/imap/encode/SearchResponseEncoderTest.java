@@ -24,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.apache.james.imap.encode.base.ByteImapResponseWriter;
 import org.apache.james.imap.encode.base.ImapResponseComposerImpl;
 import org.apache.james.imap.message.response.SearchResponse;
+import org.apache.james.imap.search.SearchResponseEncoder;
 import org.junit.Before;
 import org.junit.Test;
 

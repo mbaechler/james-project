@@ -50,7 +50,7 @@ import org.apache.james.imap.encode.NamespaceResponseEncoder;
 import org.apache.james.imap.encode.QuotaResponseEncoder;
 import org.apache.james.imap.encode.QuotaRootResponseEncoder;
 import org.apache.james.imap.encode.RecentResponseEncoder;
-import org.apache.james.imap.encode.SearchResponseEncoder;
+import org.apache.james.imap.search.SearchResponseEncoder;
 import org.apache.james.imap.encode.StatusResponseEncoder;
 import org.apache.james.imap.encode.VanishedResponseEncoder;
 import org.apache.james.imap.encode.XListResponseEncoder;
