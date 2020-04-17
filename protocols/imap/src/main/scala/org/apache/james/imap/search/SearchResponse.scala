@@ -19,30 +19,10 @@
 
 package org.apache.james.imap.search
 
-import java.io.IOException
-
-import org.apache.james.imap.api.ImapConstants
-import org.apache.james.imap.encode.{ImapResponseComposer, ImapResponseEncoder}
+import org.apache.james.imap.api.message.response.ImapResponseMessage
+import org.apache.james.mailbox.ModSeq
 
 /**
- * Encoders IMAP4rev1 <code>SEARCH</code> responses.
+ * A <code>SEARCH</code> response.
  */
-class SearchResponseEncoder extends ImapResponseEncoder[SearchResponse] {
-  override def acceptableMessages: Class[SearchResponse] = classOf[SearchResponse]
-
-  @throws[IOException]
-  override def encode(response: SearchResponse, composer: ImapResponseComposer): Unit = {
-    composer.untagged
-    composer.commandName(ImapConstants.SEARCH_COMMAND)
-
-    if (response.ids != null) response.ids.foreach(composer.message)
-
-    if (response.highestModSeq != null) {
-      composer.openParen
-      composer.message("MODSEQ")
-      composer.message(response.highestModSeq.asLong)
-      composer.closeParen
-    }
-    composer.end
-  }
-}
+private[search] final case class SearchResponse(ids: Iterable[Long], highestModSeq: ModSeq) extends ImapResponseMessage

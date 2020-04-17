@@ -23,14 +23,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.apache.james.imap.encode.base.ByteImapResponseWriter;
 import org.apache.james.imap.encode.base.ImapResponseComposerImpl;
-import org.apache.james.imap.message.response.SearchResponse;
+import org.apache.james.imap.search.SearchResponse;
 import org.apache.james.imap.search.SearchResponseEncoder;
 import org.junit.Before;
 import org.junit.Test;
 
-public class SearchResponseEncoderTest {
+import com.google.common.collect.ImmutableList;
+import scala.jdk.javaapi.CollectionConverters;
 
-    private static final long[] IDS = { 1, 4, 9, 16 };
+public class SearchResponseEncoderTest {
 
     private SearchResponse response;
     private SearchResponseEncoder encoder;
@@ -39,7 +40,7 @@ public class SearchResponseEncoderTest {
 
     @Before
     public void setUp() throws Exception {
-        response = new SearchResponse(IDS, null);
+        response = new SearchResponse(CollectionConverters.asScala(ImmutableList.of(1L, 4L, 9L, 16L)), null);
         encoder = new SearchResponseEncoder();
     }
 

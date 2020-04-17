@@ -19,6 +19,7 @@
 
 package org.apache.james.imap.message.response;
 
+import org.apache.james.imap.search.SearchResponse;
 import org.junit.jupiter.api.Test;
 
 import nl.jqno.equalsverifier.EqualsVerifier;

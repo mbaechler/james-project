@@ -51,7 +51,6 @@ import org.apache.james.imap.api.message.response.StatusResponseFactory;
 import org.apache.james.imap.api.process.ImapProcessor;
 import org.apache.james.imap.api.process.SelectedMailbox;
 import org.apache.james.imap.encode.FakeImapSession;
-import org.apache.james.imap.message.response.SearchResponse;
 import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MailboxSessionUtil;
@@ -85,8 +84,6 @@ public class SearchProcessorTest {
     private static final long SIZE = 1729;
 
     private static final String KEYWORD = "BD3";
-
-    private static final long[] EMPTY = {};
 
     private static final String ADDRESS = "John Smith <john@example.org>";
 
@@ -482,7 +479,7 @@ public class SearchProcessorTest {
     private void verifyCalls() {
         verify(selectedMailbox).resetEvents();
 
-        verify(responder).respond(new SearchResponse(EMPTY, null));
+        verify(responder).respond(new SearchResponse(CollectionConverters.asScala(ImmutableList.of()), null));
 
         verify(responder).respond(same(statusResponse));
     }

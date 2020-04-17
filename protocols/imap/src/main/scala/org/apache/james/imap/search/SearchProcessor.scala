@@ -27,7 +27,7 @@ import org.apache.james.imap.api.message.request.SearchResultOption
 import org.apache.james.imap.api.message.response.StatusResponseFactory
 import org.apache.james.imap.api.message.{Capability, IdRange, UidRange}
 import org.apache.james.imap.api.process.{ImapProcessor, ImapSession, SearchResUtil, SelectedMailbox}
-import org.apache.james.imap.message.response.{ESearchResponse, SearchResponse}
+import org.apache.james.imap.message.response.ESearchResponse
 import org.apache.james.imap.processor.{AbstractMailboxProcessor, CapabilityImplementingProcessor}
 import org.apache.james.mailbox.exception.{MailboxException, MessageRangeException}
 import org.apache.james.mailbox.model.{FetchGroup, MessageRange, SearchQuery}
@@ -72,7 +72,7 @@ class SearchProcessor(val next: ImapProcessor, val mailboxManager: MailboxManage
       }
       else null
       val response =
-        if (resultOptions == null || resultOptions.isEmpty) new SearchResponse(ids.toArray, highestModSeq)
+        if (resultOptions == null || resultOptions.isEmpty) SearchResponse(ids, highestModSeq)
         else {
           import scala.jdk.CollectionConverters._
           val idRanges = IdRange.mergeRanges(ids.map(new IdRange(_)).asJava).asScala
@@ -103,7 +103,7 @@ class SearchProcessor(val next: ImapProcessor, val mailboxManager: MailboxManage
           } else {
             // Just save the returned sequence-set as this is not SEARCHRES + ESEARCH
             SearchResUtil.saveSequenceSet(session, idRanges.toArray)
-            new SearchResponse(ids.toArray, highestModSeq)
+            SearchResponse(ids, highestModSeq)
           }
         }
       responder.respond(response)
