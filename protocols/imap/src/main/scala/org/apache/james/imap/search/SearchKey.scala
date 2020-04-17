@@ -1,9 +1,10 @@
-package org.apache.james.imap.api.message.request
+package org.apache.james.imap.search
 
 import java.util.{Date, Optional}
 
 import javax.mail.Flags.Flag
 import org.apache.james.imap.api.ImapConstants
+import org.apache.james.imap.api.message.request.DayMonthYear
 import org.apache.james.imap.api.message.{IdRange, UidRange}
 import org.apache.james.imap.api.process.ImapSession
 import org.apache.james.mailbox.MessageUid

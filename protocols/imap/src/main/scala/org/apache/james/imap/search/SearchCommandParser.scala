@@ -1,15 +1,15 @@
-package org.apache.james.imap.decode.parser
+package org.apache.james.imap.search
 
 import java.nio.charset.{Charset, IllegalCharsetNameException, UnsupportedCharsetException}
 
 import org.apache.james.imap.api.display.HumanReadableText
-import org.apache.james.imap.api.message.request.{All, And, Answered, Bcc, Before, Body, Cc, Deleted, Draft, Flagged, From, Header, Keyword, Larger, ModSeq, New, Not, Old, Older, On, Or, Recent, SearchKey, SearchOperation, SearchResultOption, Seen, SentBefore, SentOn, SentSince, SequenceNumbers, Since, Smaller, Subject, Text, To, Uid, UnAnswered, UnDeleted, UnDraft, UnFlagged, UnKeyword, UnSeen, Younger}
+import org.apache.james.imap.api.message.request.SearchResultOption
 import org.apache.james.imap.api.message.response.{StatusResponse, StatusResponseFactory}
 import org.apache.james.imap.api.process.ImapSession
 import org.apache.james.imap.api.{ImapConstants, ImapMessage, Tag}
 import org.apache.james.imap.decode.ImapRequestLineReader.CharacterValidator
+import org.apache.james.imap.decode.parser.AbstractUidCommandParser
 import org.apache.james.imap.decode.{DecodingException, ImapRequestLineReader}
-import org.apache.james.imap.message.request.SearchRequest
 import org.slf4j.LoggerFactory
 
 import scala.annotation.tailrec

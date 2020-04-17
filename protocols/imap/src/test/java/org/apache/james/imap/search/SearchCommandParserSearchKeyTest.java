@@ -17,7 +17,7 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.imap.decode.parser;
+package org.apache.james.imap.search;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Fail.fail;
@@ -32,43 +32,7 @@ import org.apache.james.imap.api.ImapCommand;
 import org.apache.james.imap.api.ImapMessage;
 import org.apache.james.imap.api.message.IdRange;
 import org.apache.james.imap.api.message.UidRange;
-import org.apache.james.imap.api.message.request.All;
-import org.apache.james.imap.api.message.request.Answered;
-import org.apache.james.imap.api.message.request.Bcc;
-import org.apache.james.imap.api.message.request.Body;
-import org.apache.james.imap.api.message.request.Cc;
 import org.apache.james.imap.api.message.request.DayMonthYear;
-import org.apache.james.imap.api.message.request.Deleted;
-import org.apache.james.imap.api.message.request.Draft;
-import org.apache.james.imap.api.message.request.Flagged;
-import org.apache.james.imap.api.message.request.From;
-import org.apache.james.imap.api.message.request.Header;
-import org.apache.james.imap.api.message.request.Keyword;
-import org.apache.james.imap.api.message.request.Larger;
-import org.apache.james.imap.api.message.request.New;
-import org.apache.james.imap.api.message.request.Not;
-import org.apache.james.imap.api.message.request.Old;
-import org.apache.james.imap.api.message.request.On;
-import org.apache.james.imap.api.message.request.Or;
-import org.apache.james.imap.api.message.request.Recent;
-import org.apache.james.imap.api.message.request.SearchKey;
-import org.apache.james.imap.api.message.request.Seen;
-import org.apache.james.imap.api.message.request.SentBefore;
-import org.apache.james.imap.api.message.request.SentOn;
-import org.apache.james.imap.api.message.request.SentSince;
-import org.apache.james.imap.api.message.request.SequenceNumbers;
-import org.apache.james.imap.api.message.request.Since;
-import org.apache.james.imap.api.message.request.Smaller;
-import org.apache.james.imap.api.message.request.Subject;
-import org.apache.james.imap.api.message.request.Text;
-import org.apache.james.imap.api.message.request.To;
-import org.apache.james.imap.api.message.request.Uid;
-import org.apache.james.imap.api.message.request.UnAnswered;
-import org.apache.james.imap.api.message.request.UnDeleted;
-import org.apache.james.imap.api.message.request.UnDraft;
-import org.apache.james.imap.api.message.request.UnFlagged;
-import org.apache.james.imap.api.message.request.UnKeyword;
-import org.apache.james.imap.api.message.request.UnSeen;
 import org.apache.james.imap.api.message.response.StatusResponseFactory;
 import org.apache.james.imap.decode.DecodingException;
 import org.apache.james.imap.decode.ImapRequestLineReader;
@@ -238,7 +202,7 @@ public class SearchCommandParserSearchKeyTest {
 
     @Test
     public void testShouldParseBefore() throws Exception {
-        SearchKey key = org.apache.james.imap.api.message.request.Before.apply(DATE);
+        SearchKey key = org.apache.james.imap.search.Before.apply(DATE);
         checkValid("BEFORE 1-Jan-2000\r\n", key);
         checkValid("before 1-Jan-2000\r\n", key);
         checkValid("BEforE 1-Jan-2000\r\n", key);

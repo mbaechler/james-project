@@ -17,6 +17,13 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.imap.api.message.request
+package org.apache.james.imap.search
 
-case class SearchOperation(key: SearchKey, options: Seq[SearchResultOption])
+import org.apache.james.imap.api.{ImapConstants, Tag}
+import org.apache.james.imap.message.request.AbstractImapRequest
+
+class SearchRequest(val operation: SearchOperation,
+                    val useUids: Boolean,
+                    private val tag: Tag)
+  extends AbstractImapRequest(tag, ImapConstants.SEARCH_COMMAND) {
+}

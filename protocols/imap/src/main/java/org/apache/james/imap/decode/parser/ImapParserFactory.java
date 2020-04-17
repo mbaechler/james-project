@@ -29,6 +29,7 @@ import org.apache.james.imap.api.message.response.StatusResponseFactory;
 import org.apache.james.imap.decode.ImapCommandParser;
 import org.apache.james.imap.decode.ImapCommandParserFactory;
 import org.apache.james.imap.decode.base.AbstractImapCommandParser;
+import org.apache.james.imap.search.SearchCommandParser;
 
 import com.github.steveash.guavate.Guavate;
 

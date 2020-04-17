@@ -17,7 +17,7 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.imap.decode.parser;
+package org.apache.james.imap.search;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -30,9 +30,6 @@ import java.util.List;
 
 import org.apache.james.imap.api.message.IdRange;
 import org.apache.james.imap.api.message.UidRange;
-import org.apache.james.imap.api.message.request.SearchKey;
-import org.apache.james.imap.api.message.request.SequenceNumbers;
-import org.apache.james.imap.api.message.request.Uid;
 import org.apache.james.imap.api.message.response.StatusResponseFactory;
 import org.apache.james.imap.decode.ImapRequestLineReader;
 import org.apache.james.imap.decode.ImapRequestStreamLineReader;

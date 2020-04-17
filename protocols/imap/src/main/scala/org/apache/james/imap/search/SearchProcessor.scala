@@ -17,18 +17,18 @@
  * under the License.                                           *
  * ***************************************************************/
 
-package org.apache.james.imap.processor
+package org.apache.james.imap.search
 
 import java.io.Closeable
 import java.util
 
 import org.apache.james.imap.api.display.HumanReadableText
-import org.apache.james.imap.api.message.request.{Criterion, SearchResultOption}
+import org.apache.james.imap.api.message.request.SearchResultOption
 import org.apache.james.imap.api.message.response.StatusResponseFactory
 import org.apache.james.imap.api.message.{Capability, IdRange, UidRange}
 import org.apache.james.imap.api.process.{ImapProcessor, ImapSession, SearchResUtil, SelectedMailbox}
-import org.apache.james.imap.message.request.SearchRequest
 import org.apache.james.imap.message.response.{ESearchResponse, SearchResponse}
+import org.apache.james.imap.processor.{AbstractMailboxProcessor, CapabilityImplementingProcessor}
 import org.apache.james.mailbox.exception.{MailboxException, MessageRangeException}
 import org.apache.james.mailbox.model.{FetchGroup, MessageRange, SearchQuery}
 import org.apache.james.mailbox.{MailboxManager, MailboxSession, MessageManager, MessageUid, ModSeq}
@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory
 
 object SearchProcessor {
   private val LOGGER = LoggerFactory.getLogger(classOf[SearchProcessor])
-  private[processor] val SEARCH_MODSEQ = "SEARCH_MODSEQ"
+  private val SEARCH_MODSEQ = "SEARCH_MODSEQ"
   private val CAPS =
     Seq(
       Capability.of("WITHIN"),

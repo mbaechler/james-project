@@ -28,7 +28,7 @@ import org.apache.james.imap.decode.DecodingException;
 import org.apache.james.imap.decode.ImapRequestLineReader;
 import org.apache.james.imap.decode.base.AbstractImapCommandParser;
 
-abstract class AbstractUidCommandParser extends AbstractImapCommandParser {
+public abstract class AbstractUidCommandParser extends AbstractImapCommandParser {
 
     public AbstractUidCommandParser(ImapCommand command, StatusResponseFactory statusResponseFactory) {
         super(command, statusResponseFactory);

@@ -17,10 +17,11 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.imap.decode.parser;
+package org.apache.james.imap.search;
 
 import static org.apache.james.imap.ImapFixture.TAG;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Fail.fail;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
@@ -36,52 +37,131 @@ import java.nio.charset.StandardCharsets;
 import org.apache.james.imap.api.ImapConstants;
 import org.apache.james.imap.api.ImapMessage;
 import org.apache.james.imap.api.display.HumanReadableText;
-import org.apache.james.imap.api.message.request.Bcc;
-import org.apache.james.imap.api.message.request.Body;
-import org.apache.james.imap.api.message.request.Cc;
-import org.apache.james.imap.api.message.request.From;
-import org.apache.james.imap.api.message.request.Header;
-import org.apache.james.imap.api.message.request.SearchKey;
-import org.apache.james.imap.api.message.request.Subject;
-import org.apache.james.imap.api.message.request.Text;
-import org.apache.james.imap.api.message.request.To;
 import org.apache.james.imap.api.message.response.StatusResponse;
 import org.apache.james.imap.api.message.response.StatusResponseFactory;
+import org.apache.james.imap.api.process.ImapSession;
+import org.apache.james.imap.decode.DecodingException;
 import org.apache.james.imap.decode.ImapRequestLineReader;
 import org.apache.james.imap.decode.ImapRequestStreamLineReader;
+import org.apache.james.imap.decode.parser.NioUtils;
 import org.apache.james.imap.encode.FakeImapSession;
 import org.junit.Before;
 import org.junit.Test;
 
-public class SearchCommandParserCharsetTest {
-
-    private static final Charset UTF8 = Charset.forName("UTF-8");
-
-    private static final Charset ASCII = Charset.forName("US-ASCII");
-
+public class SearchCommandParserQuotedCharsetTest {
     private static final String ASCII_SEARCH_TERM = "A Search Term";
 
     private static final String NON_ASCII_SEARCH_TERM = "как Дела?";
 
-    private static final byte[] BYTES_NON_ASCII_SEARCH_TERM = NioUtils.toBytes(
-            NON_ASCII_SEARCH_TERM, UTF8);
+    private static final String LENGTHY_NON_ASCII_SEARCH_TERM = NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM
+            + NON_ASCII_SEARCH_TERM;
 
-    private static final byte[] BYTES_UTF8_NON_ASCII_SEARCH_TERM = NioUtils
-            .add(NioUtils.toBytes(" {16}\r\n", ASCII),
-                    BYTES_NON_ASCII_SEARCH_TERM);
+    private static final byte[] BYTES_LENGTHY_NON_ASCII_SEARCH_TERM = NioUtils
+            .toBytes(LENGTHY_NON_ASCII_SEARCH_TERM, StandardCharsets.UTF_8);
+
+    private static final byte[] BYTES_NON_ASCII_SEARCH_TERM = NioUtils.toBytes(
+            NON_ASCII_SEARCH_TERM, StandardCharsets.UTF_8);
+
+    private static final byte[] BYTES_QUOTED_UTF8_LENGTHY_NON_ASCII_SEARCH_TERM = add(
+            add(NioUtils.toBytes(" \"", StandardCharsets.US_ASCII),
+                    BYTES_LENGTHY_NON_ASCII_SEARCH_TERM), NioUtils.toBytes(
+                    "\"", StandardCharsets.US_ASCII));
+
+    private static final byte[] BYTES_QUOTED_UTF8_NON_ASCII_SEARCH_TERM = add(
+            add(NioUtils.toBytes(" \"", StandardCharsets.US_ASCII), BYTES_NON_ASCII_SEARCH_TERM),
+            NioUtils.toBytes("\"", StandardCharsets.US_ASCII));
+
+    private static final byte[] BYTES_UTF8_NON_ASCII_SEARCH_TERM = add(NioUtils
+            .toBytes(" {16}\r\n", StandardCharsets.US_ASCII), BYTES_NON_ASCII_SEARCH_TERM);
 
     private static final byte[] CHARSET = NioUtils.toBytes("CHARSET UTF-8 ",
-            ASCII);
+        StandardCharsets.US_ASCII);
+
+    private static byte[] add(byte[] one, byte[] two) {
+        byte[] results = new byte[one.length + two.length];
+        System.arraycopy(one, 0, results, 0, one.length);
+        System.arraycopy(two, 0, results, one.length, two.length);
+        return results;
+    }
 
     SearchCommandParser parser;
     StatusResponseFactory mockStatusResponseFactory;
     ImapMessage message;
 
+    private ImapSession session;
+    
     @Before
     public void setUp() throws Exception {
         mockStatusResponseFactory = mock(StatusResponseFactory.class);
         parser = new SearchCommandParser(mockStatusResponseFactory);
         message = mock(ImapMessage.class);
+        session = new FakeImapSession();
+    }
+
+    @Test
+    public void testShouldDecoderLengthyQuotedCharset() throws Exception {
+        SearchKey key = Bcc.apply(LENGTHY_NON_ASCII_SEARCH_TERM);
+        ImapRequestLineReader reader = new ImapRequestStreamLineReader(
+                new ByteArrayInputStream(add(add(CHARSET, "BCC"
+                        .getBytes(StandardCharsets.US_ASCII)),
+                        BYTES_QUOTED_UTF8_LENGTHY_NON_ASCII_SEARCH_TERM)),
+                new ByteArrayOutputStream());
+        final SearchKey searchKey = parser.searchKey(null, reader, null, true);
+        assertThat(searchKey).isEqualTo(key);
+    }
+
+    @Test
+    public void testShouldDecoderQuotedCharset() throws Exception {
+        SearchKey key = Bcc.apply(NON_ASCII_SEARCH_TERM);
+        ImapRequestLineReader reader = new ImapRequestStreamLineReader(
+                new ByteArrayInputStream(add(add(CHARSET, "BCC"
+                        .getBytes(StandardCharsets.US_ASCII)),
+                        BYTES_QUOTED_UTF8_NON_ASCII_SEARCH_TERM)),
+                new ByteArrayOutputStream());
+        final SearchKey searchKey = parser.searchKey(null, reader, null, true);
+        assertThat(searchKey).isEqualTo(key);
     }
 
     @Test
@@ -89,15 +169,28 @@ public class SearchCommandParserCharsetTest {
         ImapRequestLineReader reader = new ImapRequestStreamLineReader(
                 new ByteArrayInputStream("CHARSET BOGUS ".getBytes(StandardCharsets.US_ASCII)),
                 new ByteArrayOutputStream());
-        parser.decode(reader, TAG, false, new FakeImapSession());
+        parser.decode(reader, TAG, false, session);
 
         verify(mockStatusResponseFactory, times(1)).taggedNo(
             eq(TAG),
             same(ImapConstants.SEARCH_COMMAND),
             eq(HumanReadableText.BAD_CHARSET),
             eq(StatusResponse.ResponseCode.badCharset()));
-
         verifyNoMoreInteractions(mockStatusResponseFactory);
+    }
+
+    @Test
+    public void testShouldThrowProtocolExceptionWhenBytesAreNotEncodedByCharset() {
+        try {
+            ImapRequestLineReader reader = new ImapRequestStreamLineReader(
+                    new ByteArrayInputStream(add("CHARSET US-ASCII BCC "
+                            .getBytes(StandardCharsets.US_ASCII), BYTES_NON_ASCII_SEARCH_TERM)),
+                    new ByteArrayOutputStream());
+            parser.decode(reader, TAG, false, session);
+            fail("A protocol exception should be thrown when charset is incompatible with input");
+        } catch (DecodingException e) {
+            // expected
+        }
     }
 
     @Test
@@ -152,28 +245,27 @@ public class SearchCommandParserCharsetTest {
     public void testASCIICharset() throws Exception {
         SearchKey key = Bcc.apply(ASCII_SEARCH_TERM);
         checkValid("CHARSET US-ASCII BCC \"" + ASCII_SEARCH_TERM + "\"", key,
-                true, "US-ASCII");
+                true, StandardCharsets.US_ASCII);
     }
 
     @Test
     public void testSimpleUTF8Charset() throws Exception {
         SearchKey key = Bcc.apply(ASCII_SEARCH_TERM);
         checkValid("CHARSET UTF-8 BCC \"" + ASCII_SEARCH_TERM + "\"", key,
-                true, "US-ASCII");
+                true, StandardCharsets.US_ASCII);
     }
 
     private void checkUTF8Valid(byte[] term, SearchKey key)
             throws Exception {
         ImapRequestLineReader reader = new ImapRequestStreamLineReader(
-                new ByteArrayInputStream(NioUtils.add(NioUtils.add(CHARSET,
-                        term), BYTES_UTF8_NON_ASCII_SEARCH_TERM)),
+                new ByteArrayInputStream(add(add(CHARSET, term),
+                        BYTES_UTF8_NON_ASCII_SEARCH_TERM)),
                 new ByteArrayOutputStream());
         final SearchKey searchKey = parser.searchKey(null, reader, null, true);
         assertThat(searchKey).isEqualTo(key);
     }
 
-    private void checkValid(String input, SearchKey key, boolean isFirst,
-            String charset) throws Exception {
+    private void checkValid(String input, SearchKey key, boolean isFirst, Charset charset) throws Exception {
         ImapRequestLineReader reader = new ImapRequestStreamLineReader(
                 new ByteArrayInputStream(input.getBytes(charset)),
                 new ByteArrayOutputStream());

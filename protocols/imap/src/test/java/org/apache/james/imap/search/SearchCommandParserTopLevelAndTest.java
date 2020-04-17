@@ -17,7 +17,7 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.imap.decode.parser;
+package org.apache.james.imap.search;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -32,18 +32,7 @@ import java.util.List;
 import org.apache.james.imap.api.ImapCommand;
 import org.apache.james.imap.api.message.IdRange;
 import org.apache.james.imap.api.message.UidRange;
-import org.apache.james.imap.api.message.request.And;
 import org.apache.james.imap.api.message.request.DayMonthYear;
-import org.apache.james.imap.api.message.request.Draft;
-import org.apache.james.imap.api.message.request.From;
-import org.apache.james.imap.api.message.request.Header;
-import org.apache.james.imap.api.message.request.On;
-import org.apache.james.imap.api.message.request.SearchKey;
-import org.apache.james.imap.api.message.request.SequenceNumbers;
-import org.apache.james.imap.api.message.request.Since;
-import org.apache.james.imap.api.message.request.To;
-import org.apache.james.imap.api.message.request.Uid;
-import org.apache.james.imap.api.message.request.UnAnswered;
 import org.apache.james.imap.api.message.response.StatusResponseFactory;
 import org.apache.james.imap.decode.DecodingException;
 import org.apache.james.imap.decode.ImapRequestLineReader;
@@ -52,50 +41,34 @@ import org.apache.james.mailbox.MessageUid;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.google.common.collect.ImmutableList;
 import scala.jdk.javaapi.CollectionConverters;
 
-public class SearchCommandParserAndParenthesesTest {
+public class SearchCommandParserTopLevelAndTest {
+
+    Input[] one = { sequence() };
+
+    Input[] base = { sequence(), uid(), fromHeader(), since(), stringQuoted(),
+            stringUnquoted(), draft() };
 
     Input[] variety = { sequence(), uid(), fromHeader(), since(),
             stringQuoted(), stringUnquoted(), draft(), mailingListHeader(),
-            on(), unanswered() };
-
-    public static Input and(Input[] parts, boolean parens) {
-        List<SearchKey> keys = new ArrayList<>();
-        StringBuilder builder = new StringBuilder();
-        if (parens) {
-            builder.append("(");
-        }
-        for (int i = 0; i < parts.length; i++) {
-            if (i > 0) {
-                builder.append(' ');
-            }
-            builder.append(parts[i].input);
-            keys.add(parts[i].key);
-        }
-        if (parens) {
-            builder.append(")");
-        }
-        return new Input(builder.toString(), And.apply(CollectionConverters.asScala(keys).toSeq()));
-    }
+            on(), unanswered(), };
 
     public static Input sequence() {
-        List<IdRange> ranges = IdRange.mergeRanges(Arrays.asList(
-            new IdRange(100, Long.MAX_VALUE),
-            new IdRange(110),
-            new IdRange(200, 201),
-            new IdRange(400, Long.MAX_VALUE)));
+        IdRange[] range = { new IdRange(100, Long.MAX_VALUE), new IdRange(110),
+                new IdRange(200, 201), new IdRange(400, Long.MAX_VALUE) };
+        List<IdRange> ranges = IdRange.mergeRanges(Arrays.asList(range));
         SearchKey key = SequenceNumbers.apply(CollectionConverters.asScala(ranges).toSeq());
         return new Input("*:100,110,200:201,400:*", key);
     }
 
     public static Input uid() {
-        List<UidRange> ranges = UidRange.mergeRanges(Arrays.asList(
+        List<UidRange> ranges = UidRange.mergeRanges(ImmutableList.of(
                 new UidRange(MessageUid.of(100), MessageUid.MAX_VALUE), 
                 new UidRange(MessageUid.of(110)),
                 new UidRange(MessageUid.of(200), MessageUid.of(201)), 
-                new UidRange(MessageUid.of(400), MessageUid.MAX_VALUE) 
-        ));
+                new UidRange(MessageUid.of(400), MessageUid.MAX_VALUE)));
         SearchKey key = Uid.apply(CollectionConverters.asScala(ranges).toSeq());
         return new Input("UID *:100,110,200:201,400:*", key);
     }
@@ -172,41 +145,55 @@ public class SearchCommandParserAndParenthesesTest {
     }
 
     @Test
-    public void testShouldParseTopLevelParentheses() throws Exception {
-        check(and(variety, true));
+    public void testLargePermutations() throws Exception {
+        permute(16, one);
+        permute(32, one);
     }
 
     @Test
-    public void testShouldParseDeepParentheses() throws Exception {
-        Input[] deep = { and(variety, true), and(variety, true), sequence(),
-                and(variety, true), draft(), mailingListHeader() };
-        Input[] mid = { and(deep, true), since(), and(variety, true),
-                unanswered() };
-        Input[] top = { uid(), and(deep, true), and(mid, true), stringQuoted(),
-                and(mid, true) };
-        check(and(top, true));
+    public void testBasePermutations() throws Exception {
+        permute(2, base);
+        permute(3, base);
+        permute(4, base);
+        permute(5, base);
     }
 
     @Test
-    public void testShouldParseParenthesesOnTopLevel() throws Exception {
-        Input[] deep = { and(variety, true), and(variety, true), sequence(),
-                and(variety, true), draft(), mailingListHeader() };
-        Input[] mid = { and(deep, true), since(), and(variety, true),
-                unanswered() };
-        Input[] top = { uid(), and(deep, true), and(mid, true), stringQuoted(),
-                and(mid, true) };
-        check(and(top, false));
+    public void testVarietyPermutations() throws Exception {
+        permute(5, variety);
     }
 
-    private void check(Input in) throws
-        DecodingException {
-        String input = in.input + "\r\n";
+    private void permute(int mutations, Input[] inputs) throws Exception {
+        permute(mutations, new ArrayList<>(), new StringBuffer(), inputs);
+    }
+
+    private void permute(int mutations, List<SearchKey> keys, StringBuffer buffer,
+            Input[] inputs) throws Exception {
+        if (mutations == 0) {
+            check(keys, buffer);
+        } else {
+            mutations -= 1;
+            for (Input input : inputs) {
+                StringBuffer nextBuffer = new StringBuffer(buffer.toString());
+                if (nextBuffer.length() > 0) {
+                    nextBuffer.append(' ');
+                }
+                nextBuffer.append(input.input);
+                List<SearchKey> nextKeys = new ArrayList<>(keys);
+                nextKeys.add(input.key);
+                permute(mutations, nextKeys, nextBuffer, inputs);
+            }
+        }
+    }
+
+    private void check(List<SearchKey> keys, StringBuffer buffer) throws DecodingException {
+        buffer.append("\r\n");
+        String input = buffer.toString();
+        SearchKey key = And.apply(CollectionConverters.asScala(keys).toSeq());
         ImapRequestLineReader reader = new ImapRequestStreamLineReader(
                 new ByteArrayInputStream(input.getBytes(StandardCharsets.US_ASCII)),
                 new ByteArrayOutputStream());
 
-        final SearchKey result = parser.decode(null, reader);
-        assertThat(result).isEqualTo(in.key);
+        assertThat(parser.decode(null, reader)).describedAs(input).isEqualTo(key);
     }
-
 }

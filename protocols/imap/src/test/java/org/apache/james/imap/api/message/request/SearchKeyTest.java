@@ -23,6 +23,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 
+import org.apache.james.imap.search.From;
+import org.apache.james.imap.search.ModSeq;
+import org.apache.james.imap.search.SearchKey;
+import org.apache.james.imap.search.To;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
