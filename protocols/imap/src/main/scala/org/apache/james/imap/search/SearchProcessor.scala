@@ -27,7 +27,6 @@ import org.apache.james.imap.api.message.request.SearchResultOption
 import org.apache.james.imap.api.message.response.StatusResponseFactory
 import org.apache.james.imap.api.message.{Capability, IdRange, UidRange}
 import org.apache.james.imap.api.process.{ImapProcessor, ImapSession, SearchResUtil, SelectedMailbox}
-import org.apache.james.imap.message.response.ESearchResponse
 import org.apache.james.imap.processor.{AbstractMailboxProcessor, CapabilityImplementingProcessor}
 import org.apache.james.mailbox.exception.{MailboxException, MessageRangeException}
 import org.apache.james.mailbox.model.{FetchGroup, MessageRange, SearchQuery}
@@ -98,7 +97,7 @@ class SearchProcessor(val next: ImapProcessor, val mailboxManager: MailboxManage
                   }
               SearchResUtil.saveSequenceSet(session, toSave.toArray)
             }
-            new ESearchResponse(min, max, count, idRanges.toArray, uidRanges.toArray, highestModSeq, request.getTag, useUids, resultOptions.asJava)
+            new ESearchResponse(min, max, count, idRanges.toArray, uidRanges.toArray, highestModSeq, request.getTag, useUids, resultOptions)
 
           } else {
             // Just save the returned sequence-set as this is not SEARCHRES + ESEARCH

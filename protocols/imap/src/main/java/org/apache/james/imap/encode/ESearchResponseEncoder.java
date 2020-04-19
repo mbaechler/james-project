@@ -25,8 +25,10 @@ import org.apache.james.imap.api.Tag;
 import org.apache.james.imap.api.message.IdRange;
 import org.apache.james.imap.api.message.UidRange;
 import org.apache.james.imap.api.message.request.SearchResultOption;
-import org.apache.james.imap.message.response.ESearchResponse;
+import org.apache.james.imap.search.ESearchResponse;
 import org.apache.james.mailbox.ModSeq;
+
+import scala.jdk.javaapi.CollectionConverters;
 
 /**
  * Encoders IMAP4rev1 <code>ESEARCH</code> responses.
@@ -39,15 +41,15 @@ public class ESearchResponseEncoder implements ImapResponseEncoder<ESearchRespon
 
     @Override
     public void encode(ESearchResponse response, ImapResponseComposer composer) throws IOException {
-        Tag tag = response.getTag();
-        long min = response.getMinUid();
-        long max = response.getMaxUid();
-        long count = response.getCount();
-        IdRange[] all = response.getAll();
-        UidRange[] allUids = response.getAllUids();
-        boolean useUid = response.getUseUid();
-        ModSeq highestModSeq = response.getHighestModSeq();
-        List<SearchResultOption> options = response.getSearchResultOptions();
+        Tag tag = response.tag();
+        long min = response.minUid();
+        long max = response.maxUid();
+        long count = response.count();
+        IdRange[] all = response.all();
+        UidRange[] allUids = response.allUids();
+        boolean useUid = response.useUid();
+        ModSeq highestModSeq = response.highestModSeq();
+        List<SearchResultOption> options = CollectionConverters.asJava(response.options());
         
         composer.untagged().message("ESEARCH").openParen().message("TAG").quote(tag.asString()).closeParen();
         if (useUid) {
