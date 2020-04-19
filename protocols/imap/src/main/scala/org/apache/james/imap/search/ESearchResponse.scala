@@ -27,7 +27,7 @@ import org.apache.james.mailbox.ModSeq
 
 case class ESearchResponse(minUid: Option[Long],
                            maxUid: Option[Long],
-                           count: Long,
+                           count: Option[Long],
                            all: Array[IdRange],
                            allUids: Array[UidRange],
                            highestModSeq: ModSeq,

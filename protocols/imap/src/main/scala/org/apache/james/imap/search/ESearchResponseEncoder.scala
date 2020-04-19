@@ -39,9 +39,8 @@ class ESearchResponseEncoder extends ImapResponseEncoder[ESearchResponse] {
 
     response.minUid.foreach(min => composer.message(SearchResultOption.MIN.name).message(min))
     response.maxUid.foreach(max => composer.message(SearchResultOption.MAX.name).message(max))
+    response.count.foreach(count => composer.message(SearchResultOption.COUNT.name).message(count))
 
-    if (response.options.contains(SearchResultOption.COUNT))
-      composer.message(SearchResultOption.COUNT.name).message(response.count)
     if (!response.useUid && response.all != null && response.all.nonEmpty && response.options.contains(SearchResultOption.ALL)) {
       composer.message(SearchResultOption.ALL.name)
       composer.sequenceSet(response.all)

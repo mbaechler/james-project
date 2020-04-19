@@ -80,7 +80,6 @@ class SearchProcessor(val next: ImapProcessor, val mailboxManager: MailboxManage
           if (esearch) {
             val min = ids.headOption
             val max = ids.lastOption
-            val count = ids.length
             // Save the sequence-set for later usage. This is part of SEARCHRES
             if (resultOptions.contains(SearchResultOption.SAVE)) {
               val toSave: Iterable[IdRange] =
@@ -97,6 +96,7 @@ class SearchProcessor(val next: ImapProcessor, val mailboxManager: MailboxManage
                   }
               SearchResUtil.saveSequenceSet(session, toSave.toArray)
             }
+            val count = if (resultOptions.contains(SearchResultOption.COUNT)) Some(ids.length.longValue) else None
             new ESearchResponse(min, max, count, idRanges.toArray, uidRanges.toArray, highestModSeq, request.getTag, useUids, resultOptions)
 
           } else {
