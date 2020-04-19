@@ -41,13 +41,13 @@ class ESearchResponseEncoder extends ImapResponseEncoder[ESearchResponse] {
     response.maxUid.foreach(max => composer.message(SearchResultOption.MAX.name).message(max))
     response.count.foreach(count => composer.message(SearchResultOption.COUNT.name).message(count))
 
-    if (!response.useUid && response.all != null && response.all.nonEmpty && response.options.contains(SearchResultOption.ALL)) {
+    if (response.all.nonEmpty) {
       composer.message(SearchResultOption.ALL.name)
-      composer.sequenceSet(response.all)
+      composer.sequenceSet(response.all.toArray)
     }
-    if (response.useUid && response.allUids != null && response.allUids.nonEmpty && response.options.contains(SearchResultOption.ALL)) {
+    if (response.allUids.nonEmpty) {
       composer.message(SearchResultOption.ALL.name)
-      composer.sequenceSet(response.allUids)
+      composer.sequenceSet(response.allUids.toArray)
     }
     // Add the MODSEQ to the response if needed.
     //

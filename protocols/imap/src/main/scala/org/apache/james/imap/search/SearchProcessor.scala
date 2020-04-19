@@ -35,6 +35,8 @@ import org.apache.james.metrics.api.MetricFactory
 import org.apache.james.util.MDCBuilder
 import org.slf4j.LoggerFactory
 
+import scala.collection.mutable
+
 object SearchProcessor {
   private val LOGGER = LoggerFactory.getLogger(classOf[SearchProcessor])
   private val SEARCH_MODSEQ = "SEARCH_MODSEQ"
@@ -74,7 +76,7 @@ class SearchProcessor(val next: ImapProcessor, val mailboxManager: MailboxManage
         if (resultOptions == null || resultOptions.isEmpty) SearchResponse(ids, highestModSeq)
         else {
           import scala.jdk.CollectionConverters._
-          val idRanges = IdRange.mergeRanges(ids.map(new IdRange(_)).asJava).asScala
+          val idRanges: mutable.Seq[IdRange] = IdRange.mergeRanges(ids.map(new IdRange(_)).asJava).asScala
           val uidRanges = UidRange.mergeRanges(uids.map(new UidRange(_)).asJava).asScala
           val esearch = resultOptions.exists(SearchResultOption.SAVE != _)
           if (esearch) {
@@ -97,7 +99,9 @@ class SearchProcessor(val next: ImapProcessor, val mailboxManager: MailboxManage
               SearchResUtil.saveSequenceSet(session, toSave.toArray)
             }
             val count = if (resultOptions.contains(SearchResultOption.COUNT)) Some(ids.length.longValue) else None
-            new ESearchResponse(min, max, count, idRanges.toArray, uidRanges.toArray, highestModSeq, request.getTag, useUids, resultOptions)
+            val all: Seq[IdRange] = if (resultOptions.contains(SearchResultOption.ALL)) idRanges.toSeq else Seq.empty
+            val allUids: Seq[UidRange] = if (resultOptions.contains(SearchResultOption.ALL)) uidRanges.toSeq else Seq.empty
+            ESearchResponse(min, max, count, all, allUids, highestModSeq, request.getTag, useUids, resultOptions)
 
           } else {
             // Just save the returned sequence-set as this is not SEARCHRES + ESEARCH
