@@ -25,4 +25,4 @@ import org.apache.james.mailbox.ModSeq
 /**
  * A <code>SEARCH</code> response.
  */
-private[search] final case class SearchResponse(ids: Iterable[Long], highestModSeq: ModSeq) extends ImapResponseMessage
+private[search] final case class SearchResponse(ids: Iterable[Long], highestModSeq: Option[ModSeq]) extends ImapResponseMessage

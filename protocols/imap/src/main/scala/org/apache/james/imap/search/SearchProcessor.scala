@@ -62,16 +62,7 @@ class SearchProcessor(val next: ImapProcessor, val mailboxManager: MailboxManage
       // Check if the search did contain the MODSEQ searchkey. If so we need to include the highest mod in the response.
       //
       // See RFC4551: 3.4. MODSEQ Search Criterion in SEARCH
-      val highestModSeq =
-      if (session.getAttribute(SearchProcessor.SEARCH_MODSEQ) != null) {
-        val metaData = mailbox.getMetaData(false, msession, MessageManager.MetaData.FetchGroup.NO_COUNT)
-        import scala.jdk.CollectionConverters._
-        val result = findHighestModSeq(msession, mailbox, MessageRange.toRanges(uids.asJavaCollection).asScala.toSeq, metaData.getHighestModSeq)
-        // Enable CONDSTORE as this is a CONDSTORE enabling command
-        condstoreEnablingCommand(session, responder, metaData, true)
-        result
-      }
-      else null
+      val highestModSeq = findHighestModSeq(session, responder, mailbox, msession, uids)
       val response =
         if (resultOptions == null || resultOptions.isEmpty) SearchResponse(ids, highestModSeq)
         else {
@@ -143,23 +134,36 @@ class SearchProcessor(val next: ImapProcessor, val mailboxManager: MailboxManage
     finally if (stream != null) stream.close()
   }
 
+
+  private def findHighestModSeq(session: ImapSession, responder: ImapProcessor.Responder, mailbox: MessageManager, msession: MailboxSession, uids: Seq[MessageUid]) = {
+    if (session.getAttribute(SearchProcessor.SEARCH_MODSEQ) != null) {
+      val metaData = mailbox.getMetaData(false, msession, MessageManager.MetaData.FetchGroup.NO_COUNT)
+      import scala.jdk.CollectionConverters._
+      val result = findHighestModSeqForMailbox(msession, mailbox, MessageRange.toRanges(uids.asJavaCollection).asScala.toSeq, metaData.getHighestModSeq)
+      // Enable CONDSTORE as this is a CONDSTORE enabling command
+      condstoreEnablingCommand(session, responder, metaData, true)
+      result
+    }
+    else None
+  }
+
   /**
    * Find the highest mod-sequence number in the given {@link MessageRange}'s.
    */
   @throws[MailboxException]
-  private def findHighestModSeq(session: MailboxSession, mailbox: MessageManager, ranges: Seq[MessageRange], currentHighest: ModSeq): ModSeq = {
-    var highestModSeq: ModSeq = null
+  private def findHighestModSeqForMailbox(session: MailboxSession, mailbox: MessageManager, ranges: Seq[MessageRange], currentHighest: ModSeq): Option[ModSeq] = {
+    var highestModSeq: Option[ModSeq] = None
     // Reverse loop over the ranges as its more likely that we find a match at the end
     for (range <- ranges.reverse) {
       val results = mailbox.getMessages(range, FetchGroup.MINIMAL, session)
       while (results.hasNext) {
         val modSeq = results.next.getModSeq
         highestModSeq =
-          if (highestModSeq == null || modSeq.asLong > highestModSeq.asLong)
-            modSeq
+          if (highestModSeq.forall(modSeq.asLong > _.asLong))
+            Some(modSeq)
           else
             highestModSeq
-        if (highestModSeq.equals(currentHighest)) return highestModSeq
+        if (highestModSeq.contains(currentHighest)) return highestModSeq
       }
     }
     highestModSeq

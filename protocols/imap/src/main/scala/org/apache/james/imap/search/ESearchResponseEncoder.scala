@@ -50,12 +50,8 @@ class ESearchResponseEncoder extends ImapResponseEncoder[ESearchResponse] {
       composer.sequenceSet(response.allUids.toArray)
     }
     // Add the MODSEQ to the response if needed.
-    //
     // see RFC4731 3.2.  Interaction with CONDSTORE extension
-    if (response.highestModSeq != null) {
-      composer.message("MODSEQ")
-      composer.message(response.highestModSeq.asLong)
-    }
+    response.highestModSeq.foreach(modseq => composer.message("MODSEQ").message(modseq.asLong))
     composer.end
   }
 }

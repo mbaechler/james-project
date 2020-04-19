@@ -37,12 +37,8 @@ class SearchResponseEncoder extends ImapResponseEncoder[SearchResponse] {
 
     if (response.ids != null) response.ids.foreach(composer.message)
 
-    if (response.highestModSeq != null) {
-      composer.openParen
-      composer.message("MODSEQ")
-      composer.message(response.highestModSeq.asLong)
-      composer.closeParen
-    }
+    response.highestModSeq.foreach(modseq => composer.openParen.message("MODSEQ").message(modseq.asLong).closeParen)
+    
     composer.end
   }
 }

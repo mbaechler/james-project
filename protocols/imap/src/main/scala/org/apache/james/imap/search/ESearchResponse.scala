@@ -29,7 +29,7 @@ case class ESearchResponse(minUid: Option[Long],
                            count: Option[Long],
                            all: Seq[IdRange],
                            allUids: Seq[UidRange],
-                           highestModSeq: ModSeq,
+                           highestModSeq: Option[ModSeq],
                            tag: Tag,
                            useUid: Boolean)
   extends ImapResponseMessage {
