@@ -31,7 +31,7 @@ import org.apache.james.imap.encode.AnnotationResponseEncoder;
 import org.apache.james.imap.encode.AuthenticateResponseEncoder;
 import org.apache.james.imap.encode.CapabilityResponseEncoder;
 import org.apache.james.imap.encode.ContinuationResponseEncoder;
-import org.apache.james.imap.encode.ESearchResponseEncoder;
+import org.apache.james.imap.search.ESearchResponseEncoder;
 import org.apache.james.imap.encode.EnableResponseEncoder;
 import org.apache.james.imap.encode.ExistsResponseEncoder;
 import org.apache.james.imap.encode.ExpungeResponseEncoder;
