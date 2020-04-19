@@ -101,7 +101,7 @@ class SearchProcessor(val next: ImapProcessor, val mailboxManager: MailboxManage
             val count = if (resultOptions.contains(SearchResultOption.COUNT)) Some(ids.length.longValue) else None
             val all: Seq[IdRange] = if (resultOptions.contains(SearchResultOption.ALL)) idRanges.toSeq else Seq.empty
             val allUids: Seq[UidRange] = if (resultOptions.contains(SearchResultOption.ALL)) uidRanges.toSeq else Seq.empty
-            ESearchResponse(min, max, count, all, allUids, highestModSeq, request.getTag, useUids, resultOptions)
+            ESearchResponse(min, max, count, all, allUids, highestModSeq, request.getTag, useUids)
 
           } else {
             // Just save the returned sequence-set as this is not SEARCHRES + ESEARCH

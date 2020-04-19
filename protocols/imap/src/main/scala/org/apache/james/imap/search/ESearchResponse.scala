@@ -20,9 +20,8 @@
 package org.apache.james.imap.search
 
 import org.apache.james.imap.api.Tag
-import org.apache.james.imap.api.message.{IdRange, UidRange}
-import org.apache.james.imap.api.message.request.SearchResultOption
 import org.apache.james.imap.api.message.response.ImapResponseMessage
+import org.apache.james.imap.api.message.{IdRange, UidRange}
 import org.apache.james.mailbox.ModSeq
 
 case class ESearchResponse(minUid: Option[Long],
@@ -32,7 +31,6 @@ case class ESearchResponse(minUid: Option[Long],
                            allUids: Seq[UidRange],
                            highestModSeq: ModSeq,
                            tag: Tag,
-                           useUid: Boolean,
-                           options: Seq[SearchResultOption])
+                           useUid: Boolean)
   extends ImapResponseMessage {
 }
