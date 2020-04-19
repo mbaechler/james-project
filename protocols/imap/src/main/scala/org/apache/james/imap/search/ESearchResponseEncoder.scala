@@ -36,10 +36,10 @@ class ESearchResponseEncoder extends ImapResponseEncoder[ESearchResponse] {
   override def encode(response: ESearchResponse, composer: ImapResponseComposer): Unit = {
     composer.untagged.message("ESEARCH").openParen.message("TAG").quote(response.tag.asString).closeParen
     if (response.useUid) composer.message("UID")
-    if (response.minUid > -1 && response.options.contains(SearchResultOption.MIN))
-      composer.message(SearchResultOption.MIN.name).message(response.minUid)
-    if (response.maxUid > -1 && response.options.contains(SearchResultOption.MAX))
-      composer.message(SearchResultOption.MAX.name).message(response.maxUid)
+
+    response.minUid.foreach(min => composer.message(SearchResultOption.MIN.name).message(min))
+    response.maxUid.foreach(max => composer.message(SearchResultOption.MAX.name).message(max))
+
     if (response.options.contains(SearchResultOption.COUNT))
       composer.message(SearchResultOption.COUNT.name).message(response.count)
     if (!response.useUid && response.all != null && response.all.nonEmpty && response.options.contains(SearchResultOption.ALL)) {

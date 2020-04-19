@@ -25,8 +25,8 @@ import org.apache.james.imap.api.message.request.SearchResultOption
 import org.apache.james.imap.api.message.response.ImapResponseMessage
 import org.apache.james.mailbox.ModSeq
 
-case class ESearchResponse(minUid: Long,
-                           maxUid: Long,
+case class ESearchResponse(minUid: Option[Long],
+                           maxUid: Option[Long],
                            count: Long,
                            all: Array[IdRange],
                            allUids: Array[UidRange],

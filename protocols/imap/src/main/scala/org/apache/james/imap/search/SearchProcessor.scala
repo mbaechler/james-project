@@ -78,8 +78,8 @@ class SearchProcessor(val next: ImapProcessor, val mailboxManager: MailboxManage
           val uidRanges = UidRange.mergeRanges(uids.map(new UidRange(_)).asJava).asScala
           val esearch = resultOptions.exists(SearchResultOption.SAVE != _)
           if (esearch) {
-            val min = ids.headOption.getOrElse(-1L)
-            val max = ids.lastOption.getOrElse(-1L)
+            val min = ids.headOption
+            val max = ids.lastOption
             val count = ids.length
             // Save the sequence-set for later usage. This is part of SEARCHRES
             if (resultOptions.contains(SearchResultOption.SAVE)) {
@@ -89,9 +89,9 @@ class SearchProcessor(val next: ImapProcessor, val mailboxManager: MailboxManage
                   idRanges
                 } else {
                   Seq(
-                      if (resultOptions.contains(SearchResultOption.MIN)) Some(new IdRange(min))
+                      if (resultOptions.contains(SearchResultOption.MIN)) min.map(new IdRange(_))
                       else None,
-                      if (resultOptions.contains(SearchResultOption.MAX)) Some(new IdRange(max))
+                      if (resultOptions.contains(SearchResultOption.MAX)) max.map(new IdRange(_))
                       else None)
                     .flatten
                   }
