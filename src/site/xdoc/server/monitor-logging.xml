@@ -36,7 +36,7 @@
 
     These addresses can be actual packages or class names but they don't have to.
 
-    Using class names makes loggers configuration brittle as classes can change quite often or being move from
+    Using class names makes loggers configuration brittle as classes can change quite often or being moved from
     one package to another. It's why you should be careful when using a specific logging address.
 
     However, for some important logging purpose, James define stable addresses that are documented bellow:
