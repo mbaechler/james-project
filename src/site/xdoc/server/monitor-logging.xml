@@ -39,7 +39,7 @@
     Using class names makes loggers configuration brittle as classes can change quite often or being moved from
     one package to another. It's why you should be careful when using a specific logging address.
 
-    However, for some important logging purpose, James define stable addresses that are documented bellow:
+    However, for some important logging purpose, James defines stable addresses that are documented bellow:
 
     <ul>
         <li>org.apache.james.metrics will allow to output all server metrics to logs</li>
