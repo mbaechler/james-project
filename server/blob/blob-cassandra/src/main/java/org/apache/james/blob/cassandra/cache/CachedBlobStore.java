@@ -42,6 +42,62 @@ import com.google.common.base.Preconditions;
 import reactor.core.publisher.Mono;
 
 public class CachedBlobStore implements BlobStore {
+
+    private static class ReadAheadInputStream {
+
+        @FunctionalInterface
+        interface RequireStream {
+            RequireLength of(InputStream in);
+        }
+
+        interface RequireLength {
+            ReadAheadInputStream length(int length) throws IOException;
+        }
+
+
+        static RequireStream eager() {
+            return in -> length -> {
+                //+1 is to evaluate hasMore
+                var stream = new PushbackInputStream(in, length + 1);
+                var bytes = new byte[length];
+                int readByteCount = IOUtils.read(stream, bytes);
+                Optional<byte[]> firstBytes;
+                boolean hasMore;
+                if (readByteCount < 0) {
+                    firstBytes = Optional.empty();
+                    hasMore = false;
+                } else {
+                    byte[] readBytes = Arrays.copyOf(bytes, readByteCount);
+                    hasMore = hasMore(stream);
+                    stream.unread(readBytes);
+                    firstBytes = Optional.of(readBytes);
+                }
+                return new ReadAheadInputStream(stream, firstBytes, hasMore);
+            };
+        }
+
+        private static boolean hasMore(PushbackInputStream stream) throws IOException {
+            int nextByte = stream.read();
+            if (nextByte >= 0) {
+                stream.unread(nextByte);
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        final PushbackInputStream in;
+        final Optional<byte[]> firstBytes;
+        final boolean hasMore;
+
+        private ReadAheadInputStream(PushbackInputStream in, Optional<byte[]> firstBytes, boolean hasMore) {
+            this.in = in;
+            this.firstBytes = firstBytes;
+            this.hasMore = hasMore;
+        }
+
+    }
+
     private final BlobStoreCache cache;
     private final BlobStore backend;
     private final Integer sizeThresholdInBytes;
@@ -98,15 +154,23 @@ public class CachedBlobStore implements BlobStore {
     }
 
     private Publisher<BlobId> saveInCache(BucketName bucketName, InputStream inputStream, StoragePolicy storagePolicy) {
-        PushbackInputStream pushbackInputStream = new PushbackInputStream(inputStream, sizeThresholdInBytes + 1);
+        return Mono.fromCallable(() -> ReadAheadInputStream.eager().of(inputStream).length(sizeThresholdInBytes))
+            .flatMap(readAhead -> saveToBackend(bucketName, storagePolicy, readAhead)
+                .flatMap(blobId -> putInCacheIfNeeded(bucketName, storagePolicy, readAhead, blobId)
+                    .thenReturn(blobId)));
+    }
 
-        return Mono.fromCallable(() -> fullyReadSmallStream(pushbackInputStream))
-            .flatMap(Mono::justOrEmpty)
-            .filter(bytes -> isAbleToCache(bucketName, bytes, storagePolicy))
-            .flatMap(bytes -> Mono.from(backend.save(bucketName, pushbackInputStream, storagePolicy))
-                .flatMap(blobId -> Mono.from(cache.cache(blobId, bytes))
-                    .thenReturn(blobId)))
-            .switchIfEmpty(Mono.from(backend.save(bucketName, pushbackInputStream, storagePolicy)));
+    private Mono<BlobId> saveToBackend(BucketName bucketName, StoragePolicy storagePolicy, ReadAheadInputStream readAhead) {
+        return Mono.from(backend.save(bucketName, readAhead.in, storagePolicy));
+    }
+
+    private Mono<Mono<Void>> putInCacheIfNeeded(BucketName bucketName, StoragePolicy storagePolicy, ReadAheadInputStream readAhead, BlobId blobId) {
+        return Mono.justOrEmpty(readAhead.firstBytes)
+            .filter(bytes -> isAbleToCache(bucketName, readAhead, storagePolicy))
+            .map(bytes -> {
+                System.out.println("caching");
+                return Mono.from(cache.cache(blobId, bytes));
+            });
     }
 
     @Override
@@ -128,30 +192,13 @@ public class CachedBlobStore implements BlobStore {
         return Mono.from(backend.deleteBucket(bucketName));
     }
 
-    private Optional<byte[]> fullyReadSmallStream(PushbackInputStream pushbackInputStream) throws IOException {
-        byte[] bytes = new byte[sizeThresholdInBytes];
-        int readByteCount = IOUtils.read(pushbackInputStream, bytes);
-        int extraByte = pushbackInputStream.read();
-        try {
-            if (extraByte >= 0) {
-                return Optional.empty();
-            }
-            if (readByteCount < 0) {
-                return Optional.of(new byte[] {});
-            }
-            return Optional.of(Arrays.copyOf(bytes, readByteCount));
-        } finally {
-            if (extraByte >= 0) {
-                pushbackInputStream.unread(extraByte);
-            }
-            if (readByteCount > 0) {
-                pushbackInputStream.unread(bytes, 0, readByteCount);
-            }
-        }
-    }
 
     private boolean isAbleToCache(BucketName bucketName, byte[] bytes, StoragePolicy storagePolicy) {
         return isAbleToCache(bucketName, storagePolicy) && bytes.length <= sizeThresholdInBytes;
+    }
+
+    private boolean isAbleToCache(BucketName bucketName, ReadAheadInputStream readAhead, StoragePolicy storagePolicy) {
+        return isAbleToCache(bucketName, storagePolicy) && !readAhead.hasMore;
     }
 
     private boolean isAbleToCache(BucketName bucketName, StoragePolicy storagePolicy) {
