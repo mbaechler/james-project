@@ -49,8 +49,8 @@ import com.google.common.io.FileBackedOutputStream;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
-import reactor.retry.Retry;
-import reactor.retry.RetryWithAsyncCallback;
+import reactor.util.retry.Retry;
+import reactor.util.retry.RetryBackoffSpec;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.BytesWrapper;
@@ -208,14 +208,15 @@ public class S3DumbBlobStore implements DumbBlobStore, Closeable {
             .then();
     }
 
-    private Retry<Object> createBucketOnRetry(BucketName bucketName) {
-        return RetryWithAsyncCallback.onlyIf(retryContext -> retryContext.exception() instanceof NoSuchBucketException)
-            .exponentialBackoff(FIRST_BACK_OFF, FOREVER)
-            .withBackoffScheduler(Schedulers.elastic())
-            .retryMax(MAX_RETRIES)
-            .onRetryWithMono(retryContext -> Mono
+    private RetryBackoffSpec createBucketOnRetry(BucketName bucketName) {
+        return Retry
+            .backoff(MAX_RETRIES, FIRST_BACK_OFF)
+            .filter(throwable -> throwable instanceof NoSuchBucketException)
+            .scheduler(Schedulers.elastic())
+            .doBeforeRetryAsync(signal -> Mono
                 .fromFuture(client.createBucket(builder -> builder.bucket(bucketName.asString())))
-                .onErrorResume(BucketAlreadyOwnedByYouException.class, e -> Mono.empty()));
+                .onErrorResume(BucketAlreadyOwnedByYouException.class, e -> Mono.empty())
+                .then());
     }
 
     @Override
