@@ -27,7 +27,7 @@
 
   <section name="Monitor via Logging">
 
-    As most server software, James is using logs to report problems, track weird behaviors and audit
+    As most server softwares, James is using logs to report problems, track weird behaviors and audit
     what happens during run.
 
     In the Java ecosystem, it's frequent to use FQDN for logger names: it allows to enable logs for a subtree
