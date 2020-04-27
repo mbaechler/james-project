@@ -43,7 +43,7 @@ public interface SelectedMailbox {
     void deselect();
 
     /**
-     * Return the msg index of the given uid or {@link #NO_SUCH_MESSAGE} if no
+     * Return the msg index of the given uid or {@link NullableMessageSequenceNumber#noMessage()} instance if no
      * message with the given uid was found
      */
     NullableMessageSequenceNumber msn(MessageUid uid);
@@ -145,7 +145,7 @@ public interface SelectedMailbox {
      * @param uid
      *            not null
      * @return the message sequence number that the UID held before or
-     *         {@link #NO_SUCH_MESSAGE} if no message with the given uid was
+     *         {@link NullableMessageSequenceNumber#noMessage()} instance if no message with the given uid was
      *         found being expunged
      */
     NullableMessageSequenceNumber remove(MessageUid uid);
