@@ -96,7 +96,7 @@ public class HealthCheckRoutes implements PublicRoutes {
             message = "Internal server error - When one check has failed.")
     })
     public Object validateHealthChecks(Request request, Response response) {
-        List<Result> results = executeHealthChecks().collectList().block();
+        ImmutableList<Result> results = executeHealthChecks().collect(Guavate.toImmutableList()).block();
         ResultStatus status = retrieveAggregationStatus(results);
         response.status(getCorrespondingStatusCode(status));
         return new HeathCheckAggregationExecutionResultDto(status, mapResultToDto(results));
