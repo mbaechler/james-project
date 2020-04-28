@@ -49,13 +49,13 @@ class NullableMessageSequenceNumberTest {
     }
 
     @Test
-    void orShouldReturnValueWhenMessage() {
-        assertThat(NullableMessageSequenceNumber.of(12).or(-1)).isEqualTo(12);
+    void asIntShouldReturnIntWhenMessage() {
+        assertThat(NullableMessageSequenceNumber.of(12).asInt()).contains(12);
     }
 
     @Test
-    void orShouldReturnProvidedIntWhenNoMessage() {
-        assertThat(NullableMessageSequenceNumber.noMessage().or(26)).isEqualTo(26);
+    void asIntShouldReturnEmptyWhenNoMessage() {
+        assertThat(NullableMessageSequenceNumber.noMessage().asInt()).isEmpty();
     }
 
     @Test

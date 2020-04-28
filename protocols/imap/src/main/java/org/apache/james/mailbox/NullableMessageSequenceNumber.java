@@ -63,8 +63,8 @@ public final class NullableMessageSequenceNumber {
         }
     }
 
-    public int or(int value) {
-        return msn.map(MessageSequenceNumber::asInt).orElse(value);
+    public Optional<Integer> asInt() {
+        return msn.map(MessageSequenceNumber::asInt);
     }
 
     @Override

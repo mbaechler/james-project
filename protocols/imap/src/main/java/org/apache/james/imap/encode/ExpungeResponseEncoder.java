@@ -34,7 +34,7 @@ public class ExpungeResponseEncoder implements ImapResponseEncoder<ExpungeRespon
 
     @Override
     public void encode(ExpungeResponse expungeResponse, ImapResponseComposer composer) throws IOException {
-        int messageSequenceNumber = expungeResponse.getMessageSequenceNumber().or(NO_MESSAGE);
+        int messageSequenceNumber = expungeResponse.getMessageSequenceNumber().asInt().orElse(NO_MESSAGE);
         composer.untagged().message(messageSequenceNumber).message(EXPUNGE).end();
     }
 }
