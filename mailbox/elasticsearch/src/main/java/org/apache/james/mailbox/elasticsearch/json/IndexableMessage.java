@@ -45,6 +45,8 @@ import com.google.common.collect.ImmutableList;
 
 public class IndexableMessage {
 
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
+
     public static class Builder {
         private static ZonedDateTime getSanitizedInternalDate(MailboxMessage message, ZoneId zoneId) {
             if (message.getInternalDate() == null) {
@@ -116,7 +118,7 @@ public class IndexableMessage {
             EMailers to = EMailers.from(headerCollection.getToAddressSet());
             EMailers cc = EMailers.from(headerCollection.getCcAddressSet());
             EMailers bcc = EMailers.from(headerCollection.getBccAddressSet());
-            String sentDate = DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(headerCollection.getSentDate().orElse(internalDate));
+            String sentDate = DATE_TIME_FORMATTER.format(headerCollection.getSentDate().orElse(internalDate));
             Optional<String> mimeMessageID = headerCollection.getMessageID();
 
             String text = Stream.of(from.serialize(),
@@ -133,7 +135,7 @@ public class IndexableMessage {
             String mailboxId = message.getMailboxId().serialize();
             ModSeq modSeq = message.getModSeq();
             long size = message.getFullContentOctets();
-            String date = DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(getSanitizedInternalDate(message, zoneId));
+            String date = DATE_TIME_FORMATTER.format(getSanitizedInternalDate(message, zoneId));
             String mediaType = message.getMediaType();
             String subType = message.getSubType();
             boolean isAnswered = message.isAnswered();
