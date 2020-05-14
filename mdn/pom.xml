@@ -69,6 +69,12 @@
             <groupId>javax.activation</groupId>
             <artifactId>javax.activation-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.parboiled</groupId>
+            <artifactId>parboiled_${scala.base}</artifactId>
+            <version>2.2.0</version>
+            <type>bundle</type>
+        </dependency>
 </dependencies>
 
     <build>
@@ -80,6 +86,10 @@
                     <reuseForks>true</reuseForks>
                     <forkCount>1C</forkCount>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>net.alchim31.maven</groupId>
+                <artifactId>scala-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
