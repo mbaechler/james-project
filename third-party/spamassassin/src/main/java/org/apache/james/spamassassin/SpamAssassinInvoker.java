@@ -20,6 +20,11 @@
 package org.apache.james.spamassassin;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+import java.io.UncheckedIOException;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 
@@ -141,22 +146,16 @@ public class SpamAssassinInvoker {
     }
 
     private Mono<Void> sendScanMailRequest(MimeMessage message, Connection connection, String[] additionalHeaders) {
-        Flux<ByteBuf> byteBufFlux = Flux.using(() -> new FileBackedOutputStream(FILE_THRESHOLD),
-            fileBackedOutputStream ->
-                Mono.fromCallable(() -> {
-                    message.writeTo(fileBackedOutputStream);
-                    return fileBackedOutputStream.asByteSource().openBufferedStream();
-                })
-                    .flatMapMany(inputStream -> ReactorUtils.toChunks(inputStream, BUFFER_SIZE))
-                    .map(Unpooled::wrappedBuffer), fileBackedOutputStream -> {
-                try {
-                    fileBackedOutputStream.reset();
-                } catch (IOException e) {
-                    //ignored
-                }
-            });
+        return FluxOutputStream.transfer(outputStream -> writableMessage(message, outputStream),
+            buffers -> sendRequestToSpamd(Mono.fromCallable(() -> headerAsString(additionalHeaders)), buffers.map(Unpooled::wrappedBuffer), connection));
+    }
 
-        return sendRequestToSpamd(Mono.fromCallable(() -> headerAsString(additionalHeaders)), byteBufFlux, connection);
+    private void writableMessage(MimeMessage message, OutputStream outputStream) {
+        try {
+            message.writeTo(outputStream);
+        } catch (MessagingException | IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private Mono<Void> sendRequestToSpamd(Mono<String> header, Publisher<ByteBuf> message, Connection connection) {
@@ -290,4 +289,45 @@ public class SpamAssassinInvoker {
     private boolean hasBeenSet(String line) {
         return line.startsWith("DidSet: ");
     }
+    
+    public static class FluxOutputStream {
+
+        @FunctionalInterface
+        public interface Writable {
+            void writeTo(OutputStream outputStream) throws IOException;
+        }
+
+            @FunctionalInterface
+        public interface Consumer {
+            Mono<Void> consume(Flux<ByteBuffer> buffers);
+        }
+
+        public static Mono<Void> transfer(Writable w, Consumer consumer) {
+            PipedInputStream pipedInputStream = new PipedInputStream();
+            return Mono.fromCallable(() -> new PipedOutputStream(pipedInputStream))
+                    .flatMapMany(pipedOutputStream -> Mono.zip(runWritable(w, pipedOutputStream).subscribeOn(Schedulers.elastic()), runConsumer(consumer, pipedInputStream).subscribeOn(Schedulers.elastic())))
+                    .then();
+        }
+
+        private static Mono<Void> runWritable(Writable w, PipedOutputStream pipedOutputStream) {
+            return Mono.fromRunnable(() -> {
+                try {
+                    w.writeTo(pipedOutputStream);
+                } catch(IOException e) {
+                    throw new UncheckedIOException(e);
+                } finally {
+                    try {
+                        pipedOutputStream.close();
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                }
+            });
+        }
+
+        private static Mono<Void> runConsumer(Consumer consumer, PipedInputStream inputStream) {
+            return consumer.consume(ReactorUtils.toChunks(inputStream, 8000));
+        }
+}
+
 }

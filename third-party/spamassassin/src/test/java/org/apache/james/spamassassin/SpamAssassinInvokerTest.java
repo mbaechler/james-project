@@ -37,6 +37,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 @ExtendWith(SpamAssassinExtension.class)
 public class SpamAssassinInvokerTest {
@@ -134,7 +135,9 @@ public class SpamAssassinInvokerTest {
         byte[] messageAsBytes = MimeMessageUtil.asString(mimeMessage).getBytes(StandardCharsets.UTF_8);
         Mono.from(testee.learnAsHam(new MessageToLearn(new ByteArrayInputStream(messageAsBytes), messageAsBytes.length) , USERNAME)).block();
 
-        SpamAssassinResult result = testee.scanMail(mimeMessage, USERNAME).block();
+        SpamAssassinResult result = testee.scanMail(mimeMessage, USERNAME)
+            .subscribeOn(Schedulers.elastic())
+            .block();
 
         assertThat(result.getHeadersAsAttributes()).contains(new Attribute(SpamAssassinResult.FLAG_MAIL, AttributeValue.of("NO")));
     }
