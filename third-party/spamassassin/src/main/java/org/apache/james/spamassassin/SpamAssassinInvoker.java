@@ -120,7 +120,7 @@ public class SpamAssassinInvoker {
         return createConnection()
             .flatMap(connection ->
                 sendScanMailRequest(message, connection, additionalHeaders)
-                    .then(getSpamAssassinResultMono(connection.inbound())));
+                    .then(getSpamAssassinResult(connection.inbound())));
     }
 
     private Mono<? extends Connection> createConnection() {
@@ -132,7 +132,7 @@ public class SpamAssassinInvoker {
             .connect();
     }
 
-    private Mono<SpamAssassinResult> getSpamAssassinResultMono(NettyInbound inbound) {
+    private Mono<SpamAssassinResult> getSpamAssassinResult(NettyInbound inbound) {
         return inbound.receive().asString()
             .filter(this::isSpam)
             .map(this::processSpam)
