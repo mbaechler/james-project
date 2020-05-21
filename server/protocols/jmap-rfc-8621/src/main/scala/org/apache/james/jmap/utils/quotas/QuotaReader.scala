@@ -19,12 +19,10 @@
 
 package org.apache.james.jmap.utils.quotas
 
-import eu.timepit.refined
 import eu.timepit.refined.api.Refined
 import javax.inject.Inject
 import org.apache.james.core.quota.{QuotaLimitValue, QuotaUsageValue}
 import org.apache.james.jmap.mail._
-import org.apache.james.jmap.model.UnsignedInt
 import org.apache.james.jmap.model.UnsignedInt.UnsignedInt
 import org.apache.james.mailbox.exception.MailboxException
 import org.apache.james.mailbox.model.{Quota => ModelQuota}
