@@ -47,7 +47,6 @@ import reactor.core.scala.publisher.{SFlux, SMono}
 import reactor.core.scheduler.Schedulers
 import reactor.netty.http.server.{HttpServerRequest, HttpServerResponse}
 
-import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
 object JMAPApiRoutes {
