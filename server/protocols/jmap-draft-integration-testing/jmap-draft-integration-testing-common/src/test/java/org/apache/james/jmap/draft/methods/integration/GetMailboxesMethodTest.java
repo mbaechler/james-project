@@ -682,6 +682,28 @@ public abstract class GetMailboxesMethodTest {
     }
 
     @Test
+    public void getMailboxesShouldReturnSharedMailboxesWithoutRole() throws Exception {
+        MailboxPath bobMailboxPath = MailboxPath.forUser(BOB, DefaultMailboxes.INBOX);
+        MailboxId mailboxId = mailboxProbe.createMailbox(bobMailboxPath);
+
+        mailboxProbe.createMailbox(MailboxConstants.USER_NAMESPACE, ALICE.asString(), DefaultMailboxes.INBOX);
+
+        aclProbe.replaceRights(bobMailboxPath, ALICE.asString(), new Rfc4314Rights(Right.Lookup));
+
+        given()
+            .header("Authorization", accessToken.asString())
+            .body("[[\"getMailboxes\", {\"ids\": [\"" + mailboxId.serialize() + "\"]}, \"#0\"]]")
+        .when()
+            .post("/jmap")
+        .then()
+            .statusCode(200)
+            .body(NAME, equalTo("mailboxes"))
+            .body(ARGUMENTS + ".list", hasSize(1))
+            .body(FIRST_MAILBOX + ".role", nullValue())
+            .body(FIRST_MAILBOX + ".sortOrder", equalTo(1000));
+    }
+
+    @Test
     public void getMailboxesShouldReturnDelegatedNamespaceWhenSharedMailbox() throws Exception {
         String sharedMailboxName = "BobShared";
         MailboxId mailboxId = mailboxProbe.createMailbox(MailboxConstants.USER_NAMESPACE, BOB.asString(), sharedMailboxName);
