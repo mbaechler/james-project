@@ -30,6 +30,7 @@ import org.apache.james.jmap.utils.quotas.{QuotaLoaderWithPreloadedDefault, Quot
 import org.apache.james.mailbox.model.MailboxMetaData
 import org.apache.james.mailbox.model.search.MailboxQuery
 import org.apache.james.mailbox.{MailboxManager, MailboxSession}
+import org.apache.james.metrics.api.MetricFactory
 import org.reactivestreams.Publisher
 import play.api.libs.json.{JsError, JsObject, JsSuccess}
 import reactor.core.scala.publisher.{SFlux, SMono}
@@ -38,11 +39,13 @@ import reactor.core.scheduler.Schedulers
 class MailboxGetMethod @Inject() (serializer: Serializer,
                                   mailboxManager: MailboxManager,
                                   quotaFactory : QuotaLoaderWithPreloadedDefaultFactory,
-                                  mailboxFactory: MailboxFactory) extends Method {
+                                  mailboxFactory: MailboxFactory,
+                                  metricFactory: MetricFactory) extends Method {
   override val methodName: MethodName = MethodName("Mailbox/get")
 
   override def process(invocation: Invocation, mailboxSession: MailboxSession): Publisher[Invocation] = {
-    asMailboxGetRequest(invocation.arguments)
+    metricFactory.runPublishingTimerMetricLogP99(JMAP_RFC8621_PREFIX + methodName.value,
+      asMailboxGetRequest(invocation.arguments)
         .flatMap(mailboxGetRequest => getMailboxes(mailboxGetRequest, mailboxSession)
           .collectSeq()
           .map(mailboxes => MailboxGetResponse(
@@ -53,7 +56,7 @@ class MailboxGetMethod @Inject() (serializer: Serializer,
           .map(mailboxGetResponse => Invocation(
             methodName = methodName,
             arguments = Arguments(serializer.serialize(mailboxGetResponse).as[JsObject]),
-            methodCallId = invocation.methodCallId)))
+            methodCallId = invocation.methodCallId))))
   }
 
   private def asMailboxGetRequest(arguments: Arguments): SMono[MailboxGetRequest] = {
