@@ -19,55 +19,148 @@
 package org.apache.james.queue.reactiveActivemq
 
 import java.io.{IOException, Serializable}
-import java.time.Duration
+import java.time.{Duration, Instant}
 import java.util
-import java.util.{HashMap, Map}
+import java.util.UUID
 
+import akka.stream.OverflowStrategy
+import akka.stream.scaladsl.{Sink, Source}
+import com.fasterxml.jackson.core.JsonProcessingException
 import com.github.steveash.guavate.Guavate
-import com.google.common.collect.ImmutableList
-import org.apache.activemq.artemis.api.core.RoutingType
-import org.apache.activemq.artemis.api.core.client.{ClientConsumer, ClientMessage, ClientProducer, ClientSession}
+import com.google.common.collect.{ImmutableList, ImmutableMap}
+import eu.timepit.refined
+import eu.timepit.refined.api.Refined
+import eu.timepit.refined.string.Uuid
+import javax.mail.MessagingException
+import javax.mail.internet.MimeMessage
+import org.apache.activemq.artemis.api.core.{Message, RoutingType}
+import org.apache.activemq.artemis.api.core.client.{ClientConsumer, ClientMessage, ClientProducer, ClientSession, SendAcknowledgementHandler}
+import org.apache.james.blob.api.Store
+import org.apache.james.blob.mail.MimeMessagePartsId
 import org.apache.james.queue.api.MailQueue.MailQueueException
 import org.apache.james.queue.api.{MailQueue, MailQueueName}
+import org.apache.james.queue.reactiveActivemq.EnqueueId.EnqueueId
 import org.apache.james.util.SerializationUtil
-import org.apache.mailet.{AttributeName, Mail}
+import org.apache.mailet.{AttributeName, Mail, MailAddress, PerRecipientHeaders}
 import org.reactivestreams.Publisher
+import play.api.libs.json.{Format, JsError, JsResult, JsString, JsSuccess, JsValue, Json}
+import reactor.core.publisher.Mono
 
+import scala.concurrent.{Future, Promise}
 import scala.util.Try
+import scala.jdk.CollectionConverters._
+import scala.jdk.OptionConverters._
+import scala.jdk.StreamConverters._
+
+object EnqueueId {
+  type EnqueueIdConstraint = Uuid
+  type EnqueueId = String Refined EnqueueIdConstraint
+
+  def apply(s: String): Either[String, EnqueueId] =
+    refined.refineV[EnqueueIdConstraint](s)
+
+  def apply(s: UUID): EnqueueId =
+    refined.refineV[EnqueueIdConstraint](s.toString).toOption.get
+
+  def generate() = EnqueueId(UUID.randomUUID())
+}
+
+object Header {
+
+  def of: ((String, Iterable[String])) => Header = (this.apply _).tupled
+}
+
+case class Header(key: String, values: Iterable[String])
+
+object MailMetadata {
+  def of(enqueueId: EnqueueId, mail: Mail, partsId: MimeMessagePartsId): MailMetadata = {
+    MailMetadata(
+      enqueueId.value,
+      Option(mail.getRecipients).map(_.asScala.map(_.asString).toSeq).getOrElse(Seq.empty),
+      mail.getName,
+      mail.getMaybeSender.asOptional().map(_.asString()).toScala,
+      mail.getState,
+      mail.getErrorMessage,
+      Option(mail.getLastUpdated).map(_.toInstant),
+      serializedAttributes(mail),
+      mail.getRemoteAddr,
+      mail.getRemoteHost,
+      fromPerRecipientHeaders(mail),
+      partsId.getHeaderBlobId.asString(),
+      partsId.getBodyBlobId.asString()
+    )
+  }
+
+  private def serializedAttributes(mail: Mail): Map[String, String] =
+    mail.attributes().toScala(LazyList)
+      .map(attribute => attribute.getName.asString() -> attribute.getValue.toJson.toString)
+      .toMap
+
+  private def fromPerRecipientHeaders(mail: Mail): Map[String, Iterable[Header]] = {
+    mail.getPerRecipientSpecificHeaders
+      .getHeadersByRecipient
+      .asMap
+      .asScala
+      .view
+      .map { case (mailAddress, headers) =>
+        mailAddress.asString() -> headers
+          .asScala
+          .groupMap(_.getName)(_.getValue)
+          .map(Header.of)
+      }.toMap
+
+  }
+
+}
+
+case class MailMetadata(enqueueId: String,
+                        recipients: Seq[String],
+                        name: String,
+                        sender: Option[String],
+                        state: String,
+                        errorMessage: String,
+                        lastUpdated: Option[Instant],
+                        attributes: Map[String, String],
+                        remoteAddr: String,
+                        remoteHost: String,
+                        perRecipientHeaders: Map[String, Iterable[Header]],
+                        headerBlobId: String,
+                        bodyBlobId: String)
+
+object MailReference {
+  def of(enqueueId: EnqueueId, mail: Mail, partsIds: MimeMessagePartsId): MailReference =
+    MailReference(
+      enqueueId,
+      MailMetadata.of(enqueueId, mail, partsIds),
+      partsIds
+    )
+}
+
+case class MailReference(enqueueId: EnqueueId.EnqueueId, metadata: MailMetadata, partsIds: MimeMessagePartsId)
+
+class ReactiveActiveMQMailQueue(val session: ClientSession,
+                                val queueName: MailQueueName,
+                                mimeMessageStore: Store[MimeMessage, MimeMessagePartsId]) extends MailQueue {
 
 
+  @throws[MailQueue.MailQueueException]
+  private def saveMail(mail: Mail): Publisher[MimeMessagePartsId] =
+    try {
+      mimeMessageStore.save(mail.getMessage)
+    } catch {
+      case e: MessagingException =>
+        throw new MailQueue.MailQueueException("Error while saving blob", e)
+    }
 
-class ReactiveActiveMQMailQueue(val session: ClientSession, val queueName: MailQueueName) extends MailQueue {
+  implicit val mailMetadataFormat: Format[MailMetadata] = Json.format[MailMetadata]
+  implicit val mailReferenceFormat: Format[MailReference] = Json.format[MailReference]
+  implicit val headerFormat: Format[Header] = Json.format[Header]
+  implicit val enqueueIdFormat: Format[EnqueueId] = new Format[EnqueueId] {
+    override def writes(o: EnqueueId): JsValue = JsString(o.value)
 
-  /** JMS Property which holds the recipient as String */
-  val JAMES_MAIL_RECIPIENTS = "JAMES_MAIL_RECIPIENTS"
-  /** JMS Property which holds the sender as String */
-  val JAMES_MAIL_SENDER = "JAMES_MAIL_SENDER"
-  /** JMS Property which holds the error message as String */
-  val JAMES_MAIL_ERROR_MESSAGE = "JAMES_MAIL_ERROR_MESSAGE"
-  /** JMS Property which holds the last updated time as long (ms) */
-  val JAMES_MAIL_LAST_UPDATED = "JAMES_MAIL_LAST_UPDATED"
-  /** JMS Property which holds the mail size as long (bytes) */
-  val JAMES_MAIL_MESSAGE_SIZE = "JAMES_MAIL_MESSAGE_SIZE"
-  /** JMS Property which holds the mail name as String */
-  val JAMES_MAIL_NAME = "JAMES_MAIL_NAME"
-  /** JMS Property which holds the association between recipients and specific headers */
-  val JAMES_MAIL_PER_RECIPIENT_HEADERS = "JAMES_MAIL_PER_RECIPIENT_HEADERS"
-  /**
-   * Separator which is used for separate an array of String values in the JMS
-   * Property value
-   */
-  val JAMES_MAIL_SEPARATOR = ";"
-  /** JMS Property which holds the remote hostname as String */
-  val JAMES_MAIL_REMOTEHOST = "JAMES_MAIL_REMOTEHOST"
-  /** JMS Property which holds the remote ipaddress as String */
-  val JAMES_MAIL_REMOTEADDR = "JAMES_MAIL_REMOTEADDR"
-  /** JMS Property which holds the mail state as String */
-  val JAMES_MAIL_STATE = "JAMES_MAIL_STATE"
-  /** JMS Property which holds the mail attribute names as String */
-  val JAMES_MAIL_ATTRIBUTE_NAMES = "JAMES_MAIL_ATTRIBUTE_NAMES"
-  /** JMS Property which holds next delivery time as long (ms) */
-  val JAMES_NEXT_DELIVERY = "JAMES_NEXT_DELIVERY"
+    override def reads(json: JsValue): JsResult[EnqueueId] =
+      json.validate[String].map(EnqueueId.apply).flatMap(_.fold(JsError.apply, JsSuccess(_)))
+  }
 
   session.createQueue(queueName.asString(), RoutingType.ANYCAST, queueName.asString(), true)
   session.start()
@@ -77,48 +170,41 @@ class ReactiveActiveMQMailQueue(val session: ClientSession, val queueName: MailQ
   override def enQueue(mail: Mail, delay: Duration): Unit = {
   }
 
+
+  val enqueueFlow=  Source.queue[Mail](10,OverflowStrategy.backpressure)
+    .flatMapConcat(mail=> Source.fromPublisher(saveMail(mail)))
+    .map(partsId => {
+      val mailReference = MailReference.of(EnqueueId.generate(), mail, partsId)
+      session.createMessage(true).writeBodyBufferString(Json.stringify(Json.toJson(mailReference)))
+    })
+    .to(Sink.foreachAsync(1)(send).async("singleThreadedDispatcher"))
+  val x = enqueueFlow.run()(???)
+
   @throws[MailQueueException]
   override def enQueue(mail: Mail): Unit = {
-    import scala.jdk.CollectionConverters._
-    import scala.jdk.StreamConverters._
+    x.queue.offer(mail)
+  }
+
+
+  def send(message: ClientMessage): Future[Unit] = {
+    val promise = Promise[Unit]()
 
     val producer = session.createProducer("example")
-
-    val sender: String = mail.getMaybeSender.asString("")
-
-    val attributeNames: String = mail.attributeNames.toScala(LazyList).map(_.asString()).filterNot(_ == null).mkString(JAMES_MAIL_SEPARATOR)
-
-    var message: ClientMessage = session.createMessage(true)
-      .putStringProperty(JAMES_MAIL_ERROR_MESSAGE, mail.getErrorMessage)
-      .putLongProperty(JAMES_MAIL_LAST_UPDATED, mail.getLastUpdated.getTime)
-      .putLongProperty(JAMES_MAIL_MESSAGE_SIZE, mail.getMessageSize)
-      .putStringProperty(JAMES_MAIL_NAME, mail.getName)
-
-      .putStringProperty(JAMES_MAIL_RECIPIENTS, mail.getRecipients.asScala.filterNot(_ == null).mkString(JAMES_MAIL_SEPARATOR))
-      .putStringProperty(JAMES_MAIL_REMOTEADDR, mail.getRemoteAddr)
-      .putStringProperty(JAMES_MAIL_REMOTEHOST, mail.getRemoteHost)
-
-      .putStringProperty(JAMES_MAIL_ATTRIBUTE_NAMES, attributeNames)
-      .putStringProperty(JAMES_MAIL_SENDER, sender)
-      .putStringProperty(JAMES_MAIL_STATE, mail.getState)
-
-    message = mail.attributes().toScala(LazyList).foldLeft(message) {
-      case (message, attribute) => message.putStringProperty(attribute.getName.asString(), attribute.getValue.toJson.toString)
-    }
-
-    if (!mail.getPerRecipientSpecificHeaders.getHeadersByRecipient.isEmpty) {
-      message = message.putStringProperty(JAMES_MAIL_PER_RECIPIENT_HEADERS, SerializationUtil.serialize(mail.getPerRecipientSpecificHeaders))
-    }
-
     try {
-      producer.send(message)
+      producer.send(message, new SendAcknowledgementHandler {
+        override def sendAcknowledged(message: Message): Unit =
+          promise.success()
+
+        override def sendFailed(message: Message, e: Exception): Unit =
+          promise.failure(new MailQueueException(e.getMessage, e))
+      })
     } catch {
-      case e: Exception => throw new MailQueueException(e.getMessage, e)
+      case e: Exception => promise.failure(new MailQueueException(e.getMessage, e))
     } finally {
       producer.close()
     }
+    promise.future
   }
-
   protected def getJMSProperties(mail: Mail, nextDelivery: Long): util.Map[String, AnyRef] = {
     val props: util.Map[String, AnyRef] = new util.HashMap[String, AnyRef]
 
@@ -139,7 +225,7 @@ class ReactiveActiveMQMailQueue(val session: ClientSession, val queueName: MailQ
     ???
   }
 
-  
+
   @throws[IOException]
   override def close() = {
     session.close()
