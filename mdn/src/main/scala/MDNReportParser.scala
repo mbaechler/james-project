@@ -64,24 +64,24 @@ class MDNReportParser extends Parser {
                                    ";" OWS ua-product OWS ]    */
   private def reportingUaField: Rule[HNil, ReportingUaField] = rule {
     ("Reporting-UA" ~ ":" ~ ows ~ capture(uaName) ~ ows ~ optional(ows ~ capture(uaProduct) ~ ows)) ~>
-      ((a: String, b: Option[String]) => ReportingUaField(a, b))
+      ((uaName: String, uaProduct: Option[String]) => ReportingUaField(uaName, uaProduct))
   }
 
   //    ua-name = *text-no-semi
-  def uaName = rule { zeroOrMore(textNoSemi) }
+  def uaName: Rule0 = rule { zeroOrMore(textNoSemi) }
 
   /*    text-no-semi = %d1-9 /        ; "text" characters excluding NUL, CR,
                              %d11 / %d12 / %d14-58 / %d60-127      ; LF, or semi-colon    */
-  def textNoSemi = rule {
+  def textNoSemi: Rule0 = rule {
     CharPredicate(1.toChar to 9.toChar) |
-    ch(11) |
-    ch(12) |
-    CharPredicate(14.toChar to 58.toChar) |
-    CharPredicate(60.toChar to 127.toChar)
+      ch(11) |
+      ch(12) |
+      CharPredicate(14.toChar to 58.toChar) |
+      CharPredicate(60.toChar to 127.toChar)
   }
 
   //    ua-product = *([FWS] text)
-  def uaProduct = rule { zeroOrMore(optional(fws) ~ text) }
+  def uaProduct: Rule0 = rule { zeroOrMore(optional(fws) ~ text) }
 
   /*   text            =   %d1-9 /            ; Characters excluding CR
                                  %d11 /             ;  and LF
@@ -187,51 +187,51 @@ class MDNReportParser extends Parser {
   def dispositionModifierExtension = rule { atom }
 
   //    error-field = "Error" ":" *([FWS] text)
-  def errorField = rule { "Error" ~ ":" ~ zeroOrMore(optional(fws) ~ text) }
+  def errorField: Rule1[Seq[String]] = rule { "Error" ~ ":" ~ zeroOrMore(optional(fws) ~ capture(text)) }
 
   //    extension-field = extension-field-name ":" *([FWS] text)
-  def extentionField = rule { extensionFieldName ~ ":" ~ zeroOrMore(optional(fws) ~ text) }
+  def extentionField: Rule2[String, Seq[String]] = rule { capture(extensionFieldName) ~ ":" ~ zeroOrMore(optional(fws) ~ capture(text)) }
 
   //    extension-field-name = field-name
-  def extensionFieldName = rule { fieldName }
+  def extensionFieldName: Rule0 = rule { fieldName }
 
   //   field-name      =   1*ftext
-  def fieldName = rule { oneOrMore(ftext) }
+  def fieldName: Rule0 = rule { oneOrMore(ftext) }
 
   /*   ftext           =   %d33-57 /          ; Printable US-ASCII
                          %d59-126           ;  characters not including
                                             ;  ":".   */
-  def ftext = rule {
+  def ftext: Rule0 = rule {
     CharPredicate(33.toChar to 57.toChar) |
     CharPredicate(59.toChar to 126.toChar)
   }
 
   //   CFWS            =   (1*([FWS] comment) [FWS]) / FWS
-  def cfws = rule { (oneOrMore(optional(fws) ~ comment) ~ fws) | fws }
+  def cfws: Rule0 = rule { (oneOrMore(optional(fws) ~ comment) ~ fws) | fws }
 
   //   FWS             =   ([*WSP CRLF] 1*WSP) /  obs-FWS
-  def fws = rule { (optional(zeroOrMore(wsp) ~ crlf) ~ oneOrMore(wsp)) | obsFWS }
+  def fws: Rule0 = rule { (optional(zeroOrMore(wsp) ~ crlf) ~ oneOrMore(wsp)) | obsFWS }
 
   //         WSP            =  SP / HTAB
-  def wsp = rule { sp | htab }
+  def wsp: Rule0 = rule { sp | htab }
 
   //         SP             =  %x20
-  def sp = rule { ch(0x20) }
+  def sp: Rule0 = rule { ch(0x20) }
 
   //         HTAB           =  %x09
-  def htab = rule { ch(0x09) }
+  def htab: Rule0 = rule { ch(0x09) }
 
   //         CRLF           =  CR LF
-  def crlf = rule { cr ~ lf }
+  def crlf: Rule0 = rule { cr ~ lf }
 
   //         CR             =  %x0D
-  def cr = rule { ch(0x0d) }
+  def cr: Rule0 = rule { ch(0x0d) }
 
   //         LF             =  %x0A
-  def lf = rule { ch(0x0a) }
+  def lf: Rule0 = rule { ch(0x0a) }
 
   //   obs-FWS         =   1*WSP *(CRLF 1*WSP)
-  def obsFWS = rule { oneOrMore(wsp) ~ zeroOrMore(crlf ~ oneOrMore(wsp)) }
+  def obsFWS: Rule0 = rule { oneOrMore(wsp) ~ zeroOrMore(crlf ~ oneOrMore(wsp)) }
 
   //   comment         =   "(" *([FWS] ccontent) [FWS] ")"
   def comment: Rule[HNil, HNil] = rule { "(" ~ zeroOrMore(optional(fws) ~ ccontent) ~ optional(fws) ~ ")" }
@@ -267,19 +267,19 @@ class MDNReportParser extends Parser {
   }
 
   //   quoted-pair     =   ("\" (VCHAR / WSP)) / obs-qp
-  def quotedPair = rule { ("\\" ~ (vchar | wsp)) | obsQp }
+  def quotedPair: Rule0 = rule { ("\\" ~ (vchar | wsp)) | obsQp }
 
   //         VCHAR          =  %x21-7E
-  def vchar = rule { CharPredicate(21.toChar to 0x7e.toChar) }
+  def vchar: Rule0 = rule { CharPredicate(21.toChar to 0x7e.toChar) }
 
   //   obs-qp          =   "\" (%d0 / obs-NO-WS-CTL / LF / CR)
-  def obsQp = rule { "\\" ~ (ch(0xd0) | obsCText | lf | cr) }
+  def obsQp: Rule0 = rule { "\\" ~ (ch(0xd0) | obsCText | lf | cr) }
 
   //   word            =   atom / quoted-string
-  def word = rule { atom | quotedString }
+  def word: Rule1[String] = rule { atom | quotedString }
 
   //    atom            =   [CFWS] 1*atext [CFWS]
-  def atom = rule { optional(cfws) ~ oneOrMore(atext) ~ optional(cfws) }
+  def atom: Rule0 = rule { optional(cfws) ~ oneOrMore(atext) ~ optional(cfws) }
 
   /*   atext           =   ALPHA / DIGIT /    ; Printable US-ASCII
                          "!" / "#" /        ;  characters not including
@@ -292,7 +292,7 @@ class MDNReportParser extends Parser {
                          "`" / "{" /
                          "|" / "}" /
                          "~"   */
-  def atext = rule {
+  def atext: Rule0 = rule {
     alpha | digit |
     "!" | "#" |
     "$" | "%" |
@@ -318,9 +318,9 @@ class MDNReportParser extends Parser {
   /*   quoted-string   =   [CFWS]
                                  DQUOTE *([FWS] qcontent) [FWS] DQUOTE
                                  [CFWS]   */
-  def quotedString = rule {
+  def quotedString: Rule1[String] = rule {
     optional(cfws) ~
-    dquote ~ zeroOrMore(optional(fws) ~ qcontent) ~ optional(fws) ~ dquote ~
+    dquote ~ capture(zeroOrMore(optional(fws) ~ qcontent)) ~ optional(fws) ~ dquote ~
     optional(cfws)
   }
 
@@ -328,7 +328,20 @@ class MDNReportParser extends Parser {
   def dquote = rule { ch(0x22) }
 
   //   qcontent        =   qtext / quoted-pair
-  def qcontent: Rule[HNil, HList] = rule { qcontent | quotedPair }
+  def qcontent: Rule0 = rule { qtext | quotedPair }
+
+  //   qtext           =   %d33 /             ; Printable US-ASCII
+  //                       %d35-91 /          ;  characters not including
+  //                       %d93-126 /         ;  "\" or the quote character
+  //                       obs-qtext
+  def qtext: Rule0 = rule {
+    ch(33) |
+    CharPredicate(35.toChar to 91.toChar) |
+    CharPredicate(93.toChar to 126.toChar) |
+    obsQtext
+  }
+
+  def obsQtext: Rule0 = obsNoWsCtl
 
   //   domain          =   dot-atom / domain-literal / obs-domain
   def domain = rule { dotAtom | domainLiteral | dotAtom }
@@ -343,6 +356,8 @@ class MDNReportParser extends Parser {
   def domainLiteral = rule {
     optional(cfws) ~ "[" ~ zeroOrMore(optional(fws) ~ dtext) ~ optional(fws) ~ "]" ~ optional(cfws)
   }
+
+  val foo: Seq = Seq().sortBy()
 
   /*   dtext           =   %d33-90 /          ; Printable US-ASCII
                                  %d94-126 /         ;  characters not including
@@ -363,6 +378,6 @@ class MDNReportParser extends Parser {
   def localPart = rule { dotAtom | quotedString | obsLocalPart }
 
   //   obs-local-part  =   word *("." word)
-  def obsLocalPart = rule { word ~ zeroOrMore("." ~ word) }
+  def obsLocalPart: Rule1[String] = rule { capture(word ~ zeroOrMore("." ~ word)) }
 
 }
