@@ -3,7 +3,11 @@ import java.util.Optional
 
 import org.apache.commons.io.IOUtils
 import org.apache.james.mdn.MDNReport
-import org.apache.james.mdn.fields.ReportingUserAgent
+import org.apache.james.mdn.`type`.DispositionType
+import org.apache.james.mdn.action.mode.DispositionActionMode
+import org.apache.james.mdn.fields.{AddressType, Disposition, FinalRecipient, Gateway, OriginalMessageId, OriginalRecipient, ReportingUserAgent, Text}
+import org.apache.james.mdn.modifier.DispositionModifier
+import org.apache.james.mdn.sending.mode.DispositionSendingMode
 import org.parboiled2.CharPredicate.{Alpha, Digit}
 import org.parboiled2._
 import shapeless.{HList, HNil}
@@ -27,14 +31,14 @@ import shapeless.{HList, HNil}
  * under the License.                                           *
  * ***************************************************************/
 
-object MDNReportParser {
+object MDNReportParserScala {
 
   //def parse(is: InputStream, charset: String): Optional[MDNReport] = parse(IOUtils.toString(is, charset))
 
 
 }
 
-class MDNReportParser extends Parser {
+class MDNReportParserScala extends Parser {
   override def input: ParserInput = ???
 
 
@@ -60,11 +64,11 @@ class MDNReportParser extends Parser {
 
   case class ReportingUaField(uaName: String, uaProduct: Option[String])
 
+
   /*    reporting-ua-field = "Reporting-UA" ":" OWS ua-name OWS [
                                    ";" OWS ua-product OWS ]    */
-  private def reportingUaField: Rule[HNil, ReportingUaField] = rule {
-    ("Reporting-UA" ~ ":" ~ ows ~ capture(uaName) ~ ows ~ optional(ows ~ capture(uaProduct) ~ ows)) ~>
-      ((uaName: String, uaProduct: Option[String]) => ReportingUaField(uaName, uaProduct))
+  private def reportingUaField: Rule1[ReportingUaField] = rule {
+    ("Reporting-UA" ~ ":" ~ ows ~ capture(uaName) ~ ows ~ optional(ows ~ capture(uaProduct) ~ ows)) ~> ((uaName: String, uaProduct: Option[String]) => ReportingUaField(uaName, uaProduct))
   }
 
   //    ua-name = *text-no-semi
@@ -108,8 +112,12 @@ class MDNReportParser extends Parser {
 
   /*    mdn-gateway-field = "MDN-Gateway" ":" OWS mta-name-type OWS
                                   ";" OWS mta-name    */
-  def mdnGatewayField = rule {
-    "MDN-Gateway" ~ ":" ~ ows ~ mtaNameType ~ ows ~ ";" ~ ows ~ mtaName
+  def mdnGatewayField : Rule1[Gateway] = rule {
+    ("MDN-Gateway" ~ ":" ~ ows ~ capture(mtaNameType) ~ ows ~ ";" ~ ows ~ capture(mtaName)) ~> ((gatewayType : String, name : String) => Gateway
+      .builder()
+      .name(Text.fromRawText(name))
+      .nameType(new AddressType(gatewayType))
+      .build())
   }
 
   //    mta-name-type = Atom
@@ -121,8 +129,14 @@ class MDNReportParser extends Parser {
   /*    original-recipient-field =
                      "Original-Recipient" ":" OWS address-type OWS
                      ";" OWS generic-address OWS    */
-  def originalRecipientField = rule {
-    "Original-Recipient" ~ ":" ~ ows ~ addressType ~ ows ~ ";" ~ ows ~ genericAddress ~ ows
+  def originalRecipientField : Rule1[OriginalRecipient] = rule {
+    ("Original-Recipient" ~ ":" ~ ows ~ capture(addressType) ~ ows ~ ";" ~ ows ~ capture(genericAddress) ~ ows) ~> ((addrType : String, genericAddr : String) =>
+      OriginalRecipient
+        .builder()
+      .addressType(new AddressType(addrType))
+      .originalRecipient(Text.fromRawText(genericAddr))
+      .build()
+      )
   }
 
   //    address-type = Atom
@@ -134,23 +148,29 @@ class MDNReportParser extends Parser {
   /*    final-recipient-field =
              "Final-Recipient" ":" OWS address-type OWS
              ";" OWS generic-address OWS    */
-  def finalRecipientField = rule {
-    "Final-Recipient" ~ ":" ~ ows ~ addressType ~ ows ~ ";" ~ ows ~ genericAddress ~ ows
+  def finalRecipientField : Rule1[FinalRecipient] = rule {
+    ("Final-Recipient" ~ ":" ~ ows ~ capture(addressType) ~ ows ~ ";" ~ ows ~ capture(genericAddress) ~ ows) ~> ((addrType : String, genericAddr : String) =>
+    FinalRecipient
+      .builder()
+      .addressType(new AddressType(addrType))
+      .finalRecipient(Text.fromRawText(genericAddr))
+      .build()
+    )
   }
 
   //    original-message-id-field = "Original-Message-ID" ":" msg-id
-  def originalMessageIdField = rule {
-    "Original-Message-ID" ~ ":" ~ msgId
+  def originalMessageIdField: Rule1[OriginalMessageId] = rule {
+    "Original-Message-ID" ~ ":" ~ capture(msgId) ~> ((s: String) => new OriginalMessageId(s))
   }
 
   //    msg-id          =   [CFWS] "<" id-left "@" id-right ">" [CFWS]
-  def msgId = rule { optional(cfws) ~ "<" ~ idLeft ~ "@" ~ idRight ~ ">" ~ optional(cfws) }
+  def msgId: Rule0 = rule { optional(cfws) ~ "<" ~ idLeft ~ "@" ~ idRight ~ ">" ~ optional(cfws) }
 
   //   id-left         =   dot-atom-text / obs-id-left
-  def idLeft = rule { dotAtomText | obsIdLeft }
+  def idLeft: Rule0 = rule { dotAtomText | obsIdLeft }
 
   //   obs-id-left     =   local-part
-  def obsIdLeft = rule { localPart }
+  def obsIdLeft: Rule0 = rule { localPart }
 
   //   obs-id-right    =   domain
   def idRight = rule { domain }
@@ -160,15 +180,37 @@ class MDNReportParser extends Parser {
                      OWS disposition-type
                      [ OWS "/" OWS disposition-modifier
                      *( OWS "," OWS disposition-modifier ) ] OWS    */
-  def dispositionField = rule {
-    "Disposition" ~ ":" ~ ows ~ dispositionMode ~ ows ~ ";" ~
-    ows ~ dispositionType ~
-    optional(ows ~ "/" ~ ows ~ dispositionModifier ~
-      zeroOrMore(ows ~ "," ~ ows ~ dispositionModifier)) ~ ows
+  def dispositionField : Rule1[Disposition] = rule {
+    ("Disposition" ~ ":" ~ ows ~ capture(dispositionMode) ~ ows ~ ";" ~
+    ows ~ capture(dispositionType) ~
+    optional(ows ~ "/" ~ ows ~ capture(dispositionModifier) ~
+      zeroOrMore(ows ~ "," ~ ows ~ capture(dispositionModifier))) ~ ows) ~> ((modes: (DispositionActionMode, DispositionSendingMode),
+                                                                              dispositionType: DispositionType,
+                                                                              dispositionModifierHead: Option[String],
+                                                                              dispositionModifierTail: Seq[String]) =>
+       Disposition.builder()
+         .actionMode(modes._1)
+         .sendingMode(modes._2)
+         .`type`(dispositionType)
+         .addModifiers(dispositionModifierHead.concat(dispositionModifierTail).map(new DispositionModifier(_)):_*)
+         .build()
+      )
   }
 
   //    disposition-mode = action-mode OWS "/" OWS sending-mode
-  def dispositionMode = rule { actionMode ~ ows ~ "/" ~ ows ~ sendingMode }
+  def dispositionMode: Rule1[(DispositionActionMode, DispositionSendingMode)] = rule {
+    (capture(actionMode) ~ ows ~ "/" ~ ows ~ capture(sendingMode)) ~> ((actionMode: String, sendingMode: String) => {
+      val action = actionMode match {
+        case "manual-action" => DispositionActionMode.Manual
+        case "automatic-action" => DispositionActionMode.Automatic
+      }
+      val sending = sendingMode match {
+        case "MDN-sent-manually" => DispositionSendingMode.Manual
+        case "MDN-sent-automatically" => DispositionSendingMode.Automatic
+      }
+      (action, sending)
+    })
+  }
 
   //    action-mode = "manual-action" / "automatic-action"
   def actionMode = rule { "manual-action" | "automatic-action" }
@@ -178,7 +220,12 @@ class MDNReportParser extends Parser {
 
   /*    disposition-type = "displayed" / "deleted" / "dispatched" /
                       "processed"    */
-  def dispositionType = rule { "displayed" | "deleted" | "dispatched" | "processed" }
+  def dispositionType : Rule1[DispositionType] = rule {
+    "displayed" ~ push(DispositionType.Displayed) |
+    "deleted" ~ push(DispositionType.Deleted) |
+    "dispatched" ~ push(DispositionType.Dispatched) |
+    "processed" ~ push(DispositionType.Processed)
+  }
 
   //    disposition-modifier = "error" / disposition-modifier-extension
   def dispositionModifier = rule { "error" ~ dispositionModifierExtension }
@@ -276,7 +323,7 @@ class MDNReportParser extends Parser {
   def obsQp: Rule0 = rule { "\\" ~ (ch(0xd0) | obsCText | lf | cr) }
 
   //   word            =   atom / quoted-string
-  def word: Rule1[String] = rule { atom | quotedString }
+  def word: Rule0 = rule { atom | quotedString }
 
   //    atom            =   [CFWS] 1*atext [CFWS]
   def atom: Rule0 = rule { optional(cfws) ~ oneOrMore(atext) ~ optional(cfws) }
@@ -357,8 +404,6 @@ class MDNReportParser extends Parser {
     optional(cfws) ~ "[" ~ zeroOrMore(optional(fws) ~ dtext) ~ optional(fws) ~ "]" ~ optional(cfws)
   }
 
-  val foo: Seq = Seq().sortBy()
-
   /*   dtext           =   %d33-90 /          ; Printable US-ASCII
                                  %d94-126 /         ;  characters not including
                                  obs-dtext          ;  "[", "]", or "\"   */
@@ -375,9 +420,9 @@ class MDNReportParser extends Parser {
   def obsDomain = rule { atom ~ zeroOrMore("." ~ atom) }
 
   //   local-part      =   dot-atom / quoted-string / obs-local-part
-  def localPart = rule { dotAtom | quotedString | obsLocalPart }
+  def localPart: Rule0 = rule { dotAtom | quotedString | obsLocalPart }
 
   //   obs-local-part  =   word *("." word)
-  def obsLocalPart: Rule1[String] = rule { capture(word ~ zeroOrMore("." ~ word)) }
+  def obsLocalPart: Rule0 = rule { word ~ zeroOrMore("." ~ word) }
 
 }
