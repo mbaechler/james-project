@@ -285,7 +285,11 @@ public class UnionMailboxACLResolver implements MailboxACLResolver {
 
     private static List<Rfc4314Rights> toListRights(Rfc4314Rights implicitRights) throws UnsupportedRightException {
         return Stream.concat(
-            MailboxACL.FULL_RIGHTS.list().stream().filter(not(implicitRights::contains)).map(Rfc4314Rights::new),
+            MailboxACL.FULL_RIGHTS
+                .list()
+                .stream()
+                .filter(not(implicitRights::contains))
+                .map(Rfc4314Rights::new),
             Stream.of(implicitRights))
         .collect(Guavate.toImmutableList());
     }
