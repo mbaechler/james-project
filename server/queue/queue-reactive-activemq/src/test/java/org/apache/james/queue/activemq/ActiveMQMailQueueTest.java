@@ -18,6 +18,8 @@
  ****************************************************************/
 package org.apache.james.queue.activemq;
 
+import javax.mail.internet.MimeMessage;
+
 import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.client.ActiveMQClient;
@@ -28,28 +30,45 @@ import org.apache.activemq.artemis.api.core.client.ClientSession;
 import org.apache.activemq.artemis.api.core.client.ClientSessionFactory;
 import org.apache.activemq.artemis.api.core.client.ServerLocator;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.james.blob.api.HashBlobId;
+import org.apache.james.blob.api.Store;
+import org.apache.james.blob.mail.MimeMessagePartsId;
+import org.apache.james.blob.mail.MimeMessageStore;
+import org.apache.james.blob.memory.MemoryBlobStore;
+import org.apache.james.blob.memory.MemoryDumbBlobStore;
 import org.apache.james.queue.api.MailQueue;
 import org.apache.james.queue.api.MailQueueContract;
 import org.apache.james.queue.api.MailQueueName;
 import org.apache.james.queue.reactiveActivemq.ReactiveActiveMQMailQueue;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import akka.actor.ActorSystem;
+
 @Testcontainers
 public class ActiveMQMailQueueTest implements MailQueueContract {
+
 
     @Container
     public GenericContainer artemis = new GenericContainer("vromero/activemq-artemis:2.12.0").withExposedPorts(61616);
 
+    private static ActorSystem actorSystem;
+
     ReactiveActiveMQMailQueue mailQueue;
     private String url;
 
+    @BeforeAll
+    static void beforeAll() {
+        actorSystem = ActorSystem.create();
+    }
+
     @BeforeEach
-    public void setUp() throws Exception {
+    void setUp() throws Exception {
         Integer mappedPort = artemis.getMappedPort(61616);
         url = "tcp://localhost:" + mappedPort;
         ServerLocator serverLocator = ActiveMQClient.createServerLocator(url);
@@ -57,12 +76,16 @@ public class ActiveMQMailQueueTest implements MailQueueContract {
         ClientSession session = factory.createSession("artemis","simetraehcapa", false, true, true,  serverLocator.isPreAcknowledge(), serverLocator.getAckBatchSize());
 
         MailQueueName queueName = MailQueueName.of(RandomStringUtils.random(10));
-        mailQueue = new ReactiveActiveMQMailQueue(session, queueName);
+        HashBlobId.Factory blobIdFactory = new HashBlobId.Factory();
+        MemoryBlobStore memoryBlobStore = new MemoryBlobStore(blobIdFactory, new MemoryDumbBlobStore());
+        MimeMessageStore.Factory mimeMessageStoreFactory = new MimeMessageStore.Factory(memoryBlobStore);
+        Store<MimeMessage, MimeMessagePartsId> mimeMessageStore = mimeMessageStoreFactory.mimeMessageStore();
+        mailQueue = new ReactiveActiveMQMailQueue(session, queueName, blobIdFactory, mimeMessageStore, actorSystem);
     }
 
 
     @AfterEach
-    public void tearDown() {
+    void tearDown() {
         //mailQueue.dispose();
     }
 

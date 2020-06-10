@@ -21,11 +21,14 @@ package org.apache.james.queue.reactiveActivemq
 import java.io.{IOException, Serializable}
 import java.time.{Duration, Instant}
 import java.util
-import java.util.UUID
+import java.util.{Date, UUID}
 
-import akka.stream.OverflowStrategy
-import akka.stream.scaladsl.{Sink, Source}
+import akka.actor.ActorSystem
+import akka.stream.{Materializer, OverflowStrategy}
+import akka.stream.scaladsl.{Keep, Sink, Source}
 import com.fasterxml.jackson.core.JsonProcessingException
+import com.github.fge.lambdas.Throwing
+import com.github.fge.lambdas.consumers.ThrowingBiConsumer
 import com.github.steveash.guavate.Guavate
 import com.google.common.collect.{ImmutableList, ImmutableMap}
 import eu.timepit.refined
@@ -35,13 +38,16 @@ import javax.mail.MessagingException
 import javax.mail.internet.MimeMessage
 import org.apache.activemq.artemis.api.core.{Message, RoutingType}
 import org.apache.activemq.artemis.api.core.client.{ClientConsumer, ClientMessage, ClientProducer, ClientSession, SendAcknowledgementHandler}
-import org.apache.james.blob.api.Store
+import org.apache.james.blob.api.{BlobId, Store}
 import org.apache.james.blob.mail.MimeMessagePartsId
-import org.apache.james.queue.api.MailQueue.MailQueueException
+import org.apache.james.core.MaybeSender
+import org.apache.james.queue.api.MailQueue.{MailQueueException, MailQueueItem}
 import org.apache.james.queue.api.{MailQueue, MailQueueName}
 import org.apache.james.queue.reactiveActivemq.EnqueueId.EnqueueId
+import org.apache.james.server.core.MailImpl
 import org.apache.james.util.SerializationUtil
-import org.apache.mailet.{AttributeName, Mail, MailAddress, PerRecipientHeaders}
+import org.apache.mailet.{Attribute, AttributeName, AttributeValue, Mail, PerRecipientHeaders}
+import org.apache.james.core.MailAddress
 import org.reactivestreams.Publisher
 import play.api.libs.json.{Format, JsError, JsResult, JsString, JsSuccess, JsValue, Json}
 import reactor.core.publisher.Mono
@@ -127,33 +133,66 @@ case class MailMetadata(enqueueId: String,
                         headerBlobId: String,
                         bodyBlobId: String)
 
-object MailReference {
-  def of(enqueueId: EnqueueId, mail: Mail, partsIds: MimeMessagePartsId): MailReference =
-    MailReference(
-      enqueueId,
-      MailMetadata.of(enqueueId, mail, partsIds),
-      partsIds
-    )
-}
-
-case class MailReference(enqueueId: EnqueueId.EnqueueId, metadata: MailMetadata, partsIds: MimeMessagePartsId)
-
 class ReactiveActiveMQMailQueue(val session: ClientSession,
                                 val queueName: MailQueueName,
-                                mimeMessageStore: Store[MimeMessage, MimeMessagePartsId]) extends MailQueue {
-
+                                blobIdFactory: BlobId.Factory,
+                                mimeMessageStore: Store[MimeMessage, MimeMessagePartsId],
+                                actorSystem:ActorSystem) extends MailQueue {
+  implicit val _actorSystem = actorSystem
 
   @throws[MailQueue.MailQueueException]
-  private def saveMail(mail: Mail): Publisher[MimeMessagePartsId] =
+  private def saveMimeMessage(mimeMessage: MimeMessage): Publisher[MimeMessagePartsId] =
     try {
-      mimeMessageStore.save(mail.getMessage)
+      mimeMessageStore.save(mimeMessage)
     } catch {
       case e: MessagingException =>
         throw new MailQueue.MailQueueException("Error while saving blob", e)
     }
 
+  private def readMimeMessage(partsId:MimeMessagePartsId):Publisher[MimeMessage]=
+    try{
+      mimeMessageStore.read(partsId)
+    }catch {
+      case e: MessagingException =>
+        throw new MailQueue.MailQueueException("Error while reading blob", e)
+
+    }
+
+  private def readMail(mailMetadata: MailMetadata, mimeMessage: MimeMessage): Mail = {
+    val builder = MailImpl
+      .builder
+      .name(mailMetadata.name)
+      .sender(mailMetadata.sender.map(MaybeSender.getMailSender).getOrElse(MaybeSender.nullSender))
+      .addRecipients(mailMetadata.recipients.map(new MailAddress(_)).asJavaCollection)
+      .errorMessage(mailMetadata.errorMessage)
+      .remoteAddr(mailMetadata.remoteAddr)
+      .remoteHost(mailMetadata.remoteHost)
+      .state(mailMetadata.state)
+      .mimeMessage(mimeMessage)
+
+    mailMetadata.lastUpdated.map(Date.from).foreach(builder.lastUpdated)
+
+    mailMetadata.attributes.foreach { case (name, value) => builder.addAttribute(new Attribute(AttributeName.of(name), AttributeValue.fromJsonString(value))) }
+
+    builder.addAllHeadersForRecipients(retrievePerRecipientHeaders(mailMetadata.perRecipientHeaders))
+
+    builder.build
+  }
+
+  def retrievePerRecipientHeaders(perRecipientHeaders: Map[String, Iterable[Header]]): PerRecipientHeaders = {
+    val result = new PerRecipientHeaders();
+    perRecipientHeaders.foreach{ case (key, value)=>
+      value.foreach(headers => {
+        headers.values.foreach(header => {
+          val builder = PerRecipientHeaders.Header.builder().name(headers.key).value(header)
+          result.addHeaderForRecipient(builder, new MailAddress(key))
+        })
+      })
+    }
+    result
+  }
+
   implicit val mailMetadataFormat: Format[MailMetadata] = Json.format[MailMetadata]
-  implicit val mailReferenceFormat: Format[MailReference] = Json.format[MailReference]
   implicit val headerFormat: Format[Header] = Json.format[Header]
   implicit val enqueueIdFormat: Format[EnqueueId] = new Format[EnqueueId] {
     override def writes(o: EnqueueId): JsValue = JsString(o.value)
@@ -171,25 +210,25 @@ class ReactiveActiveMQMailQueue(val session: ClientSession,
   }
 
 
-  val enqueueFlow=  Source.queue[Mail](10,OverflowStrategy.backpressure)
-    .flatMapConcat(mail=> Source.fromPublisher(saveMail(mail)))
+  private val enqueueFlow =  Source.queue[Mail](10,OverflowStrategy.backpressure)
+    .flatMapConcat(mail => Source.fromPublisher(saveMimeMessage(mail.getMessage))
     .map(partsId => {
-      val mailReference = MailReference.of(EnqueueId.generate(), mail, partsId)
+      val mailReference = MailMetadata.of(EnqueueId.generate(), mail, partsId)
       session.createMessage(true).writeBodyBufferString(Json.stringify(Json.toJson(mailReference)))
-    })
-    .to(Sink.foreachAsync(1)(send).async("singleThreadedDispatcher"))
-  val x = enqueueFlow.run()(???)
+    }))
+    .to(Sink.foreachAsync(1)(send))
+  private val enqueueStream = enqueueFlow.run()
 
   @throws[MailQueueException]
   override def enQueue(mail: Mail): Unit = {
-    x.queue.offer(mail)
+    enqueueStream.queue.offer(mail)
   }
 
 
   def send(message: ClientMessage): Future[Unit] = {
     val promise = Promise[Unit]()
 
-    val producer = session.createProducer("example")
+    val producer = session.createProducer(queueName.asString())
     try {
       producer.send(message, new SendAcknowledgementHandler {
         override def sendAcknowledged(message: Message): Unit =
@@ -219,10 +258,31 @@ class ReactiveActiveMQMailQueue(val session: ClientSession,
     props
   }
 
+  class MyMailQueueItem(mail: Mail) extends MailQueueItem {
+    override def getMail: Mail = mail
+    override def done(success: Boolean): Unit = ()
+  }
+  val consumer: ClientConsumer = session.createConsumer(queueName.asString())
+  val (dequeueQueue, dequeuePublisher) = Source.queue[ClientMessage](10,OverflowStrategy.backpressure)
+    .map(clientMessage => clientMessage.acknowledge().getBodyBuffer.readString())
+    .map(Json.parse)
+    .map(Json.fromJson[MailMetadata](_))
+    .map(metadataR=>metadataR.get)
+    .flatMapConcat(metadata=> {
+      val partsId = MimeMessagePartsId.builder()
+        .headerBlobId(blobIdFactory.from(metadata.headerBlobId))
+        .bodyBlobId(blobIdFactory.from(metadata.bodyBlobId))
+        .build()
+      Source.fromPublisher(readMimeMessage(partsId)).map(message=>
+        readMail(metadata ,message)
+      )
+    })
+    .map(new MyMailQueueItem(_))
+    .toMat(Sink.asPublisher[MailQueue.MailQueueItem](false))(Keep.both).run()
+  consumer.setMessageHandler(clientMessage=>dequeueQueue.offer(clientMessage))
+
   override def deQueue: Publisher[MailQueue.MailQueueItem] = {
-    val consumer: ClientConsumer = session.createConsumer("example")
-    val msgReceived: ClientMessage = consumer.receive()
-    ???
+    dequeuePublisher
   }
 
 

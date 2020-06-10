@@ -27,7 +27,7 @@ import org.apache.mailet.Mail;
 
 import com.google.common.base.Preconditions;
 
-public class EnqueuedItem {
+public class    EnqueuedItem {
 
     interface Builder {
 

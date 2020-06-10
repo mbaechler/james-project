@@ -92,7 +92,7 @@ public interface MailQueueContract {
             .recipients(RECIPIENT1, RECIPIENT2)
             .build());
 
-        MailQueue.MailQueueItem mailQueueItem = Flux.from(getMailQueue().deQueue()).blockFirst();
+        MailQueue.MailQueueItem mailQueueItem = Flux.from(getMailQueue().deQueue()).subscribeOn(Schedulers.elastic()).blockFirst(Duration.ofSeconds(5));
         assertThat(mailQueueItem.getMail().getRecipients())
             .containsOnly(RECIPIENT1, RECIPIENT2);
     }
