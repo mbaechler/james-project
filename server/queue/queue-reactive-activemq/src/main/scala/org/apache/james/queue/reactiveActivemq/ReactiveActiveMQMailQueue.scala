@@ -147,7 +147,7 @@ class ReactiveActiveMQMailQueue(val session: ClientSession,
                                 val queueName: MailQueueName,
                                 blobIdFactory: BlobId.Factory,
                                 mimeMessageStore: Store[MimeMessage, MimeMessagePartsId],
-                                actorSystem:ActorSystem[_]) extends MailQueue {
+                                actorSystem:    ActorSystem[_]) extends MailQueue {
   import ReactiveActiveMQMailQueue._
   implicit val _actorSystem = actorSystem
 
@@ -256,6 +256,8 @@ class ReactiveActiveMQMailQueue(val session: ClientSession,
   }
   val consumer: ClientConsumer = session.createConsumer(queueName.asString())
 
+
+
   val (dequeueActorRef, dequeuePublisher)=
 
   ActorSource.actorRef[Message](
@@ -287,27 +289,48 @@ class ReactiveActiveMQMailQueue(val session: ClientSession,
     dequeuePublisher
   }
 
-  private val enqueueFlow =  Source.queue[Mail](10,OverflowStrategy.backpressure)
+  private val enqueueFlow = Source.queue[Mail](10,OverflowStrategy.backpressure)
     .flatMapConcat(mail => Source.fromPublisher(saveMimeMessage(mail.getMessage))
       .map(partsId => {
         val mailReference = MailMetadata.of(EnqueueId.generate(), mail, partsId)
-        session.createMessage(true).writeBodyBufferString(Json.stringify(Json.toJson(mailReference)))
+        //session.createMessage(true).writeBodyBufferString()
+        Enqueue(Json.stringify(Json.toJson(mailReference)), ???)
       }))
-    .map(Enqueue())
     .log(name = "enqueue")
     .addAttributes(
       Attributes.logLevels(
         onElement = Attributes.LogLevels.Off,
         onFinish = Attributes.LogLevels.Off,
         onFailure = Attributes.LogLevels.Error))
-    .to(ActorSink.actorRef())
+    .to(ActorSink.actorRef(ActorSystem.create(ActiveMqSession(???, ???), ""), ???, ???))
 
+  //consumer.setMessageHandler(clientMessage => dequeueActorRef ! ReactiveActiveMQMailQueue.Message(clientMessage.getBodyBuffer.readString(), clientMessage, self))
   private val enqueueStream = enqueueFlow.run()
 
   @throws[IOException]
   override def close() = {
     session.close()
   }
+}
+
+object Guardian {
+  sealed trait Command
+  sealed trait Response
+  final case class GetSessionReference(replyTo: ActorRef[Response]) extends Command
+  final case class SessionReference(session: ActorRef[ActiveMqSession.Command]) extends Response
+
+  def apply(session: ClientSession, producer: ClientProducer, consumer: ClientConsumer): Behavior[Command] = Behaviors.setup(ctx => {
+
+    val dequeue: ActorRef[ReactiveActiveMQMailQueue.Message] = ???
+    val sessionActor = ctx.spawn(ActiveMqSession(session, producer), "session")
+
+    Behaviors.receiveMessage {
+      case GetSessionReference(replyTo) =>
+        replyTo ! SessionReference(sessionActor)
+        Behaviors.same
+    }
+
+  })
 }
 
 object ActiveMqSession {
@@ -323,10 +346,10 @@ object ActiveMqSession {
   final case object EnqueueSuccess extends EnqueueResult
   final case class EnqueueFailure(throwable: Throwable) extends EnqueueResult
 
-  def apply(session: ClientSession, producer: ClientProducer, consumer: ClientConsumer, dequeue: ActorRef[ReactiveActiveMQMailQueue.Message]): Behavior[Command] = Behaviors.setup(context => {
+  def apply(session: ClientSession, producer: ClientProducer): Behavior[Command] = Behaviors.setup(context => {
 
     val self = context.self
-    consumer.setMessageHandler(clientMessage => self ! Consume(clientMessage))
+    //consumer.setMessageHandler(clientMessage => dequeue ! ReactiveActiveMQMailQueue.Message(clientMessage.getBodyBuffer.readString(), clientMessage, self))
 
     Behaviors.receiveMessage {
       case Ack(clientMessage, replyTo) =>
@@ -335,9 +358,9 @@ object ActiveMqSession {
       case Nack(clientMessage, replyTo) =>
         replyTo ! EnqueueSuccess
         Behaviors.same
-      case Consume(clientMessage) =>
-        dequeue ! ReactiveActiveMQMailQueue.Message(clientMessage.getBodyBuffer.readString(), clientMessage, self)
-        Behaviors.same
+//      case Consume(clientMessage) =>
+//        dequeue ! ReactiveActiveMQMailQueue.Message(clientMessage.getBodyBuffer.readString(), clientMessage, self)
+//        Behaviors.same
       case Enqueue(payload, replyTo) =>
         val message = session.createMessage(true).writeBodyBufferString(payload)
 
