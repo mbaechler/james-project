@@ -23,9 +23,13 @@ import java.time.{Duration, Instant}
 import java.util
 import java.util.{Date, UUID}
 
-import akka.actor.ActorSystem
-import akka.stream.{Materializer, OverflowStrategy}
+import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
+import akka.actor.typed.scaladsl.Behaviors
+import akka.stream.{Attributes, Materializer, OverflowStrategy}
 import akka.stream.scaladsl.{Keep, Sink, Source}
+import akka.stream.typed.javadsl.ActorSink
+import akka.stream.typed.scaladsl.ActorSource
+import akka.util.Timeout
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.github.fge.lambdas.Throwing
 import com.github.fge.lambdas.consumers.ThrowingBiConsumer
@@ -36,7 +40,7 @@ import eu.timepit.refined.api.Refined
 import eu.timepit.refined.string.Uuid
 import javax.mail.MessagingException
 import javax.mail.internet.MimeMessage
-import org.apache.activemq.artemis.api.core.{Message, RoutingType}
+import org.apache.activemq.artemis.api.core.RoutingType
 import org.apache.activemq.artemis.api.core.client.{ClientConsumer, ClientMessage, ClientProducer, ClientSession, SendAcknowledgementHandler}
 import org.apache.james.blob.api.{BlobId, Store}
 import org.apache.james.blob.mail.MimeMessagePartsId
@@ -48,11 +52,13 @@ import org.apache.james.server.core.MailImpl
 import org.apache.james.util.SerializationUtil
 import org.apache.mailet.{Attribute, AttributeName, AttributeValue, Mail, PerRecipientHeaders}
 import org.apache.james.core.MailAddress
+import org.apache.james.queue.reactiveActivemq.ActiveMqSession.Enqueue
 import org.reactivestreams.Publisher
 import play.api.libs.json.{Format, JsError, JsResult, JsString, JsSuccess, JsValue, Json}
 import reactor.core.publisher.Mono
 
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.{Await, Future, Promise}
+import scala.concurrent.duration._
 import scala.util.Try
 import scala.jdk.CollectionConverters._
 import scala.jdk.OptionConverters._
@@ -85,8 +91,8 @@ object MailMetadata {
       Option(mail.getRecipients).map(_.asScala.map(_.asString).toSeq).getOrElse(Seq.empty),
       mail.getName,
       mail.getMaybeSender.asOptional().map(_.asString()).toScala,
-      mail.getState,
-      mail.getErrorMessage,
+      Option(mail.getState),
+      Option(mail.getErrorMessage),
       Option(mail.getLastUpdated).map(_.toInstant),
       serializedAttributes(mail),
       mail.getRemoteAddr,
@@ -123,8 +129,8 @@ case class MailMetadata(enqueueId: String,
                         recipients: Seq[String],
                         name: String,
                         sender: Option[String],
-                        state: String,
-                        errorMessage: String,
+                        state: Option[String],
+                        errorMessage: Option[String],
                         lastUpdated: Option[Instant],
                         attributes: Map[String, String],
                         remoteAddr: String,
@@ -133,11 +139,16 @@ case class MailMetadata(enqueueId: String,
                         headerBlobId: String,
                         bodyBlobId: String)
 
+object ReactiveActiveMQMailQueue {
+  private[reactiveActivemq] final case class Message(body: String, clientMessage: ClientMessage,activeMqSession: ActorRef[ActiveMqSession.Command])
+}
+
 class ReactiveActiveMQMailQueue(val session: ClientSession,
                                 val queueName: MailQueueName,
                                 blobIdFactory: BlobId.Factory,
                                 mimeMessageStore: Store[MimeMessage, MimeMessagePartsId],
-                                actorSystem:ActorSystem) extends MailQueue {
+                                actorSystem:ActorSystem[_]) extends MailQueue {
+  import ReactiveActiveMQMailQueue._
   implicit val _actorSystem = actorSystem
 
   @throws[MailQueue.MailQueueException]
@@ -164,11 +175,12 @@ class ReactiveActiveMQMailQueue(val session: ClientSession,
       .name(mailMetadata.name)
       .sender(mailMetadata.sender.map(MaybeSender.getMailSender).getOrElse(MaybeSender.nullSender))
       .addRecipients(mailMetadata.recipients.map(new MailAddress(_)).asJavaCollection)
-      .errorMessage(mailMetadata.errorMessage)
       .remoteAddr(mailMetadata.remoteAddr)
       .remoteHost(mailMetadata.remoteHost)
-      .state(mailMetadata.state)
       .mimeMessage(mimeMessage)
+
+    mailMetadata.state.foreach(builder.state)
+    mailMetadata.errorMessage.foreach(builder.errorMessage)
 
     mailMetadata.lastUpdated.map(Date.from).foreach(builder.lastUpdated)
 
@@ -192,7 +204,6 @@ class ReactiveActiveMQMailQueue(val session: ClientSession,
     result
   }
 
-  implicit val mailMetadataFormat: Format[MailMetadata] = Json.format[MailMetadata]
   implicit val headerFormat: Format[Header] = Json.format[Header]
   implicit val enqueueIdFormat: Format[EnqueueId] = new Format[EnqueueId] {
     override def writes(o: EnqueueId): JsValue = JsString(o.value)
@@ -200,6 +211,7 @@ class ReactiveActiveMQMailQueue(val session: ClientSession,
     override def reads(json: JsValue): JsResult[EnqueueId] =
       json.validate[String].map(EnqueueId.apply).flatMap(_.fold(JsError.apply, JsSuccess(_)))
   }
+  implicit val mailMetadataFormat: Format[MailMetadata] = Json.format[MailMetadata]
 
   session.createQueue(queueName.asString(), RoutingType.ANYCAST, queueName.asString(), true)
   session.start()
@@ -207,49 +219,19 @@ class ReactiveActiveMQMailQueue(val session: ClientSession,
   override def getName: MailQueueName = queueName
 
   override def enQueue(mail: Mail, delay: Duration): Unit = {
+    ???
   }
 
 
-  private val enqueueFlow =  Source.queue[Mail](10,OverflowStrategy.backpressure)
-    .flatMapConcat(mail => Source.fromPublisher(saveMimeMessage(mail.getMessage))
-    .map(partsId => {
-      val mailReference = MailMetadata.of(EnqueueId.generate(), mail, partsId)
-      session.createMessage(true).writeBodyBufferString(Json.stringify(Json.toJson(mailReference)))
-    }))
-    .to(Sink.foreachAsync(1)(send))
-  private val enqueueStream = enqueueFlow.run()
+
 
   @throws[MailQueueException]
   override def enQueue(mail: Mail): Unit = {
     enqueueStream.queue.offer(mail)
   }
 
-
-  def send(message: ClientMessage): Future[Unit] = {
-    val promise = Promise[Unit]()
-
-    val producer = session.createProducer(queueName.asString())
-    try {
-      producer.send(message, new SendAcknowledgementHandler {
-        override def sendAcknowledged(message: Message): Unit =
-          promise.success()
-
-        override def sendFailed(message: Message, e: Exception): Unit =
-          promise.failure(new MailQueueException(e.getMessage, e))
-      })
-    } catch {
-      case e: Exception => promise.failure(new MailQueueException(e.getMessage, e))
-    } finally {
-      producer.close()
-    }
-    promise.future
-  }
   protected def getJMSProperties(mail: Mail, nextDelivery: Long): util.Map[String, AnyRef] = {
     val props: util.Map[String, AnyRef] = new util.HashMap[String, AnyRef]
-
-
-
-
 
     // won't serialize the empty headers so it is mandatory
     // to handle nulls when reconstructing mail from message
@@ -257,37 +239,120 @@ class ReactiveActiveMQMailQueue(val session: ClientSession,
 
     props
   }
-
-  class MyMailQueueItem(mail: Mail) extends MailQueueItem {
+  
+  class MyMailQueueItem(mail: Mail, clientMessage: ClientMessage, activeMqSession: ActorRef[ActiveMqSession.Command]) extends MailQueueItem {
     override def getMail: Mail = mail
-    override def done(success: Boolean): Unit = ()
+    override def done(success: Boolean): Unit = {
+      import akka.actor.typed.scaladsl.AskPattern.Askable
+      implicit val scheduler = actorSystem.scheduler
+      implicit val timeout: Timeout = 1.minute
+
+      val command = if (success) ActiveMqSession.Ack else ActiveMqSession.Nack
+      Await.ready(
+        activeMqSession.ask[ActiveMqSession.EnqueueResult](replyTo => command(clientMessage, replyTo)),
+        1.minute
+      )
+    }
   }
   val consumer: ClientConsumer = session.createConsumer(queueName.asString())
-  val (dequeueQueue, dequeuePublisher) = Source.queue[ClientMessage](10,OverflowStrategy.backpressure)
-    .map(clientMessage => clientMessage.acknowledge().getBodyBuffer.readString())
-    .map(Json.parse)
-    .map(Json.fromJson[MailMetadata](_))
-    .map(metadataR=>metadataR.get)
-    .flatMapConcat(metadata=> {
+
+  val (dequeueActorRef, dequeuePublisher)=
+
+  ActorSource.actorRef[Message](
+    PartialFunction.empty,
+    PartialFunction.empty,
+    10,
+    OverflowStrategy.fail
+  ).map(message =>
+    (
+      message.clientMessage,
+      Json.fromJson[MailMetadata](Json.parse(message.body)).get,
+      message.activeMqSession)
+    )
+    .flatMapConcat{case ( msg,metadata, activeMqSession)=> {
       val partsId = MimeMessagePartsId.builder()
         .headerBlobId(blobIdFactory.from(metadata.headerBlobId))
         .bodyBlobId(blobIdFactory.from(metadata.bodyBlobId))
         .build()
       Source.fromPublisher(readMimeMessage(partsId)).map(message=>
-        readMail(metadata ,message)
+        (msg,readMail(metadata ,message),activeMqSession)
       )
-    })
-    .map(new MyMailQueueItem(_))
+    }}
+    .map{case (msg,mail,activeMqSession)=>new MyMailQueueItem(mail, msg,activeMqSession)}
     .toMat(Sink.asPublisher[MailQueue.MailQueueItem](false))(Keep.both).run()
-  consumer.setMessageHandler(clientMessage=>dequeueQueue.offer(clientMessage))
+
+  //consumer.setMessageHandler(clientMessage=>dequeueQueue.offer(clientMessage))
 
   override def deQueue: Publisher[MailQueue.MailQueueItem] = {
     dequeuePublisher
   }
 
+  private val enqueueFlow =  Source.queue[Mail](10,OverflowStrategy.backpressure)
+    .flatMapConcat(mail => Source.fromPublisher(saveMimeMessage(mail.getMessage))
+      .map(partsId => {
+        val mailReference = MailMetadata.of(EnqueueId.generate(), mail, partsId)
+        session.createMessage(true).writeBodyBufferString(Json.stringify(Json.toJson(mailReference)))
+      }))
+    .map(Enqueue())
+    .log(name = "enqueue")
+    .addAttributes(
+      Attributes.logLevels(
+        onElement = Attributes.LogLevels.Off,
+        onFinish = Attributes.LogLevels.Off,
+        onFailure = Attributes.LogLevels.Error))
+    .to(ActorSink.actorRef())
+
+  private val enqueueStream = enqueueFlow.run()
 
   @throws[IOException]
   override def close() = {
     session.close()
   }
+}
+
+object ActiveMqSession {
+
+  sealed trait Command
+  final case class Ack(clientMessage: ClientMessage, replyTo: ActorRef[EnqueueResult]) extends Command
+  final case class Nack(clientMessage: ClientMessage, replyTo: ActorRef[EnqueueResult]) extends Command
+  //
+  final case class Consume(clientMessage: ClientMessage) extends Command
+  final case class Enqueue(payload: String, replyTo: ActorRef[EnqueueResult]) extends Command
+
+  sealed trait EnqueueResult
+  final case object EnqueueSuccess extends EnqueueResult
+  final case class EnqueueFailure(throwable: Throwable) extends EnqueueResult
+
+  def apply(session: ClientSession, producer: ClientProducer, consumer: ClientConsumer, dequeue: ActorRef[ReactiveActiveMQMailQueue.Message]): Behavior[Command] = Behaviors.setup(context => {
+
+    val self = context.self
+    consumer.setMessageHandler(clientMessage => self ! Consume(clientMessage))
+
+    Behaviors.receiveMessage {
+      case Ack(clientMessage, replyTo) =>
+        Try(clientMessage.acknowledge()).fold(throwable => replyTo ! EnqueueFailure(throwable), _ => replyTo ! EnqueueSuccess)
+        Behaviors.same
+      case Nack(clientMessage, replyTo) =>
+        replyTo ! EnqueueSuccess
+        Behaviors.same
+      case Consume(clientMessage) =>
+        dequeue ! ReactiveActiveMQMailQueue.Message(clientMessage.getBodyBuffer.readString(), clientMessage, self)
+        Behaviors.same
+      case Enqueue(payload, replyTo) =>
+        val message = session.createMessage(true).writeBodyBufferString(payload)
+
+        import org.apache.activemq.artemis.api.core.{Message => ArtemisMessage}
+
+        producer.send(message, new SendAcknowledgementHandler {
+          override def sendAcknowledged(message: ArtemisMessage): Unit =
+            replyTo ! EnqueueSuccess
+
+          override def sendFailed(message: ArtemisMessage, e: Exception): Unit =
+            replyTo ! EnqueueFailure(e)
+        })
+        Behaviors.same
+    }
+  })
+
+
 }

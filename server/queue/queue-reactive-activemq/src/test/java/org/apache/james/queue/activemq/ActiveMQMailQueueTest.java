@@ -49,13 +49,14 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import akka.actor.ActorSystem;
+import scala.concurrent.Await;
 
 @Testcontainers
 public class ActiveMQMailQueueTest implements MailQueueContract {
 
 
     @Container
-    public GenericContainer artemis = new GenericContainer("vromero/activemq-artemis:2.12.0").withExposedPorts(61616);
+    public static GenericContainer artemis = new GenericContainer("vromero/activemq-artemis:2.12.0").withExposedPorts(61616);
 
     private static ActorSystem actorSystem;
 
@@ -74,7 +75,7 @@ public class ActiveMQMailQueueTest implements MailQueueContract {
         ServerLocator serverLocator = ActiveMQClient.createServerLocator(url);
         ClientSessionFactory factory =  serverLocator.createSessionFactory();
         ClientSession session = factory.createSession("artemis","simetraehcapa", false, true, true,  serverLocator.isPreAcknowledge(), serverLocator.getAckBatchSize());
-
+        Await.ready()
         MailQueueName queueName = MailQueueName.of(RandomStringUtils.random(10));
         HashBlobId.Factory blobIdFactory = new HashBlobId.Factory();
         MemoryBlobStore memoryBlobStore = new MemoryBlobStore(blobIdFactory, new MemoryDumbBlobStore());

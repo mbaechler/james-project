@@ -51,6 +51,7 @@ import org.apache.mailet.Mail;
 import org.apache.mailet.PerRecipientHeaders;
 import org.apache.mailet.base.test.FakeMail;
 import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import com.github.fge.lambdas.Throwing;
@@ -472,6 +473,7 @@ public interface MailQueueContract {
             .hasSize(totalDequeuedMessages);
     }
 
+    @Disabled
     @Test
     default void concurrentEnqueueDequeueWithAckNackShouldNotFail() throws Exception {
         MailQueue testee = getMailQueue();
@@ -511,6 +513,7 @@ public interface MailQueueContract {
             .hasSize(totalDequeuedMessages);
     }
 
+    @Disabled
     @Test
     default void dequeueShouldBeConcurrent() {
         MailQueue testee = getMailQueue();
