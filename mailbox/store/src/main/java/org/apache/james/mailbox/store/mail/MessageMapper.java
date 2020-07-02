@@ -140,6 +140,28 @@ public interface MessageMapper extends Mapper {
         return result.build();
     }
 
+    class FluentFlagsChanger {
+        public FlagsUpdateCalculator setFlag(Flags.Flag flag) {
+            return new FlagsUpdateCalculator(new Flags(flag), FlagsUpdateMode.REPLACE);
+        }
+        public FlagsUpdateCalculator unsetFlag(Flags.Flag flag) {
+            return new FlagsUpdateCalculator(new Flags(flag), FlagsUpdateMode.REMOVE);
+        }
+    }
+
+    @FunctionalInterface
+    interface FlagsChangeOperation {
+        FlagsUpdateCalculator handleFlags(FluentFlagsChanger changer);
+    }
+
+    default Iterator<UpdatedFlags> updateFlags(Mailbox mailbox, MessageUid uid, FlagsChangeOperation operation) throws MailboxException {
+        return updateFlags(mailbox, operation.handleFlags(new FluentFlagsChanger()), MessageRange.one(uid));
+    }
+
+    default Iterator<UpdatedFlags> updateFlags(Mailbox mailbox, MessageRange set, FlagsChangeOperation operation) throws MailboxException {
+        return updateFlags(mailbox, operation.handleFlags(new FluentFlagsChanger()), set);
+    }
+
     
     /**
      * Copy the given {@link MailboxMessage} to a new mailbox and return the uid of the copy. Be aware that the given uid is just a suggestion for the uid of the copied
