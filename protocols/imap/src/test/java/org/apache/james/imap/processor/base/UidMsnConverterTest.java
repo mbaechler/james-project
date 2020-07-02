@@ -65,10 +65,10 @@ public class UidMsnConverterTest {
 
     @Test
     public void getUidShouldTheCorrespondingUidIfItExist() {
-        testee.addUid(messageUid1);
+        testee.addAll(ImmutableList.of(messageUid1, messageUid2));
 
-        assertThat(testee.getUid(1))
-            .contains(messageUid1);
+        assertThat(testee.getUid(2))
+            .contains(messageUid2);
     }
 
     @Test
