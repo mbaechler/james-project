@@ -52,8 +52,8 @@ public class UidMsnConverter {
 
     public Optional<MessageUid> getUid(int msn) {
         return uids
-            .take(msn)
-            .lastOption()
+            .drop(msn - 1)
+            .headOption()
             .toJavaOptional();
     }
 

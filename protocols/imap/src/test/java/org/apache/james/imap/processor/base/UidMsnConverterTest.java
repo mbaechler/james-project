@@ -64,7 +64,16 @@ public class UidMsnConverterTest {
     }
 
     @Test
-    public void getUidShouldTheCorrespondingUidIfItExist() {
+    public void getUidShouldReturnEmptyIfOutOfRange() {
+        testee.addUid(messageUid1);
+        testee.addUid(messageUid2);
+
+        assertThat(testee.getUid(50))
+            .isEmpty();
+    }
+
+    @Test
+    public void getUidShouldReturnTheCorrespondingUidIfItExist() {
         testee.addAll(ImmutableList.of(messageUid1, messageUid2));
 
         assertThat(testee.getUid(2))
