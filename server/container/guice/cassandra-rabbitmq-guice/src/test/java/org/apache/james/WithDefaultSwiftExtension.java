@@ -19,7 +19,10 @@
 
 package org.apache.james;
 
+import org.apache.james.jmap.draft.JmapJamesServerContract;
+import org.apache.james.modules.RabbitMQExtension;
 import org.apache.james.modules.SwiftBlobStoreExtension;
+import org.apache.james.modules.TestJMAPServerModule;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -34,8 +37,16 @@ public class WithDefaultSwiftExtension implements BeforeAllCallback, AfterAllCal
     private final JamesServerExtension jamesServerExtension;
 
     WithDefaultSwiftExtension() {
-        jamesServerExtension = CassandraRabbitMQJamesServerFixture.baseExtensionBuilder()
-            .extension(new SwiftBlobStoreExtension())
+        jamesServerExtension = CassandraRabbitMQServerExtension.builder()
+            .defaultConfiguration()
+            .blobStore(builder -> builder.objectStorage().disableCache())
+            .withSpecificParameters(extension -> extension
+                .extension(new DockerElasticSearchExtension())
+                .extension(new CassandraExtension())
+                .extension(new RabbitMQExtension())
+                .extension(new SwiftBlobStoreExtension())
+                .overrideServerModule(new TestJMAPServerModule())
+                .overrideServerModule(JmapJamesServerContract.DOMAIN_LIST_CONFIGURATION_MODULE))
             .build();
     }
 

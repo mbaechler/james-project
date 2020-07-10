@@ -21,6 +21,7 @@ package org.apache.james.jmap.rabbitmq;
 import org.apache.james.CassandraExtension;
 import org.apache.james.CassandraRabbitMQJamesConfiguration;
 import org.apache.james.CassandraRabbitMQJamesServerMain;
+import org.apache.james.CassandraRabbitMQServerExtension;
 import org.apache.james.DockerElasticSearchExtension;
 import org.apache.james.JamesServerBuilder;
 import org.apache.james.JamesServerExtension;
@@ -36,19 +37,16 @@ class RabbitMQAwsS3SpamAssassinContractTest implements SpamAssassinContract {
 
     private static final SpamAssassinModuleExtension spamAssassinExtension = new SpamAssassinModuleExtension();
     @RegisterExtension
-    static JamesServerExtension testExtension = new JamesServerBuilder<CassandraRabbitMQJamesConfiguration>(tmpDir ->
-        CassandraRabbitMQJamesConfiguration.builder()
-            .workingDirectory(tmpDir)
-            .configurationFromClasspath()
-            .blobStore(BlobStoreConfiguration.objectStorage().disableCache())
-            .build())
-        .extension(new DockerElasticSearchExtension())
-        .extension(new CassandraExtension())
-        .extension(new RabbitMQExtension())
-        .extension(new AwsS3BlobStoreExtension())
-        .extension(spamAssassinExtension)
-        .server(configuration -> CassandraRabbitMQJamesServerMain.createServer(configuration)
-            .overrideWith(new TestJMAPServerModule()))
+    static JamesServerExtension testExtension = CassandraRabbitMQServerExtension.builder()
+        .defaultConfiguration()
+        .blobStore(builder -> builder.objectStorage().disableCache())
+        .withSpecificParameters(server -> server
+            .extension(new DockerElasticSearchExtension())
+            .extension(new CassandraExtension())
+            .extension(new RabbitMQExtension())
+            .extension(new AwsS3BlobStoreExtension())
+            .extension(spamAssassinExtension)
+            .overrideServerModule(new TestJMAPServerModule()))
         .build();
 }
 

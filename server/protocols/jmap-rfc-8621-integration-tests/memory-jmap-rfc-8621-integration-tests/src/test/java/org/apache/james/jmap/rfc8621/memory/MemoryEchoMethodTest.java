@@ -24,15 +24,18 @@ import static org.apache.james.MemoryJamesServerMain.IN_MEMORY_SERVER_AGGREGATE_
 import org.apache.james.GuiceJamesServer;
 import org.apache.james.JamesServerBuilder;
 import org.apache.james.JamesServerExtension;
+import org.apache.james.MemoryServerExtension;
 import org.apache.james.jmap.rfc8621.contract.EchoMethodContract;
 import org.apache.james.modules.TestJMAPServerModule;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 public class MemoryEchoMethodTest implements EchoMethodContract {
+
     @RegisterExtension
-    static JamesServerExtension testExtension = new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-        .server(configuration -> GuiceJamesServer.forConfiguration(configuration)
-            .combineWith(IN_MEMORY_SERVER_AGGREGATE_MODULE)
-            .overrideWith(new TestJMAPServerModule()))
+    static JamesServerExtension jamesServerExtension = MemoryServerExtension
+        .builder()
+        .defaultConfiguration()
+        .withSpecificParameters(extension -> extension.overrideServerModule(new TestJMAPServerModule()))
         .build();
+
 }

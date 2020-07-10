@@ -74,15 +74,18 @@ public class CassandraStepdefs {
             .configurationFromClasspath()
             .build();
 
-        mainStepdefs.jmapServer = CassandraJamesServerMain.createServer(configuration)
-            .overrideWith(new TestJMAPServerModule())
-            .overrideWith(new TestDockerESMetricReporterModule(elasticSearch.getDockerEs().getHttpHost()))
-            .overrideWith(elasticSearch.getModule())
-            .overrideWith(cassandraServer.getModule())
-            .overrideWith(binder -> binder.bind(TextExtractor.class).to(DefaultTextExtractor.class))
-            .overrideWith((binder) -> binder.bind(PersistenceAdapter.class).to(MemoryPersistenceAdapter.class))
-            .overrideWith(binder -> Multibinder.newSetBinder(binder, CleanupTasksPerformer.CleanupTask.class).addBinding().to(CassandraTruncateTableTask.class))
-            .overrideWith((binder -> binder.bind(CleanupTasksPerformer.class).asEagerSingleton()));
+
+        mainStepdefs.jmapServer = CassandraJamesServerMain.builder(configuration)
+            .server(server -> server
+                .overrideWith(new TestJMAPServerModule())
+                .overrideWith(new TestDockerESMetricReporterModule(elasticSearch.getDockerEs().getHttpHost()))
+                .overrideWith(elasticSearch.getModule())
+                .overrideWith(cassandraServer.getModule())
+                .overrideWith(binder -> binder.bind(TextExtractor.class).to(DefaultTextExtractor.class))
+                .overrideWith((binder) -> binder.bind(PersistenceAdapter.class).to(MemoryPersistenceAdapter.class))
+                .overrideWith(binder -> Multibinder.newSetBinder(binder, CleanupTasksPerformer.CleanupTask.class).addBinding().to(CassandraTruncateTableTask.class))
+                .overrideWith((binder -> binder.bind(CleanupTasksPerformer.class).asEagerSingleton())))
+            .build();
         mainStepdefs.awaitMethod = () -> elasticSearch.getDockerEs().flushIndices();
         mainStepdefs.init();
     }

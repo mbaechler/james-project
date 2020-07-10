@@ -19,6 +19,9 @@
 
 package org.apache.james;
 
+import java.util.Optional;
+import java.util.function.UnaryOperator;
+
 import org.apache.james.modules.MailboxModule;
 import org.apache.james.modules.activemq.ActiveMQQueueModule;
 import org.apache.james.modules.data.JPADataModule;
@@ -56,6 +59,41 @@ import com.google.inject.Module;
 import com.google.inject.util.Modules;
 
 public class JPAJamesServerMain implements JamesServerMain {
+
+    public static class Server {
+
+        interface RequiresConfiguration {
+            Builder configuration(UnaryOperator<Configuration.Builder> builder);
+        }
+
+        public static class Builder {
+
+            private final Configuration configuration;
+            private GuiceJamesServer server;
+
+            private Builder(Configuration configuration) {
+                this.configuration = configuration;
+                this.server = GuiceJamesServer.forConfiguration(configuration).combineWith(JPA_MODULE_AGGREGATE);
+            }
+
+            public Builder customize(UnaryOperator<GuiceJamesServer> modifier) {
+                server = modifier.apply(server);
+                return this;
+            }
+
+            public GuiceJamesServer build() {
+                return server;
+            }
+        }
+    }
+
+    public static Server.Builder builder(Configuration configuration) {
+        return new Server.Builder(configuration);
+    }
+
+    public static Server.RequiresConfiguration builder() {
+        return configurationBuilder -> builder(configurationBuilder.apply(Configuration.builder()).build());
+    }
 
     private static final Module WEBADMIN = Modules.combine(
         new WebAdminServerModule(),
@@ -102,15 +140,9 @@ public class JPAJamesServerMain implements JamesServerMain {
             .build();
 
         LOGGER.info("Loading configuration {}", configuration.toString());
-        GuiceJamesServer server = createServer(configuration)
-            .combineWith(new JMXServerModule());
+        GuiceJamesServer server = builder(configuration).customize(s -> s.combineWith(new JMXServerModule())).build();
 
         JamesServerMain.main(server);
-    }
-
-    static GuiceJamesServer createServer(Configuration configuration) {
-        return GuiceJamesServer.forConfiguration(configuration)
-            .combineWith(JPA_MODULE_AGGREGATE);
     }
 
 }

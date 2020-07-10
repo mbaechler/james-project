@@ -42,6 +42,7 @@ import java.time.Duration;
 import org.apache.james.CassandraExtension;
 import org.apache.james.CassandraRabbitMQJamesConfiguration;
 import org.apache.james.CassandraRabbitMQJamesServerMain;
+import org.apache.james.CassandraRabbitMQServerExtension;
 import org.apache.james.DockerElasticSearchExtension;
 import org.apache.james.GuiceJamesServer;
 import org.apache.james.JamesServerBuilder;
@@ -50,6 +51,7 @@ import org.apache.james.backends.cassandra.Scenario.Barrier;
 import org.apache.james.backends.cassandra.TestingSession;
 import org.apache.james.backends.cassandra.init.SessionWithInitializedTablesFactory;
 import org.apache.james.core.quota.QuotaCountLimit;
+import org.apache.james.jmap.draft.JmapJamesServerContract;
 import org.apache.james.junit.categories.BasicFeature;
 import org.apache.james.mailbox.events.RetryBackoffConfiguration;
 import org.apache.james.mailbox.model.MailboxConstants;
@@ -57,7 +59,9 @@ import org.apache.james.mailrepository.api.MailRepositoryUrl;
 import org.apache.james.modules.AwsS3BlobStoreExtension;
 import org.apache.james.modules.QuotaProbesImpl;
 import org.apache.james.modules.RabbitMQExtension;
+import org.apache.james.modules.TestJMAPServerModule;
 import org.apache.james.modules.blobstore.BlobStoreConfiguration;
+import org.apache.james.modules.objectstorage.PayloadCodecFactory;
 import org.apache.james.modules.protocols.ImapGuiceProbe;
 import org.apache.james.modules.protocols.SmtpGuiceProbe;
 import org.apache.james.probe.DataProbe;
@@ -123,26 +127,23 @@ class ConsistencyTasksIntegrationTest {
     }
 
     @RegisterExtension
-    static JamesServerExtension testExtension = new JamesServerBuilder<CassandraRabbitMQJamesConfiguration>(tmpDir ->
-        CassandraRabbitMQJamesConfiguration.builder()
-            .workingDirectory(tmpDir)
-            .configurationFromClasspath()
-            .blobStore(BlobStoreConfiguration.objectStorage().disableCache())
-            .build())
-        .extension(new DockerElasticSearchExtension())
-        .extension(new CassandraExtension())
-        .extension(new AwsS3BlobStoreExtension())
-        .extension(new RabbitMQExtension())
-        .server(configuration -> CassandraRabbitMQJamesServerMain.createServer(configuration)
-            .overrideWith(new WebadminIntegrationTestModule())
+    static JamesServerExtension testExtension = CassandraRabbitMQServerExtension.builder()
+        .defaultConfiguration()
+        .blobStore(builder -> builder.objectStorage().disableCache())
+        .withSpecificParameters(server -> server
+            .extension(new DockerElasticSearchExtension())
+            .extension(new CassandraExtension())
+            .extension(new AwsS3BlobStoreExtension())
+            .extension(new RabbitMQExtension())
+            .overrideServerModule(new WebadminIntegrationTestModule())
             // Enforce a single eventBus retry. Required as Current Quotas are handled by the eventBus.
-            .overrideWith(binder -> binder.bind(RetryBackoffConfiguration.class)
+            .overrideServerModule(binder -> binder.bind(RetryBackoffConfiguration.class)
                 .toInstance(RetryBackoffConfiguration.builder()
                     .maxRetries(1)
                     .firstBackoff(Duration.ofMillis(2))
                     .jitterFactor(0.5)
                     .build()))
-            .overrideWith(new TestingSessionModule()))
+            .overrideServerModule(new TestingSessionModule()))
         .build();
 
     @RegisterExtension

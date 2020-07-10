@@ -27,13 +27,15 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class WithCassandraBlobStoreTest implements JmapJamesServerContract, MailsShouldBeWellReceived, JamesServerContract {
 
     @RegisterExtension
-    static JamesServerExtension jamesServerExtension = new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-        .extension(new DockerElasticSearchExtension())
-        .extension(new CassandraExtension())
-        .extension(new SpamAssassinModuleExtension())
-        .server(configuration -> CassandraJamesServerMain.createServer(configuration)
-            .overrideWith(new TestJMAPServerModule())
-            .overrideWith(JmapJamesServerContract.DOMAIN_LIST_CONFIGURATION_MODULE))
+    static JamesServerExtension jamesServerExtension = CassandraServerExtension
+        .builder()
+        .defaultConfiguration()
+        .withSpecificParameters(extension -> extension
+            .extension(new DockerElasticSearchExtension())
+            .extension(new CassandraExtension())
+            .extension(new SpamAssassinModuleExtension())
+            .overrideServerModule(new TestJMAPServerModule())
+            .overrideServerModule(JmapJamesServerContract.DOMAIN_LIST_CONFIGURATION_MODULE))
         .build();
 
 }

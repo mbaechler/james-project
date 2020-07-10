@@ -46,12 +46,14 @@ class JamesServerWithRetryConnectionTest {
     private static final CassandraExtension dockerCassandra = new CassandraExtension();
 
     @RegisterExtension
-    static JamesServerExtension testExtension = new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-        .extension(dockerElasticSearch)
-        .extension(dockerCassandra)
-        .server(configuration -> CassandraJamesServerMain.createServer(configuration)
-            .overrideWith(new TestJMAPServerModule()))
-        .disableAutoStart()
+    JamesServerExtension jamesServerExtension = CassandraServerExtension
+        .builder()
+        .defaultConfiguration()
+        .withSpecificParameters(extension -> extension
+            .extension(dockerElasticSearch)
+            .extension(dockerCassandra)
+            .overrideServerModule(new TestJMAPServerModule())
+            .disableAutoStart())
         .build();
 
     private SocketChannel socketChannel;

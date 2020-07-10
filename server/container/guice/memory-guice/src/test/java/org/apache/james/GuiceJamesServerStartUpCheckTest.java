@@ -23,10 +23,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
+import org.apache.commons.configuration2.BaseHierarchicalConfiguration;
 import org.apache.james.lifecycle.api.StartUpCheck;
 import org.apache.james.modules.BlobExportImplChoice;
+import org.apache.james.modules.TestJMAPServerModule;
+import org.apache.james.server.core.configuration.ConfigurationProvider;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -110,52 +114,51 @@ class GuiceJamesServerStartUpCheckTest {
         }
     }
 
-    private static JamesServerBuilder extensionBuilder() {
-        return new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-            .server(MemoryJamesServerMain::createServer)
-            .disableAutoStart();
+    private static JamesServerExtension extensionBuilder(UnaryOperator<JamesServerBuilder> operator) {
+        return MemoryServerExtension
+            .builder()
+            .defaultConfiguration()
+            .withSpecificParameters(extension -> operator.apply(extension.disableAutoStart()))
+            .build();
     }
 
     @Nested
     class WithStartUpCheckDoesntRequireGuiceComponents implements StartUpCheckSuccessContract {
 
         @RegisterExtension
-        JamesServerExtension jamesServerExtension = extensionBuilder()
+        JamesServerExtension jamesServerExtension = extensionBuilder(extension -> extension
             .overrideServerModule(binder -> Multibinder.newSetBinder(binder, StartUpCheck.class)
-                .addBinding().to(NoopStartUpCheck.class))
-            .build();
+                .addBinding().to(NoopStartUpCheck.class)));
     }
 
     @Nested
     class WithStartUpCheckRequireGuiceComponents implements StartUpCheckSuccessContract {
 
         @RegisterExtension
-        JamesServerExtension jamesServerExtension = extensionBuilder()
+        JamesServerExtension jamesServerExtension = extensionBuilder(extension -> extension
             .overrideServerModule(binder -> Multibinder.newSetBinder(binder, StartUpCheck.class)
-                .addBinding().to(TestBlobExportMechanismStartUpCheck.class))
-            .build();
+                .addBinding().to(TestBlobExportMechanismStartUpCheck.class)));
     }
 
     @Nested
     class WithNoStartUpCheck implements StartUpCheckSuccessContract {
 
         @RegisterExtension
-        JamesServerExtension jamesServerExtension = extensionBuilder().build();
+        JamesServerExtension jamesServerExtension = extensionBuilder(UnaryOperator.identity());
     }
 
     @Nested
     class StartUpCheckFails {
 
         @RegisterExtension
-        JamesServerExtension jamesServerExtension = extensionBuilder()
+        JamesServerExtension jamesServerExtension = extensionBuilder(extension -> extension
             .overrideServerModule(binder -> {
                     Multibinder<StartUpCheck> setBinder = Multibinder
                         .newSetBinder(binder, StartUpCheck.class);
 
                     setBinder.addBinding().to(NoopStartUpCheck.class);
                     setBinder.addBinding().to(FailingStartUpCheck.class);
-                })
-            .build();
+                }));
 
         @Test
         void startUpCheckFailsShouldThrowAnExceptionCarryingOnlyBadChecks(GuiceJamesServer server) throws Exception {

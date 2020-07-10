@@ -22,13 +22,16 @@ package org.apache.james;
 import static io.restassured.RestAssured.when;
 import static io.restassured.config.EncoderConfig.encoderConfig;
 import static io.restassured.config.RestAssuredConfig.newConfig;
+import static org.apache.james.jmap.draft.JmapJamesServerContract.DOMAIN_LIST_CONFIGURATION_MODULE;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.UnaryOperator;
 
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 
+import org.apache.james.modules.TestJMAPServerModule;
 import org.apache.james.utils.WebAdminGuiceProbe;
 import org.apache.james.webadmin.WebAdminConfiguration;
 import org.apache.james.webadmin.WebAdminServer;
@@ -45,12 +48,18 @@ import reactor.core.publisher.MonoProcessor;
 import reactor.core.scheduler.Schedulers;
 
 class GuiceLifecycleHeathCheckTest {
-    private static JamesServerBuilder extensionBuilder() {
-        return new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-            .server(configuration -> MemoryJamesServerMain.createServer(configuration)
-                .overrideWith(binder -> binder.bind(WebAdminConfiguration.class)
-                    .toInstance(WebAdminConfiguration.TEST_CONFIGURATION)));
+
+    private static JamesServerExtension extensionBuilder(UnaryOperator<JamesServerBuilder> operator) {
+        return MemoryServerExtension
+            .builder()
+            .defaultConfiguration()
+            .withSpecificParameters(extension ->
+                operator.apply(extension
+                    .overrideServerModule(binder -> binder.bind(WebAdminConfiguration.class)
+                        .toInstance(WebAdminConfiguration.TEST_CONFIGURATION))))
+            .build();
     }
+
 
     private static void configureRequestSpecification(GuiceJamesServer server) {
         WebAdminGuiceProbe webAdminGuiceProbe = server.getProbe(WebAdminGuiceProbe.class);
@@ -66,7 +75,7 @@ class GuiceLifecycleHeathCheckTest {
     @Nested
     class Healthy {
         @RegisterExtension
-        JamesServerExtension jamesServerExtension = extensionBuilder().build();
+        JamesServerExtension jamesServerExtension = extensionBuilder(UnaryOperator.identity());
 
         @Test
         void startedJamesServerShouldBeHealthy(GuiceJamesServer server) {
@@ -104,10 +113,9 @@ class GuiceLifecycleHeathCheckTest {
         CountDownLatch latch = new CountDownLatch(1);
 
         @RegisterExtension
-        JamesServerExtension jamesServerExtension = extensionBuilder()
+        JamesServerExtension jamesServerExtension = extensionBuilder(extension -> extension
             .overrideServerModule(binder -> binder.bind(CountDownLatch.class).toInstance(latch))
-            .overrideServerModule(binder -> binder.bind(DestroyedBeforeWebAdmin.class).asEagerSingleton())
-            .build();
+            .overrideServerModule(binder -> binder.bind(DestroyedBeforeWebAdmin.class).asEagerSingleton()));
 
         @Test
         void stoppingJamesServerShouldBeUnhealthy(GuiceJamesServer server) {

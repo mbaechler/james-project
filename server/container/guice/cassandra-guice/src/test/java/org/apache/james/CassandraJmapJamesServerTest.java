@@ -20,19 +20,25 @@
 package org.apache.james;
 
 import org.apache.james.jmap.draft.JmapJamesServerContract;
+import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.extractor.TextExtractor;
 import org.apache.james.mailbox.store.search.PDFTextExtractor;
 import org.apache.james.modules.TestJMAPServerModule;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 class CassandraJmapJamesServerTest implements JmapJamesServerContract {
+
     @RegisterExtension
-    static JamesServerExtension testExtension = new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-        .extension(new DockerElasticSearchExtension())
-        .extension(new CassandraExtension())
-        .server(configuration -> CassandraJamesServerMain.createServer(configuration)
-            .overrideWith(binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class))
-            .overrideWith(new TestJMAPServerModule())
-            .overrideWith(DOMAIN_LIST_CONFIGURATION_MODULE))
+    JamesServerExtension jamesServerExtension = CassandraServerExtension
+        .builder()
+        .defaultConfiguration()
+        .withSpecificParameters(extension -> extension
+            .extension(new DockerElasticSearchExtension())
+            .extension(new CassandraExtension())
+            .overrideServerModule(binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class))
+            .overrideServerModule(new TestJMAPServerModule())
+            .overrideServerModule(DOMAIN_LIST_CONFIGURATION_MODULE)
+            .disableAutoStart())
         .build();
+
 }

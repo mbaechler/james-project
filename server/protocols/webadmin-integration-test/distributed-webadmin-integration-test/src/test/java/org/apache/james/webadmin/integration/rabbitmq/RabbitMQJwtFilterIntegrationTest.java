@@ -22,6 +22,7 @@ package org.apache.james.webadmin.integration.rabbitmq;
 import org.apache.james.CassandraExtension;
 import org.apache.james.CassandraRabbitMQJamesConfiguration;
 import org.apache.james.CassandraRabbitMQJamesServerMain;
+import org.apache.james.CassandraRabbitMQServerExtension;
 import org.apache.james.DockerElasticSearchExtension;
 import org.apache.james.JamesServerBuilder;
 import org.apache.james.JamesServerExtension;
@@ -37,19 +38,16 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 class RabbitMQJwtFilterIntegrationTest extends JwtFilterIntegrationTest {
     @RegisterExtension
-    static JamesServerExtension testExtension = new JamesServerBuilder<CassandraRabbitMQJamesConfiguration>(tmpDir ->
-        CassandraRabbitMQJamesConfiguration.builder()
-            .workingDirectory(tmpDir)
-            .configurationFromClasspath()
-            .blobStore(BlobStoreConfiguration.objectStorage().disableCache())
-            .build())
-        .extension(new DockerElasticSearchExtension())
-        .extension(new CassandraExtension())
-        .extension(new AwsS3BlobStoreExtension())
-        .extension(new RabbitMQExtension())
-        .server(configuration -> CassandraRabbitMQJamesServerMain.createServer(configuration)
-            .overrideWith(binder -> binder.bind(AuthenticationFilter.class).to(JwtFilter.class))
-            .overrideWith(binder -> binder.bind(JwtConfiguration.class).toInstance(jwtConfiguration()))
-            .overrideWith(new WebadminIntegrationTestModule()))
+    static JamesServerExtension testExtension = CassandraRabbitMQServerExtension.builder()
+        .defaultConfiguration()
+        .blobStore(builder -> builder.objectStorage().disableCache())
+        .withSpecificParameters(server -> server
+            .extension(new DockerElasticSearchExtension())
+            .extension(new CassandraExtension())
+            .extension(new AwsS3BlobStoreExtension())
+            .extension(new RabbitMQExtension())
+            .overrideServerModule(binder -> binder.bind(AuthenticationFilter.class).to(JwtFilter.class))
+            .overrideServerModule(binder -> binder.bind(JwtConfiguration.class).toInstance(jwtConfiguration()))
+            .overrideServerModule(new WebadminIntegrationTestModule()))
         .build();
 }

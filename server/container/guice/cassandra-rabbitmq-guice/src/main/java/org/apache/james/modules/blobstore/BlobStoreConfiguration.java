@@ -37,23 +37,46 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.MoreObjects;
 
 public class BlobStoreConfiguration {
-    private static final Logger LOGGER = LoggerFactory.getLogger(BlobStoreConfiguration.class);
 
-    public static class CacheChoice {
-        private final  BlobStoreImplName implementation;
-
-        private CacheChoice(BlobStoreImplName implementation) {
-            this.implementation = implementation;
-        }
-
-        public BlobStoreConfiguration enableCache() {
-            return new BlobStoreConfiguration(implementation, CACHE_ENABLED);
-        }
-
-        public BlobStoreConfiguration disableCache() {
-            return new BlobStoreConfiguration(implementation, !CACHE_ENABLED);
-        }
+    public static Builder builder() {
+        return new Builder();
     }
+
+    public static class Builder {
+
+        public static class CacheChoice {
+            private final BlobStoreImplName implementation;
+
+            private CacheChoice(BlobStoreImplName implementation) {
+                this.implementation = implementation;
+            }
+
+            public BlobStoreConfiguration enableCache() {
+                return new BlobStoreConfiguration(implementation, CACHE_ENABLED);
+            }
+
+            public BlobStoreConfiguration disableCache() {
+                return new BlobStoreConfiguration(implementation, !CACHE_ENABLED);
+            }
+        }
+
+        private Builder() {}
+
+        public BlobStoreConfiguration cassandra() {
+            return new BlobStoreConfiguration(BlobStoreImplName.CASSANDRA, !CACHE_ENABLED);
+        }
+
+        public CacheChoice objectStorage() {
+            return new CacheChoice(BlobStoreImplName.OBJECTSTORAGE);
+        }
+
+        public BlobStoreConfiguration hybrid() {
+            return new BlobStoreConfiguration(BlobStoreImplName.HYBRID, !CACHE_ENABLED);
+        }
+
+    }
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(BlobStoreConfiguration.class);
 
     public enum BlobStoreImplName {
         CASSANDRA("cassandra"),
@@ -102,7 +125,7 @@ public class BlobStoreConfiguration {
             return BlobStoreConfiguration.from(configuration);
         } catch (FileNotFoundException e) {
             LOGGER.warn("Could not find " + ConfigurationComponent.NAME + " configuration file, using cassandra blobstore as the default");
-            return BlobStoreConfiguration.cassandra();
+            return builder().cassandra();
         }
     }
 
@@ -117,18 +140,6 @@ public class BlobStoreConfiguration {
         boolean cacheEnabled = configuration.getBoolean(CACHE_ENABLE_PROPERTY, false);
 
         return new BlobStoreConfiguration(blobStoreImplName, cacheEnabled);
-    }
-
-    public static BlobStoreConfiguration cassandra() {
-        return new BlobStoreConfiguration(BlobStoreImplName.CASSANDRA, !CACHE_ENABLED);
-    }
-
-    public static CacheChoice objectStorage() {
-        return new CacheChoice(BlobStoreImplName.OBJECTSTORAGE);
-    }
-
-    public static BlobStoreConfiguration hybrid() {
-        return new BlobStoreConfiguration(BlobStoreImplName.HYBRID, !CACHE_ENABLED);
     }
 
     private final BlobStoreImplName implementation;

@@ -23,9 +23,13 @@ import static org.apache.james.jmap.draft.JmapJamesServerContract.DOMAIN_LIST_CO
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.function.UnaryOperator;
+
 import org.apache.james.jmap.draft.JMAPConfigurationStartUpCheck;
 import org.apache.james.jmap.draft.JMAPDraftConfiguration;
 import org.apache.james.jmap.draft.JmapJamesServerContract;
+import org.apache.james.mailbox.extractor.TextExtractor;
+import org.apache.james.mailbox.store.search.PDFTextExtractor;
 import org.apache.james.modules.TestJMAPServerModule;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -33,17 +37,21 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 class MemoryJmapJamesServerTest {
 
-    private static JamesServerBuilder extensionBuilder() {
-        return new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-            .server(configuration -> MemoryJamesServerMain.createServer(configuration)
-                .overrideWith(new TestJMAPServerModule())
-                .overrideWith(DOMAIN_LIST_CONFIGURATION_MODULE));
+    private static JamesServerExtension extensionBuilder(UnaryOperator<JamesServerBuilder> operator) {
+        return MemoryServerExtension
+            .builder()
+            .defaultConfiguration()
+            .withSpecificParameters(extension ->
+                operator.apply(extension
+                    .overrideServerModule(new TestJMAPServerModule())
+                    .overrideServerModule(DOMAIN_LIST_CONFIGURATION_MODULE)))
+            .build();
     }
 
     @Nested
     class JmapJamesServerTest implements JmapJamesServerContract {
         @RegisterExtension
-        JamesServerExtension jamesServerExtension = extensionBuilder().build();
+        JamesServerExtension jamesServerExtension = extensionBuilder(UnaryOperator.identity());
     }
 
     @Nested
@@ -53,15 +61,14 @@ class MemoryJmapJamesServerTest {
         class BadAliasKeyStore {
 
             @RegisterExtension
-            JamesServerExtension jamesServerExtension = extensionBuilder()
+            JamesServerExtension jamesServerExtension = extensionBuilder(extension -> extension
                 .disableAutoStart()
                 .overrideServerModule(binder -> binder.bind(JMAPDraftConfiguration.class)
                     .toInstance(TestJMAPServerModule
                         .jmapDraftConfigurationBuilder()
                         .keystore("badAliasKeystore")
                         .secret("password")
-                        .build()))
-                .build();
+                        .build())));
 
             @Test
             void jamesShouldNotStartWhenBadAliasKeyStore(GuiceJamesServer server) {
@@ -78,14 +85,13 @@ class MemoryJmapJamesServerTest {
         class BadSecretKeyStore {
 
             @RegisterExtension
-            JamesServerExtension jamesServerExtension = extensionBuilder()
+            JamesServerExtension jamesServerExtension = extensionBuilder(extension -> extension
                 .disableAutoStart()
                 .overrideServerModule(binder -> binder.bind(JMAPDraftConfiguration.class)
                     .toInstance(TestJMAPServerModule
                         .jmapDraftConfigurationBuilder()
                         .secret("WrongSecret")
-                        .build()))
-                .build();
+                        .build())));
 
             @Test
             void jamesShouldNotStartWhenBadSecret(GuiceJamesServer server) {

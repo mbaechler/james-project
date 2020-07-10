@@ -32,15 +32,18 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 class DefaultCassandraJamesServerTest {
+
     @RegisterExtension
-    static JamesServerExtension testExtension = new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-        .extension(new DockerElasticSearchExtension())
-        .extension(new CassandraExtension())
-        .server(configuration -> CassandraJamesServerMain.createServer(configuration)
-            .overrideWith(binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class))
-            .overrideWith(new TestJMAPServerModule())
-            .overrideWith(binder -> binder.bind(PropertiesProvider.class).to(FailingPropertiesProvider.class))
-            .overrideWith(binder -> binder.bind(ConfigurationProvider.class).toInstance((s, l) -> new BaseHierarchicalConfiguration())))
+    JamesServerExtension jamesServerExtension = CassandraServerExtension
+        .builder()
+        .defaultConfiguration()
+        .withSpecificParameters(extension -> extension
+            .extension(new DockerElasticSearchExtension())
+            .extension(new CassandraExtension())
+            .overrideServerModule(binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class))
+            .overrideServerModule(new TestJMAPServerModule())
+            .overrideServerModule(binder -> binder.bind(PropertiesProvider.class).to(FailingPropertiesProvider.class))
+            .overrideServerModule(binder -> binder.bind(ConfigurationProvider.class).toInstance((s, l) -> new BaseHierarchicalConfiguration())))
         .build();
 
     @Test

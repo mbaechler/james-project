@@ -25,6 +25,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
+import java.util.function.UnaryOperator;
 
 import org.apache.james.backends.cassandra.DockerCassandra;
 import org.apache.james.backends.cassandra.init.configuration.ClusterConfiguration;
@@ -41,13 +42,16 @@ import org.testcontainers.DockerClientFactory;
 class CassandraNodeConfTest {
     private static final int CASSANDRA_PORT = 9042;
 
-    private static JamesServerBuilder extensionBuilder() {
-        return new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-            .extension(new DockerElasticSearchExtension())
-            .extension(new CassandraExtension())
-            .server(configuration -> CassandraJamesServerMain.createServer(configuration)
-                .overrideWith(new TestJMAPServerModule()))
-            .disableAutoStart();
+    private static JamesServerExtension extensionBuilder(UnaryOperator<JamesServerBuilder> operator) {
+        return CassandraServerExtension
+            .builder()
+            .defaultConfiguration()
+            .withSpecificParameters(extension -> operator.apply(extension
+                .extension(new DockerElasticSearchExtension())
+                .extension(new CassandraExtension())
+                .overrideServerModule(new TestJMAPServerModule())
+                .disableAutoStart()))
+            .build();
     }
 
     private static String getDockerHostIp() {
@@ -71,7 +75,7 @@ class CassandraNodeConfTest {
     @Nested
     class NormalBehaviour {
         @RegisterExtension
-        JamesServerExtension testExtension = extensionBuilder().build();
+        JamesServerExtension testExtension = extensionBuilder(UnaryOperator.identity());
 
         @Test
         void serverShouldStartServiceWhenNodeIsReachable(GuiceJamesServer server) throws Exception {
@@ -86,13 +90,12 @@ class CassandraNodeConfTest {
         private final DockerCassandraRule cassandra = new DockerCassandraRule();
 
         @RegisterExtension
-        JamesServerExtension testExtension = extensionBuilder()
+        JamesServerExtension testExtension = extensionBuilder(extension -> extension
             .overrideServerModule(binder -> binder.bind(ClusterConfiguration.class)
                 .toInstance(DockerCassandra.configurationBuilder(
                         Host.from(unreachableNode, 9042),
                         cassandra.getHost())
-                    .build()))
-            .build();
+                    .build())));
 
         @Test
         void serverShouldStartServiceWhenNodeIsReachable(GuiceJamesServer server) throws Exception {
@@ -105,12 +108,11 @@ class CassandraNodeConfTest {
         private final DockerCassandraRule cassandra = new DockerCassandraRule();
 
         @RegisterExtension
-        JamesServerExtension testExtension =  extensionBuilder()
+        JamesServerExtension testExtension =  extensionBuilder(extension -> extension
             .overrideServerModule(binder -> binder.bind(ClusterConfiguration.class)
                 .toInstance(DockerCassandra.configurationBuilder(
                         Host.from(getDockerHostIp(), cassandra.getMappedPort(CASSANDRA_PORT)))
-                    .build()))
-            .build();
+                    .build())));
 
         @Test
         void configShouldWorkWithNonDefaultPort(GuiceJamesServer server) throws Exception {

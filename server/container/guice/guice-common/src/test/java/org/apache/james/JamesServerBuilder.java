@@ -29,63 +29,57 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Module;
 
-public class JamesServerBuilder<T extends Configuration> {
+public class JamesServerBuilder<ConfigurationT> {
     private static final boolean DEFAULT_AUTO_START = true;
 
     @FunctionalInterface
-    public interface ConfigurationProvider<T extends Configuration> {
-        T buildConfiguration(File tempDirectory);
+    public interface ConfigurationProvider<ConfigurationT> {
+        ConfigurationT buildConfiguration(File tempDirectory);
     }
 
     @FunctionalInterface
-    public interface ServerProvider<T extends Configuration>  {
-        GuiceJamesServer buildServer(T configuration);
-    }
-
-
-    public static ConfigurationProvider<Configuration.Basic> defaultConfigurationProvider() {
-        return tmpDir ->
-            Configuration.builder()
-                .workingDirectory(tmpDir)
-                .configurationFromClasspath()
-                .build();
+    public interface ServerProvider<ConfigurationT>  {
+        GuiceJamesServer buildServer(ConfigurationT configuration);
     }
 
     private final ImmutableList.Builder<GuiceModuleTestExtension> extensions;
     private final TemporaryFolderRegistrableExtension folderRegistrableExtension;
     private final ImmutableList.Builder<Module> overrideModules;
-    private ServerProvider server;
-    private ConfigurationProvider configuration;
+    private final ImmutableList.Builder<Module> additionalModules;
+    private final ConfigurationProvider<ConfigurationT> configuration;
+    private final ServerProvider<ConfigurationT> server;
     private Optional<Boolean> autoStart;
 
-    public JamesServerBuilder(ConfigurationProvider configurationProvider) {
-        configuration = configurationProvider;
-        extensions = ImmutableList.builder();
-        folderRegistrableExtension = new TemporaryFolderRegistrableExtension();
-        autoStart = Optional.empty();
-        overrideModules = ImmutableList.builder();
+    public JamesServerBuilder(ConfigurationProvider<ConfigurationT> configurationProvider, ServerProvider<ConfigurationT> server) {
+        this.configuration = configurationProvider;
+        this.extensions = ImmutableList.builder();
+        this.folderRegistrableExtension = new TemporaryFolderRegistrableExtension();
+        this.autoStart = Optional.empty();
+        this.overrideModules = ImmutableList.builder();
+        this.additionalModules = ImmutableList.builder();
+        this.server = server;
     }
 
-    public JamesServerBuilder<T> extensions(GuiceModuleTestExtension... extensions) {
+    public JamesServerBuilder extensions(GuiceModuleTestExtension... extensions) {
         this.extensions.add(extensions);
         return this;
     }
 
-    public JamesServerBuilder<T> extension(GuiceModuleTestExtension extension) {
+    public JamesServerBuilder extension(GuiceModuleTestExtension extension) {
         return this.extensions(extension);
     }
 
-    public JamesServerBuilder<T> server(ServerProvider<T> server) {
-        this.server = server;
-        return this;
-    }
-
-    public JamesServerBuilder<T> overrideServerModule(Module module) {
+    public JamesServerBuilder overrideServerModule(Module module) {
         this.overrideModules.add(module);
         return this;
     }
 
-    public JamesServerBuilder<T> disableAutoStart() {
+    public JamesServerBuilder additionalModule(Module module) {
+        this.additionalModules.add(module);
+        return this;
+    }
+
+    public JamesServerBuilder disableAutoStart() {
         this.autoStart = Optional.of(false);
         return this;
     }
@@ -94,8 +88,18 @@ public class JamesServerBuilder<T extends Configuration> {
         Preconditions.checkNotNull(server);
         JamesServerExtension.AwaitCondition awaitCondition = () -> extensions.build().forEach(GuiceModuleTestExtension::await);
 
-        return new JamesServerExtension(buildAggregateJunitExtension(), file -> overrideServerWithExtensionsModules(file, configuration),
-            awaitCondition, autoStart.orElse(DEFAULT_AUTO_START));
+        JamesServerExtension.ThrowingFunction<File, GuiceJamesServer> serverBuilder = file -> server
+            .buildServer(configuration.buildConfiguration(file))
+            .combineWith(additionalModules.build())
+            .overrideWith(extensionModules(file, configuration))
+            .overrideWith(overrideModules.build())
+            .overrideWith((binder -> binder.bind(CleanupTasksPerformer.class).asEagerSingleton()));
+
+        return new JamesServerExtension(
+            buildAggregateJunitExtension(),
+            serverBuilder,
+            awaitCondition,
+            autoStart.orElse(DEFAULT_AUTO_START));
     }
 
     private AggregateJunitExtension buildAggregateJunitExtension() {
@@ -107,17 +111,12 @@ public class JamesServerBuilder<T extends Configuration> {
                 .build());
     }
 
-    private GuiceJamesServer overrideServerWithExtensionsModules(File file, ConfigurationProvider configurationProvider) {
-        ImmutableList<Module> modules = extensions.build()
+    private ImmutableList<Module> extensionModules(File file, ConfigurationProvider configurationProvider) {
+        return extensions.build()
             .stream()
             .map(GuiceModuleTestExtension::getModule)
             .collect(Guavate.toImmutableList());
 
-        return server
-            .buildServer(configurationProvider.buildConfiguration(file))
-            .overrideWith(modules)
-            .overrideWith((binder -> binder.bind(CleanupTasksPerformer.class).asEagerSingleton()))
-            .overrideWith(overrideModules.build());
     }
 
 }

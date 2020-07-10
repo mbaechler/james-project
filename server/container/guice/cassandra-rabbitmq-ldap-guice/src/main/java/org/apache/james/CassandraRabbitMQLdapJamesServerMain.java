@@ -24,33 +24,26 @@ import org.apache.james.modules.blobstore.BlobStoreCacheModulesChooser;
 import org.apache.james.modules.blobstore.BlobStoreConfiguration;
 import org.apache.james.modules.blobstore.BlobStoreModulesChooser;
 import org.apache.james.modules.server.JMXServerModule;
+import org.apache.james.server.core.configuration.Configuration;
 
 import com.google.inject.Module;
 import com.google.inject.util.Modules;
 
 public class CassandraRabbitMQLdapJamesServerMain implements JamesServerMain {
-    public static final Module MODULES = Modules
-        .override(CassandraRabbitMQJamesServerMain.MODULES)
-        .with(new LdapUsersRepositoryModule());
 
     public static void main(String[] args) throws Exception {
-        CassandraRabbitMQJamesConfiguration configuration = CassandraRabbitMQJamesConfiguration.builder()
+        Configuration configuration = Configuration.builder()
             .useWorkingDirectoryEnvProperty()
             .build();
+        BlobStoreConfiguration blobStoreConfiguration = BlobStoreConfiguration.parse(configuration);
 
         LOGGER.info("Loading configuration {}", configuration.toString());
-        GuiceJamesServer server = createServer(configuration)
-            .combineWith(new JMXServerModule());
+        GuiceJamesServer server = CassandraRabbitMQJamesServerMain.builder(configuration, blobStoreConfiguration)
+            .customize(s -> s
+                .combineWith(new JMXServerModule())
+                .overrideWith(new LdapUsersRepositoryModule()))
+            .build();
 
         JamesServerMain.main(server);
-    }
-
-    public static GuiceJamesServer createServer(CassandraRabbitMQJamesConfiguration configuration) {
-        BlobStoreConfiguration blobStoreConfiguration = configuration.blobStoreConfiguration();
-
-        return GuiceJamesServer.forConfiguration(configuration)
-            .combineWith(MODULES)
-            .combineWith(BlobStoreModulesChooser.chooseModules(blobStoreConfiguration))
-            .combineWith(BlobStoreCacheModulesChooser.chooseModules(blobStoreConfiguration));
     }
 }

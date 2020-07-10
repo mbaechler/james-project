@@ -22,6 +22,7 @@ package org.apache.james.webadmin.integration.memory.vault;
 import org.apache.james.JamesServerBuilder;
 import org.apache.james.JamesServerExtension;
 import org.apache.james.MemoryJamesServerMain;
+import org.apache.james.MemoryServerExtension;
 import org.apache.james.modules.LinshareGuiceExtension;
 import org.apache.james.modules.TestJMAPServerModule;
 import org.apache.james.modules.vault.TestDeleteMessageVaultPreDeletionHookModule;
@@ -31,11 +32,13 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 class MemoryLinshareBlobExportMechanismIntegrationTest extends LinshareBlobExportMechanismIntegrationTest {
     @RegisterExtension
-    static JamesServerExtension jamesServerExtension = new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-        .extension(new LinshareGuiceExtension())
-        .server(configuration -> MemoryJamesServerMain.createServer(configuration)
-            .overrideWith(new TestJMAPServerModule())
-            .overrideWith(new TestDeleteMessageVaultPreDeletionHookModule())
-            .overrideWith(new WebadminIntegrationTestModule()))
+    static JamesServerExtension jamesServerExtension = MemoryServerExtension
+        .builder()
+        .defaultConfiguration()
+        .withSpecificParameters(extension -> extension
+            .extension(new LinshareGuiceExtension())
+            .overrideServerModule(new TestJMAPServerModule())
+            .overrideServerModule(new TestDeleteMessageVaultPreDeletionHookModule())
+            .overrideServerModule(new WebadminIntegrationTestModule()))
         .build();
 }

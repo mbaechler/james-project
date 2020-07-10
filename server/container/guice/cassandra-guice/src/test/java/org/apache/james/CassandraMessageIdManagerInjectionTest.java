@@ -32,15 +32,18 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import com.google.inject.multibindings.Multibinder;
 
 class CassandraMessageIdManagerInjectionTest {
+
     @RegisterExtension
-    static JamesServerExtension testExtension = new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-        .extension(new DockerElasticSearchExtension())
-        .extension(new CassandraExtension())
-        .server(configuration -> CassandraJamesServerMain.createServer(configuration)
-            .overrideWith(binder -> Multibinder.newSetBinder(binder, InitializationOperation.class)
+    JamesServerExtension jamesServerExtension = CassandraServerExtension
+        .builder()
+        .defaultConfiguration()
+        .withSpecificParameters(extension -> extension
+            .extension(new DockerElasticSearchExtension())
+            .extension(new CassandraExtension())
+            .overrideServerModule(binder -> Multibinder.newSetBinder(binder, InitializationOperation.class)
                 .addBinding()
-                .to(CallMe.class)))
-        .disableAutoStart()
+                .to(CallMe.class))
+            .disableAutoStart())
         .build();
 
     @Test

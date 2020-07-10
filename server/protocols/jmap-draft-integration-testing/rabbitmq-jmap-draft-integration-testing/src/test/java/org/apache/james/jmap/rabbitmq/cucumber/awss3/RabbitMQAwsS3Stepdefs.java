@@ -19,6 +19,9 @@
 
 package org.apache.james.jmap.rabbitmq.cucumber.awss3;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Arrays;
 
 import javax.inject.Inject;
@@ -30,6 +33,7 @@ import org.apache.james.CassandraRabbitMQJamesServerMain;
 import org.apache.james.CleanupTasksPerformer;
 import org.apache.james.DockerCassandraRule;
 import org.apache.james.DockerElasticSearchRule;
+import org.apache.james.backends.rabbitmq.DockerRabbitMQSingleton;
 import org.apache.james.jmap.draft.methods.integration.cucumber.ImapStepdefs;
 import org.apache.james.jmap.draft.methods.integration.cucumber.MainStepdefs;
 import org.apache.james.mailbox.cassandra.ids.CassandraMessageId;
@@ -41,6 +45,7 @@ import org.apache.james.modules.TestJMAPServerModule;
 import org.apache.james.modules.TestRabbitMQModule;
 import org.apache.james.modules.blobstore.BlobStoreConfiguration;
 import org.apache.james.modules.objectstorage.aws.s3.DockerAwsS3TestRule;
+import org.apache.james.modules.objectstorage.swift.DockerSwiftTestRule;
 import org.apache.james.server.CassandraTruncateTableTask;
 import org.junit.rules.TemporaryFolder;
 
@@ -77,14 +82,13 @@ public class RabbitMQAwsS3Stepdefs {
 
         temporaryFolder.create();
         mainStepdefs.messageIdFactory = new CassandraMessageId.Factory();
-        CassandraRabbitMQJamesConfiguration configuration = CassandraRabbitMQJamesConfiguration.builder()
-            .workingDirectory(temporaryFolder.newFolder())
-            .configurationFromClasspath()
-            .blobStore(BlobStoreConfiguration.objectStorage().disableCache())
-            .build();
 
-        mainStepdefs.jmapServer = CassandraRabbitMQJamesServerMain.createServer(configuration)
-            .overrideWith(new TestJMAPServerModule())
+        mainStepdefs.jmapServer = CassandraRabbitMQJamesServerMain.builder()
+            .configuration(configuration -> configuration
+                .workingDirectory(newFolder())
+                .configurationFromClasspath())
+            .blobStore(configuration -> configuration.objectStorage().disableCache())
+            .customize(server -> server
                 .overrideWith(new TestDockerESMetricReporterModule(elasticSearch.getDockerEs().getHttpHost()))
                 .overrideWith(new TestRabbitMQModule(rabbitMQServer.dockerRabbitMQ()))
                 .overrideWith(swiftServer.getModule())
@@ -93,9 +97,19 @@ public class RabbitMQAwsS3Stepdefs {
                 .overrideWith(binder -> binder.bind(TextExtractor.class).to(DefaultTextExtractor.class))
                 .overrideWith((binder) -> binder.bind(PersistenceAdapter.class).to(MemoryPersistenceAdapter.class))
                 .overrideWith(binder -> Multibinder.newSetBinder(binder, CleanupTasksPerformer.CleanupTask.class).addBinding().to(CassandraTruncateTableTask.class))
-                .overrideWith((binder -> binder.bind(CleanupTasksPerformer.class).asEagerSingleton()));
+                .overrideWith((binder -> binder.bind(CleanupTasksPerformer.class).asEagerSingleton())))
+            .build();
+
         mainStepdefs.awaitMethod = () -> elasticSearch.getDockerEs().flushIndices();
         mainStepdefs.init();
+    }
+
+    private File newFolder() throws UncheckedIOException {
+        try {
+            return temporaryFolder.newFolder();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @After

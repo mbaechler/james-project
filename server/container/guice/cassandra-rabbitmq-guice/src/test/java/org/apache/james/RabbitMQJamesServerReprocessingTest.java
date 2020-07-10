@@ -52,13 +52,17 @@ class RabbitMQJamesServerReprocessingTest {
     private RequestSpecification webAdminApi;
 
     @RegisterExtension
-    JamesServerExtension jamesServerExtension = CassandraRabbitMQJamesServerFixture
-        .baseExtensionBuilder(rabbitMQExtension)
-        .extension(new AwsS3BlobStoreExtension())
-        .server(configuration -> CassandraRabbitMQJamesServerMain.createServer(configuration)
-            .overrideWith(new TestJMAPServerModule())
-            .overrideWith(binder -> binder.bind(WebAdminConfiguration.class).toInstance(WebAdminConfiguration.TEST_CONFIGURATION))
-            .overrideWith(JmapJamesServerContract.DOMAIN_LIST_CONFIGURATION_MODULE))
+    JamesServerExtension jamesServerExtension = CassandraRabbitMQServerExtension.builder()
+        .defaultConfiguration()
+            .blobStore(builder -> builder.objectStorage().disableCache())
+        .withSpecificParameters(extension -> extension
+            .extension(new DockerElasticSearchExtension())
+            .extension(new CassandraExtension())
+            .extension(rabbitMQExtension)
+            .extension(new AwsS3BlobStoreExtension())
+            .overrideServerModule(new TestJMAPServerModule())
+            .overrideServerModule(binder -> binder.bind(WebAdminConfiguration.class).toInstance(WebAdminConfiguration.TEST_CONFIGURATION))
+            .overrideServerModule(JmapJamesServerContract.DOMAIN_LIST_CONFIGURATION_MODULE))
         .build();
 
     @BeforeEach

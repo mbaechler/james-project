@@ -27,8 +27,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.james.jmap.draft.JmapJamesServerContract;
 import org.apache.james.modules.AwsS3BlobStoreExtension;
 import org.apache.james.modules.RabbitMQExtension;
+import org.apache.james.modules.TestJMAPServerModule;
 import org.apache.james.util.concurrent.NamedThreadFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,10 +44,17 @@ class RabbitMQJamesServerWithRetryConnectionTest {
     private ScheduledExecutorService executorService;
 
     @RegisterExtension
-    JamesServerExtension jamesServerExtension = CassandraRabbitMQJamesServerFixture
-        .baseExtensionBuilder(rabbitMQExtension)
-        .extension(new AwsS3BlobStoreExtension())
-        .disableAutoStart()
+    JamesServerExtension jamesServerExtension = CassandraRabbitMQServerExtension.builder()
+        .defaultConfiguration()
+        .blobStore(builder -> builder.objectStorage().disableCache())
+        .withSpecificParameters(extension -> extension
+            .extension(new DockerElasticSearchExtension())
+            .extension(new CassandraExtension())
+            .extension(rabbitMQExtension)
+            .extension(new AwsS3BlobStoreExtension())
+            .overrideServerModule(new TestJMAPServerModule())
+            .overrideServerModule(JmapJamesServerContract.DOMAIN_LIST_CONFIGURATION_MODULE)
+            .disableAutoStart())
         .build();
 
     @BeforeEach

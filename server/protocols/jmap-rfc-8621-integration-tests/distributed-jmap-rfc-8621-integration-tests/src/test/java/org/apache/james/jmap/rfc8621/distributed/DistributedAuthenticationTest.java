@@ -22,6 +22,7 @@ package org.apache.james.jmap.rfc8621.distributed;
 import org.apache.james.CassandraExtension;
 import org.apache.james.CassandraRabbitMQJamesConfiguration;
 import org.apache.james.CassandraRabbitMQJamesServerMain;
+import org.apache.james.CassandraRabbitMQServerExtension;
 import org.apache.james.DockerElasticSearchExtension;
 import org.apache.james.JamesServerBuilder;
 import org.apache.james.JamesServerExtension;
@@ -34,17 +35,14 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 class DistributedAuthenticationTest implements AuthenticationContract {
     @RegisterExtension
-    static JamesServerExtension testExtension = new JamesServerBuilder<CassandraRabbitMQJamesConfiguration>(tmpDir ->
-        CassandraRabbitMQJamesConfiguration.builder()
-            .workingDirectory(tmpDir)
-            .configurationFromClasspath()
-            .blobStore(BlobStoreConfiguration.objectStorage().disableCache())
-            .build())
-        .extension(new DockerElasticSearchExtension())
-        .extension(new CassandraExtension())
-        .extension(new RabbitMQExtension())
-        .extension(new AwsS3BlobStoreExtension())
-        .server(configuration -> CassandraRabbitMQJamesServerMain.createServer(configuration)
-            .overrideWith(new TestJMAPServerModule()))
+    static JamesServerExtension testExtension = CassandraRabbitMQServerExtension.builder()
+        .defaultConfiguration()
+        .blobStore(builder -> builder.objectStorage().disableCache())
+        .withSpecificParameters(server -> server
+            .extension(new DockerElasticSearchExtension())
+            .extension(new CassandraExtension())
+            .extension(new RabbitMQExtension())
+            .extension(new AwsS3BlobStoreExtension())
+            .overrideServerModule(new TestJMAPServerModule()))
         .build();
 }

@@ -43,11 +43,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.james.CassandraExtension;
-import org.apache.james.CassandraRabbitMQJamesConfiguration;
-import org.apache.james.CassandraRabbitMQJamesServerMain;
+import org.apache.james.CassandraRabbitMQServerExtension;
 import org.apache.james.DockerElasticSearchExtension;
 import org.apache.james.GuiceJamesServer;
-import org.apache.james.JamesServerBuilder;
 import org.apache.james.JamesServerExtension;
 import org.apache.james.backends.cassandra.init.ClusterFactory;
 import org.apache.james.backends.cassandra.init.configuration.ClusterConfiguration;
@@ -71,7 +69,6 @@ import org.apache.james.modules.AwsS3BlobStoreExtension;
 import org.apache.james.modules.MailboxProbeImpl;
 import org.apache.james.modules.RabbitMQExtension;
 import org.apache.james.modules.TestJMAPServerModule;
-import org.apache.james.modules.blobstore.BlobStoreConfiguration;
 import org.apache.james.server.CassandraProbe;
 import org.apache.james.task.TaskManager;
 import org.apache.james.util.Port;
@@ -110,19 +107,16 @@ class FixingGhostMailboxTest {
     private static final Duration THIRTY_SECONDS = new Duration(30, TimeUnit.SECONDS);
 
     @RegisterExtension
-    static JamesServerExtension testExtension = new JamesServerBuilder<CassandraRabbitMQJamesConfiguration>(tmpDir ->
-        CassandraRabbitMQJamesConfiguration.builder()
-            .workingDirectory(tmpDir)
-            .configurationFromClasspath()
-            .blobStore(BlobStoreConfiguration.objectStorage().disableCache())
-            .build())
-        .extension(new DockerElasticSearchExtension())
-        .extension(new CassandraExtension())
-        .extension(new AwsS3BlobStoreExtension())
-        .extension(new RabbitMQExtension())
-        .server(configuration -> CassandraRabbitMQJamesServerMain.createServer(configuration)
-            .overrideWith(new TestJMAPServerModule())
-            .overrideWith(new WebadminIntegrationTestModule()))
+    static JamesServerExtension testExtension = CassandraRabbitMQServerExtension.builder()
+        .defaultConfiguration()
+        .blobStore(builder -> builder.objectStorage().disableCache())
+        .withSpecificParameters(server -> server
+            .extension(new DockerElasticSearchExtension())
+            .extension(new CassandraExtension())
+            .extension(new AwsS3BlobStoreExtension())
+            .extension(new RabbitMQExtension())
+            .overrideServerModule(new TestJMAPServerModule())
+            .overrideServerModule(new WebadminIntegrationTestModule()))
         .build();
 
     private AccessToken accessToken;

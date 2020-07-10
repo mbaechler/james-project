@@ -32,16 +32,19 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class KeyspaceCreationTest {
     @Nested
     class CreateWhenKeyspaceExists {
+
         @RegisterExtension
-        JamesServerExtension testExtension = new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-            .extension(new DockerElasticSearchExtension())
-            .extension(new CassandraExtension())
-            .server(CassandraJamesServerMain::createServer)
-            .overrideServerModule(binder -> binder.bind(ClusterConfiguration.class)
-                .toInstance(DockerCassandraSingleton.singleton.configurationBuilder()
-                    .createKeyspace()
-                    .build()))
-            .disableAutoStart()
+        JamesServerExtension jamesServerExtension = CassandraServerExtension
+            .builder()
+            .defaultConfiguration()
+            .withSpecificParameters(extension -> extension
+                .extension(new DockerElasticSearchExtension())
+                .extension(new CassandraExtension())
+                .overrideServerModule(binder -> binder.bind(ClusterConfiguration.class)
+                    .toInstance(DockerCassandraSingleton.singleton.configurationBuilder()
+                        .createKeyspace()
+                        .build()))
+                .disableAutoStart())
             .build();
 
         @Test
@@ -54,21 +57,23 @@ class KeyspaceCreationTest {
     @Nested
     class CreateWhenDoesNotExistAndHasRights {
         @RegisterExtension
-        JamesServerExtension testExtension = new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-            .extension(new DockerElasticSearchExtension())
-            .extension(new CassandraExtension())
-            .server(CassandraJamesServerMain::createServer)
-            .overrideServerModule(binder -> binder.bind(KeyspacesConfiguration.class).toInstance(KeyspacesConfiguration.builder()
-                .keyspace("non_existing_keyspace")
-                .cacheKeyspace("cache_non_existing_keyspace")
-                .replicationFactor(1)
-                .disableDurableWrites()
-                .build()))
-            .overrideServerModule(binder -> binder.bind(ClusterConfiguration.class)
+        JamesServerExtension jamesServerExtension = CassandraServerExtension
+            .builder()
+            .defaultConfiguration()
+            .withSpecificParameters(extension -> extension
+                .extension(new DockerElasticSearchExtension())
+                .extension(new CassandraExtension())
+                .overrideServerModule(binder -> binder.bind(KeyspacesConfiguration.class).toInstance(KeyspacesConfiguration.builder()
+                    .keyspace("non_existing_keyspace")
+                    .cacheKeyspace("cache_non_existing_keyspace")
+                    .replicationFactor(1)
+                    .disableDurableWrites()
+                    .build()))
+                .overrideServerModule(binder -> binder.bind(ClusterConfiguration.class)
                     .toInstance(DockerCassandraSingleton.singleton.superUserConfigurationBuilder()
                         .createKeyspace()
                         .build()))
-            .disableAutoStart()
+                .disableAutoStart())
             .build();
 
         @Test
@@ -81,21 +86,23 @@ class KeyspaceCreationTest {
     @Nested
     class CreateWhenDoesNotExistAndDoNotHaveRights {
         @RegisterExtension
-        JamesServerExtension testExtension = new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-            .extension(new DockerElasticSearchExtension())
-            .extension(new CassandraExtension())
-            .server(CassandraJamesServerMain::createServer)
-            .overrideServerModule(binder -> binder.bind(ClusterConfiguration.class)
-                .toInstance(DockerCassandraSingleton.singleton.configurationBuilder()
-                    .createKeyspace()
+        JamesServerExtension jamesServerExtension = CassandraServerExtension
+            .builder()
+            .defaultConfiguration()
+            .withSpecificParameters(extension -> extension
+                .extension(new DockerElasticSearchExtension())
+                .extension(new CassandraExtension())
+                .overrideServerModule(binder -> binder.bind(ClusterConfiguration.class)
+                    .toInstance(DockerCassandraSingleton.singleton.configurationBuilder()
+                        .createKeyspace()
+                        .build()))
+                .overrideServerModule(binder -> binder.bind(KeyspacesConfiguration.class).toInstance(KeyspacesConfiguration.builder()
+                    .keyspace("non_existing_keyspace")
+                    .cacheKeyspace("cache_non_existing_keyspace")
+                    .replicationFactor(1)
+                    .disableDurableWrites()
                     .build()))
-            .overrideServerModule(binder -> binder.bind(KeyspacesConfiguration.class).toInstance(KeyspacesConfiguration.builder()
-                .keyspace("non_existing_keyspace")
-                .cacheKeyspace("cache_non_existing_keyspace")
-                .replicationFactor(1)
-                .disableDurableWrites()
-                .build()))
-            .disableAutoStart()
+                .disableAutoStart())
             .build();
 
         @Test
@@ -108,20 +115,22 @@ class KeyspaceCreationTest {
     @Nested
     class StartWhenKeyspaceDoesNotExist {
         @RegisterExtension
-        JamesServerExtension testExtension = new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-            .extension(new DockerElasticSearchExtension())
-            .extension(new CassandraExtension())
-            .server(CassandraJamesServerMain::createServer)
-            .overrideServerModule(binder -> binder.bind(ClusterConfiguration.class)
-                .toInstance(DockerCassandraSingleton.singleton.configurationBuilder()
+        JamesServerExtension jamesServerExtension = CassandraServerExtension
+            .builder()
+            .defaultConfiguration()
+            .withSpecificParameters(extension -> extension
+                .extension(new DockerElasticSearchExtension())
+                .extension(new CassandraExtension())
+                .overrideServerModule(binder -> binder.bind(ClusterConfiguration.class)
+                    .toInstance(DockerCassandraSingleton.singleton.configurationBuilder()
+                        .build()))
+                .overrideServerModule(binder -> binder.bind(KeyspacesConfiguration.class).toInstance(KeyspacesConfiguration.builder()
+                    .keyspace("non_existing_keyspace")
+                    .cacheKeyspace("cache_non_existing_keyspace")
+                    .replicationFactor(1)
+                    .disableDurableWrites()
                     .build()))
-            .overrideServerModule(binder -> binder.bind(KeyspacesConfiguration.class).toInstance(KeyspacesConfiguration.builder()
-                .keyspace("non_existing_keyspace")
-                .cacheKeyspace("cache_non_existing_keyspace")
-                .replicationFactor(1)
-                .disableDurableWrites()
-                .build()))
-            .disableAutoStart()
+                .disableAutoStart())
             .build();
 
         @Test

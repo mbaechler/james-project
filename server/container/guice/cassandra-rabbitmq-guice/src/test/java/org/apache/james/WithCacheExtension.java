@@ -23,7 +23,6 @@ import org.apache.james.jmap.draft.JmapJamesServerContract;
 import org.apache.james.modules.AwsS3BlobStoreExtension;
 import org.apache.james.modules.RabbitMQExtension;
 import org.apache.james.modules.TestJMAPServerModule;
-import org.apache.james.modules.blobstore.BlobStoreConfiguration;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -38,19 +37,17 @@ public class WithCacheExtension implements BeforeAllCallback, AfterAllCallback, 
     private final JamesServerExtension jamesServerExtension;
 
     WithCacheExtension() {
-        jamesServerExtension = new JamesServerBuilder<CassandraRabbitMQJamesConfiguration>(tmpDir ->
-            CassandraRabbitMQJamesConfiguration.builder()
-                .workingDirectory(tmpDir)
-                .configurationFromClasspath()
-                .blobStore(BlobStoreConfiguration.objectStorage().enableCache())
-                .build())
-            .extension(new DockerElasticSearchExtension())
-            .extension(new CassandraExtension())
-            .extension(new RabbitMQExtension())
-            .extension(new AwsS3BlobStoreExtension())
-            .server(configuration -> CassandraRabbitMQJamesServerMain.createServer(configuration)
-                .overrideWith(new TestJMAPServerModule())
-                .overrideWith(JmapJamesServerContract.DOMAIN_LIST_CONFIGURATION_MODULE))
+        jamesServerExtension = CassandraRabbitMQServerExtension.builder()
+            .defaultConfiguration()
+            .blobStore(builder -> builder.objectStorage().enableCache())
+            .withSpecificParameters(extension -> extension
+                .extension(new DockerElasticSearchExtension())
+                .extension(new CassandraExtension())
+                .extension(new RabbitMQExtension())
+                .extension(new AwsS3BlobStoreExtension())
+                .overrideServerModule(new TestJMAPServerModule())
+                .overrideServerModule(JmapJamesServerContract.DOMAIN_LIST_CONFIGURATION_MODULE)
+                .disableAutoStart())
             .build();
     }
 

@@ -21,6 +21,7 @@ package org.apache.james.jmap.cassandra;
 
 import org.apache.james.CassandraExtension;
 import org.apache.james.CassandraJamesServerMain;
+import org.apache.james.CassandraServerExtension;
 import org.apache.james.DockerElasticSearchExtension;
 import org.apache.james.JamesServerBuilder;
 import org.apache.james.JamesServerExtension;
@@ -33,11 +34,13 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class CassandraSendMDNMethodTest extends SendMDNMethodTest {
 
     @RegisterExtension
-    JamesServerExtension testExtension = new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-        .extension(new DockerElasticSearchExtension())
-        .extension(new CassandraExtension())
-        .server(configuration -> CassandraJamesServerMain.createServer(configuration)
-            .overrideWith(new TestJMAPServerModule()))
+    JamesServerExtension jamesServerExtension = CassandraServerExtension
+        .builder()
+        .defaultConfiguration()
+        .withSpecificParameters(extension -> extension
+            .extension(new DockerElasticSearchExtension())
+            .extension(new CassandraExtension())
+            .overrideServerModule(new TestJMAPServerModule()))
         .build();
 
     @Override

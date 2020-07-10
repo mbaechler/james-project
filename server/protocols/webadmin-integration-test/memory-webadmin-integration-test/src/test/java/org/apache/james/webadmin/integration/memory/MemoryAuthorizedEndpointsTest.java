@@ -22,6 +22,8 @@ package org.apache.james.webadmin.integration.memory;
 import org.apache.james.JamesServerBuilder;
 import org.apache.james.JamesServerExtension;
 import org.apache.james.MemoryJamesServerMain;
+import org.apache.james.MemoryServerExtension;
+import org.apache.james.modules.TestJMAPServerModule;
 import org.apache.james.webadmin.integration.AuthorizedEndpointsTest;
 import org.apache.james.webadmin.integration.UnauthorizedModule;
 import org.apache.james.webadmin.integration.WebadminIntegrationTestModule;
@@ -29,9 +31,11 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 class MemoryAuthorizedEndpointsTest extends AuthorizedEndpointsTest {
     @RegisterExtension
-    static JamesServerExtension jamesServerExtension = new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-        .server(configuration -> MemoryJamesServerMain.createServer(configuration)
-            .overrideWith(new WebadminIntegrationTestModule())
-            .overrideWith(new UnauthorizedModule()))
+    static JamesServerExtension jamesServerExtension = MemoryServerExtension
+        .builder()
+        .defaultConfiguration()
+        .withSpecificParameters(extension -> extension
+            .overrideServerModule(new WebadminIntegrationTestModule())
+            .overrideServerModule(new UnauthorizedModule()))
         .build();
 }

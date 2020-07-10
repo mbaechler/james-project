@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 import java.util.EnumSet;
 
 import org.apache.james.mailbox.MailboxManager;
+import org.apache.james.server.core.configuration.Configuration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -40,10 +41,13 @@ class JamesCapabilitiesServerTest {
     }
 
     @RegisterExtension
-    static JamesServerExtension jamesServerExtension = new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-        .server(configuration -> JPAJamesServerMain.createServer(configuration)
-            .overrideWith(new TestJPAConfigurationModule())
-            .overrideWith(binder -> binder.bind(MailboxManager.class).toInstance(mailboxManager())))
+    static JamesServerExtension jamesServerExtension = JPAServerExtension
+        .builder()
+        .defaultConfiguration()
+        .withSpecificParameters(extension ->
+            extension
+                .overrideServerModule(new TestJPAConfigurationModule())
+                .overrideServerModule(binder -> binder.bind(MailboxManager.class).toInstance(mailboxManager())))
         .build();
     
     @Test

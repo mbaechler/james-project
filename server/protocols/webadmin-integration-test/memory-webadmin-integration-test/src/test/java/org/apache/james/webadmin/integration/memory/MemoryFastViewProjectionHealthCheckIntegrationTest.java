@@ -22,16 +22,23 @@ package org.apache.james.webadmin.integration.memory;
 import org.apache.james.JamesServerBuilder;
 import org.apache.james.JamesServerExtension;
 import org.apache.james.MemoryJamesServerMain;
+import org.apache.james.MemoryServerExtension;
+import org.apache.james.jwt.JwtConfiguration;
 import org.apache.james.modules.TestJMAPServerModule;
+import org.apache.james.webadmin.authentication.AuthenticationFilter;
+import org.apache.james.webadmin.authentication.JwtFilter;
 import org.apache.james.webadmin.integration.FastViewProjectionHealthCheckIntegrationContract;
 import org.apache.james.webadmin.integration.WebadminIntegrationTestModule;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 class MemoryFastViewProjectionHealthCheckIntegrationTest extends FastViewProjectionHealthCheckIntegrationContract {
+
     @RegisterExtension
-    static JamesServerExtension jamesServerExtension = new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-        .server(configuration -> MemoryJamesServerMain.createServer(configuration)
-            .overrideWith(new TestJMAPServerModule())
-            .overrideWith(new WebadminIntegrationTestModule()))
+    static JamesServerExtension jamesServerExtension = MemoryServerExtension
+        .builder()
+        .defaultConfiguration()
+        .withSpecificParameters(extension -> extension
+            .overrideServerModule(new TestJMAPServerModule())
+            .overrideServerModule(new WebadminIntegrationTestModule()))
         .build();
 }

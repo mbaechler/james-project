@@ -31,10 +31,9 @@ import java.nio.charset.Charset;
 import java.util.Optional;
 
 import org.apache.james.CassandraExtension;
-import org.apache.james.CassandraJamesServerMain;
+import org.apache.james.CassandraServerExtension;
 import org.apache.james.DockerElasticSearchExtension;
 import org.apache.james.GuiceJamesServer;
-import org.apache.james.JamesServerBuilder;
 import org.apache.james.JamesServerExtension;
 import org.apache.james.StartUpChecksPerformer.StartUpChecksException;
 import org.apache.james.backends.cassandra.versions.CassandraSchemaVersionDAO;
@@ -56,16 +55,18 @@ class CassandraSchemaVersionStartUpCheckTest {
 
     private static CassandraSchemaVersionDAO versionDAO = mock(CassandraSchemaVersionDAO.class);
 
+
     @RegisterExtension
-    static JamesServerExtension testExtension = new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-        .extension(new DockerElasticSearchExtension())
-        .extension(new CassandraExtension())
-        .server(configuration -> CassandraJamesServerMain.createServer(configuration)
-            .overrideWith(binder -> binder.bind(CassandraSchemaVersionDAO.class)
-                .toInstance(versionDAO))
-            .overrideWith(binder -> binder.bind(CassandraSchemaVersionManager.class)
-                .toInstance(new CassandraSchemaVersionManager(versionDAO, MIN_VERSION, MAX_VERSION))))
-        .disableAutoStart()
+    JamesServerExtension jamesServerExtension = CassandraServerExtension
+        .builder()
+        .defaultConfiguration()
+        .withSpecificParameters(extension -> extension
+            .extension(new DockerElasticSearchExtension())
+            .extension(new CassandraExtension())
+            .overrideServerModule(binder -> binder.bind(CassandraSchemaVersionDAO.class).toInstance(versionDAO))
+            .overrideServerModule(binder -> binder.bind(CassandraSchemaVersionManager.class)
+                .toInstance(new CassandraSchemaVersionManager(versionDAO, MIN_VERSION, MAX_VERSION)))
+            .disableAutoStart())
         .build();
 
     private SocketChannel socketChannel;

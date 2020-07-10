@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.james.CassandraExtension;
 import org.apache.james.CassandraRabbitMQJamesConfiguration;
 import org.apache.james.CassandraRabbitMQJamesServerMain;
+import org.apache.james.CassandraRabbitMQServerExtension;
 import org.apache.james.DockerElasticSearchExtension;
 import org.apache.james.GuiceJamesServer;
 import org.apache.james.GuiceModuleTestExtension;
@@ -200,25 +201,23 @@ class RabbitMQEventDeadLettersIntegrationTest {
 
     private static RabbitMQExtension RABBIT_MQ_EXTENSION = new RabbitMQExtension();
     @RegisterExtension
-    static JamesServerExtension testExtension = new JamesServerBuilder<CassandraRabbitMQJamesConfiguration>(tmpDir ->
-        CassandraRabbitMQJamesConfiguration.builder()
-            .workingDirectory(tmpDir)
-            .configurationFromClasspath()
-            .blobStore(BlobStoreConfiguration.objectStorage().disableCache())
-            .build())
-        .extension(new DockerElasticSearchExtension())
-        .extension(new CassandraExtension())
-        .extension(new AwsS3BlobStoreExtension())
-        .extension(RABBIT_MQ_EXTENSION)
-        .extension(new RetryEventsListenerExtension())
-        .server(configuration -> CassandraRabbitMQJamesServerMain.createServer(configuration)
-            .overrideWith(new WebadminIntegrationTestModule())
-            .overrideWith(binder -> binder.bind(RetryBackoffConfiguration.class)
+    static JamesServerExtension testExtension = CassandraRabbitMQServerExtension.builder()
+        .defaultConfiguration()
+        .blobStore(builder -> builder.objectStorage().disableCache())
+        .withSpecificParameters(server -> server
+            .extension(new DockerElasticSearchExtension())
+            .extension(new CassandraExtension())
+            .extension(new AwsS3BlobStoreExtension())
+            .extension(RABBIT_MQ_EXTENSION)
+            .extension(new RetryEventsListenerExtension())
+            .overrideServerModule(new WebadminIntegrationTestModule())
+            .overrideServerModule(binder -> binder.bind(RetryBackoffConfiguration.class)
                 .toInstance(RetryBackoffConfiguration.builder()
                     .maxRetries(MAX_RETRIES)
                     .firstBackoff(java.time.Duration.ofMillis(100))
                     .jitterFactor(0.5)
-                    .build())))
+                    .build()))
+        )
         .build();
 
     private static final String DOMAIN = "domain.tld";

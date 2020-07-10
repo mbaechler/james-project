@@ -18,7 +18,9 @@
  ****************************************************************/
 package org.apache.james.webadmin.integration.rabbitmq;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -31,9 +33,11 @@ import org.apache.james.DockerElasticSearchRule;
 import org.apache.james.GuiceJamesServer;
 import org.apache.james.backends.rabbitmq.DockerRabbitMQSingleton;
 import org.apache.james.modules.TestDockerESMetricReporterModule;
+import org.apache.james.modules.TestJMAPServerModule;
 import org.apache.james.modules.TestRabbitMQModule;
 import org.apache.james.modules.blobstore.BlobStoreConfiguration;
 import org.apache.james.modules.objectstorage.aws.s3.DockerAwsS3TestRule;
+import org.apache.james.modules.objectstorage.swift.DockerSwiftTestRule;
 import org.apache.james.util.FunctionalUtils;
 import org.apache.james.util.Runnables;
 import org.apache.james.webadmin.integration.UnauthorizedModule;
@@ -146,13 +150,12 @@ public class RabbitMQJmapExtension implements BeforeAllCallback, AfterAllCallbac
     }
 
     private GuiceJamesServer james() throws IOException {
-        CassandraRabbitMQJamesConfiguration configuration = CassandraRabbitMQJamesConfiguration.builder()
-            .workingDirectory(temporaryFolder.newFolder())
-            .configurationFromClasspath()
-            .blobStore(BlobStoreConfiguration.objectStorage().disableCache())
-            .build();
-
-        return CassandraRabbitMQJamesServerMain.createServer(configuration)
+        return CassandraRabbitMQJamesServerMain.builder()
+            .configuration(configuration -> configuration
+                .workingDirectory(newFolder())
+                .configurationFromClasspath())
+            .blobStore(configuration -> configuration.objectStorage().disableCache())
+            .customize(server -> server
                 .overrideWith(new TestDockerESMetricReporterModule(elasticSearchRule.getDockerEs().getHttpHost()))
                 .overrideWith(cassandra.getModule())
                 .overrideWith(elasticSearchRule.getModule())
@@ -160,7 +163,16 @@ public class RabbitMQJmapExtension implements BeforeAllCallback, AfterAllCallbac
                 .overrideWith(new TestRabbitMQModule(DockerRabbitMQSingleton.SINGLETON))
                 .overrideWith(new WebadminIntegrationTestModule())
                 .overrideWith(new UnauthorizedModule())
-                .overrideWith((binder -> binder.bind(CleanupTasksPerformer.class).asEagerSingleton()));
+                .overrideWith((binder -> binder.bind(CleanupTasksPerformer.class).asEagerSingleton())))
+            .build();
+    }
+
+    private File newFolder() throws UncheckedIOException {
+        try {
+            return temporaryFolder.newFolder();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private Supplier<GuiceJamesServer> jamesSupplier() {

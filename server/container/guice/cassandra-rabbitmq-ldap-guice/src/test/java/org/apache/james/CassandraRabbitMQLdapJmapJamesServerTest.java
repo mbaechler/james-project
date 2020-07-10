@@ -25,6 +25,7 @@ import static org.apache.james.user.ldap.DockerLdapSingleton.PASSWORD;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
+import java.util.function.Function;
 
 import org.apache.commons.net.imap.IMAPClient;
 import org.apache.james.jmap.draft.JmapJamesServerContract;
@@ -57,8 +58,17 @@ class CassandraRabbitMQLdapJmapJamesServerTest {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     class WithSwift implements ContractSuite {
         @RegisterExtension
-        JamesServerExtension testExtension = baseJamesServerExtensionBuilder(BlobStoreConfiguration.objectStorage().disableCache())
-            .extension(new SwiftBlobStoreExtension())
+        JamesServerExtension testExtension = CassandraRabbitMQServerExtension.builder()
+            .defaultConfiguration()
+            .blobStore(builder -> builder.objectStorage().disableCache())
+            .withSpecificParameters(server -> server
+                .extension(new DockerElasticSearchExtension())
+                .extension(new CassandraExtension())
+                .extension(new RabbitMQExtension())
+                .extension(new LdapTestExtension())
+                .extension(new SwiftBlobStoreExtension())
+                .overrideServerModule(new TestJMAPServerModule())
+                .overrideServerModule(JmapJamesServerContract.DOMAIN_LIST_CONFIGURATION_MODULE))
             .build();
     }
 
@@ -66,8 +76,17 @@ class CassandraRabbitMQLdapJmapJamesServerTest {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     class WithAwsS3 implements ContractSuite {
         @RegisterExtension
-        JamesServerExtension testExtension = baseJamesServerExtensionBuilder(BlobStoreConfiguration.objectStorage().disableCache())
-            .extension(new AwsS3BlobStoreExtension())
+        JamesServerExtension testExtension = CassandraRabbitMQServerExtension.builder()
+            .defaultConfiguration()
+            .blobStore(builder -> builder.objectStorage().disableCache())
+            .withSpecificParameters(server -> server
+                .extension(new DockerElasticSearchExtension())
+                .extension(new CassandraExtension())
+                .extension(new RabbitMQExtension())
+                .extension(new LdapTestExtension())
+                .extension(new AwsS3BlobStoreExtension())
+                .overrideServerModule(new TestJMAPServerModule())
+                .overrideServerModule(JmapJamesServerContract.DOMAIN_LIST_CONFIGURATION_MODULE))
             .build();
     }
 
@@ -75,23 +94,17 @@ class CassandraRabbitMQLdapJmapJamesServerTest {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     class WithoutSwiftOrAwsS3 implements ContractSuite {
         @RegisterExtension
-        JamesServerExtension testExtension = baseJamesServerExtensionBuilder(BlobStoreConfiguration.cassandra())
+        JamesServerExtension testExtension = CassandraRabbitMQServerExtension.builder()
+            .defaultConfiguration()
+            .blobStore(builder -> builder.cassandra())
+            .withSpecificParameters(server -> server
+                .extension(new DockerElasticSearchExtension())
+                .extension(new CassandraExtension())
+                .extension(new RabbitMQExtension())
+                .extension(new LdapTestExtension())
+                .overrideServerModule(new TestJMAPServerModule())
+                .overrideServerModule(JmapJamesServerContract.DOMAIN_LIST_CONFIGURATION_MODULE))
             .build();
     }
 
-    JamesServerBuilder baseJamesServerExtensionBuilder(BlobStoreConfiguration blobStoreConfiguration) {
-        return new JamesServerBuilder<CassandraRabbitMQJamesConfiguration>(tmpDir ->
-            CassandraRabbitMQJamesConfiguration.builder()
-                .workingDirectory(tmpDir)
-                .configurationFromClasspath()
-                .blobStore(blobStoreConfiguration)
-                .build())
-            .extension(new DockerElasticSearchExtension())
-            .extension(new CassandraExtension())
-            .extension(new RabbitMQExtension())
-            .extension(new LdapTestExtension())
-            .server(configuration -> CassandraRabbitMQLdapJamesServerMain.createServer(configuration)
-                .overrideWith(new TestJMAPServerModule())
-                .overrideWith(JmapJamesServerContract.DOMAIN_LIST_CONFIGURATION_MODULE));
-    }
 }

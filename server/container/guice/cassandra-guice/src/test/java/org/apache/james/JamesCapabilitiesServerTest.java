@@ -26,6 +26,8 @@ import static org.mockito.Mockito.when;
 
 import java.util.EnumSet;
 
+import org.apache.james.backends.cassandra.DockerCassandra;
+import org.apache.james.backends.cassandra.init.configuration.ClusterConfiguration;
 import org.apache.james.jmap.draft.JMAPModule;
 import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.modules.TestJMAPServerModule;
@@ -36,13 +38,15 @@ class JamesCapabilitiesServerTest {
     private static final MailboxManager mailboxManager = mock(MailboxManager.class);
 
     @RegisterExtension
-    static JamesServerExtension testExtension = new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-        .extension(new DockerElasticSearchExtension())
-        .extension(new CassandraExtension())
-        .server(configuration -> CassandraJamesServerMain.createServer(configuration)
-            .overrideWith(new TestJMAPServerModule())
-            .overrideWith(binder -> binder.bind(MailboxManager.class).toInstance(mailboxManager)))
-        .disableAutoStart()
+    JamesServerExtension jamesServerExtension = CassandraServerExtension
+        .builder()
+        .defaultConfiguration()
+        .withSpecificParameters(extension -> extension
+            .extension(new DockerElasticSearchExtension())
+            .extension(new CassandraExtension())
+            .overrideServerModule(new TestJMAPServerModule())
+            .overrideServerModule(binder -> binder.bind(MailboxManager.class).toInstance(mailboxManager))
+            .disableAutoStart())
         .build();
 
     @Test

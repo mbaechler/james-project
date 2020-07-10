@@ -19,13 +19,19 @@
 
 package org.apache.james;
 
+import org.apache.james.server.core.configuration.Configuration;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 class JPAJamesServerWithNoDatabaseAuthenticaticationSqlValidationTest extends JPAJamesServerWithSqlValidationTest {
 
     @RegisterExtension
-    static JamesServerExtension jamesServerExtension = new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-        .server(configuration -> JPAJamesServerMain.createServer(configuration)
-            .overrideWith(new TestJPAConfigurationModuleWithSqlValidation.NoDatabaseAuthentication(), DOMAIN_LIST_CONFIGURATION_MODULE))
+    static JamesServerExtension jamesServerExtension = JPAServerExtension
+        .builder()
+        .defaultConfiguration()
+        .withSpecificParameters(extension ->
+            extension
+                .overrideServerModule(new TestJPAConfigurationModuleWithSqlValidation.NoDatabaseAuthentication())
+                .overrideServerModule(DOMAIN_LIST_CONFIGURATION_MODULE))
         .build();
+
 }

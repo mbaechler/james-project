@@ -85,7 +85,7 @@ class BlobStoreConfigurationTest {
             .build();
 
         assertThat(parse(propertyProvider))
-            .isEqualTo(BlobStoreConfiguration.cassandra());
+            .isEqualTo(BlobStoreConfiguration.builder().cassandra());
     }
 
     @Test
@@ -97,7 +97,7 @@ class BlobStoreConfigurationTest {
             .build();
 
         assertThat(parse(propertyProvider))
-            .isEqualTo(BlobStoreConfiguration.objectStorage().disableCache());
+            .isEqualTo(BlobStoreConfiguration.builder().objectStorage().disableCache());
     }
 
     @Test
@@ -109,7 +109,7 @@ class BlobStoreConfigurationTest {
             .build();
 
         assertThat(parse(propertyProvider))
-            .isEqualTo(BlobStoreConfiguration.hybrid());
+            .isEqualTo(BlobStoreConfiguration.builder().hybrid());
     }
 
     @Test
@@ -121,7 +121,7 @@ class BlobStoreConfigurationTest {
             .build();
 
         assertThat(parse(propertyProvider))
-            .isEqualTo(BlobStoreConfiguration.cassandra());
+            .isEqualTo(BlobStoreConfiguration.builder().cassandra());
     }
 
 

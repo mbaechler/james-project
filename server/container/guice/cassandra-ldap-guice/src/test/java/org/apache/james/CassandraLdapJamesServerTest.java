@@ -51,15 +51,15 @@ class CassandraLdapJamesServerTest implements JamesServerContract {
     @RegisterExtension
     TestIMAPClient testIMAPClient = new TestIMAPClient();
     SMTPMessageSender messageSender = new SMTPMessageSender(Domain.LOCALHOST.asString());
-
     @RegisterExtension
-    static JamesServerExtension testExtension = new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-        .extension(new DockerElasticSearchExtension())
-        .extension(new CassandraExtension())
-        .extension(new LdapTestExtension())
-        .server(configuration -> CassandraLdapJamesServerMain.createServer(configuration)
-            .overrideWith(new TestJMAPServerModule())
-            .overrideWith(DOMAIN_LIST_CONFIGURATION_MODULE))
+    static JamesServerExtension testExtension = CassandraServerExtension.builder()
+        .defaultConfiguration()
+        .withSpecificParameters(server -> server
+            .extension(new DockerElasticSearchExtension())
+            .extension(new CassandraExtension())
+            .extension(new LdapTestExtension())
+            .overrideServerModule(new TestJMAPServerModule())
+            .overrideServerModule(DOMAIN_LIST_CONFIGURATION_MODULE))
         .build();
 
     @Test

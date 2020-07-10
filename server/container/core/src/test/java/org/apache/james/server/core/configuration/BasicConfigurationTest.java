@@ -53,7 +53,7 @@ class BasicConfigurationTest {
 
     @Test
     void buildShouldReturnConfigurationWithSuppliedValues() {
-        Configuration.Basic configuration = Configuration.builder()
+        Configuration configuration = Configuration.builder()
             .workingDirectory("/path")
             .configurationPath(new Configuration.ConfigurationPath("file://myconf/"))
             .build();
@@ -66,7 +66,7 @@ class BasicConfigurationTest {
 
     @Test
     void buildShouldReturnConfigurationWithClassPathConfigurationPathWhenSpecified() {
-        Configuration.Basic configuration = Configuration.builder()
+        Configuration configuration = Configuration.builder()
             .workingDirectory("/path")
             .configurationFromClasspath()
             .build();
@@ -79,7 +79,7 @@ class BasicConfigurationTest {
 
     @Test
     void configurationPathShouldDefaultToFileConf() {
-        Configuration.Basic configuration = Configuration.builder()
+        Configuration configuration = Configuration.builder()
             .workingDirectory("/path")
             .build();
 
@@ -94,7 +94,7 @@ class BasicConfigurationTest {
         try {
             System.setProperty("working.directory", "/path");
 
-            Configuration.Basic configuration = Configuration.builder()
+            Configuration configuration = Configuration.builder()
                 .useWorkingDirectoryEnvProperty()
                 .build();
 
@@ -109,7 +109,7 @@ class BasicConfigurationTest {
         try {
             System.setProperty("working.directory", "/path");
 
-            Configuration.Basic configuration = Configuration.builder()
+            Configuration configuration = Configuration.builder()
                 .useWorkingDirectoryEnvProperty()
                 .build();
 

@@ -24,15 +24,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.apache.commons.configuration2.BaseHierarchicalConfiguration;
 import org.apache.james.modules.TestJMAPServerModule;
 import org.apache.james.server.core.configuration.ConfigurationProvider;
+import org.apache.james.webadmin.RandomPortSupplier;
+import org.apache.james.webadmin.WebAdminConfiguration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 class DefaultMemoryJamesServerTest {
+
     @RegisterExtension
-    static JamesServerExtension jamesServerExtension = new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-        .server(configuration -> MemoryJamesServerMain.createServer(configuration)
-            .overrideWith(new TestJMAPServerModule())
-            .overrideWith(binder -> binder.bind(ConfigurationProvider.class).toInstance((s, l) -> new BaseHierarchicalConfiguration())))
+    static JamesServerExtension jamesServerExtension = MemoryServerExtension
+        .builder()
+        .defaultConfiguration()
+        .withSpecificParameters(extension ->
+            extension
+                .overrideServerModule(new TestJMAPServerModule())
+                .overrideServerModule(binder -> binder.bind(ConfigurationProvider.class).toInstance((s, l) -> new BaseHierarchicalConfiguration())))
         .build();
 
     @Test

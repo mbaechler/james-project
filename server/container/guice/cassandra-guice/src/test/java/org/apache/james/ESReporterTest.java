@@ -61,12 +61,14 @@ class ESReporterTest {
     static final DockerElasticSearchExtension elasticSearchExtension = new DockerElasticSearchExtension();
 
     @RegisterExtension
-    static JamesServerExtension testExtension = new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-        .extension(elasticSearchExtension)
-        .extension(new CassandraExtension())
-        .server(configuration -> CassandraJamesServerMain.createServer(configuration)
-            .overrideWith(new TestJMAPServerModule())
-            .overrideWith(new TestDockerESMetricReporterModule(elasticSearchExtension.getDockerES().getHttpHost())))
+    JamesServerExtension jamesServerExtension = CassandraServerExtension
+        .builder()
+        .defaultConfiguration()
+        .withSpecificParameters(extension -> extension
+            .extension(elasticSearchExtension)
+            .extension(new CassandraExtension())
+            .overrideServerModule(new TestJMAPServerModule())
+            .overrideServerModule(new TestDockerESMetricReporterModule(elasticSearchExtension.getDockerES().getHttpHost())))
         .build();
 
     private static final int DELAY_IN_MS = 100;

@@ -58,9 +58,12 @@ public class MemoryStepdefs {
             .build();
 
         mainStepdefs.messageIdFactory = new InMemoryMessageId.Factory();
-        mainStepdefs.jmapServer = MemoryJamesServerMain.createServer(configuration)
-                .overrideWith(new TestJMAPServerModule(),
-                        (binder) -> binder.bind(MessageId.Factory.class).toInstance(mainStepdefs.messageIdFactory));
+        mainStepdefs.jmapServer = MemoryJamesServerMain.builder(configuration)
+            .server(server -> server
+                .overrideWith(
+                    new TestJMAPServerModule(),
+                    binder -> binder.bind(MessageId.Factory.class).toInstance(mainStepdefs.messageIdFactory)))
+            .build();
         mainStepdefs.init();
     }
 

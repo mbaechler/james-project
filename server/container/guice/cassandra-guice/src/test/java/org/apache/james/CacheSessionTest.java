@@ -72,23 +72,25 @@ class CacheSessionTest {
     }
 
     @RegisterExtension
-    static JamesServerExtension testExtension = new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-        .extension(new DockerElasticSearchExtension())
-        .extension(new CassandraExtension())
-        .server(configuration -> CassandraJamesServerMain.createServer(configuration)
-            .combineWith(new CassandraCacheSessionModule()))
-        .overrideServerModule(binder -> Multibinder.newSetBinder(binder, CassandraModule.class, Names.named(InjectionNames.CACHE))
-            .addBinding()
-            .toInstance(CassandraModule.table(TABLE_NAME)
-                .comment("Testing table")
-                .statement(statement -> statement
-                    .addPartitionKey("id", DataType.timeuuid())
-                    .addClusteringColumn("clustering", DataType.bigint()))
-                .build()))
-        .overrideServerModule(binder -> Multibinder.newSetBinder(binder, StartUpCheck.class)
-            .addBinding()
-            .to(CacheSessionTestCheck.class))
-        .disableAutoStart()
+    JamesServerExtension jamesServerExtension = CassandraServerExtension
+        .builder()
+        .defaultConfiguration()
+        .withSpecificParameters(extension -> extension
+            .extension(new DockerElasticSearchExtension())
+            .extension(new CassandraExtension())
+            .additionalModule(new CassandraCacheSessionModule())
+            .overrideServerModule(binder -> Multibinder.newSetBinder(binder, CassandraModule.class, Names.named(InjectionNames.CACHE))
+                .addBinding()
+                .toInstance(CassandraModule.table(TABLE_NAME)
+                    .comment("Testing table")
+                    .statement(statement -> statement
+                        .addPartitionKey("id", DataType.timeuuid())
+                        .addClusteringColumn("clustering", DataType.bigint()))
+                    .build()))
+            .overrideServerModule(binder -> Multibinder.newSetBinder(binder, StartUpCheck.class)
+                .addBinding()
+                .to(CacheSessionTestCheck.class))
+            .disableAutoStart())
         .build();
 
     @Test

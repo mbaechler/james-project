@@ -19,7 +19,10 @@
 
 package org.apache.james;
 
+import org.apache.james.jmap.draft.JmapJamesServerContract;
 import org.apache.james.modules.AwsS3BlobStoreExtension;
+import org.apache.james.modules.RabbitMQExtension;
+import org.apache.james.modules.TestJMAPServerModule;
 import org.apache.james.modules.objectstorage.PayloadCodecFactory;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
@@ -35,8 +38,16 @@ public class WithEncryptedAwsS3Extension implements BeforeAllCallback, AfterAllC
     private final JamesServerExtension jamesServerExtension;
 
     WithEncryptedAwsS3Extension() {
-        jamesServerExtension = CassandraRabbitMQJamesServerFixture.baseExtensionBuilder()
-            .extension(new AwsS3BlobStoreExtension(PayloadCodecFactory.AES256))
+        jamesServerExtension = CassandraRabbitMQServerExtension.builder()
+            .defaultConfiguration()
+            .blobStore(builder -> builder.objectStorage().disableCache())
+            .withSpecificParameters(extension -> extension
+                .extension(new DockerElasticSearchExtension())
+                .extension(new CassandraExtension())
+                .extension(new RabbitMQExtension())
+                .extension(new AwsS3BlobStoreExtension(PayloadCodecFactory.AES256))
+                .overrideServerModule(new TestJMAPServerModule())
+                .overrideServerModule(JmapJamesServerContract.DOMAIN_LIST_CONFIGURATION_MODULE))
             .build();
     }
 

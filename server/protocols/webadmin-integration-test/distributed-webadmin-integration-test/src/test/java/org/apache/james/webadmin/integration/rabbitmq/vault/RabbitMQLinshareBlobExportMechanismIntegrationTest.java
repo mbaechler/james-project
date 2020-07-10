@@ -22,6 +22,7 @@ package org.apache.james.webadmin.integration.rabbitmq.vault;
 import org.apache.james.CassandraExtension;
 import org.apache.james.CassandraRabbitMQJamesConfiguration;
 import org.apache.james.CassandraRabbitMQJamesServerMain;
+import org.apache.james.CassandraRabbitMQServerExtension;
 import org.apache.james.DockerElasticSearchExtension;
 import org.apache.james.JamesServerBuilder;
 import org.apache.james.JamesServerExtension;
@@ -41,22 +42,19 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 class RabbitMQLinshareBlobExportMechanismIntegrationTest extends LinshareBlobExportMechanismIntegrationTest {
     @RegisterExtension
-    static JamesServerExtension testExtension = new JamesServerBuilder<CassandraRabbitMQJamesConfiguration>(tmpDir ->
-        CassandraRabbitMQJamesConfiguration.builder()
-            .workingDirectory(tmpDir)
-            .configurationFromClasspath()
-            .blobStore(BlobStoreConfiguration.objectStorage().disableCache())
-            .build())
-        .extension(new DockerElasticSearchExtension())
-        .extension(new CassandraExtension())
-        .extension(new RabbitMQExtension())
-        .extension(new AwsS3BlobStoreExtension())
-        .extension(new LinshareGuiceExtension())
-        .server(configuration -> CassandraRabbitMQJamesServerMain.createServer(configuration)
-            .overrideWith(binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class))
-            .overrideWith(new TestJMAPServerModule())
-            .overrideWith(new TestRabbitMQModule(DockerRabbitMQSingleton.SINGLETON))
-            .overrideWith(new WebadminIntegrationTestModule())
-            .overrideWith(new TestDeleteMessageVaultPreDeletionHookModule()))
+    static JamesServerExtension testExtension = CassandraRabbitMQServerExtension.builder()
+        .defaultConfiguration()
+        .blobStore(builder -> builder.objectStorage().disableCache())
+        .withSpecificParameters(server -> server
+            .extension(new DockerElasticSearchExtension())
+            .extension(new CassandraExtension())
+            .extension(new RabbitMQExtension())
+            .extension(new AwsS3BlobStoreExtension())
+            .extension(new LinshareGuiceExtension())
+            .overrideServerModule(binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class))
+            .overrideServerModule(new TestJMAPServerModule())
+            .overrideServerModule(new TestRabbitMQModule(DockerRabbitMQSingleton.SINGLETON))
+            .overrideServerModule(new WebadminIntegrationTestModule())
+            .overrideServerModule(new TestDeleteMessageVaultPreDeletionHookModule()))
         .build();
 }

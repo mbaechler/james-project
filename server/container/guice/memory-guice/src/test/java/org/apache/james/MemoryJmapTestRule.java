@@ -43,11 +43,14 @@ public class MemoryJmapTestRule implements TestRule {
             .workingDirectory(temporaryFolder.newFolder())
             .configurationFromClasspath()
             .build();
-        return MemoryJamesServerMain.createServer(configuration)
-            .overrideWith(new TestJMAPServerModule())
-            .overrideWith(binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class))
-            .overrideWith(binder -> binder.bind(MessageSearchIndex.class).to(SimpleMessageSearchIndex.class))
-            .overrideWith(modules);
+        return MemoryJamesServerMain
+            .builder(configuration)
+            .server(server -> server
+                .overrideWith(new TestJMAPServerModule())
+                .overrideWith(binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class))
+                .overrideWith(binder -> binder.bind(MessageSearchIndex.class).to(SimpleMessageSearchIndex.class))
+                .overrideWith(modules))
+            .build();
     }
 
     @Override

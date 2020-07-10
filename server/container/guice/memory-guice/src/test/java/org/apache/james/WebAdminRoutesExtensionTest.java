@@ -33,17 +33,22 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.restassured.RestAssured;
 
 class WebAdminRoutesExtensionTest {
+
     @RegisterExtension
-    static JamesServerExtension jamesServerExtension = new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-        .server(configuration -> MemoryJamesServerMain.createServer(configuration)
-            .overrideWith(binder -> binder.bind(WebAdminConfiguration.class)
-                .toInstance(WebAdminConfiguration.builder()
-                    .additionalRoute(MyRoute.class.getCanonicalName())
-                    .enabled()
-                    .port(new RandomPortSupplier())
-                    .corsDisabled()
-                    .build())))
+    static JamesServerExtension jamesServerExtension = MemoryServerExtension
+        .builder()
+        .defaultConfiguration()
+        .withSpecificParameters(extension ->
+            extension
+                .overrideServerModule(binder -> binder.bind(WebAdminConfiguration.class)
+                    .toInstance(WebAdminConfiguration.builder()
+                        .additionalRoute(MyRoute.class.getCanonicalName())
+                        .enabled()
+                        .port(new RandomPortSupplier())
+                        .corsDisabled()
+                        .build())))
         .build();
+
 
 
     @Test

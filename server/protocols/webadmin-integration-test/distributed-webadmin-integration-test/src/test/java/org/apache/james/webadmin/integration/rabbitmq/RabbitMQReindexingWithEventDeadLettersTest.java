@@ -35,6 +35,7 @@ import java.util.List;
 import org.apache.james.CassandraExtension;
 import org.apache.james.CassandraRabbitMQJamesConfiguration;
 import org.apache.james.CassandraRabbitMQJamesServerMain;
+import org.apache.james.CassandraRabbitMQServerExtension;
 import org.apache.james.DockerElasticSearchExtension;
 import org.apache.james.GuiceJamesServer;
 import org.apache.james.JamesServerBuilder;
@@ -82,20 +83,17 @@ class RabbitMQReindexingWithEventDeadLettersTest {
         new DockerElasticSearchExtension().withRequestTimeout(java.time.Duration.ofSeconds(5));
 
     @RegisterExtension
-    static JamesServerExtension testExtension = new JamesServerBuilder<CassandraRabbitMQJamesConfiguration>(tmpDir ->
-        CassandraRabbitMQJamesConfiguration.builder()
-            .workingDirectory(tmpDir)
-            .configurationFromClasspath()
-            .blobStore(BlobStoreConfiguration.objectStorage().disableCache())
-            .build())
-        .extension(dockerElasticSearch)
-        .extension(new CassandraExtension())
-        .extension(new RabbitMQExtension())
-        .extension(new AwsS3BlobStoreExtension(PayloadCodecFactory.AES256))
-        .server(configuration -> CassandraRabbitMQJamesServerMain.createServer(configuration)
-            .overrideWith(new TestJMAPServerModule())
-            .overrideWith(JmapJamesServerContract.DOMAIN_LIST_CONFIGURATION_MODULE)
-            .overrideWith(new WebadminIntegrationTestModule()))
+    static JamesServerExtension testExtension = CassandraRabbitMQServerExtension.builder()
+        .defaultConfiguration()
+        .blobStore(builder -> builder.objectStorage().disableCache())
+        .withSpecificParameters(server -> server
+            .extension(dockerElasticSearch)
+            .extension(new CassandraExtension())
+            .extension(new RabbitMQExtension())
+            .extension(new AwsS3BlobStoreExtension(PayloadCodecFactory.AES256))
+            .overrideServerModule(new TestJMAPServerModule())
+            .overrideServerModule(JmapJamesServerContract.DOMAIN_LIST_CONFIGURATION_MODULE)
+            .overrideServerModule(new WebadminIntegrationTestModule()))
         .build();
 
     private RequestSpecification webAdminApi;

@@ -22,9 +22,11 @@ package org.apache.james;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.apache.james.core.quota.QuotaSizeLimit;
+import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.modules.QuotaProbesImpl;
 import org.apache.james.modules.protocols.ImapGuiceProbe;
 import org.apache.james.modules.protocols.SmtpGuiceProbe;
+import org.apache.james.server.core.configuration.Configuration;
 import org.apache.james.utils.DataProbeImpl;
 import org.apache.james.utils.SMTPMessageSender;
 import org.apache.james.utils.TestIMAPClient;
@@ -40,10 +42,15 @@ import com.google.common.base.Strings;
 class JPAJamesServerTest implements JamesServerContract {
 
     @RegisterExtension
-    static JamesServerExtension jamesServerExtension = new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-        .server(configuration -> JPAJamesServerMain.createServer(configuration)
-            .overrideWith(new TestJPAConfigurationModule(), DOMAIN_LIST_CONFIGURATION_MODULE))
+    static JamesServerExtension jamesServerExtension = JPAServerExtension
+        .builder()
+        .defaultConfiguration()
+        .withSpecificParameters(extension ->
+            extension
+                .overrideServerModule(new TestJPAConfigurationModule())
+                .overrideServerModule(DOMAIN_LIST_CONFIGURATION_MODULE))
         .build();
+
 
     private static final ConditionFactory AWAIT = Awaitility.await()
         .atMost(Duration.ONE_MINUTE)

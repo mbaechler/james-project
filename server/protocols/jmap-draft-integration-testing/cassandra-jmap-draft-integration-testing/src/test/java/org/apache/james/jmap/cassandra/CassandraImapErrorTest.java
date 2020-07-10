@@ -27,6 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.apache.commons.net.imap.IMAPClient;
 import org.apache.james.CassandraExtension;
 import org.apache.james.CassandraJamesServerMain;
+import org.apache.james.CassandraServerExtension;
 import org.apache.james.DockerElasticSearchExtension;
 import org.apache.james.GuiceJamesServer;
 import org.apache.james.JamesServerBuilder;
@@ -47,11 +48,13 @@ class CassandraImapErrorTest {
     private final CassandraExtension cassandraExtension = new CassandraExtension();
 
     @RegisterExtension
-    JamesServerExtension serverExtension = new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-        .extension(new DockerElasticSearchExtension())
-        .extension(cassandraExtension)
-        .server(configuration -> CassandraJamesServerMain.createServer(configuration)
-            .overrideWith(new TestJMAPServerModule()))
+    JamesServerExtension jamesServerExtension = CassandraServerExtension
+        .builder()
+        .defaultConfiguration()
+        .withSpecificParameters(extension -> extension
+            .extension(new DockerElasticSearchExtension())
+            .extension(cassandraExtension)
+            .overrideServerModule(new TestJMAPServerModule()))
         .build();
 
     @BeforeEach

@@ -84,21 +84,21 @@ class BlobStoreModulesChooserTest {
 
     @Test
     void provideBlobStoreShouldReturnObjectStoreBlobStoreWhenObjectStoreConfigured() {
-        assertThat(BlobStoreModulesChooser.chooseModules(BlobStoreConfiguration.objectStorage().disableCache()))
+        assertThat(BlobStoreModulesChooser.chooseModules(BlobStoreConfiguration.builder().objectStorage().disableCache()))
             .first()
             .isInstanceOf(BlobStoreModulesChooser.ObjectStorageDeclarationModule.class);
     }
 
     @Test
     void provideBlobStoreShouldReturnCassandraBlobStoreWhenCassandraConfigured() {
-        assertThat(BlobStoreModulesChooser.chooseModules(BlobStoreConfiguration.cassandra()))
+        assertThat(BlobStoreModulesChooser.chooseModules(BlobStoreConfiguration.builder().cassandra()))
             .first()
             .isInstanceOf(BlobStoreModulesChooser.CassandraDeclarationModule.class);
     }
 
     @Test
     void provideBlobStoreShouldReturnHybridBlobStoreWhenHybridConfigured() {
-        assertThat(BlobStoreModulesChooser.chooseModules(BlobStoreConfiguration.hybrid()))
+        assertThat(BlobStoreModulesChooser.chooseModules(BlobStoreConfiguration.builder().hybrid()))
             .first()
             .isInstanceOf(BlobStoreModulesChooser.HybridDeclarationModule.class);
     }

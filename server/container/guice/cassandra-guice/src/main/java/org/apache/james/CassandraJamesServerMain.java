@@ -85,6 +85,51 @@ import com.google.inject.util.Modules;
 
 public class CassandraJamesServerMain implements JamesServerMain {
 
+    public static class Server {
+
+        @FunctionalInterface
+        interface ConfigurationBuilder {
+            Configuration.Builder configure(Configuration.Builder builder);
+        }
+
+        interface RequiresConfiguration {
+            Builder configuration(ConfigurationBuilder builder);
+        }
+
+        public static class Builder {
+
+            private final Configuration configuration;
+            private GuiceJamesServer server;
+
+            private Builder(Configuration configuration) {
+                this.configuration = configuration;
+                this.server = GuiceJamesServer.forConfiguration(configuration).combineWith(ALL_BUT_JMX_CASSANDRA_MODULE);
+            }
+
+            @FunctionalInterface
+            public interface ServerModifier {
+                GuiceJamesServer modify(GuiceJamesServer server);
+            }
+
+            public Builder server(ServerModifier modifier) {
+                server = modifier.modify(server);
+                return this;
+            }
+
+            public GuiceJamesServer build() {
+                return server;
+            }
+        }
+    }
+
+    public static Server.Builder builder(Configuration configuration) {
+        return new Server.Builder(configuration);
+    }
+
+    public static Server.RequiresConfiguration builder() {
+        return configurationBuilder -> builder(configurationBuilder.configure(Configuration.builder()).build());
+    }
+
     public static final Module WEBADMIN = Modules.combine(
         new CassandraRoutesModule(),
         new DataRoutesModules(),
@@ -172,14 +217,9 @@ public class CassandraJamesServerMain implements JamesServerMain {
             .build();
 
         LOGGER.info("Loading configuration {}", configuration.toString());
-        GuiceJamesServer server = createServer(configuration)
-            .combineWith(new JMXServerModule());
+        GuiceJamesServer server = builder(configuration).server(s -> s.combineWith(new JMXServerModule())).build();
 
         JamesServerMain.main(server);
     }
 
-    public static GuiceJamesServer createServer(Configuration configuration) {
-        return GuiceJamesServer.forConfiguration(configuration)
-            .combineWith(ALL_BUT_JMX_CASSANDRA_MODULE);
-    }
 }

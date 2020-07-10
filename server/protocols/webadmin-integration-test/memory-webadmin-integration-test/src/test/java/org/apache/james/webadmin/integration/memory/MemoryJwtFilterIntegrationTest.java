@@ -22,6 +22,7 @@ package org.apache.james.webadmin.integration.memory;
 import org.apache.james.JamesServerBuilder;
 import org.apache.james.JamesServerExtension;
 import org.apache.james.MemoryJamesServerMain;
+import org.apache.james.MemoryServerExtension;
 import org.apache.james.jwt.JwtConfiguration;
 import org.apache.james.webadmin.authentication.AuthenticationFilter;
 import org.apache.james.webadmin.authentication.JwtFilter;
@@ -32,10 +33,13 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class MemoryJwtFilterIntegrationTest extends JwtFilterIntegrationTest {
 
     @RegisterExtension
-    static JamesServerExtension jamesServerExtension = new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-        .server(configuration -> MemoryJamesServerMain.createServer(configuration)
-            .overrideWith(new WebadminIntegrationTestModule())
-            .overrideWith(binder -> binder.bind(AuthenticationFilter.class).to(JwtFilter.class))
-            .overrideWith(binder -> binder.bind(JwtConfiguration.class).toInstance(jwtConfiguration())))
+    static JamesServerExtension jamesServerExtension = MemoryServerExtension
+        .builder()
+        .defaultConfiguration()
+        .withSpecificParameters(extension -> extension
+            .overrideServerModule(new WebadminIntegrationTestModule())
+            .overrideServerModule(binder -> binder.bind(AuthenticationFilter.class).to(JwtFilter.class))
+            .overrideServerModule(binder -> binder.bind(JwtConfiguration.class).toInstance(jwtConfiguration())))
         .build();
+
 }

@@ -21,6 +21,7 @@ package org.apache.james.jmap.memory;
 import org.apache.james.JamesServerBuilder;
 import org.apache.james.JamesServerExtension;
 import org.apache.james.MemoryJamesServerMain;
+import org.apache.james.MemoryServerExtension;
 import org.apache.james.jmap.draft.methods.integration.SpamAssassinContract;
 import org.apache.james.jmap.draft.methods.integration.SpamAssassinModuleExtension;
 import org.apache.james.modules.TestJMAPServerModule;
@@ -28,9 +29,11 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 class MemorySpamAssassinContractTest implements SpamAssassinContract {
     @RegisterExtension
-    static JamesServerExtension testExtension = new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-        .extension(new SpamAssassinModuleExtension())
-        .server(configuration -> MemoryJamesServerMain.createServer(configuration)
-            .overrideWith(new TestJMAPServerModule()))
+    static JamesServerExtension jamesServerExtension = MemoryServerExtension
+        .builder()
+        .defaultConfiguration()
+        .withSpecificParameters(extension -> extension
+            .extension(new SpamAssassinModuleExtension())
+            .overrideServerModule(new TestJMAPServerModule()))
         .build();
 }

@@ -19,7 +19,9 @@
 
 package org.apache.james;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 
 import org.apache.james.backends.rabbitmq.DockerRabbitMQSingleton;
 import org.apache.james.modules.TestDockerESMetricReporterModule;
@@ -27,6 +29,7 @@ import org.apache.james.modules.TestJMAPServerModule;
 import org.apache.james.modules.TestRabbitMQModule;
 import org.apache.james.modules.blobstore.BlobStoreConfiguration;
 import org.apache.james.modules.objectstorage.swift.DockerSwiftTestRule;
+import org.apache.james.server.core.configuration.Configuration;
 import org.junit.rules.TemporaryFolder;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
@@ -58,20 +61,28 @@ public class CassandraRabbitMQSwiftJmapTestRule implements TestRule {
     }
 
     public GuiceJamesServer jmapServer(Module... additionals) throws IOException {
-        CassandraRabbitMQJamesConfiguration configuration = CassandraRabbitMQJamesConfiguration.builder()
-            .workingDirectory(temporaryFolder.newFolder())
-            .configurationFromClasspath()
-            .blobStore(BlobStoreConfiguration.objectStorage().disableCache())
+        return CassandraRabbitMQJamesServerMain.builder()
+            .configuration(configuration -> configuration
+                .workingDirectory(newFolder())
+                .configurationFromClasspath())
+            .blobStore(configuration -> configuration.objectStorage().disableCache())
+            .customize(server -> server
+                .overrideWith(new TestRabbitMQModule(DockerRabbitMQSingleton.SINGLETON))
+                .overrideWith(new DockerSwiftTestRule().getModule())
+                .overrideWith(new TestJMAPServerModule())
+                .overrideWith(new TestDockerESMetricReporterModule(dockerElasticSearchRule.getDockerEs().getHttpHost()))
+                .overrideWith(guiceModuleTestRule.getModule())
+                .overrideWith((binder -> binder.bind(CleanupTasksPerformer.class).asEagerSingleton()))
+                .overrideWith(additionals))
             .build();
+    }
 
-        return CassandraRabbitMQJamesServerMain.createServer(configuration)
-            .overrideWith(new TestRabbitMQModule(DockerRabbitMQSingleton.SINGLETON))
-            .overrideWith(new DockerSwiftTestRule().getModule())
-            .overrideWith(new TestJMAPServerModule())
-            .overrideWith(new TestDockerESMetricReporterModule(dockerElasticSearchRule.getDockerEs().getHttpHost()))
-            .overrideWith(guiceModuleTestRule.getModule())
-            .overrideWith((binder -> binder.bind(CleanupTasksPerformer.class).asEagerSingleton()))
-            .overrideWith(additionals);
+    private File newFolder() throws UncheckedIOException {
+        try {
+            return temporaryFolder.newFolder();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override

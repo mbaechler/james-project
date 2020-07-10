@@ -60,13 +60,15 @@ public class CassandraJmapTestRule implements TestRule {
             .configurationFromClasspath()
             .build();
 
-        return CassandraJamesServerMain.createServer(configuration)
-            .overrideWith(new TestJMAPServerModule())
-            .overrideWith(new TestDockerESMetricReporterModule(dockerElasticSearchRule.getDockerEs().getHttpHost()))
-            .overrideWith(guiceModuleTestRule.getModule())
-            .overrideWith((binder -> binder.bind(CleanupTasksPerformer.class).asEagerSingleton()))
-            .overrideWith(binder -> binder.bind(WebAdminConfiguration.class).toInstance(WebAdminConfiguration.TEST_CONFIGURATION))
-            .overrideWith(additionals);
+        return CassandraJamesServerMain.builder(configuration)
+            .server(server -> server
+                .overrideWith(new TestJMAPServerModule())
+                .overrideWith(new TestDockerESMetricReporterModule(dockerElasticSearchRule.getDockerEs().getHttpHost()))
+                .overrideWith(guiceModuleTestRule.getModule())
+                .overrideWith((binder -> binder.bind(CleanupTasksPerformer.class).asEagerSingleton()))
+                .overrideWith(binder -> binder.bind(WebAdminConfiguration.class).toInstance(WebAdminConfiguration.TEST_CONFIGURATION))
+                .overrideWith(additionals))
+            .build();
     }
 
     @Override

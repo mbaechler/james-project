@@ -26,6 +26,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import org.apache.james.GuiceJamesServer;
 import org.apache.james.JamesServerBuilder;
 import org.apache.james.JamesServerExtension;
+import org.apache.james.MemoryServerExtension;
 import org.apache.james.jmap.rfc8621.contract.MailboxGetMethodContract;
 import org.apache.james.mailbox.inmemory.InMemoryId;
 import org.apache.james.mailbox.model.MailboxId;
@@ -34,10 +35,10 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 public class MemoryMailboxGetMethodTest implements MailboxGetMethodContract {
     @RegisterExtension
-    static JamesServerExtension testExtension = new JamesServerBuilder<>(JamesServerBuilder.defaultConfigurationProvider())
-        .server(configuration -> GuiceJamesServer.forConfiguration(configuration)
-            .combineWith(IN_MEMORY_SERVER_AGGREGATE_MODULE)
-            .overrideWith(new TestJMAPServerModule()))
+    static JamesServerExtension jamesServerExtension = MemoryServerExtension
+        .builder()
+        .defaultConfiguration()
+        .withSpecificParameters(extension -> extension.overrideServerModule(new TestJMAPServerModule()))
         .build();
 
     @Override
