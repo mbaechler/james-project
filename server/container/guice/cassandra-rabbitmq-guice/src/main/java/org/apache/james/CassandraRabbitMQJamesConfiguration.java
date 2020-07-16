@@ -19,21 +19,11 @@
 
 package org.apache.james;
 
-import java.io.File;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
-import org.apache.james.filesystem.api.FileSystem;
-import org.apache.james.filesystem.api.JamesDirectoriesProvider;
 import org.apache.james.modules.blobstore.BlobStoreConfiguration;
-import org.apache.james.server.core.JamesServerResourceLoader;
-import org.apache.james.server.core.MissingArgumentException;
 import org.apache.james.server.core.configuration.Configuration;
-import org.apache.james.server.core.filesystem.FileSystemImpl;
-import org.apache.james.utils.PropertiesProvider;
-
-import com.github.fge.lambdas.Throwing;
 
 public class CassandraRabbitMQJamesConfiguration {
 

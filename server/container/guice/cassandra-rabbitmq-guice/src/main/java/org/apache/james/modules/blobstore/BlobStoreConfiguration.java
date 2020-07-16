@@ -60,7 +60,9 @@ public class BlobStoreConfiguration {
             }
         }
 
-        private Builder() {}
+        private Builder() {
+
+        }
 
         public BlobStoreConfiguration cassandra() {
             return new BlobStoreConfiguration(BlobStoreImplName.CASSANDRA, !CACHE_ENABLED);

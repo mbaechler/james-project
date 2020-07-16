@@ -20,14 +20,9 @@
 package org.apache.james;
 
 import org.apache.james.data.LdapUsersRepositoryModule;
-import org.apache.james.modules.blobstore.BlobStoreCacheModulesChooser;
 import org.apache.james.modules.blobstore.BlobStoreConfiguration;
-import org.apache.james.modules.blobstore.BlobStoreModulesChooser;
 import org.apache.james.modules.server.JMXServerModule;
 import org.apache.james.server.core.configuration.Configuration;
-
-import com.google.inject.Module;
-import com.google.inject.util.Modules;
 
 public class CassandraRabbitMQLdapJamesServerMain implements JamesServerMain {
 
