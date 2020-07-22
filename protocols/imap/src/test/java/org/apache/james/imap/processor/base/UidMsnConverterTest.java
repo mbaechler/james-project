@@ -73,7 +73,7 @@ public class UidMsnConverterTest {
     }
 
     @Test
-    public void getUidShouldReturnTheCorrespondingUidIfItExist() {
+    public void getUidShouldReturnTheCorrespondingUidIfItExists() {
         testee.addAll(ImmutableList.of(messageUid1, messageUid2));
 
         assertThat(testee.getUid(2))
