@@ -28,24 +28,23 @@ import org.apache.james.mailbox.NullableMessageSequenceNumber;
 import com.google.common.annotations.VisibleForTesting;
 
 import io.vavr.collection.TreeSet;
+import io.vavr.collection.Vector;
 
 public class UidMsnConverter {
 
-    @VisibleForTesting TreeSet<MessageUid> uids;
+    @VisibleForTesting
+    Vector<MessageUid> uids;
 
     public UidMsnConverter() {
-        this.uids = TreeSet.empty();
+        this.uids = Vector.empty();
     }
 
     public synchronized void addAll(java.util.List<MessageUid> addedUids) {
-        uids = uids.addAll(addedUids);
+        uids = uids.appendAll(addedUids).sorted().distinct();
     }
 
     public NullableMessageSequenceNumber getMsn(MessageUid uid) {
-        return uids
-            .zipWithIndex()
-            .toMap(Function.identity())
-            .get(uid)
+        return uids.indexOfOption(uid)
             .map(position -> NullableMessageSequenceNumber.of(position + 1))
             .getOrElse(NullableMessageSequenceNumber.noMessage());
     }
@@ -70,7 +69,7 @@ public class UidMsnConverter {
     }
 
     public synchronized void remove(MessageUid uid) {
-        uids = uids.remove(uid);
+        uids = uids.remove(uid).sorted();
     }
 
     public boolean isEmpty() {
@@ -78,11 +77,11 @@ public class UidMsnConverter {
     }
 
     public synchronized void clear() {
-        uids = TreeSet.empty();
+        uids = Vector.empty();
     }
 
     public synchronized void addUid(MessageUid uid) {
-        uids = uids.add(uid);
+        uids = uids.append(uid).sorted().distinct();
     }
 
 }
