@@ -20,14 +20,12 @@
 package org.apache.james.imap.processor.base;
 
 import java.util.Optional;
-import java.util.function.Function;
 
 import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.NullableMessageSequenceNumber;
 
 import com.google.common.annotations.VisibleForTesting;
 
-import io.vavr.collection.TreeSet;
 import io.vavr.collection.Vector;
 
 public class UidMsnConverter {
