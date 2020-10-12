@@ -76,7 +76,7 @@ public class CassandraTestSystemFixture {
         AttachmentContentLoader attachmentContentLoader = null;
         MessageSearchIndex index = new SimpleMessageSearchIndex(mapperFactory, mapperFactory, new DefaultTextExtractor(), attachmentContentLoader);
         CassandraMailboxManager cassandraMailboxManager = new CassandraMailboxManager(mapperFactory, sessionProvider,
-            new NoMailboxPathLocker(), new MessageParser(), new CassandraMessageId.Factory(),
+            new MessageParser(), new CassandraMessageId.Factory(),
             eventBus, annotationManager, storeRightManager, quotaComponents, index, MailboxManagerConfiguration.DEFAULT, PreDeletionHooks.NO_PRE_DELETION_HOOK);
 
         eventBus.register(new MailboxAnnotationListener(mapperFactory, sessionProvider));

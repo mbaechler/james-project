@@ -30,6 +30,7 @@ import org.apache.james.mailbox.quota.QuotaRootResolver;
 import org.apache.james.mailbox.store.BatchSizes;
 import org.apache.james.mailbox.store.MessageFactory;
 import org.apache.james.mailbox.store.MessageStorer;
+import org.apache.james.mailbox.store.NoMailboxPathLocker;
 import org.apache.james.mailbox.store.PreDeletionHooks;
 import org.apache.james.mailbox.store.StoreMessageManager;
 import org.apache.james.mailbox.store.StoreRightManager;
@@ -42,12 +43,12 @@ import org.apache.james.mailbox.store.search.MessageSearchIndex;
 public class CassandraMessageManager extends StoreMessageManager {
 
     CassandraMessageManager(CassandraMailboxSessionMapperFactory mapperFactory, MessageSearchIndex index,
-                            EventBus eventBus, MailboxPathLocker locker, Mailbox mailbox, QuotaManager quotaManager,
+                            EventBus eventBus, Mailbox mailbox, QuotaManager quotaManager,
                             QuotaRootResolver quotaRootResolver, MessageParser messageParser, MessageId.Factory messageIdFactory,
                             BatchSizes batchSizes,
                             StoreRightManager storeRightManager,
                             PreDeletionHooks preDeletionHooks) {
-        super(CassandraMailboxManager.MESSAGE_CAPABILITIES, mapperFactory, index, eventBus, locker, mailbox,
+        super(CassandraMailboxManager.MESSAGE_CAPABILITIES, mapperFactory, index, eventBus, new NoMailboxPathLocker(), mailbox,
             quotaManager, quotaRootResolver, batchSizes, storeRightManager,
             preDeletionHooks, new MessageStorer.WithAttachment(mapperFactory, messageIdFactory, new MessageFactory.StoreMessageFactory(), mapperFactory, messageParser));
     }

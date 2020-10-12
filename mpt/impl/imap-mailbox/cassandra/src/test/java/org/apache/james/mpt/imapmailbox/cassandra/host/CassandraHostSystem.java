@@ -121,7 +121,7 @@ public class CassandraHostSystem extends JamesImapHostSystem {
         MessageSearchIndex index = new SimpleMessageSearchIndex(mapperFactory, mapperFactory, new DefaultTextExtractor(), attachmentManager);
 
         mailboxManager = new CassandraMailboxManager(mapperFactory, sessionProvider,
-            new JVMMailboxPathLocker(), new MessageParser(), messageIdFactory,
+            new MessageParser(), messageIdFactory,
             eventBus, annotationManager, storeRightManager, quotaComponents, index, MailboxManagerConfiguration.DEFAULT,
             PreDeletionHooks.NO_PRE_DELETION_HOOK);
 

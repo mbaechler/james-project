@@ -101,7 +101,7 @@ public class CassandraMailboxManagerProvider {
         AttachmentContentLoader attachmentContentLoader = null;
         MessageSearchIndex index = new SimpleMessageSearchIndex(mapperFactory, mapperFactory, new DefaultTextExtractor(), attachmentContentLoader);
 
-        CassandraMailboxManager manager = new CassandraMailboxManager(mapperFactory, sessionProvider, new NoMailboxPathLocker(),
+        CassandraMailboxManager manager = new CassandraMailboxManager(mapperFactory, sessionProvider,
             messageParser, messageIdFactory, eventBus, annotationManager, storeRightManager,
             quotaComponents, index, MailboxManagerConfiguration.DEFAULT, preDeletionHooks);
 

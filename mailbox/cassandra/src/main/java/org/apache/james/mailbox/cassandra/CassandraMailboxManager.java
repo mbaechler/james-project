@@ -114,7 +114,6 @@ public class CassandraMailboxManager implements MailboxManager {
 
     private final MailboxManagerConfiguration configuration;
     private final SessionProvider sessionProvider;
-    private final MailboxPathLocker locker;
     private final CassandraMailboxSessionMapperFactory mapperFactory;
     private final MessageId.Factory messageIdFactory;
     private final StoreRightManager storeRightManager;
@@ -128,7 +127,7 @@ public class CassandraMailboxManager implements MailboxManager {
 
     @Inject
     public CassandraMailboxManager(CassandraMailboxSessionMapperFactory mapperFactory, SessionProvider sessionProvider,
-                                   MailboxPathLocker locker, MessageParser messageParser,
+                                   MessageParser messageParser,
                                    MessageId.Factory messageIdFactory, EventBus eventBus,
                                    StoreMailboxAnnotationManager annotationManager, StoreRightManager storeRightManager,
                                    QuotaComponents quotaComponents, MessageSearchIndex index,
@@ -143,7 +142,6 @@ public class CassandraMailboxManager implements MailboxManager {
         this.configuration = configuration;
         this.preDeletionHooks = preDeletionHooks;
         this.sessionProvider = sessionProvider;
-        this.locker = locker;
         this.mapperFactory = mapperFactory;
         this.messageIdFactory = messageIdFactory;
         this.storeRightManager = storeRightManager;
@@ -163,17 +161,16 @@ public class CassandraMailboxManager implements MailboxManager {
 
     protected StoreMessageManager createMessageManager(Mailbox mailboxRow, MailboxSession session) {
         return new CassandraMessageManager(mapperFactory,
-            getMessageSearchIndex(),
-            getEventBus(),
-            this.locker,
+            this.index,
+            this.eventBus,
             mailboxRow,
-            getQuotaComponents().getQuotaManager(),
-            getQuotaComponents().getQuotaRootResolver(),
-            getMessageParser(),
-            getMessageIdFactory(),
-            configuration.getBatchSizes(),
-            getStoreRightManager(),
-            getPreDeletionHooks());
+            this.quotaComponents.getQuotaManager(),
+            this.quotaComponents.getQuotaRootResolver(),
+            this.messageParser,
+            this.messageIdFactory,
+            this.configuration.getBatchSizes(),
+            this.storeRightManager,
+            this.preDeletionHooks);
     }
 
     public QuotaComponents getQuotaComponents() {
@@ -250,33 +247,10 @@ public class CassandraMailboxManager implements MailboxManager {
     }
 
     /**
-     * Return the {@link MessageSearchIndex} used by this {@link MailboxManager}
-     */
-    public MessageSearchIndex getMessageSearchIndex() {
-        return index;
-    }
-
-    /**
      * Return the {@link MailboxSessionMapperFactory} used by this {@link MailboxManager}
      */
     public MailboxSessionMapperFactory getMapperFactory() {
         return mailboxSessionMapperFactory;
-    }
-
-    public MailboxPathLocker getLocker() {
-        return locker;
-    }
-
-    protected StoreRightManager getStoreRightManager() {
-        return storeRightManager;
-    }
-
-    public MessageParser getMessageParser() {
-        return messageParser;
-    }
-
-    public PreDeletionHooks getPreDeletionHooks() {
-        return preDeletionHooks;
     }
 
     @Override
@@ -364,34 +338,34 @@ public class CassandraMailboxManager implements MailboxManager {
 
     private List<MailboxId> performConcurrentMailboxCreation(MailboxSession mailboxSession, MailboxPath mailboxPath) throws MailboxException {
         List<MailboxId> mailboxIds = new ArrayList<>();
-        locker.executeWithLock(mailboxPath, () ->
-            block(mailboxExists(mailboxPath, mailboxSession)
-                .filter(FunctionalUtils.identityPredicate().negate())
-                .map(Throwing.<Boolean, MailboxMapper>function(ignored -> mailboxSessionMapperFactory.getMailboxMapper(mailboxSession)).sneakyThrow())
-                .flatMap(mapper -> {
-                    try {
-                        mapper.execute(Mapper.toTransaction(() ->
-                            block(mapper.create(mailboxPath, UidValidity.generate())
-                                .doOnNext(mailbox -> mailboxIds.add(mailbox.getMailboxId()))
-                                .flatMap(mailbox ->
-                                    // notify listeners
-                                    eventBus.dispatch(EventFactory.mailboxAdded()
-                                            .randomEventId()
-                                            .mailboxSession(mailboxSession)
-                                            .mailbox(mailbox)
-                                            .build(),
-                                        new MailboxIdRegistrationKey(mailbox.getMailboxId()))))));
-                    } catch (Exception e) {
-                        if (e instanceof MailboxExistsException) {
-                            LOGGER.info("{} mailbox was created concurrently", mailboxPath.asString());
-                        } else if (e instanceof MailboxException) {
-                            return Mono.error(e);
-                        }
-                    }
 
-                    return Mono.empty();
-                })
-                .then()), MailboxPathLocker.LockType.Write);
+        block(mailboxExists(mailboxPath, mailboxSession)
+            .filter(FunctionalUtils.identityPredicate().negate())
+            .map(Throwing.<Boolean, MailboxMapper>function(ignored -> mailboxSessionMapperFactory.getMailboxMapper(mailboxSession)).sneakyThrow())
+            .flatMap(mapper -> {
+                try {
+                    mapper.execute(Mapper.toTransaction(() ->
+                        block(mapper.create(mailboxPath, UidValidity.generate())
+                            .doOnNext(mailbox -> mailboxIds.add(mailbox.getMailboxId()))
+                            .flatMap(mailbox ->
+                                // notify listeners
+                                eventBus.dispatch(EventFactory.mailboxAdded()
+                                        .randomEventId()
+                                        .mailboxSession(mailboxSession)
+                                        .mailbox(mailbox)
+                                        .build(),
+                                    new MailboxIdRegistrationKey(mailbox.getMailboxId()))))));
+                } catch (Exception e) {
+                    if (e instanceof MailboxExistsException) {
+                        LOGGER.info("{} mailbox was created concurrently", mailboxPath.asString());
+                    } else if (e instanceof MailboxException) {
+                        return Mono.error(e);
+                    }
+                }
+
+                return Mono.empty();
+            })
+            .then());
 
         return mailboxIds;
     }
@@ -556,32 +530,28 @@ public class CassandraMailboxManager implements MailboxManager {
             .expression(new PrefixedWildcard(from.getName() + getDelimiter()))
             .build()
             .asUserBound();
-        locker.executeWithLock(from, (MailboxPathLocker.LockAwareExecution<Void>) () -> {
-            block(mapper.findMailboxWithPathLike(query)
-                .flatMap(sub -> {
-                    String subOriginalName = sub.getName();
-                    String subNewName = newMailboxPath.getName() + subOriginalName.substring(from.getName().length());
-                    MailboxPath fromPath = new MailboxPath(from, subOriginalName);
-                    sub.setName(subNewName);
-                    return mapper.rename(sub)
-                        .map(mailboxId -> {
-                            resultBuilder.add(new MailboxRenamedResult(sub.getMailboxId(), fromPath, sub.generateAssociatedPath()));
-                            return mailboxId;
-                        }).then(eventBus.dispatch(EventFactory.mailboxRenamed()
-                                .randomEventId()
-                                .mailboxSession(session)
-                                .mailboxId(sub.getMailboxId())
-                                .oldPath(fromPath)
-                                .newPath(sub.generateAssociatedPath())
-                                .build(),
-                            new MailboxIdRegistrationKey(sub.getMailboxId())))
-                        .then(Mono.fromRunnable(() -> LOGGER.debug("Rename mailbox sub-mailbox {} to {}", subOriginalName, subNewName)));
-                })
-                .then());
+        block(mapper.findMailboxWithPathLike(query)
+            .flatMap(sub -> {
+                String subOriginalName = sub.getName();
+                String subNewName = newMailboxPath.getName() + subOriginalName.substring(from.getName().length());
+                MailboxPath fromPath = new MailboxPath(from, subOriginalName);
+                sub.setName(subNewName);
+                return mapper.rename(sub)
+                    .map(mailboxId -> {
+                        resultBuilder.add(new MailboxRenamedResult(sub.getMailboxId(), fromPath, sub.generateAssociatedPath()));
+                        return mailboxId;
+                    }).then(eventBus.dispatch(EventFactory.mailboxRenamed()
+                            .randomEventId()
+                            .mailboxSession(session)
+                            .mailboxId(sub.getMailboxId())
+                            .oldPath(fromPath)
+                            .newPath(sub.generateAssociatedPath())
+                            .build(),
+                        new MailboxIdRegistrationKey(sub.getMailboxId())))
+                    .then(Mono.fromRunnable(() -> LOGGER.debug("Rename mailbox sub-mailbox {} to {}", subOriginalName, subNewName)));
+            })
+            .then());
 
-            return null;
-
-        }, MailboxPathLocker.LockType.Write);
         return resultBuilder.build();
     }
 

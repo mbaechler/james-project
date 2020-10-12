@@ -86,14 +86,14 @@ class CassandraMailboxManagerAttachmentTest extends AbstractMailboxManagerAttach
         AttachmentContentLoader attachmentContentLoader = null;
         MessageSearchIndex index = new SimpleMessageSearchIndex(mailboxSessionMapperFactory, mailboxSessionMapperFactory, new DefaultTextExtractor(), attachmentContentLoader);
 
-        mailboxManager = new CassandraMailboxManager(mailboxSessionMapperFactory, sessionProvider, new NoMailboxPathLocker(), new MessageParser(),
+        mailboxManager = new CassandraMailboxManager(mailboxSessionMapperFactory, sessionProvider, new MessageParser(),
             messageIdFactory, eventBus, annotationManager, storeRightManager, quotaComponents,
             index, MailboxManagerConfiguration.DEFAULT, PreDeletionHooks.NO_PRE_DELETION_HOOK);
         MessageParser failingMessageParser = mock(MessageParser.class);
         when(failingMessageParser.retrieveAttachments(any()))
             .thenThrow(new RuntimeException("Message parser set to fail"));
         parseFailingMailboxManager = new CassandraMailboxManager(mailboxSessionMapperFactory, sessionProvider,
-            new NoMailboxPathLocker(), failingMessageParser, messageIdFactory,
+            failingMessageParser, messageIdFactory,
             eventBus, annotationManager, storeRightManager, quotaComponents, index, MailboxManagerConfiguration.DEFAULT, PreDeletionHooks.NO_PRE_DELETION_HOOK);
     }
 
