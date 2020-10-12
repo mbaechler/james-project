@@ -25,6 +25,7 @@ import java.util.Date;
 import javax.mail.Flags;
 import javax.mail.util.SharedByteArrayInputStream;
 
+import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MessageIdManager;
 import org.apache.james.mailbox.MessageUid;
@@ -48,7 +49,7 @@ public class MessageIdManagerTestSystem {
     private final MessageIdManager messageIdManager;
     private final MessageId.Factory messageIdFactory;
     private final MailboxSessionMapperFactory mapperFactory;
-    private final StoreMailboxManager mailboxManager;
+    private final MailboxManager mailboxManager;
 
     /**
      * Should take care of find returning the MailboxMessage
@@ -59,14 +60,14 @@ public class MessageIdManagerTestSystem {
      * @return the id of persisted message
      */
 
-    public MessageIdManagerTestSystem(MessageIdManager messageIdManager, MessageId.Factory messageIdFactory, MailboxSessionMapperFactory mapperFactory, StoreMailboxManager mailboxManager) {
+    public MessageIdManagerTestSystem(MessageIdManager messageIdManager, MessageId.Factory messageIdFactory, MailboxSessionMapperFactory mapperFactory, MailboxManager mailboxManager) {
         this.messageIdManager = messageIdManager;
         this.messageIdFactory = messageIdFactory;
         this.mapperFactory = mapperFactory;
         this.mailboxManager = mailboxManager;
     }
 
-    public StoreMailboxManager getMailboxManager() {
+    public MailboxManager getMailboxManager() {
         return mailboxManager;
     }
 
@@ -85,14 +86,15 @@ public class MessageIdManagerTestSystem {
             Mailbox mailbox = mapperFactory.getMailboxMapper(mailboxSession).findMailboxById(mailboxId).block();
             MailboxMessage message = createMessage(mailboxId, flags, messageId, uid);
             mapperFactory.getMessageMapper(mailboxSession).add(mailbox, message);
-            mailboxManager.getEventBus().dispatch(EventFactory.added()
+            //FIXME
+            /*mailboxManager.getEventBus().dispatch(EventFactory.added()
                 .randomEventId()
                 .mailboxSession(mailboxSession)
                 .mailbox(mailbox)
                 .addMetaData(message.metaData())
                 .build(),
                 new MailboxIdRegistrationKey(mailboxId))
-            .block();
+            .block();*/
             return messageId;
         } catch (Exception e) {
             throw new RuntimeException(e);

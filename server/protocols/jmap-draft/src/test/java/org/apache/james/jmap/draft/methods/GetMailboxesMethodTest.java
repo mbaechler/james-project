@@ -38,18 +38,19 @@ import org.apache.james.jmap.draft.model.MethodCallId;
 import org.apache.james.jmap.draft.model.Number;
 import org.apache.james.jmap.draft.model.mailbox.Mailbox;
 import org.apache.james.jmap.draft.model.mailbox.SortOrder;
+import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MailboxSessionUtil;
 import org.apache.james.mailbox.MessageManager;
 import org.apache.james.mailbox.Role;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.inmemory.InMemoryId;
+import org.apache.james.mailbox.inmemory.InMemoryMailboxManager;
 import org.apache.james.mailbox.inmemory.manager.InMemoryIntegrationResources;
 import org.apache.james.mailbox.model.MailboxACL;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.quota.QuotaManager;
 import org.apache.james.mailbox.quota.QuotaRootResolver;
-import org.apache.james.mailbox.store.StoreMailboxManager;
 import org.apache.james.metrics.logger.DefaultMetricFactory;
 import org.apache.james.mime4j.dom.Message;
 import org.assertj.core.groups.Tuple;
@@ -65,7 +66,7 @@ public class GetMailboxesMethodTest {
     private static final Username USERNAME = Username.of("username@domain.tld");
     private static final Username USERNAME2 = Username.of("username2@domain.tld");
 
-    private StoreMailboxManager mailboxManager;
+    private InMemoryMailboxManager mailboxManager;
     private GetMailboxesMethod getMailboxesMethod;
     private MethodCallId methodCallId;
     private MailboxFactory mailboxFactory;
@@ -104,7 +105,7 @@ public class GetMailboxesMethodTest {
 
     @Test
     public void getMailboxesShouldNotFailWhenMailboxManagerErrors() throws Exception {
-        StoreMailboxManager mockedMailboxManager = mock(StoreMailboxManager.class);
+        MailboxManager mockedMailboxManager = mock(MailboxManager.class);
         when(mockedMailboxManager.list(any()))
             .thenReturn(ImmutableList.of(new MailboxPath("namespace", Username.of("user"), "name")));
         when(mockedMailboxManager.getMailbox(any(MailboxPath.class), any()))

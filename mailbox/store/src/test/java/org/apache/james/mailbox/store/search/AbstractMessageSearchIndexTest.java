@@ -52,7 +52,6 @@ import org.apache.james.mailbox.model.SearchQuery.DateResolution;
 import org.apache.james.mailbox.model.SearchQuery.Sort;
 import org.apache.james.mailbox.model.SearchQuery.Sort.Order;
 import org.apache.james.mailbox.model.SearchQuery.Sort.SortClause;
-import org.apache.james.mailbox.store.StoreMailboxManager;
 import org.apache.james.mailbox.store.StoreMessageManager;
 import org.apache.james.mime4j.dom.Message;
 import org.apache.james.mime4j.dom.Multipart;
@@ -78,7 +77,7 @@ public abstract class AbstractMessageSearchIndexTest {
     protected static final Username USERNAME = Username.of("benwa");
 
     protected MessageSearchIndex messageSearchIndex;
-    protected StoreMailboxManager storeMailboxManager;
+    protected MailboxManager storeMailboxManager;
     protected MessageIdManager messageIdManager;
     private Mailbox mailbox;
     private Mailbox mailbox2;

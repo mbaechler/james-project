@@ -21,7 +21,6 @@ package org.apache.james.mailbox.cassandra;
 
 import javax.mail.Flags;
 
-import org.apache.james.mailbox.MailboxPathLocker;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.events.EventBus;
 import org.apache.james.mailbox.model.Mailbox;

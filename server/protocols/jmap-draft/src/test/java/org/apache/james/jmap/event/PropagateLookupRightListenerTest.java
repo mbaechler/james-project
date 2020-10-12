@@ -27,6 +27,7 @@ import org.apache.james.mailbox.MailboxSessionUtil;
 import org.apache.james.mailbox.MessageManager;
 import org.apache.james.mailbox.events.Group;
 import org.apache.james.mailbox.events.MailboxListener;
+import org.apache.james.mailbox.inmemory.InMemoryMailboxManager;
 import org.apache.james.mailbox.inmemory.manager.InMemoryIntegrationResources;
 import org.apache.james.mailbox.model.Mailbox;
 import org.apache.james.mailbox.model.MailboxACL;
@@ -37,7 +38,6 @@ import org.apache.james.mailbox.model.MailboxACL.Right;
 import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.MailboxSessionMapperFactory;
-import org.apache.james.mailbox.store.StoreMailboxManager;
 import org.apache.james.mailbox.store.StoreRightManager;
 import org.junit.Before;
 import org.junit.Test;
@@ -57,7 +57,7 @@ public class PropagateLookupRightListenerTest {
     private static final MailboxPath GRAND_CHILD_MAILBOX = MailboxPath.forUser(OWNER_USER, "shared.sub1.sub2");
 
     private StoreRightManager storeRightManager;
-    private StoreMailboxManager storeMailboxManager;
+    private InMemoryMailboxManager storeMailboxManager;
     private PropagateLookupRightListener testee;
 
     private MailboxSession mailboxSession = MailboxSessionUtil.create(OWNER_USER);

@@ -24,18 +24,17 @@ import java.io.File;
 import org.apache.james.mailbox.MailboxManagerStressContract;
 import org.apache.james.mailbox.events.EventBus;
 import org.apache.james.mailbox.exception.MailboxException;
-import org.apache.james.mailbox.store.StoreMailboxManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 
-class DomainUserMaildirMailboxManagerStressTest implements MailboxManagerStressContract<StoreMailboxManager> {
+class DomainUserMaildirMailboxManagerStressTest implements MailboxManagerStressContract<MaildirMailboxManagerProvider.MaildirMailboxManager> {
     @TempDir
     File tmpFolder;
 
-    StoreMailboxManager mailboxManager;
+    MaildirMailboxManagerProvider.MaildirMailboxManager mailboxManager;
 
     @Override
-    public StoreMailboxManager getManager() {
+    public MaildirMailboxManagerProvider.MaildirMailboxManager getManager() {
         return mailboxManager;
     }
 

@@ -31,6 +31,7 @@ import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MessageManager;
 import org.apache.james.mailbox.SessionProvider;
+import org.apache.james.mailbox.cassandra.CassandraMailboxManager;
 import org.apache.james.mailbox.cassandra.CassandraMailboxSessionMapperFactory;
 import org.apache.james.mailbox.cassandra.CassandraTestSystemFixture;
 import org.apache.james.mailbox.cassandra.mail.MailboxAggregateModule;
@@ -39,7 +40,6 @@ import org.apache.james.mailbox.quota.UserQuotaRootResolver;
 import org.apache.james.mailbox.quota.task.RecomputeCurrentQuotasService;
 import org.apache.james.mailbox.quota.task.RecomputeCurrentQuotasService.RunningOptions;
 import org.apache.james.mailbox.quota.task.RecomputeCurrentQuotasServiceContract;
-import org.apache.james.mailbox.store.StoreMailboxManager;
 import org.apache.james.mailbox.store.quota.CurrentQuotaCalculator;
 import org.apache.james.mailbox.store.quota.DefaultUserQuotaRootResolver;
 import org.apache.james.sieve.cassandra.CassandraSieveRepositoryModule;
@@ -65,7 +65,7 @@ public class CassandraRecomputeCurrentQuotasServiceTest implements RecomputeCurr
         CassandraUsersRepositoryModule.MODULE));
 
     UsersRepositoryImpl usersRepository;
-    StoreMailboxManager mailboxManager;
+    CassandraMailboxManager mailboxManager;
     SessionProvider sessionProvider;
     CurrentQuotaManager currentQuotaManager;
     UserQuotaRootResolver userQuotaRootResolver;

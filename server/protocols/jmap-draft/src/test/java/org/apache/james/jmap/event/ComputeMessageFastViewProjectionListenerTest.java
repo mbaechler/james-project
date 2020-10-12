@@ -36,6 +36,7 @@ import org.apache.james.jmap.api.projections.MessageFastViewProjection;
 import org.apache.james.jmap.draft.model.message.view.MessageFullViewFactory;
 import org.apache.james.jmap.draft.utils.JsoupHtmlTextExtractor;
 import org.apache.james.jmap.memory.projections.MemoryMessageFastViewProjection;
+import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MailboxSessionUtil;
 import org.apache.james.mailbox.MessageIdManager;
@@ -56,7 +57,6 @@ import org.apache.james.mailbox.model.MessageResult;
 import org.apache.james.mailbox.store.FakeAuthenticator;
 import org.apache.james.mailbox.store.FakeAuthorizator;
 import org.apache.james.mailbox.store.SessionProviderImpl;
-import org.apache.james.mailbox.store.StoreMailboxManager;
 import org.apache.james.metrics.tests.RecordingMetricFactory;
 import org.apache.james.mime4j.dom.Message;
 import org.apache.james.util.ClassLoaderUtils;
@@ -94,7 +94,7 @@ class ComputeMessageFastViewProjectionListenerTest {
     MessageFastViewProjection messageFastViewProjection;
     MessageFullViewFactory messageFullViewFactory;
     MailboxSession mailboxSession;
-    StoreMailboxManager mailboxManager;
+    MailboxManager mailboxManager;
 
     MessageManager inboxMessageManager;
     MessageManager otherBoxMessageManager;

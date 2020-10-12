@@ -19,8 +19,7 @@
 
 package org.apache.james.mailbox.store;
 
-import static org.apache.james.mailbox.store.StoreMailboxManager.SQL_WILDCARD_CHAR;
-
+import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.model.search.MailboxNameExpression;
 import org.apache.james.mailbox.model.search.MailboxQuery;
 
@@ -28,8 +27,8 @@ public class MailboxExpressionBackwardCompatibility {
     public static String getPathLike(MailboxQuery mailboxQuery) {
         MailboxNameExpression nameExpression = mailboxQuery.getMailboxNameExpression();
         return nameExpression.getCombinedName()
-            .replace(nameExpression.getFreeWildcard(), SQL_WILDCARD_CHAR)
-            .replace(nameExpression.getLocalWildcard(), SQL_WILDCARD_CHAR)
-            + SQL_WILDCARD_CHAR;
+            .replace(nameExpression.getFreeWildcard(), MailboxManager.SQL_WILDCARD_CHAR)
+            .replace(nameExpression.getLocalWildcard(), MailboxManager.SQL_WILDCARD_CHAR)
+            + MailboxManager.SQL_WILDCARD_CHAR;
     }
 }

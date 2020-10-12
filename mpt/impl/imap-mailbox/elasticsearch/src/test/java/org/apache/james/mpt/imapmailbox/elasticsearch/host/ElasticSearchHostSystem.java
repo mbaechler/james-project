@@ -45,9 +45,9 @@ import org.apache.james.mailbox.elasticsearch.query.CriterionConverter;
 import org.apache.james.mailbox.elasticsearch.query.QueryConverter;
 import org.apache.james.mailbox.elasticsearch.search.ElasticSearchSearcher;
 import org.apache.james.mailbox.inmemory.InMemoryId;
+import org.apache.james.mailbox.inmemory.InMemoryMailboxManager;
 import org.apache.james.mailbox.inmemory.InMemoryMessageId;
 import org.apache.james.mailbox.inmemory.manager.InMemoryIntegrationResources;
-import org.apache.james.mailbox.store.StoreMailboxManager;
 import org.apache.james.mailbox.store.StoreSubscriptionManager;
 import org.apache.james.mailbox.store.extractor.DefaultTextExtractor;
 import org.apache.james.mailbox.store.quota.NoQuotaManager;
@@ -62,7 +62,7 @@ public class ElasticSearchHostSystem extends JamesImapHostSystem {
         Feature.MOD_SEQ_SEARCH);
 
     private DockerElasticSearch dockerElasticSearch;
-    private StoreMailboxManager mailboxManager;
+    private InMemoryMailboxManager mailboxManager;
     private ReactorElasticSearchClient client;
 
     @Override

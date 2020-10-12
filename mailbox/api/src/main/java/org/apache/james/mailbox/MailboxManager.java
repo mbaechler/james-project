@@ -19,6 +19,7 @@
 
 package org.apache.james.mailbox;
 
+import java.time.Duration;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
@@ -28,6 +29,7 @@ import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.exception.MailboxExistsException;
 import org.apache.james.mailbox.exception.MailboxNotFoundException;
 import org.apache.james.mailbox.model.Mailbox;
+import org.apache.james.mailbox.model.MailboxConstants;
 import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MailboxMetaData;
 import org.apache.james.mailbox.model.MailboxPath;
@@ -38,6 +40,8 @@ import org.apache.james.mailbox.model.search.MailboxQuery;
 import org.reactivestreams.Publisher;
 
 import reactor.core.publisher.Flux;
+import reactor.util.retry.Retry;
+import reactor.util.retry.RetryBackoffSpec;
 
 /**
  * <p>
@@ -73,6 +77,23 @@ import reactor.core.publisher.Flux;
  */
 
 public interface MailboxManager extends RequestAware, RightManager, MailboxAnnotationManager, SessionProvider {
+
+    char SQL_WILDCARD_CHAR = '%';
+    EnumSet<MailboxManager.MessageCapabilities> DEFAULT_NO_MESSAGE_CAPABILITIES = EnumSet.noneOf(MailboxManager.MessageCapabilities.class);
+    int MAX_ATTEMPTS = 3;
+    Duration MIN_BACKOFF = Duration.ofMillis(100);
+    RetryBackoffSpec RETRY_BACKOFF_SPEC = Retry.backoff(MAX_ATTEMPTS, MIN_BACKOFF);
+
+    static MailboxQuery.UserBound toSingleUserQuery(MailboxQuery mailboxQuery, MailboxSession mailboxSession) {
+        return MailboxQuery.builder()
+            .namespace(mailboxQuery.getNamespace().orElse(MailboxConstants.USER_NAMESPACE))
+            .username(mailboxQuery.getUser().orElse(mailboxSession.getUser()))
+            .expression(mailboxQuery.getMailboxNameExpression()
+                .includeChildren())
+            .build()
+            .asUserBound();
+    }
+
 
     int MAX_MAILBOX_NAME_LENGTH = 200;
 

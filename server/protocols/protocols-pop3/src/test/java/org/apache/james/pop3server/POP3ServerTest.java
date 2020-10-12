@@ -40,7 +40,6 @@ import org.apache.james.mailbox.MessageManager;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.inmemory.manager.InMemoryIntegrationResources;
 import org.apache.james.mailbox.model.MailboxPath;
-import org.apache.james.mailbox.store.StoreMailboxManager;
 import org.apache.james.mime4j.dom.Message;
 import org.apache.james.pop3server.netty.POP3Server;
 import org.apache.james.protocols.api.utils.ProtocolServerUtils;
@@ -57,6 +56,8 @@ import org.junit.Test;
 
 import com.google.inject.name.Names;
 
+import reactor.core.publisher.Mono;
+
 public class POP3ServerTest {
     private static final DomainList NO_DOMAIN_LIST = null;
 
@@ -65,7 +66,7 @@ public class POP3ServerTest {
     private POP3Client pop3Client = null;
     protected MockFileSystem fileSystem;
     protected MockProtocolHandlerLoader protocolHandlerChain;
-    private StoreMailboxManager mailboxManager;
+    private MailboxManager mailboxManager;
     private final byte[] content = ("Return-path: return@test.com\r\n"
             + "Content-Transfer-Encoding: plain\r\n"
             + "Subject: test\r\n\r\n"
@@ -210,7 +211,7 @@ public class POP3ServerTest {
         pop3Client.disconnect();
         MailboxPath mailboxPath = MailboxPath.inbox(username);
         MailboxSession session = mailboxManager.login(username, "bar");
-        if (!mailboxManager.mailboxExists(mailboxPath, session).block()) {
+        if (!Mono.from(mailboxManager.mailboxExists(mailboxPath, session)).block()) {
             mailboxManager.createMailbox(mailboxPath, session);
         }
         setupTestMails(session, mailboxManager.getMailbox(mailboxPath, session));
@@ -297,7 +298,7 @@ public class POP3ServerTest {
         MailboxPath mailboxPath = MailboxPath.inbox(username);
         MailboxSession session = mailboxManager.login(username, "bar2");
 
-        if (!mailboxManager.mailboxExists(mailboxPath, session).block()) {
+        if (!Mono.from(mailboxManager.mailboxExists(mailboxPath, session)).block()) {
             mailboxManager.createMailbox(mailboxPath, session);
         }
 
@@ -387,7 +388,7 @@ public class POP3ServerTest {
         MailboxPath mailboxPath = MailboxPath.inbox(username);
         MailboxSession session = mailboxManager.login(username, "bar2");
 
-        if (!mailboxManager.mailboxExists(mailboxPath, session).block()) {
+        if (!Mono.from(mailboxManager.mailboxExists(mailboxPath, session)).block()) {
             mailboxManager.createMailbox(mailboxPath, session);
         }
 
@@ -441,7 +442,7 @@ public class POP3ServerTest {
         MailboxPath mailboxPath = MailboxPath.inbox(username);
         MailboxSession session = mailboxManager.login(username, "bar2");
 
-        if (!mailboxManager.mailboxExists(mailboxPath, session).block()) {
+        if (!Mono.from(mailboxManager.mailboxExists(mailboxPath, session)).block()) {
             mailboxManager.createMailbox(mailboxPath, session);
         }
 
@@ -653,7 +654,7 @@ public class POP3ServerTest {
         MailboxPath mailboxPath = MailboxPath.inbox(username);
 
         mailboxManager.startProcessingRequest(session);
-        if (!mailboxManager.mailboxExists(mailboxPath, session).block()) {
+        if (!Mono.from(mailboxManager.mailboxExists(mailboxPath, session)).block()) {
             mailboxManager.createMailbox(mailboxPath, session);
         }
 

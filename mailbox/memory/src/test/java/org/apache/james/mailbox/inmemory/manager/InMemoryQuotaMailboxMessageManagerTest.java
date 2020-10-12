@@ -18,10 +18,10 @@
  ****************************************************************/
 package org.apache.james.mailbox.inmemory.manager;
 
+import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.manager.IntegrationResources;
 import org.apache.james.mailbox.manager.ManagerTestProvisionner;
 import org.apache.james.mailbox.manager.QuotaMessageManagerContract;
-import org.apache.james.mailbox.store.StoreMailboxManager;
 import org.junit.jupiter.api.BeforeEach;
 
 /**
@@ -30,11 +30,11 @@ import org.junit.jupiter.api.BeforeEach;
  * Tests are performed with sufficient rights to ensure all underlying functions behave well.
  * Quota are adjusted and we check that exceptions are well thrown.
  */
-class InMemoryQuotaMailboxMessageManagerTest implements QuotaMessageManagerContract<StoreMailboxManager> {
+class InMemoryQuotaMailboxMessageManagerTest implements QuotaMessageManagerContract<MailboxManager> {
 
     ManagerTestProvisionner provisionner;
 
-    IntegrationResources<StoreMailboxManager> resources;
+    IntegrationResources<MailboxManager> resources;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -44,7 +44,7 @@ class InMemoryQuotaMailboxMessageManagerTest implements QuotaMessageManagerContr
     }
 
     @Override
-    public IntegrationResources<StoreMailboxManager> getResources() {
+    public IntegrationResources<MailboxManager> getResources() {
         return resources;
     }
 

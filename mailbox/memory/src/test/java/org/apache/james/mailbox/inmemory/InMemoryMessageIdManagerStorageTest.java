@@ -18,10 +18,10 @@
  ****************************************************************/
 package org.apache.james.mailbox.inmemory;
 
+import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.inmemory.manager.InMemoryIntegrationResources;
 import org.apache.james.mailbox.store.AbstractMessageIdManagerStorageTest;
 import org.apache.james.mailbox.store.MessageIdManagerTestSystem;
-import org.apache.james.mailbox.store.StoreMailboxManager;
 
 class InMemoryMessageIdManagerStorageTest extends AbstractMessageIdManagerStorageTest {
     
@@ -29,7 +29,7 @@ class InMemoryMessageIdManagerStorageTest extends AbstractMessageIdManagerStorag
     protected MessageIdManagerTestSystem createTestingData() {
         InMemoryIntegrationResources resources = InMemoryIntegrationResources.defaultResources();
 
-        StoreMailboxManager mailboxManager = resources.getMailboxManager();
+        MailboxManager mailboxManager = resources.getMailboxManager();
         return new MessageIdManagerTestSystem(
             resources.getMessageIdManager(),
             resources.getMessageIdFactory(),

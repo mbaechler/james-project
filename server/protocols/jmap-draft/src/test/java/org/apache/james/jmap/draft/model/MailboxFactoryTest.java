@@ -31,6 +31,7 @@ import org.apache.james.jmap.draft.model.mailbox.MailboxNamespace;
 import org.apache.james.jmap.draft.model.mailbox.Rights;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.inmemory.InMemoryId;
+import org.apache.james.mailbox.inmemory.InMemoryMailboxManager;
 import org.apache.james.mailbox.inmemory.manager.InMemoryIntegrationResources;
 import org.apache.james.mailbox.manager.ManagerTestProvisionner;
 import org.apache.james.mailbox.model.MailboxACL;
@@ -41,7 +42,6 @@ import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.model.search.MailboxQuery;
 import org.apache.james.mailbox.quota.QuotaManager;
 import org.apache.james.mailbox.quota.QuotaRootResolver;
-import org.apache.james.mailbox.store.StoreMailboxManager;
 import org.assertj.core.api.JUnitSoftAssertions;
 import org.junit.Before;
 import org.junit.Rule;
@@ -56,7 +56,7 @@ public class MailboxFactoryTest {
     @Rule
     public final JUnitSoftAssertions softly = new JUnitSoftAssertions();
 
-    private StoreMailboxManager mailboxManager;
+    private InMemoryMailboxManager mailboxManager;
     private MailboxSession mailboxSession;
     private MailboxSession otherMailboxSession;
     private Username user;

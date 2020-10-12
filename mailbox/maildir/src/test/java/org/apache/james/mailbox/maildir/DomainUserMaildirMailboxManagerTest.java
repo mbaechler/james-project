@@ -21,17 +21,17 @@ package org.apache.james.mailbox.maildir;
 import java.util.Optional;
 
 import org.apache.james.junit.TemporaryFolderExtension;
+import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.MailboxManagerTest;
 import org.apache.james.mailbox.SubscriptionManager;
 import org.apache.james.mailbox.events.EventBus;
-import org.apache.james.mailbox.store.StoreMailboxManager;
 import org.apache.james.mailbox.store.StoreSubscriptionManager;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-class DomainUserMaildirMailboxManagerTest extends MailboxManagerTest<StoreMailboxManager> {
+class DomainUserMaildirMailboxManagerTest extends MailboxManagerTest<MaildirMailboxManagerProvider.MaildirMailboxManager> {
 
     @Disabled("Maildir is using DefaultMessageId which doesn't support full feature of a messageId, which is an essential" +
         " element of the Vault")
@@ -40,7 +40,7 @@ class DomainUserMaildirMailboxManagerTest extends MailboxManagerTest<StoreMailbo
     }
 
     @Nested
-    class BasicFeaturesTests extends MailboxManagerTest<StoreMailboxManager>.BasicFeaturesTests {
+    class BasicFeaturesTests extends MailboxManagerTest<MailboxManager>.BasicFeaturesTests {
         @Disabled("MAILBOX-389 Mailbox rename fails with Maildir")
         @Test
         protected void renameMailboxShouldChangeTheMailboxPathOfAMailbox() {
@@ -73,7 +73,7 @@ class DomainUserMaildirMailboxManagerTest extends MailboxManagerTest<StoreMailbo
     }
 
     @Nested
-    class MailboxNameLimitTests extends MailboxManagerTest<StoreMailboxManager>.MailboxNameLimitTests {
+    class MailboxNameLimitTests extends MailboxManagerTest<MailboxManager>.MailboxNameLimitTests {
         @Disabled("MAILBOX-389 Mailbox rename fails with Maildir")
         @Test
         protected void renamingMailboxByIdShouldNotThrowWhenNameWithoutEmptyHierarchicalLevel() {
@@ -92,10 +92,10 @@ class DomainUserMaildirMailboxManagerTest extends MailboxManagerTest<StoreMailbo
 
     @RegisterExtension
     TemporaryFolderExtension temporaryFolder = new TemporaryFolderExtension();
-    Optional<StoreMailboxManager> mailboxManager = Optional.empty();
+    Optional<MaildirMailboxManagerProvider.MaildirMailboxManager> mailboxManager = Optional.empty();
 
     @Override
-    protected StoreMailboxManager provideMailboxManager() {
+    protected MaildirMailboxManagerProvider.MaildirMailboxManager provideMailboxManager() {
         if (!mailboxManager.isPresent()) {
             mailboxManager = Optional.of(createMailboxManager());
         }
@@ -107,7 +107,7 @@ class DomainUserMaildirMailboxManagerTest extends MailboxManagerTest<StoreMailbo
         return new StoreSubscriptionManager(provideMailboxManager().getMapperFactory());
     }
 
-    private StoreMailboxManager createMailboxManager() {
+    private MaildirMailboxManagerProvider.MaildirMailboxManager createMailboxManager() {
         try {
             return MaildirMailboxManagerProvider.createMailboxManager("/%fulluser", temporaryFolder.getTemporaryFolder().getTempDir());
         } catch (Exception e) {
@@ -116,7 +116,7 @@ class DomainUserMaildirMailboxManagerTest extends MailboxManagerTest<StoreMailbo
     }
 
     @Override
-    protected EventBus retrieveEventBus(StoreMailboxManager mailboxManager) {
+    protected EventBus retrieveEventBus(MaildirMailboxManagerProvider.MaildirMailboxManager mailboxManager) {
         return mailboxManager.getEventBus();
     }
 

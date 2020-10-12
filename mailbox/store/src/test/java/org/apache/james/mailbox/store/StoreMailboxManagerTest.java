@@ -25,8 +25,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Optional;
+
 import org.apache.james.core.Username;
 import org.apache.james.mailbox.AttachmentContentLoader;
+import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MailboxSessionUtil;
 import org.apache.james.mailbox.MessageManager;
@@ -63,157 +66,128 @@ import org.junit.jupiter.api.Test;
 
 import reactor.core.publisher.Mono;
 
-class StoreMailboxManagerTest {
+interface MailboxManagerContract {
     static final Username CURRENT_USER = Username.of("user");
     static final String CURRENT_USER_PASSWORD = "secret";
     static final Username ADMIN = Username.of("admin");
     static final String ADMIN_PASSWORD = "adminsecret";
-    static final MailboxId MAILBOX_ID = TestId.of(123);
     static final Username UNKNOWN_USER = Username.of("otheruser");
     static final String BAD_PASSWORD = "badpassword";
     static final String EMPTY_PREFIX = "";
 
-    StoreMailboxManager storeMailboxManager;
-    MailboxMapper mockedMailboxMapper;
-    MailboxSession mockedMailboxSession;
+    MailboxManager testee();
 
-    @BeforeEach
-    void setUp() throws MailboxException {
-        MailboxSessionMapperFactory mockedMapperFactory = mock(MailboxSessionMapperFactory.class);
-        mockedMailboxSession = MailboxSessionUtil.create(CURRENT_USER);
-        mockedMailboxMapper = mock(MailboxMapper.class);
-        when(mockedMapperFactory.getMailboxMapper(mockedMailboxSession))
-            .thenReturn(mockedMailboxMapper);
-        Factory messageIdFactory = mock(MessageId.Factory.class);
-        FakeAuthenticator authenticator = new FakeAuthenticator();
-        authenticator.addUser(CURRENT_USER, CURRENT_USER_PASSWORD);
-        authenticator.addUser(ADMIN, ADMIN_PASSWORD);
-
-        InVMEventBus eventBus = new InVMEventBus(new InVmEventDelivery(new RecordingMetricFactory()), EventBusTestFixture.RETRY_BACKOFF_CONFIGURATION, new MemoryEventDeadLetters());
-
-        StoreRightManager storeRightManager = new StoreRightManager(mockedMapperFactory, new UnionMailboxACLResolver(),
-                                                                    new SimpleGroupMembershipResolver(), eventBus);
-
-        StoreMailboxAnnotationManager annotationManager = new StoreMailboxAnnotationManager(mockedMapperFactory, storeRightManager);
-        SessionProviderImpl sessionProvider = new SessionProviderImpl(authenticator, FakeAuthorizator.forUserAndAdmin(ADMIN, CURRENT_USER));
-        QuotaComponents quotaComponents = QuotaComponents.disabled(sessionProvider, mockedMapperFactory);
-        AttachmentContentLoader attachmentContentLoader = null;
-        MessageSearchIndex index = new SimpleMessageSearchIndex(mockedMapperFactory, mockedMapperFactory, new DefaultTextExtractor(), attachmentContentLoader);
-
-        storeMailboxManager = new StoreMailboxManager(mockedMapperFactory, sessionProvider,
-                new JVMMailboxPathLocker(), new MessageParser(), messageIdFactory,
-                annotationManager, eventBus, storeRightManager, quotaComponents, index, MailboxManagerConfiguration.DEFAULT,
-                PreDeletionHooks.NO_PRE_DELETION_HOOK);
-    }
+    MailboxSession createSession();
 
     @Test
-    void getMailboxShouldThrowWhenUnknownId() {
-        when(mockedMailboxMapper.findMailboxById(MAILBOX_ID)).thenReturn(Mono.error(new MailboxNotFoundException(MAILBOX_ID)));
+    default void getMailboxShouldThrowWhenUnknownId() {
+        MailboxManager mailboxManager = testee();
+        MailboxSession session = testee().createSystemSession(CURRENT_USER);
 
-        assertThatThrownBy(() -> storeMailboxManager.getMailbox(MAILBOX_ID, mockedMailboxSession))
+        TestId unknownMailboxId = TestId.of(123412);
+
+        assertThatThrownBy(() -> mailboxManager.getMailbox(unknownMailboxId, session))
             .isInstanceOf(MailboxNotFoundException.class);
     }
 
     @Test
-    void getMailboxShouldReturnMailboxManagerWhenKnownId() throws Exception {
-        Mailbox mockedMailbox = mock(Mailbox.class);
-        when(mockedMailbox.generateAssociatedPath())
-            .thenReturn(MailboxPath.forUser(CURRENT_USER, "mailboxName"));
-        when(mockedMailbox.getMailboxId()).thenReturn(MAILBOX_ID);
-        when(mockedMailboxMapper.findMailboxById(MAILBOX_ID)).thenReturn(Mono.just(mockedMailbox));
+    default void getMailboxShouldReturnMailboxManagerWhenKnownId() throws Exception {
+        MailboxManager mailboxManager = testee();
+        MailboxSession session = testee().createSystemSession(CURRENT_USER);
+        MailboxPath inbox = MailboxPath.inbox(session);
+        MailboxId mailboxId = mailboxManager.createMailbox(inbox, session).get();
 
-        MessageManager expected = storeMailboxManager.getMailbox(MAILBOX_ID, mockedMailboxSession);
+        MessageManager expected = mailboxManager.getMailbox(mailboxId, session);
 
-        assertThat(expected.getId()).isEqualTo(MAILBOX_ID);
+        assertThat(expected.getId()).isEqualTo(mailboxId);
     }
 
     @Test
-    void getMailboxShouldReturnMailboxManagerWhenKnownIdAndDifferentCaseUser() throws Exception {
-        Mailbox mockedMailbox = mock(Mailbox.class);
-        when(mockedMailbox.generateAssociatedPath())
-            .thenReturn(MailboxPath.forUser(Username.of("uSEr"), "mailboxName"));
-        when(mockedMailbox.getMailboxId()).thenReturn(MAILBOX_ID);
-        when(mockedMailboxMapper.findMailboxById(MAILBOX_ID)).thenReturn(Mono.just(mockedMailbox));
+    default void getMailboxShouldReturnMailboxManagerWhenKnownIdAndDifferentCaseUser() throws Exception {
+        MailboxManager mailboxManager = testee();
+        MailboxSession session = testee().createSystemSession(Username.of("UsEr"));
+        MailboxPath inbox = MailboxPath.inbox(session);
+        MailboxId mailboxId = mailboxManager.createMailbox(inbox, session).get();
 
-        MessageManager expected = storeMailboxManager.getMailbox(MAILBOX_ID, mockedMailboxSession);
+        MailboxSession secondSession = testee().createSystemSession(Username.of("UsEr"));
 
-        assertThat(expected.getId()).isEqualTo(MAILBOX_ID);
+        MessageManager expected = mailboxManager.getMailbox(mailboxId, secondSession);
+
+        assertThat(expected.getId()).isEqualTo(mailboxId);
     }
 
     @Test
-    void getMailboxShouldThrowWhenMailboxDoesNotMatchUserWithoutRight() {
+    default void getMailboxShouldThrowWhenMailboxDoesNotMatchUserWithoutRight() throws MailboxException {
         Username otherUser = Username.of("other.user");
-        Mailbox mockedMailbox = mock(Mailbox.class);
-        when(mockedMailbox.getACL()).thenReturn(new MailboxACL());
-        when(mockedMailbox.generateAssociatedPath())
-            .thenReturn(MailboxPath.forUser(otherUser, "mailboxName"));
-        when(mockedMailbox.getMailboxId()).thenReturn(MAILBOX_ID);
-        when(mockedMailbox.getUser()).thenReturn(otherUser);
-        when(mockedMailboxMapper.findMailboxById(MAILBOX_ID)).thenReturn(Mono.just(mockedMailbox));
-        when(mockedMailboxMapper.findMailboxByPath(any())).thenReturn(Mono.just(mockedMailbox));
+        MailboxSession otherUserSession = testee().createSystemSession(otherUser);
+        MailboxManager mailboxManager = testee();
+        MailboxPath inbox = MailboxPath.inbox(otherUserSession);
+        MailboxId mailboxId = mailboxManager.createMailbox(inbox, otherUserSession).get();
 
-        assertThatThrownBy(() -> storeMailboxManager.getMailbox(MAILBOX_ID, mockedMailboxSession))
+        MailboxSession session = testee().createSystemSession(CURRENT_USER);
+
+        assertThatThrownBy(() -> mailboxManager.getMailbox(mailboxId, session))
             .isInstanceOf(MailboxNotFoundException.class);
     }
 
     @Test
-    void loginShouldCreateSessionWhenGoodPassword() throws Exception {
-        MailboxSession expected = storeMailboxManager.login(CURRENT_USER, CURRENT_USER_PASSWORD);
+    default void loginShouldCreateSessionWhenGoodPassword() throws Exception {
+        MailboxSession expected = testee().login(CURRENT_USER, CURRENT_USER_PASSWORD);
 
         assertThat(expected.getUser()).isEqualTo(CURRENT_USER);
     }
 
     @Test
-    void loginShouldThrowWhenBadPassword() {
-        assertThatThrownBy(() -> storeMailboxManager.login(CURRENT_USER, BAD_PASSWORD))
+    default void loginShouldThrowWhenBadPassword() {
+        assertThatThrownBy(() -> testee().login(CURRENT_USER, BAD_PASSWORD))
             .isInstanceOf(BadCredentialsException.class);
     }
 
     @Test
-    void loginAsOtherUserShouldNotCreateUserSessionWhenAdminWithBadPassword() {
-        assertThatThrownBy(() -> storeMailboxManager.loginAsOtherUser(ADMIN, BAD_PASSWORD, CURRENT_USER))
+    default void loginAsOtherUserShouldNotCreateUserSessionWhenAdminWithBadPassword() {
+        assertThatThrownBy(() -> testee().loginAsOtherUser(ADMIN, BAD_PASSWORD, CURRENT_USER))
             .isInstanceOf(BadCredentialsException.class);
     }
 
     @Test
-    void loginAsOtherUserShouldNotCreateUserSessionWhenNotAdmin() {
-        assertThatThrownBy(() -> storeMailboxManager.loginAsOtherUser(CURRENT_USER, CURRENT_USER_PASSWORD, UNKNOWN_USER))
+    default void loginAsOtherUserShouldNotCreateUserSessionWhenNotAdmin() {
+        assertThatThrownBy(() -> testee().loginAsOtherUser(CURRENT_USER, CURRENT_USER_PASSWORD, UNKNOWN_USER))
             .isInstanceOf(NotAdminException.class);
     }
 
     @Test
-    void loginAsOtherUserShouldThrowBadCredentialWhenBadPasswordAndNotAdminUser() {
-        assertThatThrownBy(() -> storeMailboxManager.loginAsOtherUser(CURRENT_USER, BAD_PASSWORD, CURRENT_USER))
+    default void loginAsOtherUserShouldThrowBadCredentialWhenBadPasswordAndNotAdminUser() {
+        assertThatThrownBy(() -> testee().loginAsOtherUser(CURRENT_USER, BAD_PASSWORD, CURRENT_USER))
             .isInstanceOf(BadCredentialsException.class);
     }
 
     @Test
-    void loginAsOtherUserShouldThrowBadCredentialWhenBadPasswordNotAdminUserAndUnknownUser() {
-        assertThatThrownBy(() -> storeMailboxManager.loginAsOtherUser(CURRENT_USER, BAD_PASSWORD, UNKNOWN_USER))
+    default void loginAsOtherUserShouldThrowBadCredentialWhenBadPasswordNotAdminUserAndUnknownUser() {
+        assertThatThrownBy(() -> testee().loginAsOtherUser(CURRENT_USER, BAD_PASSWORD, UNKNOWN_USER))
             .isInstanceOf(BadCredentialsException.class);
     }
 
     @Test
-    void loginAsOtherUserShouldThrowBadCredentialsWhenBadPasswordAndUserDoesNotExists() {
-        assertThatThrownBy(() -> storeMailboxManager.loginAsOtherUser(ADMIN, BAD_PASSWORD, UNKNOWN_USER))
+    default void loginAsOtherUserShouldThrowBadCredentialsWhenBadPasswordAndUserDoesNotExists() {
+        assertThatThrownBy(() -> testee().loginAsOtherUser(ADMIN, BAD_PASSWORD, UNKNOWN_USER))
             .isInstanceOf(BadCredentialsException.class);
     }
 
     @Test
-    void loginAsOtherUserShouldNotCreateUserSessionWhenDelegatedUserDoesNotExist() {
-        assertThatThrownBy(() -> storeMailboxManager.loginAsOtherUser(ADMIN, ADMIN_PASSWORD, UNKNOWN_USER))
+    default void loginAsOtherUserShouldNotCreateUserSessionWhenDelegatedUserDoesNotExist() {
+        assertThatThrownBy(() -> testee().loginAsOtherUser(ADMIN, ADMIN_PASSWORD, UNKNOWN_USER))
             .isInstanceOf(UserDoesNotExistException.class);
     }
 
     @Test
-    void loginAsOtherUserShouldCreateUserSessionWhenAdminWithGoodPassword() throws Exception {
-        MailboxSession expected = storeMailboxManager.loginAsOtherUser(ADMIN, ADMIN_PASSWORD, CURRENT_USER);
+    default void loginAsOtherUserShouldCreateUserSessionWhenAdminWithGoodPassword() throws Exception {
+        MailboxSession expected = testee().loginAsOtherUser(ADMIN, ADMIN_PASSWORD, CURRENT_USER);
 
         assertThat(expected.getUser()).isEqualTo(CURRENT_USER);
     }
 
     @Test
-    void getPathLikeShouldReturnUserPathLikeWhenNoPrefixDefined() {
+    default void getPathLikeShouldReturnUserPathLikeWhenNoPrefixDefined() {
         //Given
         MailboxSession session = MailboxSessionUtil.create(CURRENT_USER);
         MailboxQuery.Builder testee = MailboxQuery.builder()
@@ -221,7 +195,7 @@ class StoreMailboxManagerTest {
         //When
         MailboxQuery mailboxQuery = testee.build();
 
-        assertThat(StoreMailboxManager.toSingleUserQuery(mailboxQuery, session))
+        assertThat(MailboxManager.toSingleUserQuery(mailboxQuery, session))
             .isEqualTo(MailboxQuery.builder()
                 .namespace(MailboxConstants.USER_NAMESPACE)
                 .username(Username.of("user"))
@@ -231,7 +205,7 @@ class StoreMailboxManagerTest {
     }
 
     @Test
-    void getPathLikeShouldReturnUserPathLikeWhenPrefixDefined() {
+    default void getPathLikeShouldReturnUserPathLikeWhenPrefixDefined() {
         //Given
         MailboxSession session = MailboxSessionUtil.create(CURRENT_USER);
         MailboxQuery.Builder testee = MailboxQuery.builder()
@@ -240,7 +214,7 @@ class StoreMailboxManagerTest {
         //When
         MailboxQuery mailboxQuery = testee.build();
 
-        assertThat(StoreMailboxManager.toSingleUserQuery(mailboxQuery, session))
+        assertThat(MailboxManager.toSingleUserQuery(mailboxQuery, session))
             .isEqualTo(MailboxQuery.builder()
                 .namespace(MailboxConstants.USER_NAMESPACE)
                 .username(Username.of("user"))

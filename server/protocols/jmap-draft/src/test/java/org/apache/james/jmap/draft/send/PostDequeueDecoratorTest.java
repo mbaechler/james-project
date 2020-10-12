@@ -34,6 +34,7 @@ import javax.mail.Flags.Flag;
 
 import org.apache.james.core.Username;
 import org.apache.james.mailbox.DefaultMailboxes;
+import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MessageIdManager;
 import org.apache.james.mailbox.MessageManager;
@@ -50,7 +51,6 @@ import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.model.MessageRange;
 import org.apache.james.mailbox.model.MessageResult;
 import org.apache.james.mailbox.model.MessageResultIterator;
-import org.apache.james.mailbox.store.StoreMailboxManager;
 import org.apache.james.mailbox.store.SystemMailboxesProviderImpl;
 import org.apache.james.mime4j.dom.Message;
 import org.apache.james.queue.api.MailQueue;
@@ -74,7 +74,7 @@ public class PostDequeueDecoratorTest {
     private static final MailboxPath SENT_MAILBOX_PATH = MailboxPath.forUser(USERNAME, SENT);
     private static final Attribute USERNAME_ATTRIBUTE = new Attribute(MailMetadata.MAIL_METADATA_USERNAME_ATTRIBUTE, AttributeValue.of(RAW_USERNAME));
     
-    private StoreMailboxManager mailboxManager;
+    private MailboxManager mailboxManager;
     private MailQueueItem mockedMailQueueItem;
     private Mail mail;
     private PostDequeueDecorator testee;
