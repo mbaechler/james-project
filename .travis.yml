@@ -5,3 +5,4 @@ services:
 
 before_script: mvn -B -V dependency:go-offline
 
+script: mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
