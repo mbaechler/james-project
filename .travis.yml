@@ -3,3 +3,5 @@ language: java
 services:
   - docker
 
+before_script: mvn -B -V dependency:go-offline
+
