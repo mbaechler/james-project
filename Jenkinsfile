@@ -19,15 +19,14 @@
  *
  */
 
-def AGENT_LABEL = env.AGENT_LABEL ?: 'ubuntu'
-def JDK_NAME = env.JDK_NAME ?: 'jdk_11_latest'
-
 pipeline {
-
     agent {
-        node {
-            label AGENT_LABEL
-        }
+        
+        docker {
+          label 'ubuntu && !H28 && !H36 && !H40'
+          image 'apachedirectory/maven-build:jdk-11'
+          args '-v $HOME/.m2:/home/hnelson/.m2'
+        }        
     }
 
     environment {
@@ -37,12 +36,7 @@ pipeline {
         CI=true
         LC_CTYPE = 'en_US.UTF-8'        
     }
-
-    tools {
-        // ... tell Jenkins what java version, maven version or other tools are required ...
-        maven 'maven_3_latest'
-        jdk JDK_NAME
-    }
+    
 
     options {
         // Configure an overall timeout for the build of 4 hours.
