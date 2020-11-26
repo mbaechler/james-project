@@ -3377,18 +3377,18 @@
                     <failOnNoGitDirectory>false</failOnNoGitDirectory>
                     <gitDescribe>
                         <skip>false</skip>
-                        <always>false</always>
+                        <always>true</always>
                         <dirty>-dirty</dirty>
                     </gitDescribe>
                 </configuration>
-                <!--<executions>
+                <executions>
                     <execution>
                         <id>get-the-git-infos</id>
                         <goals>
                             <goal>revision</goal>
                         </goals>
                     </execution>
-                </executions>-->
+                </executions>
             </plugin>
         </plugins>
         <extensions>
