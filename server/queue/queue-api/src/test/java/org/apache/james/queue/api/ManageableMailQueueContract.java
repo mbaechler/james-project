@@ -32,12 +32,14 @@ import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
 import java.time.Duration;
 
+import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
 import org.apache.james.core.builder.MimeMessageBuilder;
 import org.apache.mailet.Attribute;
 import org.apache.mailet.Mail;
 import org.apache.mailet.base.MailAddressFixture;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 import com.github.fge.lambdas.Throwing;
@@ -48,22 +50,20 @@ import reactor.core.publisher.Flux;
 
 public interface ManageableMailQueueContract extends MailQueueContract {
 
+    default void awaitRemove() {}
+
     ManageableMailQueue getManageableMailQueue();
 
     @Test
     default void getSizeShouldReturnZeroWhenNoMessage() throws Exception {
-        long size = getManageableMailQueue().getSize();
-
-        assertThat(size).isEqualTo(0L);
+        Awaitility.await().untilAsserted(() -> assertThat(getManageableMailQueue().getSize()).isEqualTo(0L));
     }
 
     @Test
     default void getSizeShouldReturnMessageCount() throws Exception {
         enQueue(defaultMail().name("name").build());
 
-        long size = getManageableMailQueue().getSize();
-
-        assertThat(size).isEqualTo(1L);
+        Awaitility.await().untilAsserted(() -> assertThat(getManageableMailQueue().getSize()).isEqualTo(1L));
     }
 
     @Test
@@ -71,9 +71,7 @@ public interface ManageableMailQueueContract extends MailQueueContract {
         enQueue(defaultMail().name("1").build());
         enQueue(defaultMail().name("2").build());
 
-        long size = getManageableMailQueue().getSize();
-
-        assertThat(size).isEqualTo(2L);
+        Awaitility.await().untilAsserted(() -> assertThat(getManageableMailQueue().getSize()).isEqualTo(2L));
     }
 
     @Test
@@ -84,9 +82,7 @@ public interface ManageableMailQueueContract extends MailQueueContract {
             .doOnNext(Throwing.consumer(item -> item.done(true)))
             .blockFirst();
 
-        long size = getManageableMailQueue().getSize();
-
-        assertThat(size).isEqualTo(0L);
+        Awaitility.await().untilAsserted(() -> assertThat(getManageableMailQueue().getSize()).isEqualTo(0L));
     }
 
     @Test
@@ -97,9 +93,7 @@ public interface ManageableMailQueueContract extends MailQueueContract {
             .doOnNext(Throwing.consumer(item -> item.done(false)))
             .blockFirst();
 
-        long size = getManageableMailQueue().getSize();
-
-        assertThat(size).isEqualTo(1L);
+        Awaitility.await().untilAsserted(() -> assertThat(getManageableMailQueue().getSize()).isEqualTo(1L));
     }
 
     @Test
@@ -108,9 +102,7 @@ public interface ManageableMailQueueContract extends MailQueueContract {
 
         Flux.from(getManageableMailQueue().deQueue());
 
-        long size = getManageableMailQueue().getSize();
-
-        assertThat(size).isEqualTo(1L);
+        assertThat(getManageableMailQueue().getSize()).isEqualTo(1L);
     }
 
     @Test
@@ -447,6 +439,8 @@ public interface ManageableMailQueueContract extends MailQueueContract {
 
         getManageableMailQueue().remove(ManageableMailQueue.Type.Name, "name2");
 
+        awaitRemove();
+
         assertThatCode(() ->  Iterators.consumingIterator(items)).doesNotThrowAnyException();
     }
 
@@ -522,6 +516,8 @@ public interface ManageableMailQueueContract extends MailQueueContract {
 
         getManageableMailQueue().remove(ManageableMailQueue.Type.Name, "name2");
 
+        awaitRemove();
+
         assertThat(getManageableMailQueue().browse())
             .toIterable()
             .extracting(ManageableMailQueue.MailQueueItemView::getMail)
@@ -541,6 +537,8 @@ public interface ManageableMailQueueContract extends MailQueueContract {
             .build());
 
         getManageableMailQueue().remove(ManageableMailQueue.Type.Sender, OTHER_AT_LOCAL.asString());
+
+        awaitRemove();
 
         assertThat(getManageableMailQueue().browse())
             .toIterable()
@@ -562,6 +560,8 @@ public interface ManageableMailQueueContract extends MailQueueContract {
 
         getManageableMailQueue().remove(ManageableMailQueue.Type.Recipient, RECIPIENT2.asString());
 
+        awaitRemove();
+
         assertThat(getManageableMailQueue().browse())
             .toIterable()
             .extracting(ManageableMailQueue.MailQueueItemView::getMail)
@@ -581,6 +581,8 @@ public interface ManageableMailQueueContract extends MailQueueContract {
             .build());
 
         getManageableMailQueue().remove(ManageableMailQueue.Type.Recipient, RECIPIENT2.asString());
+
+        awaitRemove();
 
         assertThat(getManageableMailQueue().browse())
             .toIterable()
@@ -639,10 +641,55 @@ public interface ManageableMailQueueContract extends MailQueueContract {
             .name("name2")
             .build());
 
+        Awaitility.await().untilAsserted(() -> assertThat(getManageableMailQueue().getSize()).isEqualTo(2L));
+
         getManageableMailQueue().remove(ManageableMailQueue.Type.Name, "name1");
+
+        awaitRemove();
 
         assertThat(Flux.from(getManageableMailQueue().deQueue()).blockFirst().getMail().getName())
             .isEqualTo("name2");
+    }
+
+    @Test
+    default void removeShouldNotDeleteFutureEmails() throws MessagingException {
+        enQueue(defaultMail()
+            .name("name1")
+            .build());
+
+        Awaitility.await().untilAsserted(() -> assertThat(getManageableMailQueue().getSize()).isEqualTo(1L));
+
+        getManageableMailQueue().remove(ManageableMailQueue.Type.Recipient, MailAddressFixture.RECIPIENT1.asString());
+
+        awaitRemove();
+
+        enQueue(defaultMail()
+            .name("name2")
+            .build());
+
+        assertThat(Flux.from(getManageableMailQueue().deQueue()).blockFirst().getMail().getName())
+            .isEqualTo("name2");
+    }
+
+    @Test
+    default void removeShouldNotDeleteFutureEmailsFromBrowse() throws MessagingException {
+        enQueue(defaultMail()
+            .name("name1")
+            .build());
+
+        Awaitility.await().untilAsserted(() -> assertThat(getManageableMailQueue().getSize()).isEqualTo(1L));
+
+        getManageableMailQueue().remove(ManageableMailQueue.Type.Recipient, MailAddressFixture.RECIPIENT1.asString());
+
+        awaitRemove();
+
+        enQueue(defaultMail()
+            .name("name2")
+            .build());
+
+        assertThat(getManageableMailQueue().browse()).toIterable()
+            .extracting(mail -> mail.getMail().getName())
+            .containsExactly("name2");
     }
 
 }
