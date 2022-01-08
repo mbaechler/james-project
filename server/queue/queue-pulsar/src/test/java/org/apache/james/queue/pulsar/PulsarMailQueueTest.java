@@ -22,8 +22,10 @@ package org.apache.james.queue.pulsar;
 import static org.apache.james.queue.api.Mails.defaultMail;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 import javax.mail.MessagingException;
@@ -65,6 +67,7 @@ import com.github.fge.lambdas.Throwing;
 
 import akka.actor.ActorSystem;
 import reactor.core.publisher.Flux;
+import reactor.core.scheduler.Schedulers;
 
 @ExtendWith(DockerPulsarExtension.class)
 public class PulsarMailQueueTest implements MailQueueContract, MailQueueMetricContract, ManageableMailQueueContract, DelayedMailQueueContract, DelayedManageableMailQueueContract {
@@ -237,5 +240,68 @@ public class PulsarMailQueueTest implements MailQueueContract, MailQueueMetricCo
     @Disabled("this guarantee is too strong for Pulsar implementation and doesn't match any domain requirement")
     @Override
     public void flushShouldPreserveBrowseOrder() {
+    }
+
+    @Test
+    void delayedEmailsShouldBeDeleted() throws Exception {
+        getManageableMailQueue().enQueue(defaultMail()
+                        .name("abc")
+                        .build(),
+                5L,
+                TimeUnit.SECONDS);
+        // The queue being FIFO a second email can serve as a wait condition
+        getManageableMailQueue().enQueue(defaultMail()
+                        .name("def")
+                        .build(),
+                5L,
+                TimeUnit.SECONDS);
+
+        Awaitility.await().untilAsserted(() -> assertThat(getManageableMailQueue().getSize()).isEqualTo(2L));
+
+        getManageableMailQueue().remove(ManageableMailQueue.Type.Name, "abc");
+
+        awaitRemove();
+
+        ArrayList<String> names = new ArrayList<>();
+        Flux.from(getManageableMailQueue().deQueue())
+                .subscribeOn(Schedulers.elastic())
+                .subscribe(item -> names.add(item.getMail().getName()));
+
+        Awaitility.await().untilAsserted(() -> assertThat(names).contains("def"));
+        assertThat(names).containsExactly("def");
+    }
+
+    @Test
+    void delayedEmailsShouldBeDeletedWhenMixedWithOtherEmails() throws Exception {
+        getManageableMailQueue().enQueue(defaultMail()
+                        .name("abc")
+                        .build(),
+                5L,
+                TimeUnit.SECONDS);
+
+        Awaitility.await().untilAsserted(() -> assertThat(getManageableMailQueue().getSize()).isEqualTo(1L));
+
+        getManageableMailQueue().remove(ManageableMailQueue.Type.Name, "abc");
+
+        awaitRemove();
+
+        // The newer email
+        getManageableMailQueue().enQueue(defaultMail()
+                .name("def")
+                .build());
+        // The queue being FIFO a third email can serve as a wait condition
+        getManageableMailQueue().enQueue(defaultMail()
+                        .name("ghi")
+                        .build(),
+                5L,
+                TimeUnit.SECONDS);
+
+        ArrayList<String> names = new ArrayList<>();
+        Flux.from(getManageableMailQueue().deQueue())
+                .subscribeOn(Schedulers.elastic())
+                .subscribe(item -> names.add(item.getMail().getName()));
+
+        Awaitility.await().untilAsserted(() -> assertThat(names).contains("ghi"));
+        assertThat(names).containsExactly("def", "ghi");
     }
 }
