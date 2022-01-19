@@ -19,7 +19,7 @@
                 </encoder>
                 <immediateFlush>false</immediateFlush>
                 <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-                        <level>ERROR</level>
+                        <level>DEBUG</level>
                 </filter>
         </appender>
 
@@ -27,6 +27,10 @@
                 <appender-ref ref="CONSOLE" />
                 <appender-ref ref="FILE" />
         </root>
-        <logger name="org.apache.james" level="DEBUG" />
-	<logger name="org.testcontainers" level="DEBUG"/>
+        <logger name="org.apache.james" level="WARN" />
+        <logger name="org.apache.james.queue.pulsar" level="DEBUG" />
+        <logger name="org.apache.james.backends.pulsar" level="DEBUG" />
+        <logger name="org.apache.pulsar.client" level="DEBUG" />
+        <logger name="browse" level="DEBUG" />
+	    <logger name="org.testcontainers" level="DEBUG"/>
 </configuration>

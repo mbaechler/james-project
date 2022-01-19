@@ -72,7 +72,7 @@ import reactor.core.scheduler.Schedulers;
 @ExtendWith(DockerPulsarExtension.class)
 public class PulsarMailQueueTest implements MailQueueContract, MailQueueMetricContract, ManageableMailQueueContract, DelayedMailQueueContract, DelayedManageableMailQueueContract {
 
-    public static Logger logger = LoggerFactory.getLogger("org.apache.james");
+    public static Logger logger = LoggerFactory.getLogger(PulsarMailQueueTest.class);
 
     PulsarMailQueue mailQueue;
 
@@ -241,4 +241,36 @@ public class PulsarMailQueueTest implements MailQueueContract, MailQueueMetricCo
     @Override
     public void flushShouldPreserveBrowseOrder() {
     }
+
+    @Override
+    @Test
+    public void browseShouldReturnEmptyWhenSingleDequeueMessage() throws Exception {
+        var mail = defaultMail()
+                .name("name")
+                .build();
+        enQueue(mail);
+        Thread.sleep(1000);
+        logger.debug("{}", mailQueue.admin().topics().getStats(mailQueue.outTopic().name()).getSubscriptions());
+
+        MailQueue.MailQueueItem mailQueueItem = Flux.from(getMailQueue().deQueue()).blockFirst();
+        mailQueueItem.done(true);
+
+        logger.debug("precise0 {}", mailQueue.admin().topics().getStats(mailQueue.outTopic().name(), true).getSubscriptions());
+
+        Thread.sleep(5000);
+
+        logger.debug("precise1 {}", mailQueue.admin().topics().getStats(mailQueue.outTopic().name(), true).getSubscriptions());
+        ManageableMailQueue.MailQueueIterator items = getManageableMailQueue().browse();
+
+        logger.debug("precise2 {}", mailQueue.admin().topics().getStats(mailQueue.outTopic().name(), true).getSubscriptions());
+
+        items.hasNext();
+
+        logger.debug("precise3 {}", mailQueue.admin().topics().getStats(mailQueue.outTopic().name(), true).getSubscriptions());
+
+        assertThat(items)
+                .toIterable()
+                .isEmpty();
+    }
+
 }

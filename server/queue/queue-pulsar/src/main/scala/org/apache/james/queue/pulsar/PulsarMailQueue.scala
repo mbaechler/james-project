@@ -109,12 +109,12 @@ class PulsarMailQueue(
   private implicit val ec: ExecutionContextExecutor = system.dispatcher
   private implicit val implicitBlobIdFactory: BlobId.Factory = blobIdFactory
   private implicit val client: PulsarAsyncClient = PulsarClient(config.brokerUri)
-  private val admin = {
+  val admin = {
     val builder = PulsarAdmin.builder()
     builder.serviceHttpUrl(config.adminUri).build()
   }
 
-  private val outTopic = Topic(s"persistent://${config.namespace.asString}/James-${name.asString()}")
+  val outTopic = Topic(s"persistent://${config.namespace.asString}/James-${name.asString()}")
   private val scheduledTopic = Topic(s"persistent://${config.namespace.asString}/${name.asString()}-scheduled")
   private val filterTopic = Topic(s"persistent://${config.namespace.asString}/pmq-filter-${name.asString()}")
   private val filterScheduledTopic = Topic(s"persistent://${config.namespace.asString}/pmq-filter-scheduled-${name.asString()}")
@@ -539,29 +539,33 @@ class PulsarMailQueue(
    */
   override def browse(): ManageableMailQueue.MailQueueIterator = { //FIXME
     val outTopicReader = PulsarReader.forTopic(outTopic)
-    val scheduledTopicReader = PulsarReader.forTopic(scheduledTopic)
+   // val scheduledTopicReader = PulsarReader.forTopic(scheduledTopic)
 
     implicit val timeout: Timeout = Timeout(1, TimeUnit.SECONDS)
+
 
     val outSource = outTopicReader
       .map(message => (jsonStringToMailMetadata(message.value), message))
       .via(debugLogger("browse-out"))
       .ask[Option[MailMetadata]](filterStage)
 
-    val scheduledSource = scheduledTopicReader
-      .map(message => (jsonStringToMailMetadata(message.value), message))
-      .via(debugLogger("browse-scheduled"))
-      .ask[Option[MailMetadata]](filterScheduledStage)
+//    val scheduledSource = scheduledTopicReader
+//      .map(message => (jsonStringToMailMetadata(message.value), message))
+//      .via(debugLogger("browse-scheduled"))
+//      .ask[Option[MailMetadata]](filterScheduledStage)
 
-    val browseableMails: Source[Mail, NotUsed] = outSource.concat(scheduledSource)
+    val browseableMails: Source[Mail, NotUsed] = outSource//.concat(scheduledSource)
       .collect { case Some(value) => value }
       .flatMapConcat(metadata => {
         val partsId = MimeMessagePartsId.builder()
           .headerBlobId(blobIdFactory.from(metadata.headerBlobId))
           .bodyBlobId(blobIdFactory.from(metadata.bodyBlobId))
           .build()
+        /*
         Source.fromPublisher(readMimeMessage(partsId))
           .map(message => readMail(metadata, message))
+         */
+       Source.lazySingle(()=> readMail(metadata, null))
       })
 
     new ManageableMailQueue.MailQueueIterator() {
