@@ -30,7 +30,7 @@ import scala.concurrent.ExecutionContextExecutor
 class PulsarReaderTest extends org.scalatest.wordspec.AsyncWordSpec with ForAllTestContainer with Matchers {
   implicit val actorSystem = ActorSystem()
   implicit val ec: ExecutionContextExecutor = actorSystem.dispatcher
-  override val container: PulsarContainer = PulsarContainer("2.9.1")
+  override val container: PulsarContainer = PulsarContainer("2.10.0")
   implicit lazy val client = PulsarClient(container.pulsarBrokerUrl())
 
   "it" should {

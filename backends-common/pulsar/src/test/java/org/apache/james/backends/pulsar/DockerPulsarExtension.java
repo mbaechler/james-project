@@ -55,7 +55,7 @@ public class DockerPulsarExtension implements
     private DockerPulsar dockerPulsar;
 
     public DockerPulsarExtension() {
-        container = new PulsarContainer("2.9.1")
+        container = new PulsarContainer("2.10.0")
                 .withLogConsumer(DockerPulsarExtension::displayDockerLog)
                 .waitingFor(
                         new WaitAllStrategy()
