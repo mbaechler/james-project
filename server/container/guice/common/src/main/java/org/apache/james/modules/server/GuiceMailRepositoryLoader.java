@@ -40,7 +40,9 @@ public class GuiceMailRepositoryLoader implements MailRepositoryLoader {
     @Override
     public MailRepository load(String fullyQualifiedClassName, MailRepositoryUrl url) throws MailRepositoryStore.MailRepositoryStoreException {
         try {
-            Module urlModule = binder -> binder.bind(MailRepositoryUrl.class).toInstance(url);
+            Module urlModule = binder -> {
+                binder.bind(MailRepositoryUrl.class).toInstance(url);
+            };
 
             return genericLoader.<MailRepository>withChildModule(urlModule)
                 .instantiate(new ClassName(fullyQualifiedClassName));
