@@ -1,3 +1,4 @@
+
 package org.apache.james.modules.mailrepository;
 
 import java.util.Map;

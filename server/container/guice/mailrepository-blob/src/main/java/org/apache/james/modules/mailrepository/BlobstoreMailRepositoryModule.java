@@ -35,8 +35,6 @@ import org.apache.james.mailrepository.api.Protocol;
 import org.apache.james.mailrepository.blob.BlobMailRepository;
 import org.apache.james.mailrepository.memory.MailRepositoryStoreConfiguration;
 import org.apache.james.mailrepository.memory.MemoryMailRepositoryStore;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
@@ -63,6 +61,7 @@ public class BlobstoreMailRepositoryModule extends AbstractModule {
                                                     BlobId.Factory blobIdFactory,
                                                     MimeMessageStore.Factory mimeFactory) {
         return new MailRepositoryFactory() {
+
             @Override
             public Class<? extends MailRepository> fqdn() {
                 return BlobMailRepository.class;
