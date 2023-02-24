@@ -25,7 +25,6 @@ import com.google.common.collect.ImmutableList
 
 import javax.inject.Inject
 import org.apache.james.rate.limiter.api.{AcceptableRate, RateExceeded, RateLimiter, RateLimiterFactory, RateLimitingKey, RateLimitingResult}
-import org.apache.james.transport.mailets.ConfigurationOps.DurationOps
 import org.apache.mailet.base.GenericMailet
 import org.apache.mailet.{Mail, ProcessingState}
 import org.reactivestreams.Publisher
@@ -114,6 +113,8 @@ class GlobalRateLimit @Inject()(rateLimiterFactory: RateLimiterFactory) extends 
   private var keyPrefix: Option[KeyPrefix] = _
 
   override def init(): Unit = {
+    import org.apache.james.transport.mailets.ConfigurationOps.DurationOps
+
     val duration: Duration = getMailetConfig.getDuration("duration")
       .getOrElse(throw new IllegalArgumentException("'duration' is compulsory"))
 
