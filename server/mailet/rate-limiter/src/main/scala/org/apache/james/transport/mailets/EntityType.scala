@@ -58,7 +58,7 @@ object ConfigurationOps {
 object EntityType {
 
   implicit class EitherOps[E <: Throwable, A](either: Either[E, A]) {
-    def orThrow(message: String): A = either.left.map(cause => new RuntimeException(message, cause)).toTry.get
+    def orThrow(message: String): A = either.left.map(cause => new IllegalArgumentException(message, cause)).toTry.get
   }
 
   def extractRules(entityType: EntityType, duration: Duration, mailetConfig: MailetConfig): Option[Rules] = (entityType match {
