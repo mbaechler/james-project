@@ -21,6 +21,7 @@ package org.apache.james.samples.mailets;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.Optional;
 
 import jakarta.mail.Address;
 import jakarta.mail.Flags;
@@ -53,13 +54,23 @@ public class InstrumentationMailet implements Mailet {
     }
 
     @Override
-    public String getMailetInfo() {
-        return "Example mailet";
+    public String getName() {
+        return config.getMailetName();
     }
 
     @Override
-    public MailetConfig getMailetConfig() {
-        return config;
+    public Optional<String> onMailetException()  {
+        return Optional.ofNullable(config.getInitParameter("onMailetException"));
+    }
+
+    @Override
+    public Optional<String> onMatchException()  {
+        return Optional.ofNullable(config.getInitParameter("onMatchException"));
+    }
+
+    @Override
+    public String getMailetInfo() {
+        return "Example mailet";
     }
 
     @Override

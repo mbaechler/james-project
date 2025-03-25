@@ -19,6 +19,8 @@
 
 package org.apache.james.mailet.constructor;
 
+import java.util.Optional;
+
 import jakarta.mail.MessagingException;
 
 import org.apache.mailet.Mail;
@@ -45,8 +47,18 @@ public class ConstructorMailet implements Mailet {
     }
 
     @Override
-    public MailetConfig getMailetConfig() {
-        return null;
+    public String getName() {
+        return "ConstructorMailet";
+    }
+
+    @Override
+    public Optional<String> onMailetException() {
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<String> onMatchException() {
+        return Optional.empty();
     }
 
     @Override

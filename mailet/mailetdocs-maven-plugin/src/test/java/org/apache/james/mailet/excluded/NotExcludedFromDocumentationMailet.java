@@ -19,6 +19,8 @@
 
 package org.apache.james.mailet.excluded;
 
+import java.util.Optional;
+
 import jakarta.mail.MessagingException;
 
 import org.apache.mailet.Mail;
@@ -40,8 +42,18 @@ public class NotExcludedFromDocumentationMailet implements Mailet {
     }
 
     @Override
-    public MailetConfig getMailetConfig() {
-        return null;
+    public String getName() {
+        return "NotExcludedFromDocumentationMailet";
+    }
+
+    @Override
+    public Optional<String> onMailetException() {
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<String> onMatchException() {
+        return Optional.empty();
     }
 
     @Override

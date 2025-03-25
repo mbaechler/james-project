@@ -18,6 +18,8 @@
  ****************************************************************/
 package org.apache.james.mailetcontainer.api.mock;
 
+import java.util.Optional;
+
 import org.apache.mailet.Mail;
 import org.apache.mailet.Mailet;
 import org.apache.mailet.MailetConfig;
@@ -31,8 +33,18 @@ public class MockMailet implements Mailet {
     }
 
     @Override
-    public MailetConfig getMailetConfig() {
-        return config;
+    public String getName() {
+        return config.getMailetName();
+    }
+
+    @Override
+    public Optional<String> onMailetException()  {
+        return Optional.ofNullable(config.getInitParameter("onMailetException"));
+    }
+
+    @Override
+    public Optional<String> onMatchException()  {
+        return Optional.ofNullable(config.getInitParameter("onMatchException"));
     }
 
     @Override

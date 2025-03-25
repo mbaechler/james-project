@@ -18,6 +18,8 @@
  ****************************************************************/
 package org.apache.james.samples.mailets;
 
+import java.util.Optional;
+
 import org.apache.james.core.MailAddress;
 import org.apache.mailet.Mail;
 import org.apache.mailet.Mailet;
@@ -38,13 +40,23 @@ public class HelloWorldMailet implements Mailet {
     }
 
     @Override
-    public String getMailetInfo() {
-        return "Example mailet";
+    public String getName() {
+        return config.getMailetName();
     }
 
     @Override
-    public MailetConfig getMailetConfig() {
-        return config;
+    public Optional<String> onMailetException()  {
+        return Optional.ofNullable(config.getInitParameter("onMailetException"));
+    }
+
+    @Override
+    public Optional<String> onMatchException()  {
+        return Optional.ofNullable(config.getInitParameter("onMatchException"));
+    }
+
+    @Override
+    public String getMailetInfo() {
+        return "Example mailet";
     }
 
     @Override

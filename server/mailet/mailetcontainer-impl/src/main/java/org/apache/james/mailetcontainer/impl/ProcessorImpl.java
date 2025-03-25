@@ -30,7 +30,6 @@ import org.apache.mailet.Attribute;
 import org.apache.mailet.AttributeValue;
 import org.apache.mailet.Mail;
 import org.apache.mailet.Mailet;
-import org.apache.mailet.MailetConfig;
 import org.apache.mailet.base.MailetPipelineLogging;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,17 +80,8 @@ public class ProcessorImpl {
             mailet.service(mail);
         } catch (Throwable me) {
             ex = me;
-            String onMailetException = null;
+            String onMailetException = mailet.onMailetException().map(value -> value.trim().toLowerCase(Locale.US)).orElse(Mail.ERROR);
 
-            MailetConfig mailetConfig = mailet.getMailetConfig();
-            if (mailetConfig instanceof MailetConfigImpl) {
-                onMailetException = mailetConfig.getInitParameter("onMailetException");
-            }
-            if (onMailetException == null) {
-                onMailetException = Mail.ERROR;
-            } else {
-                onMailetException = onMailetException.trim().toLowerCase(Locale.US);
-            }
             if (onMailetException.equalsIgnoreCase("ignore")) {
                 // ignore the exception and continue
                 // this option should not be used if the mail object can be
@@ -101,7 +91,7 @@ public class ProcessorImpl {
             } else if (onMailetException.equalsIgnoreCase("propagate")) {
                 throw me;
             } else {
-                ProcessorUtil.handleException(me, mail, mailet.getMailetConfig().getMailetName(), onMailetException, LOGGER);
+                ProcessorUtil.handleException(me, mail, mailet.getName(), onMailetException, LOGGER);
             }
 
         } finally {

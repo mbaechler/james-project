@@ -19,6 +19,8 @@
 
 package org.apache.james.mailet.experimental;
 
+import java.util.Optional;
+
 import jakarta.mail.MessagingException;
 
 import org.apache.mailet.Experimental;
@@ -42,8 +44,18 @@ public class ExperimentalMailet implements Mailet {
     }
 
     @Override
-    public MailetConfig getMailetConfig() {
-        return null;
+    public String getName() {
+        return "ExperimentalMailet";
+    }
+
+    @Override
+    public Optional<String> onMailetException() {
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<String> onMatchException() {
+        return Optional.empty();
     }
 
     @Override

@@ -21,6 +21,7 @@
 package org.apache.mailet;
 
 import java.util.Collection;
+import java.util.Optional;
 
 import jakarta.mail.MessagingException;
 
@@ -42,10 +43,7 @@ import com.google.common.collect.ImmutableList;
  * </ol>
  * <p>
  * In addition to the life-cycle methods, this interface provides the
- * {@link #getMailetConfig} method, which provides the Mailet with
- * its initialization parameters and a {@link MailetContext} through which
- * it can interact with the mailet container, and the {@link #getMailetInfo}
- * method, which provides basic information about the Mailet.
+ * {@link #getMailetInfo} method, which provides basic information about the Mailet.
  * <p>
  * Mailets are grouped by the mailet container's configuration into processors.
  * Each processor is comprised of an ordered sequence of Mailets, each with a
@@ -112,18 +110,20 @@ public interface Mailet {
     void destroy();
 
     /**
-     * Returns a MailetConfig object, which provides initialization parameters
-     * and a {@link MailetContext} through which it can interact with the
-     * mailet container.
-     * <p>
-     * Implementations of this interface are responsible for storing the
-     * MailetConfig which they receive in the {@link #init} method so
-     * that this method can return it.
-     *
-     * @return the MailetConfig that this mailet was initialized with
+     * @return mailet name
      */
-    MailetConfig getMailetConfig();
-    
+    String getName();
+
+    /**
+     * @return Optional State name in case of mailet exception
+     */
+    Optional<String> onMailetException();
+
+    /**
+     * @return Optional State name in case of match exception
+     */
+    Optional<String> onMatchException();
+
     /**
      * Returns information about the mailet, such as author, version and
      * copyright.

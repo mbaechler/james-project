@@ -154,8 +154,8 @@ public abstract class AbstractStateCompositeProcessor implements MailProcessor, 
     private Stream<ProcessingState> requiredProcessorStates(Mailet mailet) {
         return Stream.concat(mailet.requiredProcessingState().stream(),
             Stream.of(
-                    Optional.ofNullable(mailet.getMailetConfig().getInitParameter("onMailetException")),
-                    Optional.ofNullable(mailet.getMailetConfig().getInitParameter("onMatchException")))
+                    mailet.onMailetException(),
+                    mailet.onMatchException())
                 .flatMap(Optional::stream)
                 .map(ProcessingState::new));
     }
